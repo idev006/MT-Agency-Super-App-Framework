@@ -50,6 +50,8 @@
 | T17 | Slow/unavailable internet | Clear retry/no-data message, never unsafe public fallback |
 
 ## 4. Suggested pilot metrics (targets, not claims)
+Management outcome KPIs and methods are defined in [Executive Policy Brief](EXECUTIVE_BRIEF.md). Distinguish working software from successful policy implementation. Measure current manual lookup time before pilot if practicable.
+
 - Scan→detail response: p95 ≤ 2 seconds on a specified test network after already authenticated (rebaseline after pilot).
 - Correct person/phone retrieval in representative pilot: target ≥99% **relative to verified registration records**, not independently verified legal ownership.
 - 0 authorized bypasses in defined security tests.
