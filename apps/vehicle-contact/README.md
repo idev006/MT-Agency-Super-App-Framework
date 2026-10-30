@@ -17,7 +17,9 @@
 - [WORKFLOW_AND_MEDIA_PIPELINE.md](WORKFLOW_AND_MEDIA_PIPELINE.md) — 5-angle vehicle images, registration/scan workflows, secure upload pipeline
 
 ## Scope freeze — v1
-**IN:** vehicle registration, responsible contact, printable opaque QR, mobile scanner with front/rear camera, authorized vehicle lookup, tap-to-call, manual search, basic management and audit.
+**IN:** vehicle registration, responsible contact, optional 0–5 labeled vehicle photos, printable opaque QR, mobile scanner with front/rear camera, authorized vehicle lookup, tap-to-call, manual search, basic management and audit.
+
+**Fast-rollout rule:** photos improve physical comparison but are **not mandatory** to activate a valid contact record or issue QR in v1.
 
 **OUT:** parking rights, zone authorization, automatic LINE messages, relocation workflow/status, dashboard, AI plate recognition, barrier/CCTV integration.
 
