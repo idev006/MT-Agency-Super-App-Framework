@@ -23,8 +23,8 @@ a{color:#f9d588}details{line-height:1.65}code{word-break:break-word} .ok{color:#
 <div class="card"><h2>สแกน QR Code ด้วยโทรศัพท์</h2><p class="muted">เปิดกล้องหลังเป็นค่าเริ่มต้น สลับหน้า–หลังหรือเลือกกล้องอื่นได้หากอุปกรณ์รองรับ ไม่มีการส่งภาพหรือข้อมูล QR ไปยังเซิร์ฟเวอร์</p>
 <div class="stage"><div id="reader" style="width:100%;height:100%;overflow:hidden"></div></div>
 <div class="actions"><button id="start">เปิดกล้อง</button><button id="flip" class="alt" disabled>สลับกล้อง</button><button id="stop" class="alt" disabled>ปิดกล้อง</button></div>
-<label for="devices">กล้องที่เลือกใช้</label><select id="devices" disabled><option>กรุณาเปิดกล้องก่อน</option></select>
-<label for="qrfile">ทดสอบอ่าน QR จากภาพที่บันทึกไว้ (ใช้แยกสาเหตุ)</label><input id="qrfile" type="file" accept="image/*"><p id="debug" class="muted">Decoder: รอเริ่มทดสอบ</p><p id="state" class="status" role="status" aria-live="polite">พร้อมทดสอบ — กด “เปิดกล้อง” และอนุญาตการใช้กล้อง</p></div>
+<label for="devices">กล้องที่เลือกใช้ (iPhone สามารถเลือก Back Camera จากรายการ)</label><select id="devices" disabled><option>กรุณาเปิดกล้องก่อน</option></select>
+<label for="qrfile">ทดสอบอ่าน QR จากภาพที่บันทึกไว้ (ใช้แยกสาเหตุ)</label><input id="qrfile" type="file" accept="image/*"><p id="debug" class="muted">Decoder: รอเริ่มทดสอบ</p><p id="state" class="status" role="status" aria-live="polite">พร้อมทดสอบ — กด “เปิดกล้อง” และอนุญาตการใช้กล้อง • iPhone: แนะนำเปิดใน Safari โดยตรง</p></div>
 <div class="card"><h2>ผลการสแกน</h2><div id="result" class="result" aria-live="polite">ยังไม่มีข้อมูล</div><div class="actions"><button id="again" class="alt" disabled>สแกนใหม่</button><button id="copy" class="alt" disabled>คัดลอกผล</button></div><small>เพื่อความปลอดภัย POC นี้ไม่เปิดลิงก์จาก QR โดยอัตโนมัติ</small></div>
 <div class="card"><h2>ข้อมูลการทดสอบ</h2><div id="env" class="muted"></div>
 <details><summary>วิธีทดสอบและแก้ปัญหา</summary><p>ทดสอบด้วย Android Chrome หรือ iPhone Safari ผ่าน HTTPS หากเปิดกล้องไม่ได้ ให้ตรวจสิทธิ์ Camera ในการตั้งค่าเบราว์เซอร์และลองเปิดใน Chrome/Safari โดยตรง แนะนำทดสอบสลับกล้องอย่างน้อย 5 ครั้งต่ออุปกรณ์</p><p>ถ้า QR ไม่ถูกอ่าน ลองจัดแสง ถือให้นิ่ง และขยับมือถือห่าง QR เล็กน้อย; ใช้กล้องปกติของมือถืออ่าน QR เป็นวิธีสำรอง</p></details>
@@ -33,7 +33,7 @@ a{color:#f9d588}details{line-height:1.65}code{word-break:break-word} .ok{color:#
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 const $=id=>document.getElementById(id),state=$('state'),dev=$('devices'),result=$('result'),debug=$('debug');
-let engine=null,started=false,busy=false,mode='environment',lastText='',scans=0,stopPending=false;
+let engine=null,started=false,busy=false,mode='environment',lastText='',scans=0,availableCameras=[];
 const say=(txt,success=false)=>{state.textContent=txt;state.style.border='1px solid '+(success?'#359978':'#506985')};
 const userAgent=navigator.userAgent;$('env').textContent='แพลตฟอร์ม: '+(/iPhone|iPad/.test(userAgent)?'iOS':/Android/.test(userAgent)?'Android':'อื่นๆ')+' | HTTPS: '+(isSecureContext?'ใช่':'ไม่ใช่')+' | Decoder: html5-qrcode v2.3.8';
 function buttons(){ $('start').disabled=busy||started; $('flip').disabled=busy||!started; $('stop').disabled=busy||!started;$('again').disabled=busy||!started; }
@@ -48,28 +48,53 @@ async function teardown(){
  engine=null;
  dev.disabled=true;
 }
+function rearCamera(cameras){
+ return cameras.find(c=>/back|rear|environment|world|ด้านหลัง|กล้องหลัง/i.test(c.label||''))||null;
+}
+function frontCamera(cameras){
+ return cameras.find(c=>/front|face|user|ด้านหน้า|กล้องหน้า/i.test(c.label||''))||null;
+}
 async function begin(cameraId){
- if(busy)return;busy=true;buttons();try{
+ if(busy)return;busy=true;buttons();
+ try{
   if(!isSecureContext)throw new Error('ต้องเปิดจาก HTTPS');
-  await teardown();
-  await ensureEngine();
-  const camera=cameraId?cameraId:{facingMode:mode};
-  await engine.start(camera,{fps:8,qrbox:(w,h)=>{const x=Math.max(150,Math.floor(Math.min(w,h)*.72));return {width:x,height:x}},aspectRatio:1.0,disableFlip:false},decoded,()=>{});
-  started=true;debug.textContent='Decoder: พร้อม | กล้อง: '+(cameraId?'เลือกอุปกรณ์':mode)+' | กำลังตรวจ QR';
-  say('เปิดกล้องแล้ว • นำ QR มาอยู่ตรงกลางกรอบ ประมาณ 10–20 ซม.',true);
-  try{
-   const cameras=await Html5Qrcode.getCameras();
-   dev.innerHTML='';
-   cameras.forEach((cam,i)=>{const option=document.createElement('option');option.value=cam.id;option.textContent=cam.label||'กล้อง '+(i+1);dev.append(option)});
-   dev.disabled=cameras.length<2;
-   if(cameraId)dev.value=cameraId;
-  }catch(e){debug.textContent+=' | ไม่สามารถอ่านรายชื่อกล้อง'}
- }catch(err){say('เริ่มสแกนไม่สำเร็จ: '+(err?.message||String(err)));debug.textContent='Decoder: มีข้อผิดพลาด'}
- finally{busy=false;buttons();}
+  await teardown();await ensureEngine();
+  // On iOS, first enumerate only after camera permission is granted.
+  // Try strict rear-facing preference, then exact rear deviceId (where identifiable).
+  // Never silently accept a front-facing camera as proof that rear selection works.
+  let cameras=[];
+  try{cameras=await Html5Qrcode.getCameras()}catch(e){}
+  availableCameras=cameras;
+  const preferred=mode==='environment'?rearCamera(cameras):frontCamera(cameras);
+  const candidates=cameraId?[{id:cameraId}]:[
+    ...(preferred?[{id:preferred.id}]:[]),
+    {facingMode:{exact:mode}},
+    {facingMode:mode}
+  ];
+  const errors=[];
+  for(const candidate of candidates){
+   try{
+    await engine.start(candidate,{fps:8,qrbox:(w,h)=>{const x=Math.max(150,Math.floor(Math.min(w,h)*.72));return {width:x,height:x}},disableFlip:false},decoded,()=>{});
+    started=true;break;
+   }catch(err){errors.push(err?.message||String(err));try{await engine.stop()}catch(e){}}
+  }
+  if(!started)throw new Error('ไม่สามารถเปิด'+(mode==='environment'?'กล้องหลัง':'กล้องหน้า')+' ได้: '+errors.join(' | '));
+  const activeTrack=document.querySelector('#reader video')?.srcObject?.getVideoTracks?.()[0];
+  const settings=activeTrack?.getSettings?.()||{};
+  let selected=availableCameras.find(c=>c.id===settings.deviceId)||null;
+  const activeName=selected?.label||activeTrack?.label||'ไม่ทราบชื่อกล้อง';
+  debug.textContent='กล้องที่ใช้งาน: '+activeName+' | โหมดที่ร้องขอ: '+mode+' | facingMode ที่ได้รับ: '+(settings.facingMode||'ไม่รายงาน')+' | กล้องที่พบ: '+availableCameras.length;
+  dev.innerHTML='';
+  availableCameras.forEach((cam,i)=>{const opt=document.createElement('option');opt.value=cam.id;opt.textContent=cam.label||'กล้อง '+(i+1);dev.append(opt)});
+  if(settings.deviceId)dev.value=settings.deviceId;
+  dev.disabled=availableCameras.length<2;
+  say('เปิดกล้องแล้ว • ตรวจสอบภาพว่ามาจากกล้องหลัง ก่อนทดสอบอ่าน QR',true);
+ }catch(err){say('เริ่มสแกนไม่สำเร็จ: '+(err?.message||String(err)));debug.textContent='กล้องหลัง/หน้า: โปรดตรวจข้อความ Error และรุ่น iPhone'}
+ finally{busy=false;buttons()}
 }
 async function stop(){if(busy)return;busy=true;buttons();try{await teardown();say('ปิดกล้องแล้ว');debug.textContent='Decoder: ปิดกล้อง'}catch(err){say('ปิดกล้องไม่สำเร็จ: '+String(err))}finally{busy=false;buttons()}}
 $('start').onclick=()=>begin();$('flip').onclick=()=>{mode=mode==='environment'?'user':'environment';begin()};$('stop').onclick=stop;
-dev.onchange=()=>{if(dev.value)begin(dev.value)};
+dev.onchange=()=>{if(dev.value){const cam=availableCameras.find(x=>x.id===dev.value);mode=cam&&/front|user|ด้านหน้า/i.test(cam.label)?'user':'environment';begin(dev.value)}};
 $('again').onclick=()=>{lastText='';result.textContent='กำลังสแกน...';$('copy').disabled=true;say('สแกนใหม่ได้เลย',true)};
 $('copy').onclick=async()=>{try{await navigator.clipboard.writeText(lastText);say('คัดลอกแล้ว',true)}catch(e){say('คัดลอกไม่สำเร็จ')}};
 $('qrfile').onchange=async e=>{
