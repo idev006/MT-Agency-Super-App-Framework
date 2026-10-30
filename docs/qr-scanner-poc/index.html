@@ -38,7 +38,7 @@ const say=(txt,success=false)=>{state.textContent=txt;state.style.border='1px so
 function shortUA(){const ua=navigator.userAgent;let os=/iPhone|iPad/.test(ua)?'iOS/iPadOS':/Android/.test(ua)?'Android':'Other';const m=ua.match(/(?:OS |Android )([0-9_\.]+)/);const engine=/CriOS\//.test(ua)?'Chrome iOS':/FxiOS\//.test(ua)?'Firefox iOS':/Safari\//.test(ua)?'Safari/WebKit':/Chrome\//.test(ua)?'Chrome':'Other browser';return os+' '+(m?.[1]||'?').replaceAll('_','.')+' / '+engine}
 function refreshDiag(){
  const lines=[
-  'รุ่น POC: v5 Diagnostic',
+  'รุ่น POC: v6 Diagnostic',
   'ระบบ/เบราว์เซอร์: '+shortUA(),
   'HTTPS: '+(isSecureContext?'YES':'NO'),
   'Camera API: '+(navigator.mediaDevices?.getUserMedia?'YES':'NO'),
@@ -84,20 +84,31 @@ async function begin(cameraId){
   try{cameras=await Html5Qrcode.getCameras()}catch(e){}
   availableCameras=cameras;
   const preferred=mode==='environment'?rearCamera(cameras):frontCamera(cameras);
-  const candidates=cameraId?[{id:cameraId}]:[
-    ...(preferred?[{id:preferred.id}]:[]),
+  // html5-qrcode accepts a string camera ID, or a facingMode/deviceId constraint.
+  // Do not call stop() after a failed start(): this can trigger an invalid state transition.
+  const candidates=cameraId?[cameraId]:[
+    ...(preferred?[preferred.id]:[]),
     {facingMode:{exact:mode}},
     {facingMode:mode}
   ];
-  const errors=[];cameraAttempt=(cameraId?'device selection':'mode '+mode);lastCameraError='ไม่มี';
+  const errors=[];cameraAttempt=(cameraId?'เลือกกล้องจากรายการ':'ต้องการ '+mode);lastCameraError='ไม่มี';
+  let activeEngine=null;
   for(const candidate of candidates){
-   cameraAttempt=typeof candidate==='object'&&candidate.id?'deviceId / camera list':'facingMode '+(candidate.facingMode?.exact||candidate.facingMode||mode);
+   cameraAttempt=typeof candidate==='string'?'deviceId':('facingMode '+(candidate.facingMode?.exact||candidate.facingMode||mode));
    try{
+    // Fresh instance on each attempt to prevent transition state leaking from previous errors.
+    if(engine){try{engine.clear()}catch(e){}}
+    engine=new Html5Qrcode('reader',{formatsToSupport:[Html5QrcodeSupportedFormats.QR_CODE],verbose:false});
     await engine.start(candidate,{fps:8,qrbox:(w,h)=>{const x=Math.max(150,Math.floor(Math.min(w,h)*.72));return {width:x,height:x}},disableFlip:false},decoded,()=>{});
-    started=true;break;
-   }catch(err){errors.push(err?.message||String(err));try{await engine.stop()}catch(e){}}
+    started=true;activeEngine=engine;break;
+   }catch(err){
+    errors.push(err?.message||String(err));
+    engine=null;
+    // A failed start does not imply the scanner entered SCANNING state.
+    // Avoid stop() during transition. Retry only with a fresh instance.
+   }
   }
-  if(!started)throw new Error('ไม่สามารถเปิด'+(mode==='environment'?'กล้องหลัง':'กล้องหน้า')+' ได้: '+errors.join(' | '));
+  if(!activeEngine)throw new Error('ไม่สามารถเปิด'+(mode==='environment'?'กล้องหลัง':'กล้องหน้า')+' ได้: '+errors.join(' | '));
   const activeTrack=document.querySelector('#reader video')?.srcObject?.getVideoTracks?.()[0];
   const settings=activeTrack?.getSettings?.()||{};
   let selected=availableCameras.find(c=>c.id===settings.deviceId)||null;
