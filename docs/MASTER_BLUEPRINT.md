@@ -235,6 +235,8 @@ Use idempotency for grant mutations, pagination and consistent errors (`401` una
 
 **Camera requirements:** HTTPS, permission prompt, `getUserMedia` with `facingMode` (`environment` / `user`), enumerate supported devices where available, release stream before switching; fallback manual lookup. Test Android Chrome, iOS Safari, LINE WebView and external browser. Torch capability is optional and feature-detected. LINE scanner may be fallback only if camera choice requirement remains satisfied by main scanner.
 
+**Vehicle Contact v1.0 clarification (2026-10-30):** The immediate policy goal is identification of the registered responsible person and an authorized tap-to-call number. Support **up to five optional vehicle photos** (front, rear, left, right, three-quarter), with secure upload/gallery per [Vehicle Contact workflow and media pipeline](../apps/vehicle-contact/WORKFLOW_AND_MEDIA_PIPELINE.md). Registration and QR issuance must not be blocked by missing photos. Parking-zone authorization, incidents and relocation workflows are future-phase concepts, not v1 scope.
+
 **Suggested domain entities:** `vehicles`, `vehicle_people`, `vehicle_photos`, `vehicle_qr_tokens`, `parking_zones`, `parking_permissions`, `vehicle_verifications`, `vehicle_incidents`.
 
 **Statuses:** `AUTHORIZED` (within location/time/scope), `NOT_AUTHORIZED`, `EXPIRED`, `REVIEW_REQUIRED`, `UNKNOWN`. No QR/no lookup match is **unknown**, not automatically an offense.
