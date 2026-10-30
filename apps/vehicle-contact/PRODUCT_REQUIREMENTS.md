@@ -25,7 +25,7 @@ Success is measured by **time from scanning/opening to seeing a callable respons
 | VC-02 | Issue/print sticker | New high-entropy QR maps to exactly one active vehicle; QR contains no PII; printing has human-readable plate/vehicle reference |
 | VC-03 | Native camera QR | HTTPS URL resolves to safe authentication handoff then exact vehicle record (not index/search) |
 | VC-04 | In-app scanner | Works on supported Android/iOS; rear/front choice; stops old video tracks on camera switch; camera failure gives fallback |
-| VC-05 | View vehicle | Show plate/province, type, make/model/color, registered responsible person/unit; show vehicle photo if available |
+| VC-05 | View vehicle | Show plate/province, type, make/model/color, registered responsible person/unit; show five labeled vehicle photos (front, rear, left, right, 45-degree) |
 | VC-06 | Contact person | Authorized role sees click-to-call phone link (`tel:`), phone formatting/validation; never auto-call |
 | VC-07 | Manual plate lookup | Search by normalized Thai plate and province; ambiguous results require explicit selection |
 | VC-08 | No match / revoked QR | Safe 'not found / verify with operator' message; do not reveal unapproved personal data |
@@ -45,7 +45,7 @@ Success is measured by **time from scanning/opening to seeing a callable respons
 `/apps/vehicle` → Scan/Search; `/v/<opaque-token>` → secure lookup → Vehicle detail. External phone camera opens same HTTPS URL; only the authenticated view shows contact data.
 
 ## 5. Data captured
-- Vehicle: plate, province, type, make, model, color, optional verified photo.
+- Vehicle: plate, province, type, make, model, color, five image slots: front, rear, left, right, three-quarter; staged records may be incomplete; activation requires five READY images unless approved pilot exception.
 - Contact: verified internal profile if available, display name/rank/unit, phone, relationship: responsible user/registered owner claim; optional standby contact deferred unless approved.
 - Metadata: status, source, updated time, last verified time, operator/audit fields.
 - QR token separate from visible plate and PII.
@@ -71,5 +71,5 @@ Parking entitlements/zone assignment; permit issuance; automated relocation requ
 2. Which internal roles may see full phone numbers? Any need for call relay?
 3. Whether personnel directory can safely be linked or initial controlled manual entry is required.
 4. Acceptable initial data collection mechanism and information/privacy notice.
-5. Is vehicle photo required for v1 or optional?
+5. Confirm mandatory five-photo activation requirement and approved pilot exceptions.
 6. Approved domains and production hosting/security review.
