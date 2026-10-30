@@ -10,7 +10,7 @@
 5. Frontend previews and optionally compresses before upload; never trust client MIME/size alone.
 6. Backend grants short-lived upload authorization to private Supabase Storage paths scoped to vehicle ID and slot; restrict formats JPEG/PNG/WebP, example policy ≤5 MB per source file (configurable), remove disallowed metadata/EXIF location and normalize orientation. **Do not retain original GPS metadata.**
 7. Upload image, validate file signature/dimensions, create thumbnail/optimized rendition in controlled processing step, store metadata; mark slot READY only after verified upload. Reject suspicious or unsupported files.
-8. Operator reviews all five and contact; promote DRAFT → ACTIVE only if business rule satisfied (proposal: all five photos required for new ACTIVE registrations; migration exception for initial rollout requires approval).
+8. Operator verifies required vehicle/contact fields; promote DRAFT → ACTIVE without requiring photos. Up to five photo slots may be filled incrementally. Missing photos must be shown as 'not available', never block urgent QR/contact rollout.
 9. Generate opaque QR token (CSPRNG, ≥128 bits), store digest; print sticker with human-readable registration and QR URL. Never embed PII in QR.
 10. Audit creation, photo changes, activation and QR issuance; show success and recoverable error on failed upload.
 
@@ -60,7 +60,7 @@ Mobile capture / file selection
 
 ## 6. Acceptance Tests
 - Five specified photo slots supported, correctly ordered and replaceable; sixth photo blocked unless requirement updated.
-- For new records all five READY required to activate (proposal; approve pilot exception separately).
+- New records can activate with 0–5 READY photos; no photograph is required for v1 activation.
 - Android/iOS: camera capture, gallery pick, permission denial handling; WebView variations tested.
 - Every uploaded file validated by backend and stored in PRIVATE storage; EXIF GPS stripped; thumbnails generated.
 - No anonymous or cross-unit photo access; signed image URLs short-lived; direct Storage access denied when policy disallows.
@@ -70,7 +70,7 @@ Mobile capture / file selection
 - Verify photo replacement cleanup and audit, staged rollback and backup/restore procedure.
 
 ## 7. Pipeline for Implementation (Rapid Delivery)
-**P0:** lock five-slot policy, storage limits, privacy and permitted roles.  
+**P0:** confirm up-to-five optional photo slots, storage limits, privacy and permitted roles.  
 **P1:** migration for photos + private bucket policies + staged test data.  
 **P2:** operator UI five photos with reliable upload/retake.  
 **P3:** thumbnail rendering and secure detail API/gallery.  
