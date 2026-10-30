@@ -14,6 +14,7 @@
 - [PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md) — problem, users, functional rules, screens, scope
 - [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) — data model, security, API, integration
 - [TEST_AND_DELIVERY.md](TEST_AND_DELIVERY.md) — tests, readiness and delivery gates
+- [WORKFLOW_AND_MEDIA_PIPELINE.md](WORKFLOW_AND_MEDIA_PIPELINE.md) — 5-angle vehicle images, registration/scan workflows, secure upload pipeline
 
 ## Scope freeze — v1
 **IN:** vehicle registration, responsible contact, printable opaque QR, mobile scanner with front/rear camera, authorized vehicle lookup, tap-to-call, manual search, basic management and audit.
