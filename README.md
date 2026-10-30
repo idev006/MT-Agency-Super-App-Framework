@@ -10,6 +10,7 @@
 
 ## Start here
 
+- **[MASTER BLUEPRINT — primary project design reference](docs/MASTER_BLUEPRINT.md)** (v1.0.0-draft; proposed, not approved for production)
 - [Project Charter](docs/PROJECT_CHARTER.md)
 - [Architecture Baseline](docs/ARCHITECTURE.md)
 - [Authorization Model](docs/AUTHORIZATION.md)
