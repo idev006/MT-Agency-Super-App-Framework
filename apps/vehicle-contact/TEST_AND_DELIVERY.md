@@ -8,7 +8,7 @@
 | S0 | Confirm app owner, contact data source and who may view phone | Policy/privacy signoff on minimum PII |
 | S1 | App registration, platform login, roles and mock vehicle detail | Viewer allowed, outsider denied, app access isolated |
 | S2 | Vehicle/contact CRUD, typed search and audit | Correct records and validated phone, no unauthorized PII |
-| S2a | Five-angle photo capture, upload, private storage, thumbnails | Five READY slots for new active registration; protected gallery loads |
+| S2a | Five-angle photo capture, upload, private storage, thumbnails | 0–5 READY slots accepted for activation; protected gallery loads |
 | S3 | QR generation, revocation and native QR deep-link | Copy QR resolves to original; revoked QR fails closed |
 | S4 | In-app scanner, front/rear selection, mobile UX | Android/iOS physical device tests and fallback |
 | S5 | Controlled import, print test, deployment/runbook | Site acceptance with representative vehicles and staff |
