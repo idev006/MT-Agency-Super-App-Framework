@@ -35,6 +35,13 @@
 7. New apps should not require rewriting the platform authentication core.
 8. No credentials, real personnel records, vehicle-owner records, or operationally sensitive data in this public repository.
 
+## Application 001 — MT Vehicle Contact
+
+- [Vehicle Contact app documentation / implementation entrypoint](apps/vehicle-contact/README.md)
+- [Product requirements](apps/vehicle-contact/PRODUCT_REQUIREMENTS.md)
+- [Technical design](apps/vehicle-contact/TECHNICAL_DESIGN.md)
+- [Test & delivery](apps/vehicle-contact/TEST_AND_DELIVERY.md)
+
 ## First reference application
 
 **Vehicle QR** — register vehicles; issue opaque QR identifiers; verify plate, make, model, color, registered person and parking permissions. Android/iOS camera selection is a required proof-of-concept item.
