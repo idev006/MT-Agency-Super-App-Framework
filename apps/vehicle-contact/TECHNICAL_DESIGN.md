@@ -14,7 +14,7 @@
 | Table | Core fields | Rules |
 |---|---|---|
 | `vc_vehicles` | id UUID, plate_normalized, province_code, type, make, model, color, status, created_at, updated_at | unique active plate/province as policy permits; no forced global uniqueness on raw plate |
-| `vc_vehicle_photos` | id, vehicle_id, slot, private object_path, thumbnail_path, MIME, size, dimensions, status, version, uploaded_by | exactly five named active slots; authenticated signed access; server-side content checks; see [media pipeline](WORKFLOW_AND_MEDIA_PIPELINE.md) |
+| `vc_vehicle_photos` | id, vehicle_id, slot, private object_path, thumbnail_path, MIME, size, dimensions, status, version, uploaded_by | up to five optional named active slots; do not block activation when missing; authenticated signed access; server-side content checks; see [media pipeline](WORKFLOW_AND_MEDIA_PIPELINE.md) |
 | `vc_vehicle_contacts` | id, vehicle_id, person_profile_id?, display_name, org_id?, phone_e164, relationship, is_primary, status, verified_at, created_at | one active primary contact per vehicle; avoid unnecessary duplication of personnel details |
 | `vc_qr_tokens` | id, vehicle_id, token_digest, issued_at, revoked_at?, issued_by, reason | token digest indexed unique; raw token only displayed/printed at issue, not logged |
 | `vc_lookup_audit` | id, actor_user_id, vehicle_id?, result, source(scan/search), timestamp, correlation_id | protected audit retention and access policy |
