@@ -45,7 +45,7 @@ Success is measured by **time from scanning/opening to seeing a callable respons
 `/apps/vehicle` → Scan/Search; `/v/<opaque-token>` → secure lookup → Vehicle detail. External phone camera opens same HTTPS URL; only the authenticated view shows contact data.
 
 ## 5. Data captured
-- Vehicle: plate, province, type, make, model, color, five image slots: front, rear, left, right, three-quarter; staged records may be incomplete; activation requires five READY images unless approved pilot exception.
+- Vehicle: plate, province, type, make, model, color, five image slots: front, rear, left, right, three-quarter; zero to five labeled images may be supplied; images are optional for activation to prioritize rapid contact; missing slots are clearly labeled.
 - Contact: verified internal profile if available, display name/rank/unit, phone, relationship: responsible user/registered owner claim; optional standby contact deferred unless approved.
 - Metadata: status, source, updated time, last verified time, operator/audit fields.
 - QR token separate from visible plate and PII.
@@ -71,5 +71,5 @@ Parking entitlements/zone assignment; permit issuance; automated relocation requ
 2. Which internal roles may see full phone numbers? Any need for call relay?
 3. Whether personnel directory can safely be linked or initial controlled manual entry is required.
 4. Acceptable initial data collection mechanism and information/privacy notice.
-5. Confirm mandatory five-photo activation requirement and approved pilot exceptions.
+5. Confirm image privacy/retention and whether any photo is mandatory later; v1 does not block activation for missing photos.
 6. Approved domains and production hosting/security review.
