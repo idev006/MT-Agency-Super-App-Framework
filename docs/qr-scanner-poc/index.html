@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#102948"><title>MT QR Scanner POC • ภ.6</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#f4f8ff;background:#081827}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(#14375b,#081827 400px);min-height:100vh}
+main{max-width:620px;margin:auto;padding:20px 16px 60px}header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:18px}
+small,.muted{color:#acbdcc}h1{font-size:1.55rem;margin:4px 0}h2{font-size:1.02rem;margin:0 0 8px}
+.card{background:#122b45;border:1px solid #345272;border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 6px 24px #0002}
+.tag{display:inline-block;border:1px solid #b69a5b;color:#f4db93;border-radius:99px;padding:6px 10px;font-size:.78rem}
+.stage{position:relative;background:#020e19;border-radius:13px;overflow:hidden;aspect-ratio:4/5;max-height:480px;display:grid;place-items:center}
+video{width:100%;height:100%;object-fit:cover} .aim{pointer-events:none;position:absolute;inset:20%;border:3px solid #e2c47c;border-radius:17px;box-shadow:0 0 0 900px #00102052} .aim:after{content:"วาง QR Code ให้อยู่ในกรอบ";position:absolute;bottom:-34px;left:-12%;width:124%;text-align:center;color:white;font-size:.85rem}
+button{background:#e5be70;color:#15243a;border:0;border-radius:12px;padding:12px 14px;font-weight:800;min-height:46px;font-size:1rem;cursor:pointer}button.alt{background:#244768;color:#f2f7ff}button:disabled{opacity:.4}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}.actions button{flex:1;min-width:130px}
+select,input{width:100%;border:1px solid #54718e;background:#0b1e32;color:white;border-radius:10px;padding:12px;font-size:1rem;margin-top:6px}
+label{display:block;margin-top:10px;font-size:.9rem;color:#c5d6e6}
+.status{padding:10px;border-radius:10px;background:#1b3a59;line-height:1.6}
+.result{word-break:break-all;background:#061626;border:1px solid #405b73;border-radius:10px;padding:12px;min-height:55px}
+a{color:#f9d588}details{line-height:1.65}code{word-break:break-word} .ok{color:#89efba}.warn{color:#ffcf8a}
+</style>
+</head><body><main>
+<header><div><small>ตำรวจภูธรภาค 6 • Prototype</small><h1>MT QR Scanner POC</h1></div><span class="tag">ทดสอบกล้อง</span></header>
+<div class="card"><h2>สแกน QR Code ด้วยโทรศัพท์</h2><p class="muted">เปิดกล้องหลังเป็นค่าเริ่มต้น สลับหน้า–หลังหรือเลือกกล้องอื่นได้หากอุปกรณ์รองรับ ไม่มีการส่งภาพหรือข้อมูล QR ไปยังเซิร์ฟเวอร์</p>
+<div class="stage"><video id="preview" autoplay muted playsinline></video><div class="aim"></div></div>
+<div class="actions"><button id="start">เปิดกล้อง</button><button id="flip" class="alt" disabled>สลับกล้อง</button><button id="stop" class="alt" disabled>ปิดกล้อง</button></div>
+<label for="devices">กล้องที่เลือกใช้</label><select id="devices" disabled><option>กรุณาเปิดกล้องก่อน</option></select>
+<p id="state" class="status" role="status" aria-live="polite">พร้อมทดสอบ — กด “เปิดกล้อง” และอนุญาตการใช้กล้อง</p></div>
+<div class="card"><h2>ผลการสแกน</h2><div id="result" class="result" aria-live="polite">ยังไม่มีข้อมูล</div><div class="actions"><button id="again" class="alt" disabled>สแกนใหม่</button><button id="copy" class="alt" disabled>คัดลอกผล</button></div><small>เพื่อความปลอดภัย POC นี้ไม่เปิดลิงก์จาก QR โดยอัตโนมัติ</small></div>
+<div class="card"><h2>ข้อมูลการทดสอบ</h2><div id="env" class="muted"></div>
+<details><summary>วิธีทดสอบและแก้ปัญหา</summary><p>ทดสอบด้วย Android Chrome หรือ iPhone Safari ผ่าน HTTPS หากเปิดกล้องไม่ได้ ให้ตรวจสิทธิ์ Camera ในการตั้งค่าเบราว์เซอร์และลองเปิดใน Chrome/Safari โดยตรง แนะนำทดสอบสลับกล้องอย่างน้อย 5 ครั้งต่ออุปกรณ์</p><p>ถ้า QR ไม่ถูกอ่าน ลองจัดแสง ถือให้นิ่ง และขยับมือถือห่าง QR เล็กน้อย; ใช้กล้องปกติของมือถืออ่าน QR เป็นวิธีสำรอง</p></details>
+</div><small>POC เท่านั้น • ยังไม่ได้เชื่อมฐานข้อมูลรถหรือหมายเลขโทรศัพท์ • ไม่มีการบันทึกภาพ</small>
+</main>
+<script type="module">
+const $=id=>document.getElementById(id),v=$('preview'),state=$('state'),dev=$('devices'),result=$('result');
+let stream=null,scanning=false,busy=false,mode='environment',scanner=null,detector=null,frame=0,lastText='';
+const say=(s,ok=false)=>{state.textContent=s;state.style.border='1px solid '+(ok?'#368e66':'#486c91')};
+const ua=navigator.userAgent; $('env').textContent='แพลตฟอร์ม: '+(/iPhone|iPad/i.test(ua)?'iOS / iPadOS':/Android/i.test(ua)?'Android':'อื่น ๆ')+' | HTTPS: '+(isSecureContext?'ใช่':'ไม่ใช่')+' | กล้อง: '+(navigator.mediaDevices?.getUserMedia?'รองรับ':'ไม่รองรับ');
+async function setupDecoder(){
+ if('BarcodeDetector' in window){try{const fm=await BarcodeDetector.getSupportedFormats();if(fm.includes('qr_code')){detector=new BarcodeDetector({formats:['qr_code']});say('เปิดกล้องแล้ว • ใช้ BarcodeDetector',true);return}}catch(e){}}
+ // Loaded on demand. QR data stays in browser. If CDN unreachable, inform tester.
+ try{const lib=await import('https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js');scanner=lib.default||lib.jsQR||window.jsQR}catch(e){}
+ if(!scanner){try{await new Promise((resolve,reject)=>{let s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';s.onload=resolve;s.onerror=reject;document.head.append(s)});scanner=window.jsQR}catch(e){}}
+ if(!scanner)throw Error('ไม่สามารถโหลดตัวอ่าน QR ได้ โปรดลองตรวจอินเทอร์เน็ต');
+ say('เปิดกล้องแล้ว • ใช้ตัวอ่าน QR สำรอง',true);
+}
+async function listDevices(){try{const ds=(await navigator.mediaDevices.enumerateDevices()).filter(x=>x.kind==='videoinput');dev.innerHTML='';for(const [i,d] of ds.entries()){let o=document.createElement('option');o.value=d.deviceId;o.textContent=d.label||'กล้อง '+(i+1);dev.append(o)}dev.disabled=ds.length<2;let current=stream?.getVideoTracks()[0]?.getSettings()?.deviceId;if(current)dev.value=current}catch(e){dev.disabled=true}}
+function stopStream(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}v.srcObject=null}
+function stop(){scanning=false;busy=false;cancelAnimationFrame(frame);stopStream();$('start').disabled=false;$('flip').disabled=true;$('stop').disabled=true;dev.disabled=true;say('ปิดกล้องแล้ว')}
+async function begin(deviceId){if(busy)return;busy=true;scanning=false;cancelAnimationFrame(frame);stopStream();try{
+ if(!isSecureContext||!navigator.mediaDevices?.getUserMedia)throw Error('ต้องเปิดผ่าน HTTPS และเบราว์เซอร์ที่รองรับการเปิดกล้อง');
+ const video=deviceId?{deviceId:{exact:deviceId},width:{ideal:1280},height:{ideal:720}}:{facingMode:{ideal:mode},width:{ideal:1280},height:{ideal:720}};
+ stream=await navigator.mediaDevices.getUserMedia({audio:false,video});v.srcObject=stream;await v.play();await setupDecoder();$('start').disabled=true;$('flip').disabled=false;$('stop').disabled=false;$('again').disabled=false;await listDevices();scanning=true;tick();
+ }catch(e){stopStream();$('start').disabled=false;$('flip').disabled=true;$('stop').disabled=true;say('เปิดกล้องไม่สำเร็จ: '+(e?.message||e?.name||'ไม่ทราบสาเหตุ'));}finally{busy=false}}
+const canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
+async function tick(){if(!scanning)return;try{if(v.readyState>=2&&v.videoWidth){let text='';if(detector){const codes=await detector.detect(v);text=codes.find(x=>x.rawValue)?.rawValue||''}else if(scanner){canvas.width=640;canvas.height=Math.max(1,Math.round(640*v.videoHeight/v.videoWidth));ctx.drawImage(v,0,0,canvas.width,canvas.height);const data=ctx.getImageData(0,0,canvas.width,canvas.height);text=scanner(data.data,data.width,data.height)?.data||''}if(text){lastText=text;result.textContent=text;scanning=false;cancelAnimationFrame(frame);$('copy').disabled=false;say('อ่าน QR สำเร็จ • กด “สแกนใหม่” เพื่อทดสอบต่อ',true);return}}}catch(e){say('ถอดรหัส QR ไม่สำเร็จ: '+e.message)}if(scanning)frame=requestAnimationFrame(tick)}
+$('start').onclick=()=>begin();$('flip').onclick=()=>{mode=mode==='environment'?'user':'environment';begin()};$('stop').onclick=stop;
+dev.onchange=()=>{if(dev.value)begin(dev.value)};$('again').onclick=()=>{result.textContent='กำลังสแกน...';lastText='';$('copy').disabled=true;if(stream){scanning=true;say('กำลังสแกน...');tick()}else begin()};$('copy').onclick=async()=>{try{await navigator.clipboard.writeText(lastText);say('คัดลอกผลแล้ว',true)}catch(e){say('ไม่สามารถคัดลอกได้')}};window.addEventListener('pagehide',stop);document.addEventListener('visibilitychange',()=>{if(document.hidden&&stream)stop()});
+</script></body></html>
