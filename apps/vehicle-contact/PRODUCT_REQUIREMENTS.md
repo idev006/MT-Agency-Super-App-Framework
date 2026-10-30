@@ -13,6 +13,9 @@ Success is measured by **time from scanning/opening to seeing a callable respons
 - 100% of sensitive contact responses require server-verified permission; no anonymous record disclosure.
 - Usability test with real personnel, Android and iOS, including front/rear camera switching and permission-denied fallback.
 
+### Executive outcome and pilot validation
+Project success is distinct from software delivery. Track registration coverage, accuracy of callable responsible contacts, scan-to-contact time and access-control safety. Proposed pilot KPIs and measurement procedures are documented in [Executive Policy Brief](EXECUTIVE_BRIEF.md). Targets are not achieved results. Version 1 does not claim to track when the vehicle has physically moved.
+
 ## 2. Personas
 - **VIEWER:** commander/designated staff: scan/search, read permitted vehicle/primary contact, tap phone.
 - **OPERATOR:** manage approved vehicle entries, contact links, QR issuance/revocation; includes viewer powers.
