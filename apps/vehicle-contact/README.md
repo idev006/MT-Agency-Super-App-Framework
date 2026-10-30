@@ -11,6 +11,7 @@
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
 ## Documents
+- [EXECUTIVE_BRIEF.md](EXECUTIVE_BRIEF.md) — policy outcomes, executive narrative and pilot KPIs
 - [PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md) — problem, users, functional rules, screens, scope
 - [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) — data model, security, API, integration
 - [TEST_AND_DELIVERY.md](TEST_AND_DELIVERY.md) — tests, readiness and delivery gates
