@@ -11,6 +11,7 @@
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
 ## Documents
+- [POC_QR_SCANNER.md](POC_QR_SCANNER.md) — Android/iOS camera POC evidence, remaining QR decoding gates
 - [EXECUTIVE_BRIEF.md](EXECUTIVE_BRIEF.md) — policy outcomes, executive narrative and pilot KPIs
 - [PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md) — problem, users, functional rules, screens, scope
 - [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) — data model, security, API, integration
@@ -33,7 +34,7 @@
 - Prefer speed of use over feature accumulation, not over security.
 
 ## Decisions awaiting confirmation
-Production contact display policy, responsible data owner, permitted personnel directory source, initial registration/import workflow, scanner usability on real iOS/Android/LINE environments, app owner and deployment permissions.
+Production contact display policy, responsible data owner, permitted personnel directory source, initial registration/import workflow, QR-decoding and camera-switching on real iOS/Android/LINE environments (Android and iOS camera access confirmed by owner on 2026-10-30), app owner and deployment permissions.
 
 ## Next action
 Review requirements with policy sponsor → lock v1 scope → validate security, user onboarding and contact accuracy → implement in staging with synthetic test data.
