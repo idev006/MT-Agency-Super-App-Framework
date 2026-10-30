@@ -3,6 +3,12 @@
 **Test page source:** [index.html](index.html)
 **Target GitHub Pages URL (only after activation):** https://idev006.github.io/MT-Agency-Super-App-Framework/qr-scanner-poc/
 
+## Verified field result (2026-10-30)
+- Project owner reports that the camera now opens/works on both Android and iOS on tested phones (**user-confirmed POC result**).
+- Full QR decoding success on both devices, switching, and repeated-scan reliability still require explicit test evidence.
+- Reference implementation is [index.html](index.html), diagnostic UI v7 (fix commit `f0c847d218dde899cb048bc4661eb55597f6d478`).
+- Full report: [POC_QR_SCANNER.md](../../apps/vehicle-contact/POC_QR_SCANNER.md).
+
 ## Publishing
 Repository Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `main` → Folder: `/docs` → Save. Wait for GitHub Pages deployment to complete and check the target URL in mobile Chrome/Safari. If the repository already has a different Pages setup, do not overwrite without reviewing it. Requires repository admin. The repo is public and this test page deliberately contains no actual car/owner/phone data.
 
@@ -19,4 +25,4 @@ Repository Settings → Pages → Build and deployment → Source: Deploy from a
 Record OS/browser versions, rear camera, front/back switch, QR decode, permission handling, camera shutdown and native camera URL-opening. Do not assume every multi-camera phone exposes all physical lenses. If front camera switching is unreliable, use rear-only in v1.
 
 ## Safety/limits
-No user identity, spreadsheet, backend or personal data; no scan logs sent to server; jsQR library is loaded from a public CDN only as fallback when native `BarcodeDetector` unavailable, requiring internet. QR results are not opened automatically. This tests standalone HTTPS frontend, **not** camera access in the GAS iframe. Do not publish actual QR codes containing private information in issue reports.
+No user identity, spreadsheet, backend or personal data; no scan logs sent to server; html5-qrcode v2.3.8 is loaded from a public CDN and requires internet. QR results are not opened automatically. This tests standalone HTTPS frontend, **not** camera access in the GAS iframe. Do not publish actual QR codes containing private information in issue reports.
