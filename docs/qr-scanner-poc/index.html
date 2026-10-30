@@ -26,17 +26,35 @@ a{color:#f9d588}details{line-height:1.65}code{word-break:break-word} .ok{color:#
 <label for="devices">กล้องที่เลือกใช้ (iPhone สามารถเลือก Back Camera จากรายการ)</label><select id="devices" disabled><option>กรุณาเปิดกล้องก่อน</option></select>
 <label for="qrfile">ทดสอบอ่าน QR จากภาพที่บันทึกไว้ (ใช้แยกสาเหตุ)</label><input id="qrfile" type="file" accept="image/*"><p id="debug" class="muted">Decoder: รอเริ่มทดสอบ</p><p id="state" class="status" role="status" aria-live="polite">พร้อมทดสอบ — กด “เปิดกล้อง” และอนุญาตการใช้กล้อง • iPhone: แนะนำเปิดใน Safari โดยตรง</p></div>
 <div class="card"><h2>ผลการสแกน</h2><div id="result" class="result" aria-live="polite">ยังไม่มีข้อมูล</div><div class="actions"><button id="again" class="alt" disabled>สแกนใหม่</button><button id="copy" class="alt" disabled>คัดลอกผล</button></div><small>เพื่อความปลอดภัย POC นี้ไม่เปิดลิงก์จาก QR โดยอัตโนมัติ</small></div>
-<div class="card"><h2>ข้อมูลการทดสอบ</h2><div id="env" class="muted"></div>
+<div class="card"><h2>ข้อมูลการทดสอบ</h2><div id="env" class="muted"></div><div class="card" style="background:#092038;border-color:#e5be70"><h2>🔍 Camera Diagnostic v5 — แคปหน้าจอส่วนนี้</h2><div id="diag" style="font-family:ui-monospace,monospace;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65">กำลังเตรียมข้อมูล...</div><button id="refreshdiag" class="alt" type="button" style="margin-top:8px">อัปเดตข้อมูลวินิจฉัย</button><p class="muted" style="font-size:12px">ไม่แสดง deviceId, ชื่อผู้ใช้, เบอร์โทร หรือข้อมูล QR ที่สแกน ข้อมูลไม่ถูกส่งออกจากโทรศัพท์</p></div>
 <details><summary>วิธีทดสอบและแก้ปัญหา</summary><p>ทดสอบด้วย Android Chrome หรือ iPhone Safari ผ่าน HTTPS หากเปิดกล้องไม่ได้ ให้ตรวจสิทธิ์ Camera ในการตั้งค่าเบราว์เซอร์และลองเปิดใน Chrome/Safari โดยตรง แนะนำทดสอบสลับกล้องอย่างน้อย 5 ครั้งต่ออุปกรณ์</p><p>ถ้า QR ไม่ถูกอ่าน ลองจัดแสง ถือให้นิ่ง และขยับมือถือห่าง QR เล็กน้อย; ใช้กล้องปกติของมือถืออ่าน QR เป็นวิธีสำรอง</p></details>
 </div><small>POC เท่านั้น • ยังไม่ได้เชื่อมฐานข้อมูลรถหรือหมายเลขโทรศัพท์ • ไม่มีการบันทึกภาพ</small>
 </main>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 const $=id=>document.getElementById(id),state=$('state'),dev=$('devices'),result=$('result'),debug=$('debug');
-let engine=null,started=false,busy=false,mode='environment',lastText='',scans=0,availableCameras=[];
-const say=(txt,success=false)=>{state.textContent=txt;state.style.border='1px solid '+(success?'#359978':'#506985')};
+let engine=null,started=false,busy=false,mode='environment',lastText='',scans=0,availableCameras=[],lastCameraError='ไม่มี',cameraAttempt='ยังไม่เริ่ม',activeInfo='ยังไม่เปิด',diagUpdates=0;
+const say=(txt,success=false)=>{state.textContent=txt;state.style.border='1px solid '+(success?'#359978':'#506985');refreshDiag()};
+function shortUA(){const ua=navigator.userAgent;let os=/iPhone|iPad/.test(ua)?'iOS/iPadOS':/Android/.test(ua)?'Android':'Other';const m=ua.match(/(?:OS |Android )([0-9_\.]+)/);const engine=/CriOS\//.test(ua)?'Chrome iOS':/FxiOS\//.test(ua)?'Firefox iOS':/Safari\//.test(ua)?'Safari/WebKit':/Chrome\//.test(ua)?'Chrome':'Other browser';return os+' '+(m?.[1]||'?').replaceAll('_','.')+' / '+engine}
+function refreshDiag(){
+ const lines=[
+  'รุ่น POC: v5 Diagnostic',
+  'ระบบ/เบราว์เซอร์: '+shortUA(),
+  'HTTPS: '+(isSecureContext?'YES':'NO'),
+  'Camera API: '+(navigator.mediaDevices?.getUserMedia?'YES':'NO'),
+  'สถานะ: '+(busy?'กำลังเปลี่ยนกล้อง':started?'เปิดกล้อง':'กล้องปิด'),
+  'กล้องที่ร้องขอ: '+cameraAttempt,
+  'กล้องที่ใช้งานจริง: '+activeInfo,
+  'กล้องที่พบ: '+availableCameras.length,
+  ...availableCameras.map((c,i)=>'  '+(i+1)+'. '+(c.label||'ไม่ทราบชื่อ')),
+  'สแกนสำเร็จ: '+scans+' ครั้ง',
+  'ข้อผิดพลาดล่าสุด: '+lastCameraError
+ ];
+ $('diag').textContent=lines.join('\n');
+}
+$('refreshdiag').onclick=refreshDiag;
 const userAgent=navigator.userAgent;$('env').textContent='แพลตฟอร์ม: '+(/iPhone|iPad/.test(userAgent)?'iOS':/Android/.test(userAgent)?'Android':'อื่นๆ')+' | HTTPS: '+(isSecureContext?'ใช่':'ไม่ใช่')+' | Decoder: html5-qrcode v2.3.8';
-function buttons(){ $('start').disabled=busy||started; $('flip').disabled=busy||!started; $('stop').disabled=busy||!started;$('again').disabled=busy||!started; }
+function buttons(){ $('start').disabled=busy||started; $('flip').disabled=busy||!started; $('stop').disabled=busy||!started;$('again').disabled=busy||!started;refreshDiag() }
 function decoded(text){if(!text||lastText===text)return;lastText=text;result.textContent=text;scans++;$('copy').disabled=false;debug.textContent='Decoder: พบ QR สำเร็จ | จำนวน '+scans+' ครั้ง';say('อ่าน QR สำเร็จ • กดสแกนใหม่เพื่อทดสอบต่อ',true);}
 async function ensureEngine(){
  if(typeof Html5Qrcode!=='function')throw new Error('โหลดตัวอ่าน QR ไม่สำเร็จ กรุณารีเฟรช หรือตรวจอินเทอร์เน็ต');
@@ -71,8 +89,9 @@ async function begin(cameraId){
     {facingMode:{exact:mode}},
     {facingMode:mode}
   ];
-  const errors=[];
+  const errors=[];cameraAttempt=(cameraId?'device selection':'mode '+mode);lastCameraError='ไม่มี';
   for(const candidate of candidates){
+   cameraAttempt=typeof candidate==='object'&&candidate.id?'deviceId / camera list':'facingMode '+(candidate.facingMode?.exact||candidate.facingMode||mode);
    try{
     await engine.start(candidate,{fps:8,qrbox:(w,h)=>{const x=Math.max(150,Math.floor(Math.min(w,h)*.72));return {width:x,height:x}},disableFlip:false},decoded,()=>{});
     started=true;break;
@@ -82,17 +101,17 @@ async function begin(cameraId){
   const activeTrack=document.querySelector('#reader video')?.srcObject?.getVideoTracks?.()[0];
   const settings=activeTrack?.getSettings?.()||{};
   let selected=availableCameras.find(c=>c.id===settings.deviceId)||null;
-  const activeName=selected?.label||activeTrack?.label||'ไม่ทราบชื่อกล้อง';
+  const activeName=selected?.label||activeTrack?.label||'ไม่ทราบชื่อกล้อง';activeInfo=activeName+' | facingMode='+(settings.facingMode||'?')+' | '+(settings.width||'?')+'x'+(settings.height||'?');
   debug.textContent='กล้องที่ใช้งาน: '+activeName+' | โหมดที่ร้องขอ: '+mode+' | facingMode ที่ได้รับ: '+(settings.facingMode||'ไม่รายงาน')+' | กล้องที่พบ: '+availableCameras.length;
   dev.innerHTML='';
   availableCameras.forEach((cam,i)=>{const opt=document.createElement('option');opt.value=cam.id;opt.textContent=cam.label||'กล้อง '+(i+1);dev.append(opt)});
   if(settings.deviceId)dev.value=settings.deviceId;
   dev.disabled=availableCameras.length<2;
   say('เปิดกล้องแล้ว • ตรวจสอบภาพว่ามาจากกล้องหลัง ก่อนทดสอบอ่าน QR',true);
- }catch(err){say('เริ่มสแกนไม่สำเร็จ: '+(err?.message||String(err)));debug.textContent='กล้องหลัง/หน้า: โปรดตรวจข้อความ Error และรุ่น iPhone'}
+ }catch(err){lastCameraError=(err?.name||'Error')+': '+(err?.message||String(err));say('เริ่มสแกนไม่สำเร็จ: '+lastCameraError);debug.textContent='กล้องหลัง/หน้า: โปรดตรวจข้อความ Error และรุ่น iPhone'}
  finally{busy=false;buttons()}
 }
-async function stop(){if(busy)return;busy=true;buttons();try{await teardown();say('ปิดกล้องแล้ว');debug.textContent='Decoder: ปิดกล้อง'}catch(err){say('ปิดกล้องไม่สำเร็จ: '+String(err))}finally{busy=false;buttons()}}
+async function stop(){if(busy)return;busy=true;buttons();try{await teardown();activeInfo='ปิดกล้องแล้ว';say('ปิดกล้องแล้ว');debug.textContent='Decoder: ปิดกล้อง'}catch(err){say('ปิดกล้องไม่สำเร็จ: '+String(err))}finally{busy=false;buttons()}}
 $('start').onclick=()=>begin();$('flip').onclick=()=>{mode=mode==='environment'?'user':'environment';begin()};$('stop').onclick=stop;
 dev.onchange=()=>{if(dev.value){const cam=availableCameras.find(x=>x.id===dev.value);mode=cam&&/front|user|ด้านหน้า/i.test(cam.label)?'user':'environment';begin(dev.value)}};
 $('again').onclick=()=>{lastText='';result.textContent='กำลังสแกน...';$('copy').disabled=true;say('สแกนใหม่ได้เลย',true)};
@@ -104,5 +123,5 @@ $('qrfile').onchange=async e=>{
 };
 window.addEventListener('pagehide',()=>{if(started)engine?.stop().catch(()=>{})});
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&started)stop()});
-buttons();
+buttons();refreshDiag();
 </script></body></html>
