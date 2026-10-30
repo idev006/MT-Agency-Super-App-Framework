@@ -1,8 +1,29 @@
 # POC — QR Scanner on Android & iOS
 
-**Status:** PROPOSED, not yet tested | **Date:** 2026-10-30 | **Owner:** MT Vehicle Contact
+**Status:** PARTIAL POC PASS — real-device camera access confirmed by project owner for Android and iOS; QR decoding and detailed device matrix not independently verified | **Date:** 2026-10-30 | **Owner:** MT Vehicle Contact
 **Decision to validate:** rear camera by default, optional front/back switch, and optional device selector.
 
+## POC Result — 2026-10-30 (User-confirmed)
+
+**Result:** Project owner confirmed the POC can now access/use the camera on **both Android and iOS phones**. This closes the earlier camera-access blocker for the devices used in this test. Evidence source: user feedback in project conversation (not an independent device-lab test). 
+
+**Reference build:** [GitHub Pages scanner source](../../docs/qr-scanner-poc/index.html), diagnostic UI v7, associated fix commit `f0c847d218dde899cb048bc4661eb55597f6d478`. POC source may evolve; tag/pin before production integration.
+
+**Known observed detail:** Earlier Android test reported 2 devices (front + back), active `camera 0, facing back`, `facingMode=environment`, 480×640 resolution, no last error, and QR decode count 0. Subsequent confirmation indicates camera access works on Android/iOS. Do not infer from this alone that scanning/QR decode succeeds on both OS or that camera switching is proven.
+
+**Verification status:**
+- Android camera access: **PASS (user-reported)**.
+- iOS camera access: **PASS (user-reported)**.
+- Rear camera availability on Android: **PASS (previous diagnostic)**.
+- Rear camera choice and front/rear switching on iOS: **TO VERIFY** (no iOS diagnostic log received here).
+- Actual QR code decoding on both OS: **TO VERIFY** (user did not explicitly report decoded output).
+- Permission denied, lifecycle cleanup and sustained repeat scans: **TO VERIFY**.
+- GAS HTML Service embedded scanner: **NOT TESTED**. Standalone HTTPS Pages remains the POC delivery architecture.
+- App login, authorization and backend contact lookup: **OUT OF POC / NOT BUILT**.
+
+**Decision:** Proceed to the next integration design step while keeping device-specific QR decoding acceptance tests open. Do not mark full scanner POC complete until real QR decoding results and both-device test matrix are recorded.
+
+---
 ## Why a separate POC is essential
 Google Apps Script HTML Service is sandboxed in an iframe; the official Apps Script troubleshooting documentation explicitly identifies camera `getUserMedia()` permission-policy failures and advises hosting sensitive media capture on a separate domain/window. Therefore do not commit to a scanner embedded directly within GAS HTML Service until experimentally proven on target devices. Keep the Vue camera UI on approved stand-alone HTTPS origin for initial POC.
 
