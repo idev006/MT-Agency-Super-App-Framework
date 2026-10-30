@@ -1,0 +1,35 @@
+# MT Vehicle Contact — App 001
+
+**App ID:** `vehicle-contact`  
+**Version:** 1.0.0-draft | **Status:** PROPOSED, awaiting stakeholder sign-off  
+**Parent SSOT:** [MT Agency Super App Master Blueprint](../../docs/MASTER_BLUEPRINT.md)  
+**Date:** 2026-10-30 | **Priority:** urgent policy delivery
+
+## Mission
+เมื่อพบรถในสถานที่ราชการ ผู้บังคับบัญชาหรือเจ้าหน้าที่ที่ได้รับสิทธิ์ต้องทราบว่า **ใครเป็นผู้รับผิดชอบรถคันนี้ และจะโทรติดต่อได้อย่างไร** อย่างรวดเร็ว ผ่านมือถือ Android/iOS
+
+**MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
+
+## Documents
+- [PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md) — problem, users, functional rules, screens, scope
+- [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) — data model, security, API, integration
+- [TEST_AND_DELIVERY.md](TEST_AND_DELIVERY.md) — tests, readiness and delivery gates
+
+## Scope freeze — v1
+**IN:** vehicle registration, responsible contact, printable opaque QR, mobile scanner with front/rear camera, authorized vehicle lookup, tap-to-call, manual search, basic management and audit.
+
+**OUT:** parking rights, zone authorization, automatic LINE messages, relocation workflow/status, dashboard, AI plate recognition, barrier/CCTV integration.
+
+## Guiding design choices
+- The **registered responsible contact** is not necessarily the legal owner. Do not claim verified ownership without authoritative evidence.
+- QR contains opaque unpredictable reference only, not personal information or a phone number.
+- Anonymous visitors to the QR URL receive login/safe landing only; personal data requires authenticated app permission.
+- Supabase (proposed) is authoritative for identity, vehicle/contact data and authorization. GAS/Sheets may support controlled import/export, not decide access.
+- One-login promise applies to internal Super App modules sharing a valid session; account linking/LINE flows require PoC.
+- Prefer speed of use over feature accumulation, not over security.
+
+## Decisions awaiting confirmation
+Production contact display policy, responsible data owner, permitted personnel directory source, initial registration/import workflow, scanner usability on real iOS/Android/LINE environments, app owner and deployment permissions.
+
+## Next action
+Review requirements with policy sponsor → lock v1 scope → validate security, user onboarding and contact accuracy → implement in staging with synthetic test data.
