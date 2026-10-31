@@ -11,6 +11,7 @@
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
 ## Documents
+- [PROJECT_PROPOSAL_POLICY_DRIVEN.md](PROJECT_PROPOSAL_POLICY_DRIVEN.md) — ข้อเสนอโครงการเชิงนโยบาย Workflow ทางเข้า–ออก, Stakeholders, และ QC (ร่างเพื่อพิจารณา)
 - [POC_QR_SCANNER.md](POC_QR_SCANNER.md) — Android/iOS camera POC evidence, remaining QR decoding gates
 - [EXECUTIVE_BRIEF.md](EXECUTIVE_BRIEF.md) — policy outcomes, executive narrative and pilot KPIs
 - [PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md) — problem, users, functional rules, screens, scope
