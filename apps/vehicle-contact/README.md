@@ -11,6 +11,8 @@
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
 ## Documents
+- [EXECUTIVE_APPROVAL_PROPOSAL_V2.md](EXECUTIVE_APPROVAL_PROPOSAL_V2.md) — เอกสารเสนอผู้บังคับบัญชาฉบับปรับปรุง 2.0 (ร่างอนุมัติหลักการ)
+- [SYSTEM_ANALYSIS_V2.md](SYSTEM_ANALYSIS_V2.md) — Actors / Use Cases / Workflows / Data Model / Security / QC Gates
 - [TEAM_UPSKILL_RESEARCH_2026-10-31.md](TEAM_UPSKILL_RESEARCH_2026-10-31.md) — แหล่งเรียนรู้ทางการและแผน QC ของทีมตามบทบาท
 - [SENIOR_THAI_LEGAL_COUNSEL_ROLE.md](SENIOR_THAI_LEGAL_COUNSEL_ROLE.md) — บทบาทนิติกรอาวุโส กฎหมายไทย/PDPA/ดิจิทัล และ Legal QC Gates
 - [PDPA_ROPA_REGISTER.md](PDPA_ROPA_REGISTER.md) — PDPA operational draft; pending DPO/legal approval
