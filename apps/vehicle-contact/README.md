@@ -11,6 +11,7 @@
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
 ## Documents
+- [PDPA_GOVERNANCE_PACK.md](PDPA_GOVERNANCE_PACK.md) — Draft ROPA, legal-basis assessment, staff/visitor privacy notices, consent decision, and privacy gate
 - [FORMAL_PROJECT_PROPOSAL.md](FORMAL_PROJECT_PROPOSAL.md) — ร่างเสนอโครงการฉบับทางการ ตามแนวทาง สศช. พร้อมบันทึก QC
 - [PROJECT_PROPOSAL_POLICY_DRIVEN.md](PROJECT_PROPOSAL_POLICY_DRIVEN.md) — ข้อเสนอโครงการเชิงนโยบาย Workflow ทางเข้า–ออก, Stakeholders, และ QC (ร่างเพื่อพิจารณา)
 - [POC_QR_SCANNER.md](POC_QR_SCANNER.md) — Android/iOS camera POC evidence, remaining QR decoding gates
