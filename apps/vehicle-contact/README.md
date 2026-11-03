@@ -1,4 +1,4 @@
-# MT Vehicle Contact — App 001
+# P6 Vehicle Contact — App 001
 
 **App ID:** `vehicle-contact`  
 **Version:** 1.0.0-draft | **Status:** PROPOSED, awaiting stakeholder sign-off  
