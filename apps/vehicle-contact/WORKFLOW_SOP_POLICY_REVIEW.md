@@ -1,4 +1,4 @@
-# MT Vehicle Contact — Policy / Workflow / SOP Review
+# P6 Vehicle Contact — Policy / Workflow / SOP Review
 **3 Nov 2026 — Draft for command and field review**
 
 ## Core policy
