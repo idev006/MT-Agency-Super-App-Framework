@@ -203,3 +203,12 @@
 - **ข้อเสนอเรื่องค่าธรรมเนียม/ค่าจัดทำ:** เป็นเพียงแนวคิดให้พิจารณาในอนาคต **ห้ามเรียกเก็บเงินในระยะนี้** จนกว่านิติกร/ฝ่ายการเงินตรวจอำนาจตามกฎหมาย แยกประเภทค่าธรรมเนียมกับค่าบริการ ระบุผู้มีอำนาจอนุมัติอัตรา ขั้นตอนออกใบเสร็จ การจัดเก็บและนำส่งรายได้ พร้อมได้รับอนุมัติจริง ทั้งนี้ การสมัครใจมี QR และการไม่สมัครต้องไม่ถูกใช้เป็นเหตุเลือกปฏิบัติหรือปิดกั้นการเข้าพื้นที่โดยไม่มีอำนาจ
 - อ้างอิงหลักกฎหมายการเงินการคลังของรัฐ: มาตรา 33–34 แห่ง พ.ร.บ.วินัยการเงินการคลังของรัฐ พ.ศ. 2561 และหลักเกณฑ์ภาครัฐเรื่องการเรียกเก็บค่าธรรมเนียมและค่าบริการ (ต้องให้ฝ่ายกฎหมายยืนยันการใช้กับกรณีนี้)
 - ผลต่องบประมาณ: ยอดสติกเกอร์ 330 ดวงเดิมเป็นแผนสำหรับรถเจ้าหน้าที่ประมาณ 300 คันพร้อมสำรอง **ไม่รวมความต้องการสติกเกอร์สมัครใจสีม่วงและสีชมพู**; ต้องแยกคำนวณเมื่อมีจำนวนคำขอจริงและอนุมัติวิธีจัดหาแล้ว
+
+## Phase scope correction — 3 Nov 2026 (latest user direction)
+**PHASE 1: NO CARD EXCHANGE.** The first rollout will **not** exchange, issue, retrieve or track temporary gate passes for vehicles lacking QR stickers. This supersedes earlier Phase-1 wording about numbered passes and pass-return workflows. Prior pass-exchange procedures in this document are preserved for **future-phase planning only**, not Phase-1 SOP.
+
+**Phase-1 operational proposal:** pre-register regular staff vehicles; issue QR where required; guards use QR scan or plate/province lookup when a contact is needed. Co-residents and general public are not obliged to acquire QR. For no-QR/no-record cases, guards follow an approved human coordination/escalation procedure (gate officer / relevant unit / site duty supervisor); do not invent a contact or pretend that lookup always succeeds. A lightweight contact note may be evaluated separately subject to policy approval, minimization and PDPA review; **do not implement mandatory pass exchange or an unapproved visitor-tracking system**.
+
+**PHASE 2 (future optional):** temporary visitor pass exchange, full visit lifecycle/entry-exit tracking, and return/lost-pass SOP can be reconsidered after Phase-1 evaluation and command approval.
+
+**Presentation rule:** posters, executive reports, SOP diagrams and budget for current approval must show Phase 1 only, with Phase 2 clearly marked as future optional. No gate card icons or mandatory pass process in Phase-1 workflow. Keep the policy aspiration 'all vehicles contactable' distinct from field-tested coverage.
