@@ -1,4 +1,4 @@
-# MT Vehicle Contact — System Analysis & Design v2.0
+# P6 Vehicle Contact — System Analysis & Design v2.0
 **Date: 2026-10-31 | Status: PROPOSED / awaiting policy, architecture and PDPA decisions**
 ## 1. Requirements baseline
 North Star: ทุกคันระบุผู้ประสานงานและติดต่อได้. Policy is authoritative; software assists. QR is a reference, not access entitlement. Two operational paths: QR and no QR. Without QR, lookup works **only if plate/contact were recorded or already exist**.
