@@ -34,3 +34,12 @@ F. **Maintenance:** แก้เบอร์ เปลี่ยนรถ เพ�
 ก่อนเก็บข้อมูลจริงต้องตรวจฐานกฎหมายรายกิจกรรม, ROPA, Privacy Notice, Consent เฉพาะจำเป็น, อายุเก็บข้อมูล, สิทธิ์ผู้ดูเบอร์และขั้นตอนเหตุรั่วไหล. QR เป็น opaque identifier ไม่บรรจุ PII. ต้องทดสอบทุกเหตุการณ์กับ รปภ. จริงและผู้มีอำนาจรับรองก่อนใช้.
 
 **Draft only.** No legal, DPO, field or executive sign-off is implied.
+
+## Phase scope correction — 3 Nov 2026 (latest user direction)
+**PHASE 1: NO CARD EXCHANGE.** The first rollout will **not** exchange, issue, retrieve or track temporary gate passes for vehicles lacking QR stickers. This supersedes earlier Phase-1 wording about numbered passes and pass-return workflows. Prior pass-exchange procedures in this document are preserved for **future-phase planning only**, not Phase-1 SOP.
+
+**Phase-1 operational proposal:** pre-register regular staff vehicles; issue QR where required; guards use QR scan or plate/province lookup when a contact is needed. Co-residents and general public are not obliged to acquire QR. For no-QR/no-record cases, guards follow an approved human coordination/escalation procedure (gate officer / relevant unit / site duty supervisor); do not invent a contact or pretend that lookup always succeeds. A lightweight contact note may be evaluated separately subject to policy approval, minimization and PDPA review; **do not implement mandatory pass exchange or an unapproved visitor-tracking system**.
+
+**PHASE 2 (future optional):** temporary visitor pass exchange, full visit lifecycle/entry-exit tracking, and return/lost-pass SOP can be reconsidered after Phase-1 evaluation and command approval.
+
+**Presentation rule:** posters, executive reports, SOP diagrams and budget for current approval must show Phase 1 only, with Phase 2 clearly marked as future optional. No gate card icons or mandatory pass process in Phase-1 workflow. Keep the policy aspiration 'all vehicles contactable' distinct from field-tested coverage.
