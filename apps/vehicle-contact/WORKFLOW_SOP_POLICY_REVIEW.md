@@ -43,3 +43,11 @@ F. **Maintenance:** แก้เบอร์ เปลี่ยนรถ เพ�
 **PHASE 2 (future optional):** temporary visitor pass exchange, full visit lifecycle/entry-exit tracking, and return/lost-pass SOP can be reconsidered after Phase-1 evaluation and command approval.
 
 **Presentation rule:** posters, executive reports, SOP diagrams and budget for current approval must show Phase 1 only, with Phase 2 clearly marked as future optional. No gate card icons or mandatory pass process in Phase-1 workflow. Keep the policy aspiration 'all vehicles contactable' distinct from field-tested coverage.
+
+## Phase-1 implementation clarification — optional future module (3 Nov 2026)
+Latest instruction: **Visitor pass exchange may be designed and developed in advance, but MUST remain disabled in Phase 1.** Therefore the previous “Phase 1: no card exchange” decision applies to **operations/activation**, not a blanket prohibition on engineering work.
+- Phase-1 enabled: approved regular vehicle registration, QR issuance, authorized QR scanning, and plate/province contact lookup.
+- Future-ready but Phase-1 **OFF**: visitor pass issuance/exchange, return/lost-pass workflow, and entry/exit visit lifecycle. Implementation may be prepared or tested with synthetic data in isolated non-production environments.
+- Use modular design plus server-side feature authorization; an invisible UI button is insufficient. Do not auto-collect visitor/pass data in Phase 1, expose disabled APIs, or require guard pass-exchange steps.
+- Activation in a later phase requires separate command approval, operating SOP, guard training, security and PDPA review, field acceptance and explicit enablement. Future-phase designs should not be presented as current operations.
+- Posters pending approval: show **Phase 1 current workflow without card exchange**; optionally place a clearly labeled future-capability note in roadmap only.
