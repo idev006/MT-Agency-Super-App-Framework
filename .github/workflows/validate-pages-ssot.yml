@@ -1,0 +1,17 @@
+name: Validate SSOT published pages
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ensure docs Pages artifacts match canonical app and portal sources
+        run: node scripts/sync-pages.mjs --check

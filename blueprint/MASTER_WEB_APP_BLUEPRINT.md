@@ -53,3 +53,7 @@ docs/qr-scanner-poc/        # legacy publicly served POC; keep URL stable until 
 Architecture review → lint/build/tests → adapter contract tests → authorization/security review → staging/device verification → approved deploy and rollback plan. Project-level proof belongs under each app's `docs/`. Deviations require recorded ADR with owner, rationale and approval.
 
 **Reference application:** [Vehicle Contact](../apps/vehicle-contact/README.md). Its business rules are not universal standards.
+
+
+## App directory and generated Pages artifacts
+Canonical application source remains under `apps/<app-id>/`; public links are registered in [`portal/apps.json`](../portal/apps.json) and rendered from [`portal/index.template.html`](../portal/index.template.html). Published files in `docs/` are build artifacts, **not** an alternate source of truth. The required check is `node scripts/sync-pages.mjs --check`.

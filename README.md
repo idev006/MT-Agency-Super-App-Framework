@@ -53,3 +53,11 @@ Update architecture docs via Git commits / Pull Requests. Mark proposals as prop
 
 ## Mandatory web application standard
 [MT Web Application Master Blueprint](blueprint/MASTER_WEB_APP_BLUEPRINT.md) applies to every application. Individual project documentation lives exclusively under `apps/<app-id>/docs/`. Historical document URLs retain relocation pointers. The standalone QR POC is kept at `docs/qr-scanner-poc/` to preserve existing GitHub Pages paths.
+
+
+## Single Source of Truth and App Directory
+- **Canonical code:** `apps/<app-id>/`. For QR Scanner: [`apps/vehicle-contact/poc/qr-scanner/index.html`](apps/vehicle-contact/poc/qr-scanner/index.html).
+- **Canonical app listing and directory template:** [`portal/`](portal/README.md).
+- **Published GitHub Pages artifacts:** `docs/index.html` and `docs/qr-scanner-poc/index.html` are generated copies, never edit by hand.
+- **Synchronize:** `node scripts/sync-pages.mjs`; **verify:** `node scripts/sync-pages.mjs --check` (checked in GitHub Actions).
+- **Planned Pages directory:** https://idev006.github.io/MT-Agency-Super-App-Framework/ (requires Pages configured for `main /docs`).
