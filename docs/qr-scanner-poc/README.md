@@ -1,28 +1,9 @@
-# MT QR Scanner POC — Mobile Browser
+# GitHub Pages compatibility mirror — QR Scanner POC
 
-**Test page source:** [index.html](index.html)
-**Target GitHub Pages URL (only after activation):** https://idev006.github.io/MT-Agency-Super-App-Framework/qr-scanner-poc/
+The canonical application-owned source is now [apps/vehicle-contact/poc/qr-scanner/index.html](../../apps/vehicle-contact/poc/qr-scanner/index.html), with [README](../../apps/vehicle-contact/poc/qr-scanner/README.md).
 
-## Verified field result (2026-10-30)
-- Project owner reports that the camera now opens/works on both Android and iOS on tested phones (**user-confirmed POC result**).
-- Full QR decoding success on both devices, switching, and repeated-scan reliability still require explicit test evidence.
-- Reference implementation is [index.html](index.html), diagnostic UI v7 (fix commit `f0c847d218dde899cb048bc4661eb55597f6d478`).
-- Full report: [POC_QR_SCANNER.md](../../apps/vehicle-contact/POC_QR_SCANNER.md).
+This **legacy deployed HTML mirror** remains temporarily at [index.html](index.html) so a GitHub Pages deployment sourced from `/docs` continues to work. Do not modify this mirror independently; any changes should originate in the application and be synced into the published artifact. This is not a second independent application.
 
-## Publishing
-Repository Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: `main` → Folder: `/docs` → Save. Wait for GitHub Pages deployment to complete and check the target URL in mobile Chrome/Safari. If the repository already has a different Pages setup, do not overwrite without reviewing it. Requires repository admin. The repo is public and this test page deliberately contains no actual car/owner/phone data.
+Old Pages URL (if Pages enabled): https://idev006.github.io/MT-Agency-Super-App-Framework/qr-scanner-poc/
 
-## How to test
-1. Open the deployed HTTPS URL in Android Chrome or iPhone Safari.
-2. Tap **เปิดกล้อง** and allow camera. Default is rear (`environment`).
-3. Point at a harmless test QR code, see the decoded result (shown as text only, no automatic navigation).
-4. Tap **สแกนใหม่**, then **สลับกล้อง** and test repeated transitions.
-5. Try the camera device selector if supported by browser.
-6. Tap **ปิดกล้อง**; ensure OS camera indicator stops.
-7. Deny permission, reload, test error response. Try opening same URL from LINE in-app browser and note differences.
-
-## POC gate
-Record OS/browser versions, rear camera, front/back switch, QR decode, permission handling, camera shutdown and native camera URL-opening. Do not assume every multi-camera phone exposes all physical lenses. If front camera switching is unreliable, use rear-only in v1.
-
-## Safety/limits
-No user identity, spreadsheet, backend or personal data; no scan logs sent to server; html5-qrcode v2.3.8 is loaded from a public CDN and requires internet. QR results are not opened automatically. This tests standalone HTTPS frontend, **not** camera access in the GAS iframe. Do not publish actual QR codes containing private information in issue reports.
+The owner reported Android/iOS camera access working (2026-10-30). Full QR decoding on both platforms remains unverified; see [test report](../../apps/vehicle-contact/docs/POC_QR_SCANNER.md).

@@ -54,4 +54,4 @@ Review requirements with policy sponsor → lock v1 scope → validate security,
 
 
 ## Document architecture
-Project-only requirements, proposals, privacy documents and tests are in [docs/](docs/). All web apps follow the [Master Web App Blueprint](../../blueprint/MASTER_WEB_APP_BLUEPRINT.md). QR scanner standalone public test page remains at [docs/qr-scanner-poc](../../docs/qr-scanner-poc/README.md) until release migration is validated.
+Project-only requirements, proposals, privacy documents and tests are in [docs/](docs/). All web apps follow the [Master Web App Blueprint](../../blueprint/MASTER_WEB_APP_BLUEPRINT.md). QR Scanner POC canonical source is in [poc/qr-scanner/](poc/qr-scanner/README.md). The legacy [GitHub Pages mirror](../../docs/qr-scanner-poc/README.md) remains temporarily for publishing compatibility; application source changes belong only under `apps/vehicle-contact/`.
