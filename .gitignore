@@ -1,0 +1,7 @@
+# Generated deployment artifacts — source lives in apps/ and portal/
+_site/
+node_modules/
+dist/
+.env
+.env.*
+!.env.example

@@ -7,9 +7,9 @@
       "description": "ต้นแบบสแกน QR Code สำหรับทดสอบการเปิดกล้องบน Android และ iOS",
       "kind": "poc",
       "stage": "prototype",
-      "path": "./qr-scanner-poc/",
+      "path": "./apps/vehicle-contact/poc/qr-scanner/",
       "source": "apps/vehicle-contact/poc/qr-scanner/index.html",
-      "notice": "POC เท่านั้น ยังไม่เชื่อมข้อมูลส่วนบุคคลหรือระบบสิทธิ์; การเปิดใช้งาน GitHub Pages ยังต้องตรวจสอบ"
+      "notice": "POC สำหรับทดลองกล้องบน Android/iOS — ยังไม่ใช่ระบบใช้งานจริง"
     }
   ]
 }

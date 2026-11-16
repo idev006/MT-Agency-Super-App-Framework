@@ -37,7 +37,8 @@ apps/<app-id>/
   public/
   package.json
 packages/                  # truly reusable app-independent utilities
-docs/qr-scanner-poc/        # legacy publicly served POC; keep URL stable until migration validated
+portal/                    # app directory source and public-link registry
+_site/                     # temporary generated Pages artifact, never committed
 ```
 
 ## Binding supporting standards
@@ -56,4 +57,4 @@ Architecture review → lint/build/tests → adapter contract tests → authoriz
 
 
 ## App directory and generated Pages artifacts
-Canonical application source remains under `apps/<app-id>/`; public links are registered in [`portal/apps.json`](../portal/apps.json) and rendered from [`portal/index.template.html`](../portal/index.template.html). Published files in `docs/` are build artifacts, **not** an alternate source of truth. The required check is `node scripts/sync-pages.mjs --check`.
+Canonical app source is under `apps/<app-id>/`; app directory source is in [`portal/`](../portal/README.md). The CI build creates disposable `_site/` output from those sources. No `docs/qr-scanner-poc/` or committed deployment copy is permitted. GitHub Pages must publish via GitHub Actions.

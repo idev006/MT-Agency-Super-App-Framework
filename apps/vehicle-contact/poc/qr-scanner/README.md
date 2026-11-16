@@ -3,11 +3,10 @@
 
 This is a **standalone HTML/JavaScript diagnostic prototype**, not yet converted to Vue 3/Vite multi-layer application code. Its source belongs to the Vehicle Contact app; see [test evidence](../../docs/POC_QR_SCANNER.md) and the [app README](../../README.md).
 
-## Publishing / compatibility
-The previous GitHub Pages file at `docs/qr-scanner-poc/index.html` is retained as a **legacy deployment mirror** because GitHub Pages may currently publish from `main/docs`. Do not edit the mirror as the canonical source. Before removing it, implement a deployment workflow that copies the canonical file into the Pages artifact and verify the old URL on Android/iOS.
-
-**Legacy test URL (requires enabled Pages):**
-https://idev006.github.io/MT-Agency-Super-App-Framework/qr-scanner-poc/
+## Publishing / SSOT
+The **only** QR Scanner HTML source is [index.html](index.html). GitHub Actions builds an ephemeral Pages artifact from this source; **no duplicate** `docs/qr-scanner-poc/` directory is kept in Git. The Pages source setting must be **GitHub Actions**.
+Intended deployed route: https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/poc/qr-scanner/
+The legacy `/qr-scanner-poc/` URL is redirected by the deployment artifact when Actions-based Pages is active.
 
 ## Verification
 Camera opened on Android and iOS according to owner (2026-10-30). Successful decoding, switching and lifecycle cases still require documented real-device evidence. No production contact lookup, authorization or database exists in this POC.
