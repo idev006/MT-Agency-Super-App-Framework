@@ -17,7 +17,7 @@ const seen=new Set();
 for(const a of catalog.apps){
  if(!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(a.id)||seen.has(a.id))throw Error("Invalid or duplicate app id");
  seen.add(a.id);
- if(!a.path.startsWith("./")||a.path.includes("..")||a.path.includes("\"))throw Error("Invalid public path");
+ if(!a.path.startsWith("./")||a.path.includes("..")||a.path.includes(String.fromCharCode(92)))throw Error("Invalid public path");
  if(a.kind!=="poc"&&a.kind!=="app")throw Error("Invalid app kind");
 }
 const cards=catalog.apps.map(a=>`<article class="app"><span class="status">${esc(a.kind==="poc"?"Prototype / POC":"Application")}</span><h2>${esc(a.name)}</h2><p>${esc(a.description)}</p><a href="${esc(a.path)}">เปิด${a.kind==="poc"?"หน้าทดสอบ":"แอปพลิเคชัน"}</a><p><small>${esc(a.notice)}</small></p></article>`).join("\n");
