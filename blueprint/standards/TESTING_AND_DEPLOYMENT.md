@@ -1,0 +1,2 @@
+# Testing and Deployment Standard
+Per app: reproducible install, lint, build, unit tests for use cases/domain, API adapter integration tests and critical-path E2E. CI before merge; deployment to staging before production; environment isolation, approved secrets and rollback. Verify real Android/iOS camera behavior when relevant (permission, decode, switching, cleanup). GitHub Pages is static frontend hosting only. Do not mark tests passed without evidence.

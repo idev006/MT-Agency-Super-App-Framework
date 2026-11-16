@@ -1,0 +1,2 @@
+# Security Standard
+Least privilege; default deny; enforce authentication, scopes and permissions on trusted backend/database. No browser-side service-role tokens or API secrets. No real personnel/vehicle records in public repo. QR carries opaque reference only. Apply HTTPS, server-side validation, safe logging, secret/dependency scanning, documented privacy/legal review and scoped retention before production data release.

@@ -10,16 +10,16 @@
 
 ## Start here
 
-- **[MASTER BLUEPRINT — primary project design reference](docs/MASTER_BLUEPRINT.md)** (v1.0.0-draft; proposed, not approved for production)
-- [Project Charter](docs/PROJECT_CHARTER.md)
-- [Architecture Baseline](docs/ARCHITECTURE.md)
-- [Authorization Model](docs/AUTHORIZATION.md)
-- [App Onboarding Contract](docs/APP_ONBOARDING.md)
-- [Decisions and Open Questions](docs/DECISIONS.md)
+- **[MASTER BLUEPRINT — primary project design reference](blueprint/platform/MASTER_BLUEPRINT.md)** (v1.0.0-draft; proposed, not approved for production)
+- [Project Charter](blueprint/platform/PROJECT_CHARTER.md)
+- [Architecture Baseline](blueprint/platform/ARCHITECTURE.md)
+- [Authorization Model](blueprint/platform/AUTHORIZATION.md)
+- [App Onboarding Contract](blueprint/platform/APP_ONBOARDING.md)
+- [Decisions and Open Questions](blueprint/platform/DECISIONS.md)
 
 ## Target stack (proposed)
 
-- Frontend: React + TypeScript; GitHub repository / HTTPS hosting (evaluate GitHub Pages against organizational security requirements)
+- Frontend: Vue 3 + Vue Router + Pinia + Tailwind CSS + DaisyUI + Vite; GitHub repository / HTTPS hosting (evaluate GitHub Pages against organizational security requirements)
 - Entry points: Web/PWA and LINE MINI App / LIFF
 - Primary backend: Supabase Auth, PostgreSQL, RLS, Edge Functions
 - Optional integrations: Google Apps Script and Google Sheets for reports/imports (not the authoritative authorization database)
@@ -38,9 +38,9 @@
 ## Application 001 — MT Vehicle Contact
 
 - [Vehicle Contact app documentation / implementation entrypoint](apps/vehicle-contact/README.md)
-- [Product requirements](apps/vehicle-contact/PRODUCT_REQUIREMENTS.md)
-- [Technical design](apps/vehicle-contact/TECHNICAL_DESIGN.md)
-- [Test & delivery](apps/vehicle-contact/TEST_AND_DELIVERY.md)
+- [Product requirements](apps/vehicle-contact/docs/PRODUCT_REQUIREMENTS.md)
+- [Technical design](apps/vehicle-contact/docs/TECHNICAL_DESIGN.md)
+- [Test & delivery](apps/vehicle-contact/docs/TEST_AND_DELIVERY.md)
 
 ## First reference application
 
@@ -49,3 +49,7 @@
 ## Change control
 
 Update architecture docs via Git commits / Pull Requests. Mark proposals as proposed until explicitly accepted. Do not treat the current documents as deployed or security-certified.
+
+
+## Mandatory web application standard
+[MT Web Application Master Blueprint](blueprint/MASTER_WEB_APP_BLUEPRINT.md) applies to every application. Individual project documentation lives exclusively under `apps/<app-id>/docs/`. Historical document URLs retain relocation pointers. The standalone QR POC is kept at `docs/qr-scanner-poc/` to preserve existing GitHub Pages paths.

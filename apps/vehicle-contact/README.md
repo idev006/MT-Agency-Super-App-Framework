@@ -2,7 +2,7 @@
 
 **App ID:** `vehicle-contact`  
 **Version:** 1.0.0-draft | **Status:** PROPOSED, awaiting stakeholder sign-off  
-**Parent SSOT:** [MT Agency Super App Master Blueprint](../../docs/MASTER_BLUEPRINT.md)  
+**Parent SSOT:** [MT Agency Super App Master Blueprint](../../blueprint/MASTER_WEB_APP_BLUEPRINT.md)  
 **Date:** 2026-10-30 | **Priority:** urgent policy delivery
 
 ## Mission
@@ -11,25 +11,25 @@
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
 ## Documents
-- [QR_STICKER_COST_COMPARISON_2026-10-31.md](QR_STICKER_COST_COMPARISON_2026-10-31.md) — ราคาสำรวจและเปรียบเทียบ Solution A4+เคลือบ กับจ้างพิมพ์ UV/กันน้ำ 1 ปี
-- [EXECUTIVE_APPROVAL_PROPOSAL_V2.md](EXECUTIVE_APPROVAL_PROPOSAL_V2.md) — เอกสารเสนอผู้บังคับบัญชาฉบับปรับปรุง 2.0 (ร่างอนุมัติหลักการ)
-- [SYSTEM_ANALYSIS_V2.md](SYSTEM_ANALYSIS_V2.md) — Actors / Use Cases / Workflows / Data Model / Security / QC Gates
-- [TEAM_UPSKILL_RESEARCH_2026-10-31.md](TEAM_UPSKILL_RESEARCH_2026-10-31.md) — แหล่งเรียนรู้ทางการและแผน QC ของทีมตามบทบาท
-- [SENIOR_THAI_LEGAL_COUNSEL_ROLE.md](SENIOR_THAI_LEGAL_COUNSEL_ROLE.md) — บทบาทนิติกรอาวุโส กฎหมายไทย/PDPA/ดิจิทัล และ Legal QC Gates
-- [PDPA_ROPA_REGISTER.md](PDPA_ROPA_REGISTER.md) — PDPA operational draft; pending DPO/legal approval
-- [PDPA_LAWFUL_BASIS_DECISION.md](PDPA_LAWFUL_BASIS_DECISION.md) — PDPA operational draft; pending DPO/legal approval
-- [PDPA_PRIVACY_NOTICES.md](PDPA_PRIVACY_NOTICES.md) — PDPA operational draft; pending DPO/legal approval
-- [PDPA_CONSENT_AND_RIGHTS.md](PDPA_CONSENT_AND_RIGHTS.md) — PDPA operational draft; pending DPO/legal approval
-- [PDPA_DATA_RETENTION_AND_RELEASE_GATE.md](PDPA_DATA_RETENTION_AND_RELEASE_GATE.md) — PDPA operational draft; pending DPO/legal approval
-- [PDPA_GOVERNANCE_PACK.md](PDPA_GOVERNANCE_PACK.md) — Draft ROPA, legal-basis assessment, staff/visitor privacy notices, consent decision, and privacy gate
-- [FORMAL_PROJECT_PROPOSAL.md](FORMAL_PROJECT_PROPOSAL.md) — ร่างเสนอโครงการฉบับทางการ ตามแนวทาง สศช. พร้อมบันทึก QC
-- [PROJECT_PROPOSAL_POLICY_DRIVEN.md](PROJECT_PROPOSAL_POLICY_DRIVEN.md) — ข้อเสนอโครงการเชิงนโยบาย Workflow ทางเข้า–ออก, Stakeholders, และ QC (ร่างเพื่อพิจารณา)
-- [POC_QR_SCANNER.md](POC_QR_SCANNER.md) — Android/iOS camera POC evidence, remaining QR decoding gates
-- [EXECUTIVE_BRIEF.md](EXECUTIVE_BRIEF.md) — policy outcomes, executive narrative and pilot KPIs
-- [PRODUCT_REQUIREMENTS.md](PRODUCT_REQUIREMENTS.md) — problem, users, functional rules, screens, scope
-- [TECHNICAL_DESIGN.md](TECHNICAL_DESIGN.md) — data model, security, API, integration
-- [TEST_AND_DELIVERY.md](TEST_AND_DELIVERY.md) — tests, readiness and delivery gates
-- [WORKFLOW_AND_MEDIA_PIPELINE.md](WORKFLOW_AND_MEDIA_PIPELINE.md) — 5-angle vehicle images, registration/scan workflows, secure upload pipeline
+- [QR_STICKER_COST_COMPARISON_2026-10-31.md](docs/QR_STICKER_COST_COMPARISON_2026-10-31.md) — ราคาสำรวจและเปรียบเทียบ Solution A4+เคลือบ กับจ้างพิมพ์ UV/กันน้ำ 1 ปี
+- [EXECUTIVE_APPROVAL_PROPOSAL_V2.md](docs/EXECUTIVE_APPROVAL_PROPOSAL_V2.md) — เอกสารเสนอผู้บังคับบัญชาฉบับปรับปรุง 2.0 (ร่างอนุมัติหลักการ)
+- [SYSTEM_ANALYSIS_V2.md](docs/SYSTEM_ANALYSIS_V2.md) — Actors / Use Cases / Workflows / Data Model / Security / QC Gates
+- [TEAM_UPSKILL_RESEARCH_2026-10-31.md](docs/TEAM_UPSKILL_RESEARCH_2026-10-31.md) — แหล่งเรียนรู้ทางการและแผน QC ของทีมตามบทบาท
+- [SENIOR_THAI_LEGAL_COUNSEL_ROLE.md](docs/SENIOR_THAI_LEGAL_COUNSEL_ROLE.md) — บทบาทนิติกรอาวุโส กฎหมายไทย/PDPA/ดิจิทัล และ Legal QC Gates
+- [PDPA_ROPA_REGISTER.md](docs/PDPA_ROPA_REGISTER.md) — PDPA operational draft; pending DPO/legal approval
+- [PDPA_LAWFUL_BASIS_DECISION.md](docs/PDPA_LAWFUL_BASIS_DECISION.md) — PDPA operational draft; pending DPO/legal approval
+- [PDPA_PRIVACY_NOTICES.md](docs/PDPA_PRIVACY_NOTICES.md) — PDPA operational draft; pending DPO/legal approval
+- [PDPA_CONSENT_AND_RIGHTS.md](docs/PDPA_CONSENT_AND_RIGHTS.md) — PDPA operational draft; pending DPO/legal approval
+- [PDPA_DATA_RETENTION_AND_RELEASE_GATE.md](docs/PDPA_DATA_RETENTION_AND_RELEASE_GATE.md) — PDPA operational draft; pending DPO/legal approval
+- [PDPA_GOVERNANCE_PACK.md](docs/PDPA_GOVERNANCE_PACK.md) — Draft ROPA, legal-basis assessment, staff/visitor privacy notices, consent decision, and privacy gate
+- [FORMAL_PROJECT_PROPOSAL.md](docs/FORMAL_PROJECT_PROPOSAL.md) — ร่างเสนอโครงการฉบับทางการ ตามแนวทาง สศช. พร้อมบันทึก QC
+- [PROJECT_PROPOSAL_POLICY_DRIVEN.md](docs/PROJECT_PROPOSAL_POLICY_DRIVEN.md) — ข้อเสนอโครงการเชิงนโยบาย Workflow ทางเข้า–ออก, Stakeholders, และ QC (ร่างเพื่อพิจารณา)
+- [POC_QR_SCANNER.md](docs/POC_QR_SCANNER.md) — Android/iOS camera POC evidence, remaining QR decoding gates
+- [EXECUTIVE_BRIEF.md](docs/EXECUTIVE_BRIEF.md) — policy outcomes, executive narrative and pilot KPIs
+- [PRODUCT_REQUIREMENTS.md](docs/PRODUCT_REQUIREMENTS.md) — problem, users, functional rules, screens, scope
+- [TECHNICAL_DESIGN.md](docs/TECHNICAL_DESIGN.md) — data model, security, API, integration
+- [TEST_AND_DELIVERY.md](docs/TEST_AND_DELIVERY.md) — tests, readiness and delivery gates
+- [WORKFLOW_AND_MEDIA_PIPELINE.md](docs/WORKFLOW_AND_MEDIA_PIPELINE.md) — 5-angle vehicle images, registration/scan workflows, secure upload pipeline
 
 ## Scope freeze — v1
 **IN:** vehicle registration, responsible contact, optional 0–5 labeled vehicle photos, printable opaque QR, mobile scanner with front/rear camera, authorized vehicle lookup, tap-to-call, manual search, basic management and audit.
@@ -51,3 +51,7 @@ Production contact display policy, responsible data owner, permitted personnel d
 
 ## Next action
 Review requirements with policy sponsor → lock v1 scope → validate security, user onboarding and contact accuracy → implement in staging with synthetic test data.
+
+
+## Document architecture
+Project-only requirements, proposals, privacy documents and tests are in [docs/](docs/). All web apps follow the [Master Web App Blueprint](../../blueprint/MASTER_WEB_APP_BLUEPRINT.md). QR scanner standalone public test page remains at [docs/qr-scanner-poc](../../docs/qr-scanner-poc/README.md) until release migration is validated.

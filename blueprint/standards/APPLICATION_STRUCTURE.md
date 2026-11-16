@@ -1,0 +1,2 @@
+# Application Structure
+All apps belong to `apps/<app-id>/`: `README.md`, `docs/`, `src/presentation/`, `src/application/`, `src/domain/`, `src/infrastructure/`, `tests/`, `public/`, `package.json`, `vite.config.js`. Project documents remain in app `docs/`; global rules live only in `blueprint/`. Shared, app-neutral code goes in `packages/`. Retain legacy `docs/qr-scanner-poc/` until deployed replacement and migration are verified. Reference blueprint version from app README.

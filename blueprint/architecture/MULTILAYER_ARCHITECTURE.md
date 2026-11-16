@@ -1,0 +1,2 @@
+# Multi-layer Architecture
+Use **Presentation → Application → Domain**, with **Infrastructure → Domain ports**. Components handle visual state only; Pinia orchestrates use cases; domain models and repository interfaces are framework-independent; API adapters translate remote DTOs and errors. Wire dependencies in a composition root. Patterns: Dependency Inversion, Ports & Adapters, Repository; avoid abstraction without a concrete need. External authorization is always server-enforced.
