@@ -43,6 +43,12 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 
 **Non-negotiable:** user edits in Google Sheets are candidate proposals, NOT SSOT updates. Protected business API operations remain off until security gates pass. No background sync or trigger is claimed to exist by this documentation.
 
+## 2B. Drive media root verified and base folders created (2026-11-17)
+- Selected and inspected the owner's [uploads folder](https://drive.google.com/drive/folders/1H_gIVF04LfLlgDRvOApcrY835Rd4LGEW) under the existing project root.
+- Created base folders `vehicles/`, `staging/`, `quarantine/`; no vehicle folders or files yet. Details in [Media Storage Design](VEHICLE_MEDIA_STORAGE_DESIGN.md).
+- VC-W10 photo-storage subtask **FOLDER STRUCTURE DONE / ACCESS & MEDIA PIPELINE BLOCKED**. Next: audit effective Drive permissions and design backend-only uploads, per-vehicle versioning, thumbnail processing, privacy/retention and fake-Drive integration tests.
+- The business decision 5 photo slots versus mandatory five photos remains OPEN. Creation of folders is not approval for real images or production PII.
+
 ## 3. Milestone sequence (relative, not scheduled dates)
 
 | Milestone | Outcome / exit condition | Depends on |
