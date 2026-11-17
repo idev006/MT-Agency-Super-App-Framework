@@ -5,7 +5,7 @@
 ## 1. Authority and scope
 - Business baseline: [Approved requirements](../../APPROVED_REQUIREMENTS_BASELINE_R01_R26.md).
 - API operations: `system.health`, `system.config.get`, `system.config.update` (API v1 JSON envelope, GAS POST except public health GET).
-- Implementation: `backend/gas/src/api/routes/Router.js`; server permission source `backend/gas/src/api/controllers/OperationController.js`.
+- Implementation: `backend/gas/src/api/routes/Router.js`, `backend/gas/src/application/use-cases/AdministrationOperations.js`; server permission source `backend/gas/src/api/controllers/OperationController.js`.
 - Diagram source: [sequence.mmd](sequence.mmd) (Mermaid, reviewed alongside spec).
 
 ## 2. Preconditions
@@ -35,3 +35,32 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Monitor
+  actor Admin as SYSTEM_ADMIN
+  participant FE as Vue UI
+  participant API as GAS Router / Controller
+  participant Settings as AdministrationOperations
+  participant DB as Sheets
+  Monitor->>API: GET system.health (public)
+  API-->>Monitor: Minimal bootstrap status, no secrets
+  Admin->>FE: View or edit settings
+  FE->>API: system.config.get(sessionToken)
+  API->>API: Require system.settings.read
+  API->>DB: Read two vc_settings keys
+  API-->>FE: Bounded setting values
+  FE->>API: system.config.update(values)
+  API->>API: Require system.settings.manage
+  alt Valid keys and integer bounds
+    API->>Settings: updateSettings()
+    Settings->>DB: Update vc_settings and append audit
+    API-->>FE: Updated setting values
+  else Invalid / unauthorized
+    API-->>FE: INVALID_SETTINGS / FORBIDDEN
+  end
+```

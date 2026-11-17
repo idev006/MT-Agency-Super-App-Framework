@@ -35,3 +35,32 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Admin as SYSTEM_ADMIN
+  participant FE as Vue Campaign UI
+  participant API as GAS API
+  participant Campaign as AdministrationOperations
+  participant DB as Sheets
+  Admin->>FE: Set campaign window and quota
+  FE->>API: campaigns.create(session,dates,limit)
+  API->>API: Require campaigns.manage
+  alt Valid future end and quota
+    API->>Campaign: Generate opaque campaign token
+    Campaign->>DB: Store SHA-256 token digest and metadata
+    Campaign->>DB: Append campaign audit
+    API-->>FE: campaignId and one-time campaignToken
+    FE->>API: campaigns.list
+    API->>DB: Read bounded campaign list
+    API-->>FE: No raw token in list
+    Admin->>FE: Revoke a campaign
+    FE->>API: campaigns.revoke(campaignId)
+    API->>DB: Mark REVOKED, revoked_at + audit
+  else Invalid period or unauthorized
+    API-->>FE: INVALID_CAMPAIGN / FORBIDDEN
+  end
+```

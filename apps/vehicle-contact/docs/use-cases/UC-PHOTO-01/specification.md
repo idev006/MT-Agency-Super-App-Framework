@@ -36,3 +36,31 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Registrant
+  participant FE as Vue Camera / Upload
+  participant API as GAS API
+  participant Media as MediaRetentionOperations
+  participant Drive as Google Drive
+  participant DB as Sheets
+  loop Each of five required photo slots
+    Registrant->>FE: Capture one image
+    FE->>API: photos.upload(campaignToken,slot,base64Image,mime)
+    API->>Media: Validate token, slot, image type/size
+    Media->>Drive: Upload verified image outside ScriptLock
+    Drive-->>Media: Storage reference
+    Media->>DB: Lock, revalidate campaign, insert vc_photo_staging
+    alt Staging write succeeds
+      API-->>FE: photoId and slot
+    else Staging write fails
+      Media->>Drive: Best-effort trash uploaded file
+      API-->>FE: Safe operation failure
+    end
+  end
+  Note over FE,DB: Five staged photo IDs are required by registrations.submit
+```

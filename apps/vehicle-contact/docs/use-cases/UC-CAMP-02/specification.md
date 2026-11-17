@@ -34,3 +34,27 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Registrant
+  participant FE as Vue Public Registration
+  participant API as GAS API
+  participant Campaign as Campaign Use Case
+  participant DB as Sheets
+  Registrant->>FE: Open shared campaign link
+  FE->>API: campaigns.validate(campaignToken)
+  API->>Campaign: Validate token format / hash digest
+  Campaign->>DB: Read vc_campaigns
+  alt Active, within window, below submission quota
+    Campaign-->>API: valid=true / campaignId
+    API-->>FE: Show registration form
+  else Revoked, expired, invalid, or full
+    API-->>FE: CAMPAIGN_INVALID
+    FE-->>Registrant: Form unavailable / retry later
+  end
+  Note over API,DB: Submit must recheck quota under LockService; never trust this precheck
+```

@@ -37,3 +37,33 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Admin as REGISTRATION_ADMIN
+  participant FE as Vue Photo Editor
+  participant API as GAS API
+  participant Photo as MediaRetentionOperations
+  participant Drive as Google Drive
+  participant DB as Sheets
+  Admin->>FE: Replace selected photo slot
+  FE->>API: photos.replace(vehicleId,slot,image,mime)
+  API->>API: Require vehicle.update
+  Photo->>DB: Validate ACTIVE vehicle
+  Photo->>Drive: Upload replacement outside ScriptLock
+  Photo->>DB: Lock, require exactly one ACTIVE photo for slot
+  alt Metadata update succeeds
+    Photo->>DB: Update storage ref, version, audit
+    Photo->>Drive: Trash old file (best effort)
+    opt Old-file trash fails
+      Photo->>DB: Journal OLD_FILE_CLEANUP_REQUIRED
+    end
+    API-->>FE: replaced true
+  else Sheets metadata write fails
+    Photo->>Drive: Trash newly uploaded file (best effort)
+    API-->>FE: Safe operation failure
+  end
+```

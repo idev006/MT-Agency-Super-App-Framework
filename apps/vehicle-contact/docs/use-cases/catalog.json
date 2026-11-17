@@ -205,7 +205,8 @@
       "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
       "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
       "source": [
-        "backend/gas/src/api/routes/Router.js"
+        "backend/gas/src/api/routes/Router.js",
+        "backend/gas/src/application/use-cases/AdministrationOperations.js"
       ],
       "testSources": [
         "backend/gas/tests/actor-rbac-matrix.test.mjs"
