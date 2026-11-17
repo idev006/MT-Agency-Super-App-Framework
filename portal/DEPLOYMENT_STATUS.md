@@ -2,7 +2,7 @@
 
 **Last reviewed:** 2026-11-17 (Asia/Bangkok)  
 **Source branch:** `main`  
-**Status:** BLOCKED — deployment from GitHub Actions not yet proven; do not mark production-ready.
+**Status:** CI BUILD + DEPLOY **PASS** on 2026-11-17 for commit `314c04307207586a1559c89ef6cadcb2693b2f2e` (rerun attempt 2). This verifies deployment workflow only; device scanning, authorization and production release are **NOT** approved.
 
 ## Confirmed
 - Canonical scanner source: `apps/vehicle-contact/poc/qr-scanner/index.html`.
@@ -13,12 +13,17 @@
 - Deployment workflow: `.github/workflows/deploy-pages-ssot.yml`.
 - PR-only validation workflow: `.github/workflows/validate-ssot.yml`.
 
-## GitHub evidence
+## Latest confirmed successful workflow
+- https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/43988536740 — rerun attempt 2 **SUCCESS**, both `build` and `deploy` completed successfully (verified via GitHub Actions API on 2026-11-17).
+- Successful SSOT checks include canonical source validation, disposable `_site/` build, output comparison and artifact upload.
+- Runtime HTTP reachability, camera decoding on physical phones, and security/PII acceptance have **not** been independently verified by this CI outcome.
+
+## Historical GitHub evidence
 - Previous deployment run: https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/43800767675 — **failure**.
 - After build workflow improvements: https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/43988446571 — **failure**, build job `steps=[]`, `runner_id=0`, and deployment job skipped.
 - **Inference limit:** No steps were reported, so this does not prove a JavaScript build/test failure. Runner provisioning, Actions settings, account limits, workflow policy, or other GitHub control-plane issues require inspection by a repository maintainer. No root cause asserted.
 
-## Maintainer checklist
+## Follow-up checklist (deployment succeeded; release validation remains)
 1. Open Actions → latest **Build and deploy Pages from SSOT** run; inspect GitHub's job banner, annotations and usage/billing or Actions policy notices.
 2. Confirm repository Settings → Actions allows the required actions and GitHub-hosted runners.
 3. Confirm repository Settings → Pages → **Build and deployment → Source: GitHub Actions** (the old branch-based Pages build may otherwise publish outdated content).
