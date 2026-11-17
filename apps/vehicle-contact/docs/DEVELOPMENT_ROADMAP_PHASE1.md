@@ -63,6 +63,12 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 - This is an **engineering packaging experiment**, not the final optimized per-domain runtime module architecture: generated files are independent IIFEs with some duplicated code. No claims of live login, Sheets editor verification, Web App deployment or production release.
 - Evidence and constraints: [GAS Test Evidence](GAS_TEST_EVIDENCE.md).
 
+## 2E. Source-module mirrored GAS files — Version 5 proof (2026-11-17)
+
+- Owner-requested source-to-GAS module mapping implemented: [GAS_MODULE_MAPPING.md](GAS_MODULE_MAPPING.md), [builder](../backend/gas/scripts/build.mjs).
+- [GitHub Actions run 44035053861](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44035053861) **PASS**: 14 `.gs` files + manifest pushed to existing Script ID; **GAS Version 5 created**. Each generated module <=800 lines; tests validate runtime order independence and API fail-closed.
+- Manual-only Workflow restored after one-shot test. Actual GAS Editor + Sheet schema verification remains required before closing runtime acceptance.
+
 ## 3. Milestone sequence (relative, not scheduled dates)
 
 | Milestone | Outcome / exit condition | Depends on |
