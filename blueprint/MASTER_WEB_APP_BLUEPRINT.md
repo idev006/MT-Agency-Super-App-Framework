@@ -7,7 +7,7 @@
 This is the mandatory technical blueprint for **all web applications** in this repository. It governs HOW applications are built, not WHAT an individual project does. Project proposals, requirements, PDPA decisions, test evidence and operating procedures live only in `apps/<app-id>/docs/`. The independent [Platform and Identity Blueprint](platform/MASTER_BLUEPRINT.md) governs shared identity, SSO, role assignments and platform governance. Where an older platform document still suggests React, this approved Vue frontend baseline supersedes that technology choice. Do not interpret this as production approval of the older platform design.
 
 ## Mandatory GAS backend addendum
-Any application that implements its backend/API using Google Apps Script **MUST** follow [MT Master GAS Backend API Blueprint](MASTER_GAS_BACKEND_API_BLUEPRINT.md) in addition to this web application blueprint. The GAS standard governs backend design patterns, layering, Sheets/Drive/HTTP adapters, security, testing and clasp-based deployment. It does not require every app to use GAS or Sheets.
+Any application that implements its backend/API using Google Apps Script **MUST** follow [MT Master GAS Backend API Blueprint](MASTER_GAS_BACKEND_API_BLUEPRINT.md) in addition to this web application blueprint. The GAS standard governs backend design patterns, layering, **provider-agnostic persistence/storage ports**, security, testing and clasp-based deployment. GAS may use any supported and authorized database or storage provider (including Google Sheets) through app-owned adapters. It does not require every app to use GAS or any particular database.
 
 ## Standard stack
 Vue 3, Vue Router, Pinia, Tailwind CSS, DaisyUI, HTML5, Vite; use reviewed pinned dependencies and lockfiles.
