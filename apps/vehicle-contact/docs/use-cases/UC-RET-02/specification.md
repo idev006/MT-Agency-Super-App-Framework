@@ -40,3 +40,39 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Sys as SYSTEM_ADMIN
+  actor Worker as RETENTION_WORKER
+  participant API as GAS API / RBAC
+  participant Retention as MediaRetentionOperations
+  participant DB as Sheets
+  participant Drive as Google Drive
+  Sys->>API: retention.approve(jobId)
+  API->>API: Require retention.delete.approve
+  Retention->>DB: Lock, check due and legal_hold false
+  alt Authorized approval
+    Retention->>DB: Set DELETION_APPROVED and append audit
+    API-->>Sys: approved true
+    Worker->>API: retention.execute(jobId)
+    API->>API: Require retention.worker and feature flag
+    Retention->>DB: Mark DELETION_IN_PROGRESS
+    Retention->>Drive: Trash all linked photo files
+    Retention->>DB: Delete vehicle/contact/QR/dependent rows
+    Retention->>DB: Mark DELETION_COMPLETED; preserve audit rows
+    API-->>Worker: DELETION_COMPLETED
+  else Hold, not due, no approval or error
+    API-->>Sys: RETENTION_NOT_APPROVABLE / safe error
+    opt Worker deletion fails after approval
+      Retention->>DB: Mark DELETION_FAILED and last_error
+      API-->>Worker: DELETION_RETRY_REQUIRED
+    end
+  end
+  Sys->>API: retention.jobStatus(jobId)
+  API-->>Sys: Current status and attempt count
+  Note over Retention,DB: Retry/recovery after abrupt GAS timeout still unverified
+```

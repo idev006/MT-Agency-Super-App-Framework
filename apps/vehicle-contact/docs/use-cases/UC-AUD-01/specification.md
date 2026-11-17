@@ -35,3 +35,29 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Auditor
+  participant FE as Vue Audit View
+  participant API as GAS API / RBAC
+  participant Audit as MediaRetentionOperations
+  participant DB as Sheets
+  Auditor->>FE: Filter audit by vehicle and limit
+  FE->>API: audit.query(session,vehicleId,limit)
+  API->>API: Require audit.read
+  alt Authorized
+    Audit->>DB: Read vc_lookup_audit and vc_change_audit
+    Audit->>Audit: Sort and bound events
+    API-->>FE: Sanitized rows
+    Auditor->>FE: Request export
+    FE->>API: audit.export(session,filter)
+    Audit->>DB: Read bounded events
+    API-->>FE: JSON rows (not a downloadable file)
+  else Unauthorized or invalid input
+    API-->>FE: FORBIDDEN / INVALID_LIMIT
+  end
+```

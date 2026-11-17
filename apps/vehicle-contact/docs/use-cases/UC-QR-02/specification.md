@@ -36,3 +36,34 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Admin
+  participant FE as Vue QR Admin
+  participant API as GAS API
+  participant QR as VehicleOperations
+  participant DB as Sheets
+  Admin->>FE: Issue / replace / revoke token
+  FE->>API: qr.issue / qr.replace / qr.revoke
+  API->>API: Require qr.manage
+  QR->>DB: Acquire ScriptLock, require ACTIVE vehicle
+  QR->>DB: Count active tokens
+  alt Issue and no active token
+    QR->>DB: Store new token digest only
+    API-->>FE: One-time raw token
+  else Replace and at most one active
+    QR->>DB: Revoke current token immediately
+    QR->>DB: Insert newly generated digest and audit
+    API-->>FE: New one-time token
+  else Revoke
+    QR->>DB: Revoke active token and append audit
+    API-->>FE: revoked true/false
+  else Invalid state or unauthorized
+    API-->>FE: QR_ALREADY_ACTIVE / MULTIPLE_ACTIVE_QR / FORBIDDEN
+  end
+  Note over QR,DB: Partial write and timeout recovery remains a release gate
+```

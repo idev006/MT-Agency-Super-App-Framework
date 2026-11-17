@@ -38,3 +38,29 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Staff
+  participant FE as Vue Scanner
+  participant API as GAS API / Session RBAC
+  participant QR as VehicleOperations
+  participant DB as Sheets
+  Staff->>FE: Camera scan QR
+  FE->>FE: Extract opaque token; no contact in QR payload
+  FE->>API: qr.resolve(sessionToken,token)
+  API->>API: Require vehicle.lookup and valid session
+  QR->>QR: Check token syntax and hash digest
+  QR->>DB: Read vc_qr_tokens and linked vehicle
+  alt ACTIVE token and ACTIVE vehicle
+    QR->>DB: Record lookup audit
+    QR->>DB: Read permitted contacts/photos
+    API-->>FE: Authorized vehicle DTO
+  else Unknown, revoked or inactive vehicle
+    API-->>FE: Null or INVALID_QR
+    FE-->>Staff: Show safe no-match / manual fallback
+  end
+```
