@@ -1,0 +1,30 @@
+# P6 Vehicle Contact — GAS Backend Bootstrap
+
+**State:** SAFE BOOTSTRAP; not deployed; data CRUD and sign-in intentionally disabled.
+
+- Canonical source: this folder on GitHub (not Google Sheets cells).
+- Google Sheets is the Phase 1 private datastore with one tab per logical table, provisioned in the owner's Drive project root.
+- GAS runtime entrypoints: `src/entrypoints/WebApp.js`. API groups include `system.health` only; all protected operations fail closed.
+- `src/infrastructure/persistence/sheets/SheetsSchemaRepository.js` validates table headers as an **admin-only** function; it never returns data rows to a public caller.
+- Follow [central GAS Master Blueprint](../../../blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md) and [application-specific contract](../../docs/GAS_API_SPEC.md).
+
+## Developer build and first script setup
+
+```bash
+cd apps/vehicle-contact/backend/gas
+npm test
+npm run build
+# Open your existing target Spreadsheet in Google Sheets > Extensions > Apps Script
+# Create a bound or standalone Apps Script Project. Record its Script ID.
+# Set Script Property VEHICLE_SHEET_ID in Apps Script Project Settings.
+# Configure clasp credentials in a secure workstation (never in Git).
+# Copy .clasp.json.example to .clasp.json and replace Script ID.
+clasp push
+# Run verifyVehicleSchemaFromEditor() with authorized admin Google identity.
+```
+
+`clasp push` updates script code, not automatically a published versioned Web App. Do **not** publish the protected API or owner-privileged public endpoints until the auth/session gateway design and direct-URL bypass security gates pass. Script secrets and `.clasp.json` should be kept out of Git; the provided `.clasp.json.example` is safe sample configuration.
+
+**Code packaging:** `npm run build` concatenates modular source to `dist/Code.gs` and copies `appsscript.json` (Google Apps Script V8). No cloud deployment is performed by this build.
+
+**Important:** Google Drive connector supports the Sheet but currently cannot create or push an Apps Script Project. The Apps Script project must be created/authorized with the owner's Google account before any first `clasp push`.
