@@ -5,4 +5,6 @@ GAS backend implementations MUST follow the [Master GAS Backend API Blueprint](.
 
 Backend persistence selection is per application: GAS may access Google Sheets, SQL/NoSQL services or file/object storage through validated, supported adapters and authenticated interfaces. The GAS blueprint forbids coupling business logic to a storage provider; network/runtime support must be verified rather than assumed.
 
-For client-serving GAS backends, the GAS Master Blueprint v1.2.0 requires a dedicated API Layer between `doGet/doPost` and Application Use Cases, with versioned routing, controllers, DTO validation, verified authorization and response/error mapping. GAS entrypoints are thin runtime bridges, not API controllers or business services.
+For client-serving GAS backends, the GAS Master Blueprint v1.3.0 requires a dedicated API Layer between `doGet/doPost` and Application Use Cases, with versioned routing, controllers, DTO validation, verified authorization and response/error mapping. GAS entrypoints are thin runtime bridges, not API controllers or business services.
+
+Each GAS Backend MUST organize its client-facing operations into business-capability API groups using a shared versioned router and per-group action allowlists. The app-specific `GAS_API_SPEC.md` is authoritative for its groups, permissions, DTOs and compatibility aliases.
