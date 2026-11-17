@@ -13,6 +13,11 @@
 - Run the editor-only functions `verifyVehicleSchemaFromEditor()`, `inspectVehicleSchemaDriftFromEditor()` and `proposeVehicleSchemaChangeFromEditor()` after configuring the Apps Script project. Only **sheet names and header cells** are inspected. No PR, migration, scheduled trigger or changed column is created automatically.
 - Any physical Sheets edit (including new columns) produces drift until the responsible reviewer signs off a change to the JSON SSOT and an approved migration. Never expose the inspector as an anonymous public API.
 
+## GitHub Actions deployment to target Script ID
+- **Manual, main-branch only:** [Deploy P6 Vehicle Contact GAS](../../../../.github/workflows/deploy-vehicle-gas.yml). An authorized maintainer must configure the `P6VC_CLASPRC_JSON` GitHub Actions secret (never in source/chat) and type `PUSH_VEHICLE_GAS` to dispatch.
+- Target Apps Script ID is fixed in the workflow to the owner-provided project. Workflow runs `npm run check`, then `clasp push --force` and `clasp create-version`. No Web App deployment is published; the entire target Apps Script project source is replaced, so back up current GAS code first.
+- **Current deployment status:** workflow and runbook added to GitHub; no Google account OAuth Secret was configured by this change and no push was performed or proven. See [GAS GitHub Actions Deployment Runbook](../../docs/GAS_GITHUB_ACTIONS_DEPLOYMENT.md).
+
 ## Developer build and first script setup
 
 ```bash
