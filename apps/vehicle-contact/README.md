@@ -11,6 +11,8 @@
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
 ## Documents
+- [REQUIREMENTS_TRACEABILITY.md](docs/REQUIREMENTS_TRACEABILITY.md) — ตรวจการเชื่อมโยงข้อกำหนด/เอกสาร/โค้ด/หลักฐาน และรายการที่ขัดแย้งรออนุมัติ
+- [DECISION_LOG.md](docs/DECISION_LOG.md) — บันทึกการตัดสินใจเฉพาะโครงการและสถานะอนุมัติ
 - [QR_STICKER_COST_COMPARISON_2026-10-31.md](docs/QR_STICKER_COST_COMPARISON_2026-10-31.md) — ราคาสำรวจและเปรียบเทียบ Solution A4+เคลือบ กับจ้างพิมพ์ UV/กันน้ำ 1 ปี
 - [EXECUTIVE_APPROVAL_PROPOSAL_V2.md](docs/EXECUTIVE_APPROVAL_PROPOSAL_V2.md) — เอกสารเสนอผู้บังคับบัญชาฉบับปรับปรุง 2.0 (ร่างอนุมัติหลักการ)
 - [SYSTEM_ANALYSIS_V2.md](docs/SYSTEM_ANALYSIS_V2.md) — Actors / Use Cases / Workflows / Data Model / Security / QC Gates
