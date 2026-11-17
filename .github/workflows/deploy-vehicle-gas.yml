@@ -46,8 +46,8 @@ jobs:
       - name: Verify deployment artifact
         run: |
           test -s dist/appsscript.json
-          test "$(find dist -maxdepth 1 -type f -name '*.gs' | wc -l)" -eq 20
-          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 21
+          test "$(find dist -maxdepth 1 -type f -name '*.gs' | wc -l)" -eq 22
+          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 23
           test -s 'dist/ENTRYPOINTS$WebApp.gs'
           test -s 'dist/API$routes$Router.gs'
           test -s 'dist/INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs'
