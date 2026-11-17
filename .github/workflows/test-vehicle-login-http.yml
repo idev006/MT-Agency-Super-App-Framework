@@ -1,0 +1,44 @@
+name: P6VC Single-Account HTTP Login Acceptance (manual only)
+on:
+  workflow_dispatch:
+    inputs:
+      exec_url:
+        description: 'Existing owner-approved GAS /exec target, bound to the approved Phase-1 sheet'
+        type: string
+        required: true
+        default: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
+      username:
+        description: 'Exact active account in specified Sheet'
+        type: string
+        required: true
+        default: 'admin'
+      confirmation:
+        description: 'Type TEST_LOGIN_ON_APPROVED_SHEET to accept login/session audit writes'
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  login-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    if: ${{ inputs.confirmation == 'TEST_LOGIN_ON_APPROVED_SHEET' }}
+    env:
+      P6VC_GAS_EXEC_URL: ${{ inputs.exec_url }}
+      P6VC_HTTP_LOGIN_USERNAME: ${{ inputs.username }}
+      P6VC_HTTP_LOGIN_PASSWORD: ${{ secrets.P6VC_HTTP_LOGIN_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Fail closed unless private password secret is configured
+        shell: bash
+        run: |
+          if [ -z "$P6VC_HTTP_LOGIN_PASSWORD" ]; then
+            echo 'BLOCKED: P6VC_HTTP_LOGIN_PASSWORD must be configured in GitHub Actions Secrets'; exit 1;
+          fi
+      - name: Auth-only real HTTPS test, redact credentials and tokens
+        run: node apps/vehicle-contact/backend/gas/scripts/login-http-acceptance.mjs
