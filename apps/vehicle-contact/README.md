@@ -5,7 +5,7 @@
 **Parent SSOT:** [MT Agency Super App Master Blueprint](../../blueprint/MASTER_WEB_APP_BLUEPRINT.md)  
 **Date:** 2026-10-30 | **Priority:** urgent policy delivery
 
-## Mission
+> **Resume after an inaccessible chat:** [PROJECT_HANDOVER.md](docs/PROJECT_HANDOVER.md) — evidence-based source map, actual API test scope, deploy versions, open security gates and ready-to-paste continuation instruction. Verify live Issues/CI before acting.\n\n## Mission
 เมื่อพบรถในสถานที่ราชการ ผู้บังคับบัญชาหรือเจ้าหน้าที่ที่ได้รับสิทธิ์ต้องทราบว่า **ใครเป็นผู้รับผิดชอบรถคันนี้ และจะโทรติดต่อได้อย่างไร** อย่างรวดเร็ว ผ่านมือถือ Android/iOS
 
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
