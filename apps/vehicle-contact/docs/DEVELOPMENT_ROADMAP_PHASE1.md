@@ -27,6 +27,11 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 | Vehicle/contact/QR CRUD, real UI, live GAS | **NOT IMPLEMENTED / NOT VERIFIED** | Only `system.health` safe bootstrap is routed |
 | PDPA approvals and field/UAT | **OPEN** | Operational/legal decisions pending |
 
+## 2C. GitHub Actions → GAS manual source deploy (2026-11-17)
+- New [manual gated deployment workflow](../../../.github/workflows/deploy-vehicle-gas.yml) targeting the owner-provided Apps Script ID; source build/tests required, manual `PUSH_VEHICLE_GAS` confirmation on main, `clasp push --force` and immutable source version creation.
+- [Deployment setup / safe overwrite runbook](GAS_GITHUB_ACTIONS_DEPLOYMENT.md).
+- **Status: WORKFLOW SOURCE CONFIGURED; NOT AUTHENTICATED/NOT DEPLOYED.** OAuth secret `P6VC_CLASPRC_JSON`, verifying target script contents/backups and first authorized run are pending. No Web App `/exec` publication or production security approval.
+
 ## 2A. Controlled Schema Sync — M2 scope (2026-11-17)
 
 **SSOT authority:** [Canonical database schema](../schema/database.schema.json) is the only authoritative dictionary. [Human-readable Data Dictionary](GAS_DATA_DICTIONARY.md) and [implementation record](SCHEMA_SYNC_IMPLEMENTATION.md) are documentation projections.
