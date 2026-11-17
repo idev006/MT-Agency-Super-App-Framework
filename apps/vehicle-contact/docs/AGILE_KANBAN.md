@@ -102,3 +102,7 @@ This section supersedes the *initial snapshot counts only* above; preserve origi
 - This connected GitHub integration exposes issue `milestone` assignment but not creation/listing of native milestones or GitHub Projects board creation. Do not claim M1–M6 native objects or a draggable Projects board exist until verified by an authorized maintainer.
 
 **Next board hygiene:** preserve one `status:*` label per issue; reconcile all 31 issues and exact counts against GitHub before publishing metrics; use existing issue bodies for acceptance/evidence, not duplicate tracking documents. Any milestone-number assignment requires verification of the actual native milestone ID and title.
+
+### Complete issue-state census (2026-11-17)
+
+All **31** issues VC-W01–VC-W31 were individually fetched after the initial reconciliation. GitHub issue states/labels yielded **5 DONE-EVIDENCED (closed): W01, W23, W24, W25, W30; 3 REVIEW: W07, W29, W31; 6 TODO: W08, W09, W15, W18, W26, W28; 16 BLOCKED: W02–W06, W10–W14, W16–W17, W19–W21, W27; 1 ON-HOLD: W22; 0 IN-PROGRESS**. Counts are a point-in-time audit, not an auto-refreshing dashboard. All fetched issues had **no native milestone assigned** (`milestone: null`); `area:m0` through `area:m6` are existing labels and the roadmap also includes M0. Native milestone creation/Projects board provisioning remains unverified/unavailable via this connector, so no milestone IDs were fabricated.
