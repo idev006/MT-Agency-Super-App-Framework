@@ -13,6 +13,10 @@
 ## Phase 1 technology direction (2026-11-17)
 **Approved architecture direction:** Vehicle Contact Phase 1 uses Google Sheets as the primary datastore: **one worksheet/tab = one logical table** within an application spreadsheet. The app-specific GAS Backend API accesses these tables via domain ports and Sheets repository adapters. Frontend communicates through its GAS API adapter and a verified, non-bypassable security boundary. **Username/Password Phase 1 authentication** replaces reliance on the unfinished MT-I-AM; production credential/session design and direct GAS endpoint protection are still open security gates. Earlier Supabase-centric design paragraphs are historical draft alternatives, not the Phase 1 choice. See [Phase 1 Google Sheets Data Architecture](docs/PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).
 
+## Live Agile Kanban tracking
+- [Agile Kanban — live GitHub Issues lanes](docs/AGILE_KANBAN.md) and [repository Issues](https://github.com/idev006/MT-Agency-Super-App-Framework/issues): **28 work items VC-W01–VC-W28 created**, 4 completed with evidence and closed; remaining items tracked via `status:*`, `area:*`, `priority:*` labels.
+- This is an **issue-backed Kanban** with live filtered GitHub lists; **no native GitHub Projects board has been created**. Owner/review assignments and target dates are pending actual team decisions.
+
 ## Development management — Phase 1 (2026-11-17)
 - [System Analyst Baseline](docs/SYSTEM_ANALYST_BASELINE_PHASE1.md) — problem, actors, business processes, requirements, use cases, architecture, data model and open decisions; planning baseline, **not policy/PDPA release approval**.
 - [Development Roadmap & Backlog](docs/DEVELOPMENT_ROADMAP_PHASE1.md) — M0–M6 milestones, VC-W01–VC-W22 work items, dependencies, acceptance evidence, security-first critical path and Phase-1 no-pass boundaries.
