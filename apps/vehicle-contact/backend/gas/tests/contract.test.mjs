@@ -74,6 +74,7 @@ const expected=[
  'APPLICATION$migrations$MigrationRunner.gs',
  'INFRASTRUCTURE$migrations$SheetsMigrationAdapter.gs',
  'DOMAIN$policies$SecurityEventPolicy.gs',
+ 'DOMAIN$policies$VehicleLifecycle.gs',
  'SCHEMA$database.schema.gs'
 ].sort();
 assert.deepEqual(gasFiles,expected);
