@@ -103,8 +103,8 @@ const check=async()=> {
  if(!a.ok||!gate.ok){runner.status='FAIL';runner.reason='Public route capability preflight unexpectedly failed';return;}
  if(!isEnabled){
   runner.status=runner.tests.some(x=>x.status==='FAIL')?'FAIL':'PASS_PARTIAL_BLOCKED';
-  runner.reason='VEHICLE_API_ENABLED is false for the currently published /exec deployment; protected HTTP AuthN/business operations cannot be tested here';
-  runner.blocked.push({scope:'49 non-health API operations',status:'BLOCKED_BY_FEATURE_GATE',count:totalOps-1,
+  runner.reason='Protected HTTP dispatcher returned SERVICE_UNAVAILABLE. This is consistent with VEHICLE_API_ENABLED disabled, but may also indicate missing protected-service configuration. No authenticated business API could be exercised.';
+  runner.blocked.push({scope:'Non-health business API operations',status:'BLOCKED_BY_FEATURE_GATE',count:totalOps-1,
    note:'Catalog operations blocked, not executed; DO NOT label 49 tests as passed'});
   console.log('GATE CLOSED: authenticated /exec tests blocked, no synthetic credentials sent');
   return;

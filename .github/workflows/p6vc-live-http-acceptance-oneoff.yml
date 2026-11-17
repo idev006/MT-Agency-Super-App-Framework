@@ -1,12 +1,12 @@
-name: P6VC Live HTTP Acceptance (isolated one-off)
+name: P6VC Authenticated HTTP Acceptance (manual only)
 on:
-  push:
-    branches:
-      - test/p6vc-live-http-e2e-20261117
-    paths:
-      - '.github/workflows/p6vc-live-http-acceptance-oneoff.yml'
-      - 'apps/vehicle-contact/backend/gas/scripts/verify-live-gateway.mjs'
   workflow_dispatch:
+    inputs:
+      staging_url:
+        description: 'GAS /exec URL. Use a separate synthetic-only staging Script Project for authenticated tests.'
+        required: true
+        type: string
+        default: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
 permissions:
   contents: read
 jobs:
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      P6VC_GAS_EXEC_URL: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
+      P6VC_GAS_EXEC_URL: ${{ inputs.staging_url }}
     steps:
       - uses: actions/checkout@v4
         with:
