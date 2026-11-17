@@ -1,7 +1,7 @@
 # MT Master GAS Backend API Blueprint — Architecture & Design Patterns
 
 **Document ID:** MT-GAS-MBP-001  
-**Version:** 1.3.0  
+**Version:** 1.4.0  
 **Effective baseline:** 2026-11-17  
 **Decision status:** **MANDATORY architecture direction as instructed by the repository owner; NOT a production/security/legal release approval**  
 **Scope:** Every new or materially modified Google Apps Script (GAS) backend/API within `apps/<app-id>/backend/gas/` of this repository.
@@ -157,6 +157,41 @@ A legacy `operation: "vehicles.lookup"` envelope MAY remain during a documented 
 - **Outbox/queue-like workflow:** only if a durable, testable store and recovery mechanism exist; GAS triggers alone do not guarantee exactly-once delivery.
 
 Avoid design-pattern proliferation without a concrete use case.
+
+## 4A. Mandatory GAS code organization pattern (ES Modules + runtime facade)
+
+**Normative Code Design Pattern — MT-GAS-CODE-001.** For maintainable client-serving GAS backends, the canonical GitHub source SHOULD use **ES Modules (named imports/exports)** and MUST preserve the **Hexagonal / Ports & Adapters** boundaries. A reviewed ADR may approve an equivalent namespace/module approach for very small or legacy projects.
+
+1. **Source-time modules, runtime bundle:** Apps Script's V8 runtime does not execute native Node-style ES module imports directly. Use an approved pinned bundler (e.g. esbuild), producing a deterministic GAS-compatible artifact; do not upload raw `import/export` source as though Apps Script executes it.
+2. **Thin global facade:** Generated GAS bundle MUST expose only the required top-level callable functions such as `doGet(e)`, `doPost(e)` and carefully reviewed administrative entrypoints. Prefer a single application-specific namespace (e.g. `P6VC`) for its implementation facade and avoid global business-service functions.
+3. **Revealing-module encapsulation:** Named ES module exports describe source-time interfaces; bundling hides implementation details in the generated IIFE/module scope. A separate Revealing Module Pattern implementation is optional, not required in addition to modules.
+4. **Constructor/factory Dependency Injection:** Application use cases receive port implementations via arguments/factories, not global service locators or hardcoded `SpreadsheetApp`. The Composition Root constructs per-invocation dependencies appropriate to the operation and environment.
+5. **No mutable global session:** Never use GAS process-global variables as authenticated session, cross-invocation cache, tenant identity or transaction storage; App Script executions do not guarantee durable instance state.
+6. **Business API groups:** Keep `(version, group, action)` allowlists and per-action permissions in the API Layer; do not export arbitrary functions or connect a client directly to infrastructure adapters.
+7. **No premature Singleton / Factory proliferation:** Use stateless factories and simple objects; Strategy, Factory registry and other patterns only when measurable alternatives exist. Do not instantiate unrelated providers on each request.
+8. **Testability:** Run native Node unit tests against pure modules and injected fake ports; execute **the generated deployment bundle** in a GAS-like test harness to verify global `doGet/doPost` and admin function exposure, response contracts, protected-operation denial, syntax/runtime compatibility, and no exposure of secrets.
+9. **Deployment discipline:** Exclude `dist/`, Node dependencies, credential files and clasp tokens from Git source; build produces `Code.gs` + manifest in the declared clasp root. `clasp push` must run only from approved, verified build and credentials; production deployments still require security and release gates.
+10. **Reviewable boundaries:** CI SHOULD enforce import-boundary rules (Domain never imports GAS, API, Infrastructure, browser; Application never imports GAS, infrastructure or API; Infrastructure implements domain/application ports). Folder existence alone is insufficient evidence.
+
+**Recommended source/runtime view:**
+
+```text
+GitHub: src/entrypoints → api/(routes,groups,controllers,dto,security,responses)
+             → application/use-cases → domain/ports
+                                     ← infrastructure/adapters
+             → composition/ (dependency assembly)
+    ES Modules + tests + pinned build tool
+                   |
+                bundle
+                   v
+Apps Script: global doGet/doPost/admin function → private app namespace/module
+                   |
+                runtime adapters
+                   v
+Authorized Google Sheets / supported provider
+```
+
+This is a **code pattern requirement** complementing the existing API grouping, trust-boundary and authentication rules. A namespace by itself is not a substitute for dependency inversion, policy checks or secure storage.
 
 ## 5. Mandatory per-app source organization
 
@@ -365,7 +400,7 @@ Choose by functional need, security posture, scale, cost and operational support
 | Gate | Minimum evidence | Release policy |
 |---|---|---|
 | GAS-G01 Structure | Mandatory `src/api/{routes,controllers,dto,security,responses}` for client-serving GAS, entrypoint/application/domain/infrastructure/composition layers, manifest; no app docs under `blueprint/` | Fail PR if missing for declared GAS backend |
-| GAS-G02 Dependency | Domain/Application do not import GAS services, adapters implement ports | Fail PR |
+| GAS-G02 Dependency & Code Pattern | Domain/Application do not import GAS services, adapters implement ports; source modules are independently testable and build resolves to a GAS-compatible global entrypoint facade | Fail PR |
 | GAS-G03 API Group & Contract | Versioned group/action registry, controller mappings, valid/invalid requests, unknown group/action/version, paging, error envelope, DTO mapping, per-operation security negative tests | Fail PR |
 | GAS-G04 AuthZ | Anonymous, invalid identity, wrong app role/scope, direct-GAS URL bypass, data enumeration | Block release until independently tested |
 | GAS-G05 Persistence & Storage | Selected provider's schema, migrations, access policy, conflicts, idempotency, transactions/consistency, backups, adapter contracts, rollback/reconciliation; Sheets-specific locks/batching only if using Sheets | Fail staging |
@@ -406,4 +441,4 @@ Choose by functional need, security posture, scale, cost and operational support
 - [Apps Script Web App manifest](https://developers.google.com/apps-script/manifest/web-app-api-executable) — access and executeAs.
 - [LockService](https://developers.google.com/apps-script/reference/lock/lock-service) — concurrent access control.
 
-**End of normative blueprint MT-GAS-MBP-001 (v1.3.0).**
+**End of normative blueprint MT-GAS-MBP-001 (v1.4.0).**
