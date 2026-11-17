@@ -1,5 +1,8 @@
 # MT Agency Super App Framework — MASTER BLUEPRINT
 
+> **Document consistency note (2026-11-17):** This is the earlier **platform/identity design draft**, not the current frontend technology authority. References to **React / TypeScript** in the architecture diagram and proposed UI baseline below are historical proposals and are **superseded for all web applications** by the approved **Vue 3 / Pinia / Vue Router / Vite** baseline in [MT Web Application Master Blueprint](../MASTER_WEB_APP_BLUEPRINT.md). Platform identity, SSO and authorization proposals retain their draft status until separately approved. Do not infer code migration or production approval.
+
+
 **Document ID:** MT-SAF-MBP-001  
 **Version:** 1.0.0-draft  
 **Date:** 2026-10-30  
