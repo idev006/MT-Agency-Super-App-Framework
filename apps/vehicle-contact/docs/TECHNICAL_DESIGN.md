@@ -1,10 +1,11 @@
 # Technical Design — MT Vehicle Contact v1.0
 
 **Status:** PROPOSED. Technical decisions are candidates until PoC/security review.  
+**QC note (2026-11-17):** The currently approved frontend baseline is Vue 3, Vue Router, Pinia, Tailwind, DaisyUI and Vite. Historical React statements in this draft must not be used to choose the implementation stack; backend choices and integration remain proposals pending their own gates.  
 **Parent:** [Master Blueprint](../../docs/MASTER_BLUEPRINT.md)
 
 ## 1. System design
-**Client:** React + TypeScript mobile-first Shell; HTTPS host, candidate GitHub Pages. Native camera QR works by web URL, in-app scanner uses browser camera APIs.
+**Client:** [Historical proposed React + TypeScript shell, superseded for frontend implementation by approved Vue 3 Web App Blueprint](../../../blueprint/MASTER_WEB_APP_BLUEPRINT.md); HTTPS host, candidate GitHub Pages. Native camera QR works by web URL, in-app scanner uses browser camera APIs.
 
 **Core:** platform Supabase Auth + PostgreSQL/RLS + Edge Functions (candidate). Domain module uses central access control `vehicle.access` and granular permissions. Internal app uses shared session; LINE LIFF identity linkage is an independent PoC.
 
