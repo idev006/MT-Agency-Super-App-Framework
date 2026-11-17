@@ -37,3 +37,34 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User
+  participant FE as Vue Client
+  participant API as GAS API
+  participant IdP as Google OIDC tokeninfo
+  participant Identity as IdentityOperations
+  participant DB as Sheets
+  User->>FE: Link Google while locally signed in
+  FE->>API: auth.linkGoogle(password,idToken,session)
+  API->>Identity: Authorize session; verify local password
+  Identity->>IdP: Verify Google token audience / issuer / expiry
+  alt Token valid and sub unused
+    Identity->>DB: Insert vc_user_identities mapping
+    Identity->>DB: Append GOOGLE_LINKED audit
+    API-->>FE: linked true
+    User->>FE: Later Google sign-in
+    FE->>API: auth.googleLogin(idToken)
+    API->>IdP: Verify token claims
+    API->>DB: Resolve existing linked sub to ACTIVE vc_users
+    API->>DB: Issue digest-only vc_sessions
+    API-->>FE: Session token / expiry
+  else Invalid token or unknown/duplicate sub
+    API-->>FE: Safe authentication or link error
+  end
+  Note over API,IdP: External OIDC verifier requires separate live provider evidence
+```

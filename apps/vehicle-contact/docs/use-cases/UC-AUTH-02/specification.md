@@ -36,3 +36,40 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User
+  actor Admin as SYSTEM_ADMIN
+  participant FE as Vue Client
+  participant API as GAS API
+  participant Identity as IdentityOperations
+  participant Session as SessionService
+  participant DB as Sheets
+  User->>FE: Submit old and new password
+  FE->>API: auth.changePassword with sessionToken
+  API->>Session: authorize allowPasswordChange
+  API->>Identity: Validate old password / hash new
+  alt Old password valid
+    Identity->>DB: Update vc_users hash and change_required false
+    Identity->>DB: Append password-change audit
+    Identity->>Session: revokeUser(userId)
+    Session->>DB: Revoke all active vc_sessions
+    API-->>FE: changed true, reauthenticate true
+  else Invalid old password
+    API-->>FE: INVALID_CREDENTIALS
+  end
+  Admin->>API: users.resetPassword(userId,tempPassword)
+  API->>Session: Require users.manage
+  alt Allowed
+    API->>Identity: resetPassword()
+    Identity->>DB: Replace hash, set change_required true
+    Identity->>Session: Revoke all sessions
+    API-->>Admin: reset true
+  else Forbidden
+    API-->>Admin: FORBIDDEN
+  end
+```

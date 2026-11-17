@@ -35,3 +35,31 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Admin as SYSTEM_ADMIN
+  participant FE as Vue Org Admin
+  participant API as GAS API / RBAC
+  participant Orgs as AdministrationOperations
+  participant DB as Sheets
+  FE->>API: organizations.list
+  API->>API: Require organizations.read
+  API->>DB: Read vc_organizations
+  API-->>FE: Organization rows
+  Admin->>FE: Create, update or disable organization
+  FE->>API: organizations.create / update / disable
+  API->>API: Require organizations.manage
+  alt Valid POLICE hierarchy or flat EXTERNAL
+    API->>Orgs: Validate type, parent and cycle guard available
+    Orgs->>DB: Insert or update vc_organizations
+    Orgs->>DB: Append change audit
+    API-->>FE: Organization ID / success
+  else Invalid type, parent or permission
+    API-->>FE: INVALID_ORG_TYPE / PARENT_NOT_FOUND / FORBIDDEN
+  end
+  Note over Orgs,DB: Arbitrary hierarchy cycles are not currently detected: design gap
+```

@@ -39,3 +39,39 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor User
+  participant FE as Vue Client
+  participant GAS as GAS doPost
+  participant API as Router + Controller
+  participant Auth as IdentityOperations + SessionService
+  participant DB as Sheets
+  User->>FE: Enter username and password
+  FE->>GAS: POST auth.login(username,password)
+  GAS->>API: Version + DTO validation / feature gate
+  API->>Auth: login()
+  Auth->>DB: Read recent failures and vc_users
+  alt User active and password valid; under rate limit
+    Auth->>DB: Record SUCCESS security event
+    Auth->>DB: Insert vc_sessions with token digest
+    Auth-->>API: Session token, expiry, mustChangePassword
+    API-->>FE: ok true / sessionToken
+    FE->>GAS: POST auth.session(sessionToken)
+    GAS->>Auth: Validate token digest, idle, expiry, roles
+    Auth->>DB: Update last_seen_at
+    Auth-->>FE: userId / roles / expiry
+    User->>FE: Logout
+    FE->>GAS: POST auth.logout(sessionToken)
+    GAS->>Auth: Revoke vc_sessions row
+    Auth-->>FE: revoked true
+  else Invalid login or blocked account
+    Auth->>DB: Record FAILED security event where allowed
+    Auth-->>FE: INVALID_CREDENTIALS / LOGIN_RATE_LIMIT
+  end
+  Note over FE,GAS: Browser tokens are not trusted roles; test direct GAS URL bypass before release
+```
