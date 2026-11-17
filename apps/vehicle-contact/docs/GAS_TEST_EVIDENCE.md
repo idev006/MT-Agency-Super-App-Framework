@@ -16,6 +16,12 @@
 | Per-operation authorization and direct endpoint bypass | **NOT IMPLEMENTED / BLOCKING** |
 | QR, data CRUD, concurrency, PDPA | **NOT IMPLEMENTED / BLOCKING** |
 
+## Live /exec API GET/POST contract — PASS 7/7 (2026-11-17)
+
+- External [GitHub Actions run 44036525176](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44036525176) (job 133880617061) used real HTTPS GET and POST and observed all seven expected responses including missing group and disabled protected routes.
+- Source of test cases: [smoke-api.mjs](../backend/gas/scripts/smoke-api.mjs); detailed [API evidence](GAS_LIVE_API_TEST_EVIDENCE.md). Workflow is manual-only for later runs.
+- **Not production authorization evidence:** protected routes are unconditionally disabled, and deployed Web App version is still not verified.
+
 ## GitHub source-mirrored multi-file GAS — VERIFIED 2026-11-17 (Version 5)
 
 - **Workflow run:** [44035053861](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44035053861), conclusion **success**, commit `b1ea83d1f6e67d65952754b013651b23edff6b8b`.
