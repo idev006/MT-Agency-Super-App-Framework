@@ -4,6 +4,7 @@
 
 | ID | Date | Subject | Status | Evidence / implication |
 | --- | --- | --- | --- | --- |
+| VC-ADR-011 | 2026-11-17 | Phase-1 vehicle media location is project-root child Google Drive `uploads/` folder, with `vehicles/`, `staging/`, `quarantine/` base folders | **STORAGE LOCATION SELECTED / BASE FOLDERS CREATED; MEDIA RELEASE BLOCKED** | Owner-provided folder link, verified Drive parent ID and physical folder creation; [Media Storage Design](VEHICLE_MEDIA_STORAGE_DESIGN.md); access/retention/photo minimum still OPEN |
 | VC-ADR-009 | 2026-11-17 | Phase 1 primary datastore is Google Sheets; one tab per logical table, accessed only through GAS repository adapter | **ARCHITECTURE DIRECTION APPROVED; NOT IMPLEMENTED** | Owner direction; [Phase 1 data architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md). Supabase primary datastore descriptions in historical draft superseded for Phase 1; column schema remains proposed |
 | VC-ADR-010 | 2026-11-17 | MT-I-AM deferred; Phase 1 uses Username/Password sign-in, subject to secure server-side verification and non-bypassable GAS API | **ARCHITECTURE DIRECTION APPROVED; SECURITY IMPLEMENTATION OPEN** | [Phase 1 data architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md). No plaintext passwords in Sheets; identity/session provider still to be selected |
 | VC-ADR-001 | 2026-11-16 | Keep this application's docs in `apps/vehicle-contact/docs/`, POC code in `poc/qr-scanner/` | **STRUCTURE ACCEPTED** | Project-owner instruction, Git history; no production approval |
