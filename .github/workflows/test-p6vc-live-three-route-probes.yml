@@ -1,0 +1,59 @@
+name: P6VC Live GAS Three-Route Smoke Probe (no credentials)
+on:
+  push:
+    branches:
+      - test/p6vc-live-api-three-probes-20261118
+    paths:
+      - .github/workflows/test-p6vc-live-three-route-probes.yml
+permissions:
+  contents: read
+concurrency:
+  group: p6vc-non-auth-three-route-smoke
+  cancel-in-progress: false
+jobs:
+  verify:
+    name: Probe existing /exec without login, secrets or writes
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      TARGET_URL: https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec
+    steps:
+      - name: GET health; POST invalid login; POST unauthenticated session
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          const target=process.env.TARGET_URL;
+          const cases=[
+            {name:'API-01.HEALTH',method:'GET',expectedOk:true,expectedStatus:'bootstrap'},
+            {name:'API-02.LOGIN_INVALID_PAYLOAD',method:'POST',group:'auth',action:'login',payload:{},expectedError:'INVALID_REQUEST'},
+            {name:'API-03.SESSION_NO_TOKEN',method:'POST',group:'auth',action:'session',payload:{},expectedError:'UNAUTHENTICATED'}
+          ];
+          let passed=0;
+          for(const c of cases){
+            const options=c.method==='GET'?{method:'GET'}:{
+              method:'POST',
+              headers:{'Content-Type':'text/plain;charset=utf-8'},
+              body:JSON.stringify({apiVersion:'v1',group:c.group,action:c.action,payload:c.payload})
+            };
+            options.redirect='follow';
+            options.signal=AbortSignal.timeout(30000);
+            try{
+              const response=await fetch(target,options);
+              const raw=await response.text();
+              const result=JSON.parse(raw);
+              const good=response.status===200&&(
+                c.expectedOk? result.ok===true&&result.data?.status===c.expectedStatus :
+                result.ok===false&&result.error?.code===c.expectedError
+              );
+              console.log((good?'PASS':'FAIL')+' '+c.name+' HTTP_'+response.status+
+                (result.ok===false?' errorCode='+String(result.error?.code||'UNKNOWN'):' ok='+String(result.ok)));
+              if(good)passed++;
+            }catch(e){
+              // Do not print URLs, response bodies, credentials, or session tokens.
+              console.log('FAIL '+c.name+' transportOrParse='+String(e?.name||'UNKNOWN').slice(0,50));
+            }
+          }
+          console.log('FINAL '+JSON.stringify({status:passed===3?'PASS':'FAIL',pass:passed,failed:3-passed,
+            executed:3,scope:'unauthenticated-route-smoke-only',credentialsUsed:false,mutation:false}));
+          if(passed!==3)process.exitCode=1;
+          NODE
