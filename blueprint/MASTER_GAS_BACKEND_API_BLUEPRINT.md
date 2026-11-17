@@ -1,7 +1,7 @@
 # MT Master GAS Backend API Blueprint — Architecture & Design Patterns
 
 **Document ID:** MT-GAS-MBP-001  
-**Version:** 1.2.1  
+**Version:** 1.3.0  
 **Effective baseline:** 2026-11-17  
 **Decision status:** **MANDATORY architecture direction as instructed by the repository owner; NOT a production/security/legal release approval**  
 **Scope:** Every new or materially modified Google Apps Script (GAS) backend/API within `apps/<app-id>/backend/gas/` of this repository.
@@ -75,6 +75,51 @@ Authorized Database / Storage / External Service
 
 For internal-only GAS automations with **no client-facing API**, an approved ADR may replace public routing with a typed internal service interface while retaining separation and security requirements.
 
+### Mandatory API grouping by business capability
+
+Every client-serving GAS Backend MUST organize its published operations into **cohesive API groups** aligned with business capabilities / bounded contexts or resources, not by database provider, UI page, or an ever-growing single controller. Examples below are illustrative, not mandatory groups for every app.
+
+```text
+GAS doGet / doPost
+  -> API Version Router
+      -> vehicles group
+          -> vehicles.lookup
+          -> vehicles.register
+          -> vehicles.update
+      -> contacts group
+          -> contacts.read
+          -> contacts.update
+      -> reports group
+          -> reports.summary
+      -> health group (minimal safe diagnostics; never expose secrets)
+```
+
+**Group governance rules**
+1. Each operation is uniquely identified by `(apiVersion, group, action)`; recommend `group.action` such as `vehicles.lookup`, not method-dependent synthetic REST endpoints. Keep existing `vehicle.lookup` as a compatibility alias only with an explicit versioned migration/deprecation plan.
+2. The **version router** MUST dispatch only to registered groups; each **group router** dispatches only allowlisted actions to a small corresponding controller or handler.
+3. All groups use **one shared contract** for validation, verified authorization context, DTO response/error envelopes, correlation IDs, privacy-safe logging and version negotiation. A group MUST NOT bypass security middleware or define unreviewed response shapes.
+4. Define security policy **per operation**, not only per group. For example, read/contact lookup and administrative registration may require different permissions and scopes.
+5. One API group normally owns one bounded business concern and its Application Use Cases. Split a group when responsibilities or ownership diverge; do not create a group just because there is a new storage table, spreadsheet tab or frontend screen.
+6. Group names are stable lowercase ASCII plural resource nouns or bounded-capability names (for example `vehicles`, `contacts`, `reports`). Avoid generic catch-alls (`misc`, `utils`) and version suffixes inside names.
+7. Publish all groups and their operations in the app-specific `GAS_API_SPEC.md` with contract version, request/response schema, permitted client types, permission/scope, idempotency, example and deprecation.
+8. Test that unknown groups, unknown actions, unsupported versions, incorrect permissions and malformed payloads are rejected with the documented safe error envelope.
+9. **Google Apps Script constraint:** Grouping is a **logical router/controller design** behind `doGet(e)`/`doPost(e)`; it does not imply independently hosted native routes `/api/v1/vehicles` or arbitrary HTTP verbs/status codes. A trusted Gateway/BFF may expose true REST routes if supported and approved.
+10. Each GAS Backend owns its group definitions. The Master Blueprint defines pattern and contract, not the concrete business groups or endpoints of every app.
+
+**Recommended request envelope** (via validated, authorized transport; not itself an authentication mechanism):
+
+```json
+{
+  "apiVersion": "v1",
+  "group": "vehicles",
+  "action": "lookup",
+  "requestId": "generated-opaque-id",
+  "payload": {"plate":"TEST-PLATE"}
+}
+```
+
+A legacy `operation: "vehicles.lookup"` envelope MAY remain during a documented compatibility period; when provided, parse/normalize at the shared API boundary and never allow conflicting group/action/operation values. New designs SHOULD use `group` and `action` explicitly.
+
 ### Layer responsibilities
 
 | Layer | MUST own | MUST NOT own |
@@ -134,7 +179,9 @@ apps/<app-id>/
       src/
         entrypoints/               # WebApp.gs, GAS runtime bridge only
         api/                       # mandatory client-serving API Layer
-          routes/                 # versioned operation allowlist
+          routes/                 # version router + per-group allowlists
+          groups/                 # app-owned business API groups
+            <group-name>/         # group router + group controllers/DTOs as needed
           controllers/            # use case invocation, no business logic
           dto/                    # request/response validation & mapping
           security/               # verified auth context and authorization
@@ -169,7 +216,7 @@ apps/<app-id>/
 
 ### Ingress limitations and routing
 - Official GAS Web Apps expose `doGet(e)` and `doPost(e)` returning `HtmlOutput` or `TextOutput`; **do not claim native PATCH/PUT/DELETE handlers or arbitrary status/header control**.
-- Client operations MUST pass through the dedicated **API Layer**. If routing multiple actions through POST, use an explicit **allowlisted operation name** with API version, not eval/dynamic function invocation; enforce action-specific authentication/authorization.
+- Client operations MUST pass through the dedicated **API Layer**, organized into registered **business API groups**. If routing multiple actions through POST, use an explicit **allowlisted `(apiVersion, group, action)`** contract, not eval/dynamic function invocation; enforce action-specific authentication/authorization.
 - GET MUST be read-only; sensitive GET URLs and query parameters must not contain tokens, phone numbers or other personal data.
 - If real HTTP status codes, custom authentication headers, standard CORS preflight, high-volume REST semantics or direct OAuth token verification are essential, use a **trusted gateway/BFF** or choose a more suitable backend. Do not fake HTTP semantics in ways clients might mistake for secure behavior.
 - Browser access to a GAS Web App across origins requires verified integration behavior; do not assume JSON POST works from all browsers or WebViews. Test redirect, CORS, cookies and identity in target clients.
@@ -179,7 +226,8 @@ Request (via approved secured transport):
 ```json
 {
   "apiVersion": "v1",
-  "operation": "vehicle.lookup",
+  "group": "vehicles",
+  "action": "lookup",
   "requestId": "generated-opaque-id",
   "payload": { "plate": "TEST-PLATE", "province": "TEST-PROVINCE" }
 }
@@ -205,7 +253,7 @@ Error:
 }
 ```
 
-Use operation names and response schemas published in the app's `GAS_API_SPEC.md`. Protect sensitive fields and avoid using raw error messages in responses. Do not treat `ok:false` as a substitute for correct access control at ingress.
+Use API group/action names and response schemas published in the app's `GAS_API_SPEC.md`. Protect sensitive fields and avoid using raw error messages in responses. Do not treat `ok:false` as a substitute for correct access control at ingress.
 
 ### Versioning and evolution
 - Declare `apiVersion`; treat breaking field/behavior changes as contract changes.
@@ -318,7 +366,7 @@ Choose by functional need, security posture, scale, cost and operational support
 |---|---|---|
 | GAS-G01 Structure | Mandatory `src/api/{routes,controllers,dto,security,responses}` for client-serving GAS, entrypoint/application/domain/infrastructure/composition layers, manifest; no app docs under `blueprint/` | Fail PR if missing for declared GAS backend |
 | GAS-G02 Dependency | Domain/Application do not import GAS services, adapters implement ports | Fail PR |
-| GAS-G03 API Layer & Contract | Versioned router/controller mappings, valid/invalid requests, unknown operation, version, paging, error envelope, DTO mapping, security-policy negative tests | Fail PR |
+| GAS-G03 API Group & Contract | Versioned group/action registry, controller mappings, valid/invalid requests, unknown group/action/version, paging, error envelope, DTO mapping, per-operation security negative tests | Fail PR |
 | GAS-G04 AuthZ | Anonymous, invalid identity, wrong app role/scope, direct-GAS URL bypass, data enumeration | Block release until independently tested |
 | GAS-G05 Persistence & Storage | Selected provider's schema, migrations, access policy, conflicts, idempotency, transactions/consistency, backups, adapter contracts, rollback/reconciliation; Sheets-specific locks/batching only if using Sheets | Fail staging |
 | GAS-G06 External API | Timeouts, bounded retry, errors, no secret leakage | Fail staging |
@@ -358,4 +406,4 @@ Choose by functional need, security posture, scale, cost and operational support
 - [Apps Script Web App manifest](https://developers.google.com/apps-script/manifest/web-app-api-executable) — access and executeAs.
 - [LockService](https://developers.google.com/apps-script/reference/lock/lock-service) — concurrent access control.
 
-**End of normative blueprint MT-GAS-MBP-001 (v1.2.1).**
+**End of normative blueprint MT-GAS-MBP-001 (v1.3.0).**
