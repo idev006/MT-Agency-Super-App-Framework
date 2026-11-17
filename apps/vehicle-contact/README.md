@@ -10,6 +10,11 @@
 
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
+## Use Case / Sequence Diagram SSOT (Phase 1)
+- [20 Source-Reviewed Use Cases and Mermaid Sequence Diagrams](docs/use-cases/README.md) map all **50 declared API v1 operations** to one owner, actor, main/error flows, storage side effects and test identifiers.
+- [Requirements-to-API-to-Test Traceability Matrix](docs/traceability-matrix.md) records known contract and code discrepancies requiring decisions; [MT UML Design Standard](../../blueprint/standards/USE_CASE_SEQUENCE_STANDARD.md) governs FE/BE design reviews.
+- **Design only:** Real GAS Editor acceptance and authenticated staging HTTP remain unverified. Treat earlier draft architecture and stale counts below as historical where superseded by these canonical Phase-1 documents.
+
 ## Phase 1 technology direction (2026-11-17)
 **Approved architecture direction:** Vehicle Contact Phase 1 uses Google Sheets as the primary datastore: **one worksheet/tab = one logical table** within an application spreadsheet. The app-specific GAS Backend API accesses these tables via domain ports and Sheets repository adapters. Frontend communicates through its GAS API adapter and a verified, non-bypassable security boundary. **Username/Password Phase 1 authentication** replaces reliance on the unfinished MT-I-AM; production credential/session design and direct GAS endpoint protection are still open security gates. Earlier Supabase-centric design paragraphs are historical draft alternatives, not the Phase 1 choice. See [Phase 1 Google Sheets Data Architecture](docs/PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).
 

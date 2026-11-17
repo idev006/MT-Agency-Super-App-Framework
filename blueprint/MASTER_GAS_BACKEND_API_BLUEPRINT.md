@@ -14,6 +14,7 @@
 - This document governs GAS backend architecture, server-side behavior, GAS platform constraints, security boundaries, persistence adapters and deployment.
 - [Platform/Identity Blueprint](platform/MASTER_BLUEPRINT.md) covers proposed shared identity/SSO/authorization governance; its draft status does not grant a GAS service permission to trust client-supplied roles.
 - [API Integration Standard](standards/API_INTEGRATION_STANDARD.md), [Security Standard](standards/SECURITY_STANDARD.md) and [Testing & Deployment Standard](standards/TESTING_AND_DEPLOYMENT.md) continue to apply.
+- [Use Case & Sequence Diagram Standard](standards/USE_CASE_SEQUENCE_STANDARD.md) governs versioned actor flows, API ownership, negative/compensation paths and traceable tests for material business operations. App-specific sequences remain under `apps/<app-id>/docs/`.
 - `apps/<app-id>/docs/` contains app-specific API specifications, privacy/legal approvals, schema, test evidence, data retention, and service ownership. App code lives under its app root, **never** in `blueprint/`.
 - Source files committed to GitHub are canonical. Runtime deployments, generated bundles, secrets and credentials are not canonical source.
 
