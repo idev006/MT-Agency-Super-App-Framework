@@ -1,9 +1,14 @@
 {
   "name": "@p6/vehicle-contact-gas",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
+  "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",
-    "test": "node tests/contract.test.mjs"
+    "test": "node tests/contract.test.mjs",
+    "check": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
   }
 }
