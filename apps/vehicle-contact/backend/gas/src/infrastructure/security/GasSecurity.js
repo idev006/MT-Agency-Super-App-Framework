@@ -1,3 +1,4 @@
+import {pbkdf2Sha256} from './Pbkdf2.js';
 // GAS cryptography adapter; secrets are Script Properties, never browser-supplied.
 export function createGasSecurity({utilities,urlFetchApp,propertiesService,clock}) {
  const props=propertiesService.getScriptProperties();
@@ -13,16 +14,10 @@ export function createGasSecurity({utilities,urlFetchApp,propertiesService,clock
   let difference=0;for(let i=0;i<a.length;i++)difference|=a.charCodeAt(i)^b.charCodeAt(i);
   return difference===0;
  }
- // PBKDF2-HMAC-SHA256, one 32-byte block. GAS execution time must be profiled in staging.
+ // PBKDF2-HMAC-SHA256 with pure JS inner rounds to avoid slow GAS service calls.
  function pbkdf2(password,saltHex,iterations){
   const key=utilities.newBlob(password).getBytes();
-  let u=mac(bytes(saltHex).concat([0,0,0,1]),key);
-  const out=Array.from(u,x=>x&255);
-  for(let i=1;i<iterations;i++){
-   u=mac(u,key);
-   for(let j=0;j<out.length;j++)out[j]^=u[j]&255;
-  }
-  return hex(out);
+  return hex(pbkdf2Sha256(key,bytes(saltHex),iterations));
  }
  function hashPassword(password){
   if(typeof password!=='string'||password.length<12||password.length>128)throw new Error('INVALID_PASSWORD');
