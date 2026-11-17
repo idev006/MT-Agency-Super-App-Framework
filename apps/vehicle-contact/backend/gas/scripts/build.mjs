@@ -1,21 +1,23 @@
-import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import {mkdirSync,copyFileSync} from 'node:fs';
 import {join,resolve} from 'node:path';
+import {build} from 'esbuild';
 const root=resolve(import.meta.dirname,'..');
-const source=[
- 'domain/ports/SchemaRepository.js',
- 'api/dto/RequestValidator.js',
- 'api/responses/ResponseFactory.js',
- 'api/security/Policy.js',
- 'api/groups/system/SystemGroup.js',
- 'api/controllers/VehicleController.js',
- 'api/routes/Router.js',
- 'application/use-cases/VerifySchema.js',
- 'infrastructure/persistence/sheets/SheetsSchemaRepository.js',
- 'composition/Container.js',
- 'entrypoints/WebApp.js'
-];
-const body=source.map(p=>'// '+p+'\n'+readFileSync(join(root,'src',p),'utf8')).join('\n');
-mkdirSync(join(root,'dist'),{recursive:true});
-writeFileSync(join(root,'dist','Code.gs'),body);
-writeFileSync(join(root,'dist','appsscript.json'),readFileSync(join(root,'appsscript.json')));
-console.log('GAS build produced dist/Code.gs and manifest; deployment is not performed');
+const out=join(root,'dist');
+mkdirSync(out,{recursive:true});
+await build({
+  entryPoints:[join(root,'src/entrypoints/WebApp.js')],
+  bundle:true,
+  platform:'browser',
+  target:'es2020',
+  format:'iife',
+  globalName:'P6VC',
+  outfile:join(out,'Code.gs'),
+  legalComments:'none',
+  footer:{js:[
+    'function doGet(e) { return P6VC.doGet(e); }',
+    'function doPost(e) { return P6VC.doPost(e); }',
+    'function verifyVehicleSchemaFromEditor() { return P6VC.verifyVehicleSchemaFromEditor(); }'
+  ].join('\n')}
+});
+copyFileSync(join(root,'appsscript.json'),join(out,'appsscript.json'));
+console.log('Bundled ES modules -> GAS-compatible dist/Code.gs; no deployment performed');
