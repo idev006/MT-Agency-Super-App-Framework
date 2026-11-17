@@ -48,7 +48,12 @@ if(existsSync(appsRoot)){
   for(const p of [
     gas+'/appsscript.json',
     gas+'/src/entrypoints',
-    gas+'/src/transport',
+    gas+'/src/api',
+    gas+'/src/api/routes',
+    gas+'/src/api/controllers',
+    gas+'/src/api/dto',
+    gas+'/src/api/security',
+    gas+'/src/api/responses',
     gas+'/src/application',
     gas+'/src/domain',
     gas+'/src/infrastructure',
