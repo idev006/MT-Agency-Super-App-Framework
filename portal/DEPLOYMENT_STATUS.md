@@ -14,6 +14,7 @@
 - PR-only validation workflow: `.github/workflows/validate-ssot.yml`.
 
 ## Latest confirmed successful workflow
+- https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44015493123 — **SUCCESS** (both build and deploy), commit `c46779905718aaf64d286add00d81f1b2c581629`; includes strict broken-link validator and QC report. No real-device or security sign-off implied.
 - https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/43988536740 — rerun attempt 2 **SUCCESS**, both `build` and `deploy` completed successfully (verified via GitHub Actions API on 2026-11-17).
 - Successful SSOT checks include canonical source validation, disposable `_site/` build, output comparison and artifact upload.
 - Runtime HTTP reachability, camera decoding on physical phones, and security/PII acceptance have **not** been independently verified by this CI outcome.
