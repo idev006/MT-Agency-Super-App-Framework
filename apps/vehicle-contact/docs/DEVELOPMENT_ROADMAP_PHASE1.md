@@ -75,6 +75,15 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 - [Live API evidence](GAS_LIVE_API_TEST_EVIDENCE.md) records exact expected outcomes; **not** security acceptance for enabled protected business APIs.
 - Next gates: editor schema verification against real Sheets, deployment-version inspection, and secure staging integration.
 
+## 2G. Owner-approved five-part API test development (2026-11-17)
+
+- **Approval:** perform Schema Integration, Authentication/Authorization, Vehicle Registration, Media and QR API tests in sequence.
+- **Source and detailed acceptance:** [API_TEST_SUITE_PHASE1.md](API_TEST_SUITE_PHASE1.md); [Kanban VC-W31](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/31).
+- **Verified CI:** [run 44037490677](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44037490677), **10/10 Node test cases PASS** plus existing contract tests; the build produces **17 .gs modules + manifest** under the 800-line cap.
+- **Actual delivered testable policies:** draft registration field checks, five media slot rules, and injected trusted-crypto QR token/digest generation; fake Sheets header read validation and API fail-closed security probes. This is **mock/synthetic unit coverage only**, not live registration, Drive upload, QR persistence, or end-to-end authorization.
+- **Outstanding go/no-go:** authorized GAS Editor-to-Sheets schema integration, approved Username/Password provider and non-bypassable GAS ingress, secured CRUD adapter, Drive privacy/access controls, then real staged API E2E with synthetic records.
+- **Deployment note:** CI tests do not automatically push new code; existing GAS Version 5 remains the last verified source-push version.
+
 ## 3. Milestone sequence (relative, not scheduled dates)
 
 | Milestone | Outcome / exit condition | Depends on |
