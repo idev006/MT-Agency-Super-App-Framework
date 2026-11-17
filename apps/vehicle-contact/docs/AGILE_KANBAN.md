@@ -87,3 +87,18 @@ A native GitHub Projects v2 board was **not created**: the connected GitHub tool
 - [Schema Sync](SCHEMA_SYNC_IMPLEMENTATION.md)
 - [Vehicle Photo Media Storage](VEHICLE_MEDIA_STORAGE_DESIGN.md)
 - [GAS Test Evidence](GAS_TEST_EVIDENCE.md)
+
+
+## 10. Evidence reconciliation — 2026-11-17 (post-handover)
+
+This section supersedes the *initial snapshot counts only* above; preserve original historical snapshots for audit. Issue labels/states remain the live authority. Checked individually: VC-W01, W02, W04–W08, W15, W23–W25, W29–W31. Do **not** infer full board counts from this subset.
+
+- VC-W29 is **REVIEW**, not the older BLOCKED/first-push-pending description: source pushes evidenced by [Version 3 run 44033187307](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44033187307), [Version 4 run 44034261629](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44034261629) and [Version 5 run 44035053861](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44035053861). Editor verification, actual /exec deployment version, and security gates are not accepted.
+- VC-W30 is **closed/DONE-EVIDENCED**, limited to [7/7 live bootstrap smoke](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44036525176); protected routes are disabled.
+- VC-W31 is **open/REVIEW**, with [10/10 Node synthetic tests](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44037490677) and 17-module build, but no secured E2E or proof that the 17-module artifact was pushed.
+- VC-W08 remains **TODO** and explicitly depends on VC-W07 review. Synthetic-only tests that do not require approval can be scoped separately within the existing issue, but do not silently treat the dependency as resolved.
+- VC-W15 remains **TODO**; mock-only Vue shell may be implemented without enabling protected APIs.
+- The canonical existing work IDs include **M0** (governance, VC-W01–03), then M1–M6; do not relabel M0 tasks as M1 merely to fit a six-stage visualization. GitHub issue `area:m*` labels are not proof that native GitHub Milestone objects exist.
+- This connected GitHub integration exposes issue `milestone` assignment but not creation/listing of native milestones or GitHub Projects board creation. Do not claim M1–M6 native objects or a draggable Projects board exist until verified by an authorized maintainer.
+
+**Next board hygiene:** preserve one `status:*` label per issue; reconcile all 31 issues and exact counts against GitHub before publishing metrics; use existing issue bodies for acceptance/evidence, not duplicate tracking documents. Any milestone-number assignment requires verification of the actual native milestone ID and title.
