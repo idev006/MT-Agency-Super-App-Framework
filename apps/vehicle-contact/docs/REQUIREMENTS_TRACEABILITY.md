@@ -14,7 +14,14 @@
 | VC-T06 | Regular QR compliance; visitor/pass exchange | `SYSTEM_ANALYSIS_V2.md` states phase-1 pass-exchange OFF; later phases require separate approval | `WORKFLOW_SOP_POLICY_REVIEW.md` | **PHASE GATE — OPEN** | Confirm currently approved phase and SOP before activation |
 | VC-T07 | Parking access/zone entitlements | `PRODUCT_REQUIREMENTS.md` excludes v1; operating policy may require sticker/guard checks | `SYSTEM_ANALYSIS_V2.md` | **SCOPE RECONCILIATION — OPEN** | Separate physical policy from digital access-control functionality |
 | VC-T08 | Contact personal data, role permissions, audit, retention | PDPA set within `docs/`; master security standards in `../../../blueprint/` | `PDPA_REVIEW_CHECKLIST.md`, `TEST_AND_DELIVERY.md` | DRAFT / LEGAL AND DPO REVIEW OPEN | Obtain documented lawful basis, access and retention decisions |
-| VC-T09 | Reproducible scanner publishing from one source | `../poc/qr-scanner/index.html`, `../../../blueprint/decisions/ADR-002-SSOT-BOUNDARIES.md` | `../../../.github/workflows/deploy-pages-ssot.yml` | SOURCE VERIFIED / DEPLOY FAILED IN PRIOR RUN | Verify Pages settings and Actions run |
+| VC-T09 | Reproducible scanner publishing from one source | `../poc/qr-scanner/index.html`, `../../../blueprint/decisions/ADR-002-SSOT-BOUNDARIES.md` | `../../../.github/workflows/deploy-pages-ssot.yml` | SOURCE VERIFIED / BUILD + DEPLOY PASS on 2026-11-17 (run 43988536740 attempt 2); functional mobile tests OPEN | Validate published URL and physical Android/iOS devices |
+
+## Reconciliation guidance (QC 2026-11-17)
+- **Camera POC is standalone HTML/JS, not Vue.** Do not represent it as a Vue production application.
+- **Presentation framework precedence:** `../../../blueprint/MASTER_WEB_APP_BLUEPRINT.md` sets Vue 3; any React text within older proposed platform or project designs is historical draft, **not an approved frontend alternative**. No implementation migration has been performed.
+- **Phase-1 visitor card/pass:** `WORKFLOW_SOP_POLICY_REVIEW.md` and the 2026-11-03 addendum in `SYSTEM_ANALYSIS_V2.md` state card/pass feature is OFF for Phase 1; historical earlier proposal passages mention passes. Maintain those as historical proposals, not current approved operating instructions.
+- **Visitor retention duration:** older PDPA material leaves this pending; a planning limit of up to 120 days is not a signed retention schedule. Do not automate deletion/retention or activate collection based on an unapproved number.
+- **Vehicle photo minimum:** conflicting requirements still OPEN; retain original drafts until policy owner signs off.
 
 ## Decision control
 - **Approved**: explicit approval and evidence link, approver, date and scoped change.
