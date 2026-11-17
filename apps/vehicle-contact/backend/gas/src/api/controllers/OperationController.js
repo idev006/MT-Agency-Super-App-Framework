@@ -21,6 +21,8 @@ const permissions={
  'audit.query':'audit.read','audit.export':'audit.read'
 };
 const publicOps=new Set(['auth.login','auth.googleLogin','campaigns.validate','registrations.submit','photos.upload']);
+export const OPERATION_PERMISSIONS=Object.freeze({...permissions});
+export const PUBLIC_OPERATIONS=Object.freeze([...publicOps]);
 const safeErrors=new Set([
  'BAD_REQUEST','NOT_FOUND','INVALID_REQUEST','FORBIDDEN','UNAUTHENTICATED','SESSION_EXPIRED','SESSION_IDLE_EXPIRED',
  'PASSWORD_CHANGE_REQUIRED','LOGIN_RATE_LIMIT','INVALID_CREDENTIALS','INVALID_GOOGLE_TOKEN','IDENTITY_ALREADY_LINKED',
