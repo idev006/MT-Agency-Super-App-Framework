@@ -55,6 +55,14 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 - VC-W10 photo-storage subtask **FOLDER STRUCTURE DONE / ACCESS & MEDIA PIPELINE BLOCKED**. Next: audit effective Drive permissions and design backend-only uploads, per-vehicle versioning, thumbnail processing, privacy/retention and fake-Drive integration tests.
 - The business decision 5 photo slots versus mandatory five photos remains OPEN. Creation of folders is not approval for real images or production PII.
 
+## 2D. Multi-file GAS packaging proof — source deploy evidenced (2026-11-17)
+
+- [Multi-file build script](../backend/gas/scripts/build.mjs) generates five namespaced `Package$Module.gs` files + `appsscript.json` instead of one monolithic `Code.gs`; build and CI reject compiled files over 800 lines.
+- [Successful run 44034261629](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44034261629) pushed 6 files to the owner-supplied Script ID and created **GAS Version 4** (source commit `2083899e`). CI covers both file load orders, API route deny, and schema drift.
+- Temporary narrowly scoped request-trigger was removed immediately afterward: ongoing deployment policy remains **manual-only**, `PUSH_VEHICLE_GAS` confirmation.
+- This is an **engineering packaging experiment**, not the final optimized per-domain runtime module architecture: generated files are independent IIFEs with some duplicated code. No claims of live login, Sheets editor verification, Web App deployment or production release.
+- Evidence and constraints: [GAS Test Evidence](GAS_TEST_EVIDENCE.md).
+
 ## 3. Milestone sequence (relative, not scheduled dates)
 
 | Milestone | Outcome / exit condition | Depends on |
