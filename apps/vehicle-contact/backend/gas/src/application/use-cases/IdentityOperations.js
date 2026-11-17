@@ -6,7 +6,7 @@ export function createIdentityOperations({store,security,sessions}) {
  function issueLogin(user){if(!user||user.status!=='ACTIVE')throw new Error('INVALID_CREDENTIALS');return sessions.issue(user);}
  function attempts(username) {
   const digest=security.sha256('username:'+username),since=Date.parse(security.now())-15*60000;
-  const recent=store.list('vc_security_events',{username_digest:digest})
+  const recent=store.listNewest('vc_security_events',{username_digest:digest})
    .filter(x=>Date.parse(x.created_at)>since&&x.status==='FAILED');
   if(recent.length>=6)throw new Error('LOGIN_RATE_LIMIT');
   return digest;

@@ -8,15 +8,19 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
  function uploadPhoto(p) {
   const campaign=campaigns.getCampaign(p.campaignToken);
   if(!['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'].includes(p.slot))throw new Error('INVALID_SLOT');
-  const item=drivePhotos.upload(p.base64Image,p.mimeType),photoId=id();
-  try{
-   store.atomic(()=>{
+  const photoId=id();
+  return store.atomic(()=>{
+   const maxUploads=Math.min(5000,Math.max(20,Number(campaign.max_submissions)*10));
+   if(store.list('vc_photo_staging',{campaign_id:campaign.campaign_id}).length>=maxUploads)
+    throw new Error('PHOTO_UPLOAD_LIMIT');
+   const item=drivePhotos.upload(p.base64Image,p.mimeType);
+   try{
     store.insert('vc_photo_staging',{photo_id:photoId,campaign_id:campaign.campaign_id,slot:p.slot,
      storage_ref:item.storage_ref,mime_type:item.mime_type,size_bytes:item.size_bytes,
      status:'STAGED',created_at:now(),used_at:''});
-   });
-  }catch(e){try{drivePhotos.trash(item.storage_ref);}catch(_){/* orphan requires reconciliation */}throw e;}
-  return {photoId,slot:p.slot};
+   }catch(e){try{drivePhotos.trash(item.storage_ref);}catch(_){/* manual reconciliation */}throw e;}
+   return {photoId,slot:p.slot};
+  });
  }
  function photosList(p) {
   const vehicleId=need(p.vehicleId,'VEHICLE_ID');

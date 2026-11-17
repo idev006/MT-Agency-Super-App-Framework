@@ -25,6 +25,10 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
   if(!Number.isSafeInteger(limit)||limit<1||limit>5000)throw new Error('INVALID_LIMIT');
   return records(name,filter).slice(0,limit).map(x=>({...x.data}));
  }
+ function listNewest(name,filter={},limit=5000){
+  if(!Number.isSafeInteger(limit)||limit<1||limit>5000)throw new Error('INVALID_LIMIT');
+  return records(name,filter).slice(-limit).map(x=>({...x.data}));
+ }
  function mustLock(){if(!locked)throw new Error('LOCK_REQUIRED');}
  function insert(name,data){
   mustLock();const t=table(name);
@@ -55,5 +59,5 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
   locked=true;
   try{return fn();}finally{locked=false;lock.releaseLock();}
  }
- return Object.freeze({one,list,insert,update,remove,atomic});
+ return Object.freeze({one,list,listNewest,insert,update,remove,atomic});
 }
