@@ -37,3 +37,36 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Admin as REGISTRATION_ADMIN
+  participant FE as Vue Vehicle Edit
+  participant API as GAS API / RBAC
+  participant Vehicle as VehicleOperations
+  participant DB as Sheets
+  Admin->>FE: Edit vehicle details
+  FE->>API: vehicles.update(vehicleId,expectedVersion,delta)
+  API->>API: Require vehicle.update
+  Vehicle->>DB: Acquire ScriptLock and reload ACTIVE vehicle
+  alt expectedVersion matches; no duplicate plate
+    Vehicle->>DB: Optionally validate ACTIVE owner
+    Vehicle->>DB: Increment version, update row and append audit
+    API-->>FE: New vehicle version
+  else Stale version / duplicate / missing owner
+    API-->>FE: VERSION_CONFLICT / DUPLICATE_VEHICLE / OWNER_NOT_FOUND
+  end
+  Admin->>FE: Edit primary contact
+  FE->>API: contacts.update(vehicleId,contactName/contactPhone)
+  API->>API: Require vehicle.update
+  Vehicle->>DB: Require exactly one ACTIVE primary contact
+  alt Valid contact
+    Vehicle->>DB: Update contact and append audit
+    API-->>FE: updated true
+  else Missing primary contact
+    API-->>FE: PRIMARY_CONTACT_INVARIANT
+  end
+```

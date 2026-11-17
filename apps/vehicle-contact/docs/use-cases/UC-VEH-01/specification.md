@@ -38,3 +38,38 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Staff
+  participant FE as Vue Vehicle Search
+  participant API as GAS API / Session RBAC
+  participant Search as VehicleOperations
+  participant DB as Sheets
+  Staff->>FE: Enter plate and province
+  FE->>API: vehicles.lookup(session,plate,province)
+  API->>API: Validate session + vehicle.lookup
+  Search->>DB: Find unique ACTIVE normalized vehicle
+  alt Vehicle found
+    Search->>DB: Append lookup audit
+    opt Contact and photos permissions exist
+      Search->>DB: Read active contact and five photo metadata
+    end
+    API-->>FE: Vehicle DTO with permitted fields
+    FE->>API: vehicles.detail / contacts.read / photos.list
+    API->>DB: Recheck active vehicle, access and audit
+    API-->>FE: Authorized details
+    Staff->>FE: Tap phone number to call
+    FE-->>Staff: Launch dialer via user gesture, not automatic call
+  else Not found / unauthorized / ambiguous
+    API-->>FE: Safe null / forbidden / conflict
+    FE-->>Staff: Manual fallback SOP
+  end
+  opt History permission
+    FE->>API: vehicles.history
+    API-->>FE: Limited change audit
+  end
+```

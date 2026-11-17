@@ -37,3 +37,37 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Owner
+  actor Admin as REGISTRATION_ADMIN
+  participant FE as Vue Change Request
+  participant API as GAS API
+  participant Changes as VehicleOperations
+  participant DB as Sheets
+  Owner->>FE: Propose vehicle/contact correction
+  FE->>API: changes.submit(session,vehicleId,delta)
+  API->>Changes: Check ACTIVE vehicle and owner_user_id
+  alt Ownership verified and nonempty delta
+    Changes->>DB: Insert PENDING vc_change_requests and audit
+    API-->>FE: requestId PENDING
+  else Owner not verified or invalid
+    API-->>FE: OWNERSHIP_NOT_VERIFIED / validation error
+  end
+  Admin->>API: changes.listPending(session)
+  API->>API: Require vehicle.change.approve
+  API->>DB: Read pending requests
+  Admin->>API: changes.review(requestId,APPROVE/REJECT)
+  Changes->>DB: Lock and reread request
+  alt APPROVE
+    Changes->>DB: Update vehicle and/or primary contact, increment version
+  else REJECT
+    Changes->>DB: Keep existing vehicle/contact values
+  end
+  Changes->>DB: Mark request reviewed and append audit
+  API-->>Admin: Reviewed status
+```

@@ -40,3 +40,41 @@ Traceability check PASS; frontend API adapter request/response and errors match 
 
 
 **Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+
+## 9. GitHub Mermaid Preview
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Registrant
+  participant FE as Vue Registration Form
+  participant API as GAS API
+  participant Reg as VehicleOperations
+  participant DB as Google Sheets
+  Registrant->>FE: Submit vehicle, contact, five photoIds, idempotencyKey
+  FE->>API: registrations.submit(payload,campaignToken)
+  API->>Reg: Validate DTO and business fields
+  Reg->>DB: Acquire ScriptLock
+  Reg->>DB: Check campaign, digest and idempotency
+  alt Completed identical submission
+    DB-->>Reg: Stored result
+    Reg-->>FE: Same requestId and vehicleId
+  else New valid submission
+    Reg->>DB: Check quota, org, plate+province and five STAGED slots
+    Reg->>DB: Insert vc_operation_journal PREPARED
+    Reg->>DB: Insert PENDING_APPROVAL registration
+    Reg->>DB: Mark five photos CLAIMED and increment quota
+    Reg->>DB: Insert completed idempotency response
+    Reg->>DB: Mark journal APPLIED
+    Reg-->>FE: requestId, vehicleId, PENDING_APPROVAL
+  else Validation conflict
+    Reg-->>FE: CAMPAIGN_INVALID / DUPLICATE_VEHICLE / conflict
+  end
+  opt Caught write exception after PREPARED
+    Reg->>DB: Best-effort reverse compensation under lock
+    Reg->>DB: Journal ROLLED_BACK or RECOVERY_REQUIRED
+    Reg-->>FE: Safe error
+  end
+  Reg->>DB: Release lock and flush
+  Note over Reg,DB: Abrupt GAS timeout may leave PREPARED journal; manual reconciliation still required
+```
