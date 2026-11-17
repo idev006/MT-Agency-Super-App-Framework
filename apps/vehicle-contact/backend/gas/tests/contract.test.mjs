@@ -50,31 +50,50 @@ tabs.unapproved_table=['a'];
 assert.equal(compareSchema(DATABASE_SCHEMA,tabs).changes.some(c=>c.kind==='UNDECLARED_TABLE'),true);
 delete tabs.unapproved_table;
 const root=resolve(import.meta.dirname,'..');
-const gasFiles=[
- 'ENTRY$WebGet.gs',
- 'ENTRY$WebPost.gs',
- 'ADMIN$VerifySchema.gs',
- 'ADMIN$InspectSchema.gs',
- 'ADMIN$ProposeSchema.gs'
-];
+const {readdirSync}=await import('node:fs');
+const gasFiles=readdirSync(join(root,'dist')).filter(f=>f.endsWith('.gs')).sort();
+const expected=[
+ 'API$controllers$VehicleController.gs',
+ 'API$dto$RequestValidator.gs',
+ 'API$groups$system$SystemGroup.gs',
+ 'API$responses$ResponseFactory.gs',
+ 'API$routes$Router.gs',
+ 'API$security$Policy.gs',
+ 'APPLICATION$schema-sync$CompareSchema.gs',
+ 'APPLICATION$schema-sync$ProposeMigration.gs',
+ 'APPLICATION$use-cases$VerifySchema.gs',
+ 'COMPOSITION$Container.gs',
+ 'DOMAIN$ports$SchemaRepository.gs',
+ 'ENTRYPOINTS$WebApp.gs',
+ 'INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs',
+ 'SCHEMA$database.schema.gs'
+].sort();
+assert.deepEqual(gasFiles,expected);
 const mockContent={MimeType:{JSON:'JSON'},createTextOutput(v){return {value:v,setMimeType(){return this;}};}};
-function loadGAS(order){
-  const ctx=vm.createContext({ContentService:mockContent,console});
-  for(const file of order){
-    const code=readFileSync(join(root,'dist',file),'utf8');
-    assert.ok(code.split(/\r?\n/).length<=800,`File ${file} exceeds 800 lines`);
-    new vm.Script(code,{filename:file}).runInContext(ctx);
-  }
-  return ctx;
+function loadGAS(order) {
+ const context=vm.createContext({ContentService:mockContent,console});
+ for(const file of order){
+   const code=readFileSync(join(root,'dist',file),'utf8');
+   assert.ok(code.split(/\r?\n/).length<=800, 'Exceeded 800 lines: '+file);
+   assert.ok(!/^\\s*(import|export)\\s/m.test(code), 'Raw ESM remains: '+file);
+   new vm.Script(code,{filename:file}).runInContext(context);
+ }
+ return context;
 }
-// Independently scoped IIFE files must work even if GAS loads them in reverse order.
+// GAS file ordering is implementation detail, not an architectural dependency.
 for(const order of [gasFiles,[...gasFiles].reverse()]){
  const context=loadGAS(order);
  for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor'])
    assert.equal(typeof context[name],'function');
  assert.equal(JSON.parse(context.doGet({}).value).data.status,'bootstrap');
+ assert.equal(JSON.parse(context.doPost({postData:{contents:'not JSON'}}).value).ok,false);
  const denied=JSON.parse(context.doPost({postData:{contents:JSON.stringify({apiVersion:'v1',group:'vehicles',action:'lookup',payload:{role:'admin'}})}}).value);
  assert.equal(denied.ok,false);
- assert.equal(JSON.parse(context.doPost({postData:{contents:'bad json'}}).value).ok,false);
+ const fakeProps={getScriptProperties(){return {getProperty(name){assert.equal(name,'VEHICLE_SHEET_ID');return 'test-sheet-id';}};}};
+ context.PropertiesService=fakeProps;context.SpreadsheetApp=fakeSheets;context.Logger={log(){}};
+ assert.equal(context.verifyVehicleSchemaFromEditor().ok,true);
+ const drift=context.inspectVehicleSchemaDriftFromEditor();
+ assert.equal(drift.match,true);
+ assert.equal(context.proposeVehicleSchemaChangeFromEditor().status,'REVIEW_REQUIRED');
 }
-console.log('Canonical schema, multi-file independent GAS, drift/proposal, and fake Sheets contracts PASSED');
+console.log('Layer-mirrored GAS source modules, order independence, schema, safe API, and editor entrypoints PASSED');
