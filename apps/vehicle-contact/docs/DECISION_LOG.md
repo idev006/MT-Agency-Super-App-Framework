@@ -4,6 +4,8 @@
 
 | ID | Date | Subject | Status | Evidence / implication |
 | --- | --- | --- | --- | --- |
+| VC-ADR-009 | 2026-11-17 | Phase 1 primary datastore is Google Sheets; one tab per logical table, accessed only through GAS repository adapter | **ARCHITECTURE DIRECTION APPROVED; NOT IMPLEMENTED** | Owner direction; [Phase 1 data architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md). Supabase primary datastore descriptions in historical draft superseded for Phase 1; column schema remains proposed |
+| VC-ADR-010 | 2026-11-17 | MT-I-AM deferred; Phase 1 uses Username/Password sign-in, subject to secure server-side verification and non-bypassable GAS API | **ARCHITECTURE DIRECTION APPROVED; SECURITY IMPLEMENTATION OPEN** | [Phase 1 data architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md). No plaintext passwords in Sheets; identity/session provider still to be selected |
 | VC-ADR-001 | 2026-11-16 | Keep this application's docs in `apps/vehicle-contact/docs/`, POC code in `poc/qr-scanner/` | **STRUCTURE ACCEPTED** | Project-owner instruction, Git history; no production approval |
 | VC-ADR-002 | 2026-11-17 | Required vehicle photo minimum (1) vs optional 0–5 | **OPEN — requires business sponsor decision** | `REQUIREMENTS_TRACEABILITY.md` VC-T05 |
 | VC-ADR-003 | 2026-11-17 | Visitor card/pass exchange and entry/exit activation by phase | **OPEN — policy sign-off required** | `SYSTEM_ANALYSIS_V2.md` phase-1 clarification; VC-T06 |
