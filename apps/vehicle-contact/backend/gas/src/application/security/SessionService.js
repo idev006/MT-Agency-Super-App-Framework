@@ -30,7 +30,7 @@ export function createSessionService({store,security}) {
    throw new Error('PASSWORD_CHANGE_REQUIRED');
   const access=permissionsFor(user.user_id);
   if(!access.permissions.includes(permission))throw new Error('FORBIDDEN');
-  store.atomic(()=>store.update('vc_sessions',{session_id:session.session_id},{last_seen_at:security.now()}));
+  store.sequence(()=>store.update('vc_sessions',{session_id:session.session_id},{last_seen_at:security.now()}));
   return {userId:user.user_id,user,roles:access.roles,permissions:access.permissions,sessionId:session.session_id,session};
  }
  function issue(user) {
@@ -38,14 +38,14 @@ export function createSessionService({store,security}) {
   const idle=Number(policy&&policy.value);
   if(!Number.isSafeInteger(idle)||idle<1||idle>480)throw new Error('IDLE_POLICY_NOT_CONFIGURED');
   const token=security.secretToken(),date=security.now(),expires=new Date(Date.parse(date)+480*60000).toISOString();
-  store.atomic(()=>store.insert('vc_sessions',{
+  store.sequence(()=>store.insert('vc_sessions',{
    session_id:security.secretToken(),user_id:user.user_id,token_digest:security.sha256(token),
    status:'ACTIVE',issued_at:date,expires_at:expires,last_seen_at:date,idle_timeout_minutes:idle,revoked_at:''
   }));
   return {sessionToken:token,expiresAt:expires,mustChangePassword:user.password_change_required===true||String(user.password_change_required)==='true'};
  }
  function revokeUser(userId){
-  return store.atomic(()=>{
+  return store.sequence(()=>{
    const rows=store.list('vc_sessions',{user_id:userId});
    for(const item of rows)if(item.status==='ACTIVE')store.update('vc_sessions',{session_id:item.session_id},{status:'REVOKED',revoked_at:security.now()});
    return rows.length;

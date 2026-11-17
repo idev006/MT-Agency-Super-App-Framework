@@ -12,7 +12,7 @@ export function createIdentityOperations({store,security,sessions}) {
   return digest;
  }
  function recordAttempt(digest,status){
-  store.atomic(()=>store.insert('vc_security_events',{event_id:security.secretToken(),username_digest:digest,status,created_at:security.now()}));
+  store.sequence(()=>store.insert('vc_security_events',{event_id:security.secretToken(),username_digest:digest,status,created_at:security.now()}));
  }
  function login(p) {
   const username=required(p.username,'USERNAME',100).normalize('NFKC').toLowerCase();
@@ -33,12 +33,12 @@ export function createIdentityOperations({store,security,sessions}) {
  function changePassword(p,actor){
   if(!security.verifyPassword(p.oldPassword,actor.user.password_hash))throw new Error('INVALID_CREDENTIALS');
   const hash=security.hashPassword(p.newPassword);
-  store.atomic(()=>{store.update('vc_users',{user_id:actor.userId},{password_hash:hash,password_change_required:false,updated_at:security.now()});changed('PASSWORD_CHANGED',actor.userId,actor.userId)});
+  store.sequence(()=>{store.update('vc_users',{user_id:actor.userId},{password_hash:hash,password_change_required:false,updated_at:security.now()});changed('PASSWORD_CHANGED',actor.userId,actor.userId)});
   sessions.revokeUser(actor.userId);
   return {changed:true,reauthenticate:true};
  }
  function logout(p,actor){
-  store.atomic(()=>store.update('vc_sessions',{session_id:actor.sessionId},{status:'REVOKED',revoked_at:security.now()}));
+  store.sequence(()=>store.update('vc_sessions',{session_id:actor.sessionId},{status:'REVOKED',revoked_at:security.now()}));
   return {revoked:true};
  }
  function session(p,actor){return {userId:actor.userId,roles:actor.roles,expiresAt:actor.session.expires_at,mustChangePassword:actor.user.password_change_required===true||String(actor.user.password_change_required)==='true'};}
@@ -46,14 +46,14 @@ export function createIdentityOperations({store,security,sessions}) {
   if(!security.verifyPassword(p.password,actor.user.password_hash))throw new Error('INVALID_CREDENTIALS');
   const claim=security.verifyGoogle(p.idToken);
   if(store.one('vc_user_identities',{provider:'GOOGLE',provider_sub:claim.sub}))throw new Error('IDENTITY_ALREADY_LINKED');
-  store.atomic(()=>{store.insert('vc_user_identities',{identity_id:security.secretToken(),user_id:actor.userId,provider:'GOOGLE',provider_sub:claim.sub,linked_at:security.now()});changed('GOOGLE_LINKED',actor.userId,actor.userId)});
+  store.withLock(()=>{store.insert('vc_user_identities',{identity_id:security.secretToken(),user_id:actor.userId,provider:'GOOGLE',provider_sub:claim.sub,linked_at:security.now()});changed('GOOGLE_LINKED',actor.userId,actor.userId)});
   return {linked:true};
  }
  function createUser(p,actor) {
   const username=required(p.username,'USERNAME',100).normalize('NFKC').toLowerCase();
-  if(store.one('vc_users',{username_normalized:username}))throw new Error('DUPLICATE_USERNAME');
   const hash=security.hashPassword(p.temporaryPassword),id=security.secretToken();
-  store.atomic(()=>{
+  store.withLock(()=>{
+   if(store.one('vc_users',{username_normalized:username}))throw new Error('DUPLICATE_USERNAME');
    store.insert('vc_users',{user_id:id,username_normalized:username,display_name:text(p.displayName),
     password_hash:hash,password_salt:'',password_change_required:true,status:'ACTIVE',
     org_id:p.organizationId||'',created_at:security.now(),updated_at:security.now()});
@@ -72,18 +72,18 @@ export function createIdentityOperations({store,security,sessions}) {
   const patch={updated_at:security.now()};
   if(p.displayName!==undefined)patch.display_name=text(p.displayName);
   if(p.organizationId!==undefined)patch.org_id=required(p.organizationId,'ORGANIZATION_ID');
-  store.atomic(()=>{store.update('vc_users',{user_id:id},patch);changed('USER_UPDATED',actor.userId,id)});
+  store.sequence(()=>{store.update('vc_users',{user_id:id},patch);changed('USER_UPDATED',actor.userId,id)});
   return {userId:id,updated:true};
  }
  function suspend(p,actor){
   const id=required(p.userId,'USER_ID');
   if(id===actor.userId)throw new Error('SELF_SUSPEND_DENIED');
-  store.atomic(()=>{store.update('vc_users',{user_id:id},{status:'SUSPENDED',updated_at:security.now()});changed('USER_SUSPENDED',actor.userId,id)});
+  store.sequence(()=>{store.update('vc_users',{user_id:id},{status:'SUSPENDED',updated_at:security.now()});changed('USER_SUSPENDED',actor.userId,id)});
   sessions.revokeUser(id);return {userId:id,suspended:true};
  }
  function resetPassword(p,actor){
   const id=required(p.userId,'USER_ID'),hash=security.hashPassword(p.temporaryPassword);
-  store.atomic(()=>{store.update('vc_users',{user_id:id},{password_hash:hash,password_change_required:true,updated_at:security.now()});changed('PASSWORD_RESET',actor.userId,id)});
+  store.sequence(()=>{store.update('vc_users',{user_id:id},{password_hash:hash,password_change_required:true,updated_at:security.now()});changed('PASSWORD_RESET',actor.userId,id)});
   sessions.revokeUser(id);return {userId:id,reset:true};
  }
  function assignRoles(p,actor) {
@@ -93,7 +93,7 @@ export function createIdentityOperations({store,security,sessions}) {
    throw new Error('INVALID_ROLES');
   const roles=[...new Set(p.roles)];
   if(id===actor.userId&&!roles.includes('SYSTEM_ADMIN'))throw new Error('SELF_DEMOTION_DENIED');
-  store.atomic(()=>{
+  store.withLock(()=>{
    for(const row of store.list('vc_user_roles',{user_id:id}))store.remove('vc_user_roles',{assignment_id:row.assignment_id});
    for(const r of roles)store.insert('vc_user_roles',{assignment_id:security.secretToken(),user_id:id,role_id:r,status:'ACTIVE'});
    changed('ROLES_CHANGED',actor.userId,id);

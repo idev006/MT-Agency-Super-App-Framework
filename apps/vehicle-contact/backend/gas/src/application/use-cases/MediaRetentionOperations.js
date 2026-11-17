@@ -9,7 +9,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   const campaign=campaigns.getCampaign(p.campaignToken);
   if(!['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'].includes(p.slot))throw new Error('INVALID_SLOT');
   const photoId=id();
-  return store.atomic(()=>{
+  return store.withLock(()=>{
    const maxUploads=Math.min(5000,Math.max(20,Number(campaign.max_submissions)*10));
    if(store.list('vc_photo_staging',{campaign_id:campaign.campaign_id}).length>=maxUploads)
     throw new Error('PHOTO_UPLOAD_LIMIT');
@@ -37,7 +37,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   const media=drivePhotos.upload(p.base64Image,p.mimeType);
   let oldStorage=null;
   try {
-   store.atomic(()=>{
+   store.withLock(()=>{
     const existing=store.list('vc_vehicle_photos',{vehicle_id:vehicleId}).filter(x=>x.slot===slot&&x.status==='ACTIVE');
     if(existing.length!==1)throw new Error('PHOTO_SLOT_INVARIANT');
     oldStorage=existing[0].storage_ref;
@@ -48,7 +48,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   }catch(e){try{drivePhotos.trash(media.storage_ref);}catch(_){}throw e;}
   // Once replacement is persisted, retire the old publicly linkable file.
   if(oldStorage)try{drivePhotos.trash(oldStorage);}catch(_){
-   store.atomic(()=>store.insert('vc_operation_journal',{event_id:id(),operation:'photos.replace',
+   store.sequence(()=>store.insert('vc_operation_journal',{event_id:id(),operation:'photos.replace',
     entity_id:vehicleId,actor_id:actor.userId,status:'OLD_FILE_CLEANUP_REQUIRED',
     detail_json:JSON.stringify({storageRef:oldStorage}),created_at:now()}));
   }
@@ -63,7 +63,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
  }
  function approveDeletion(p,actor){
   const jobId=need(p.jobId,'JOB_ID');
-  return store.atomic(()=>{
+  return store.withLock(()=>{
    const job=store.one('vc_retention_jobs',{job_id:jobId});
    if(!job||job.status!=='WAITING_RETENTION'||Date.parse(job.due_at)>Date.parse(now())
     ||job.legal_hold===true||String(job.legal_hold)==='true')throw new Error('RETENTION_NOT_APPROVABLE');
@@ -83,12 +83,12 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   if(!job||!['DELETION_APPROVED','DELETION_FAILED'].includes(job.status)||!job.approved_by
    ||Date.parse(job.due_at)>Date.parse(now())||job.legal_hold===true||String(job.legal_hold)==='true')
    throw new Error('DELETION_NOT_AUTHORIZED');
-  store.atomic(()=>store.update('vc_retention_jobs',{job_id:jobId},{status:'DELETION_IN_PROGRESS',
+  store.withLock(()=>store.update('vc_retention_jobs',{job_id:jobId},{status:'DELETION_IN_PROGRESS',
    attempts:Number(job.attempts)+1,updated_at:now()}));
   try {
    const vehicleId=job.vehicle_id;
    for(const photo of store.list('vc_vehicle_photos',{vehicle_id:vehicleId}))drivePhotos.trash(photo.storage_ref);
-   store.atomic(()=>{
+   store.withLock(()=>{
     for(const table of ['vc_vehicle_photos','vc_vehicle_contacts','vc_qr_tokens','vc_change_requests','vc_registration_requests']){
      for(const row of store.list(table,{vehicle_id:vehicleId})){
       const key=Object.keys(row).find(k=>({vc_vehicle_photos:'photo_id',vc_vehicle_contacts:'contact_id',vc_qr_tokens:'qr_id',vc_change_requests:'change_id',vc_registration_requests:'request_id'})[table]===k);
@@ -102,7 +102,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
    });
    return {jobId,status:'DELETION_COMPLETED'};
   }catch(e){
-   store.atomic(()=>store.update('vc_retention_jobs',{job_id:jobId},{status:'DELETION_FAILED',last_error:String(e.message||'FAILURE').slice(0,120),updated_at:now()}));
+   store.sequence(()=>store.update('vc_retention_jobs',{job_id:jobId},{status:'DELETION_FAILED',last_error:String(e.message||'FAILURE').slice(0,120),updated_at:now()}));
    throw new Error('DELETION_RETRY_REQUIRED');
   }
  }

@@ -15,7 +15,7 @@ export function bootstrapStagingAdmin({spreadsheetApp,lockService,utilities,prop
  const security=createGasSecurity({utilities,propertiesService,clock:()=>new Date().toISOString()});
  const hashed=security.hashPassword(password);
  const userId=security.secretToken();
- store.atomic(()=>{
+ store.withLock(()=>{
   if(store.list('vc_users',{},2).length)throw new Error('BOOTSTRAP_ALREADY_COMPLETED');
   store.insert('vc_users',{user_id:userId,username_normalized:username,display_name:'Initial System Admin',
    password_hash:hashed,password_salt:'',password_change_required:true,status:'ACTIVE',org_id:'',

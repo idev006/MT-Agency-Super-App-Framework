@@ -12,7 +12,7 @@ export function createAdministrationOperations({store,security}) {
   const values=p.values;
   if(!values||typeof values!=='object'||Array.isArray(values)||!Object.keys(values).length
    ||Object.keys(values).some(k=>!settings.includes(k)))throw new Error('INVALID_SETTINGS');
-  store.atomic(()=>{
+  store.sequence(()=>{
    for(const [key,value] of Object.entries(values)){
     if(!Number.isSafeInteger(value)||value<1||value>(key==='idle_timeout_minutes'?480:3650))throw new Error('INVALID_SETTING_VALUE');
     const row={value:String(value),updated_by:a.userId,updated_at:security.now()};
@@ -32,7 +32,7 @@ export function createAdministrationOperations({store,security}) {
   const id=security.secretToken(),type=required(p.type,'ORG_TYPE');
   if(!['POLICE','EXTERNAL'].includes(type))throw new Error('INVALID_ORG_TYPE');
   if(type==='POLICE'&&p.parentId&&!store.one('vc_organizations',{organization_id:p.parentId}))throw new Error('PARENT_NOT_FOUND');
-  store.atomic(()=>{
+  store.sequence(()=>{
    store.insert('vc_organizations',{organization_id:id,name:required(p.name,'ORG_NAME'),org_type:type,
     parent_id:type==='POLICE'?(p.parentId||''):'',status:'ACTIVE',created_at:security.now(),updated_at:security.now()});
    audit(a,'ORG_CREATED',id);
@@ -47,12 +47,12 @@ export function createAdministrationOperations({store,security}) {
    if(p.parentId&&!store.one('vc_organizations',{organization_id:p.parentId}))throw new Error('PARENT_NOT_FOUND');
    patch.parent_id=p.parentId;
   }
-  store.atomic(()=>{store.update('vc_organizations',{organization_id:id},patch);audit(a,'ORG_UPDATED',id)});
+  store.sequence(()=>{store.update('vc_organizations',{organization_id:id},patch);audit(a,'ORG_UPDATED',id)});
   return {organizationId:id,updated:true};
  }
  function disableOrg(p,a){
   const id=required(p.organizationId,'ORG_ID');
-  store.atomic(()=>{store.update('vc_organizations',{organization_id:id},{status:'DISABLED',updated_at:security.now()});audit(a,'ORG_DISABLED',id)});
+  store.sequence(()=>{store.update('vc_organizations',{organization_id:id},{status:'DISABLED',updated_at:security.now()});audit(a,'ORG_DISABLED',id)});
   return {organizationId:id,disabled:true};
  }
  function getCampaign(token,{requireCapacity=true}={}){
@@ -68,7 +68,7 @@ export function createAdministrationOperations({store,security}) {
   if(!Number.isFinite(start)||!Number.isFinite(end)||start>=end||end<=now
    ||!Number.isSafeInteger(max)||max<1||max>100000)throw new Error('INVALID_CAMPAIGN');
   const id=security.secretToken(),token=security.secretToken();
-  store.atomic(()=>{
+  store.sequence(()=>{
    store.insert('vc_campaigns',{campaign_id:id,token_digest:security.sha256(token),
     starts_at:new Date(start).toISOString(),ends_at:new Date(end).toISOString(),
     max_submissions:max,submitted_count:0,revoked_at:'',status:'ACTIVE',created_by:a.userId,created_at:security.now()});
@@ -88,7 +88,7 @@ export function createAdministrationOperations({store,security}) {
  }
  function revokeCampaign(p,a){
   const id=required(p.campaignId,'CAMPAIGN_ID');
-  store.atomic(()=>{store.update('vc_campaigns',{campaign_id:id},{status:'REVOKED',revoked_at:security.now()});audit(a,'CAMPAIGN_REVOKED',id)});
+  store.withLock(()=>{store.update('vc_campaigns',{campaign_id:id},{status:'REVOKED',revoked_at:security.now()});audit(a,'CAMPAIGN_REVOKED',id)});
   return {campaignId:id,revoked:true};
  }
  return Object.freeze({

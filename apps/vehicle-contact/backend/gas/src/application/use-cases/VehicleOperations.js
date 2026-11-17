@@ -8,7 +8,7 @@ export function createVehicleOperations({store,security,campaigns}) {
   action,redacted_summary:action,correlation_id:id().slice(0,16),created_at:now()
  });
  function lookupAudit(actor,vehicleId,source,result){
-  store.atomic(()=>store.insert('vc_lookup_audit',{audit_id:id(),actor_id:actor.userId,vehicle_id:vehicleId,
+  store.sequence(()=>store.insert('vc_lookup_audit',{audit_id:id(),actor_id:actor.userId,vehicle_id:vehicleId,
    lookup_source:source,result,correlation_id:id().slice(0,16),created_at:now()}));
  }
  function activeVehicle(vehicleId){
@@ -36,7 +36,7 @@ export function createVehicleOperations({store,security,campaigns}) {
   const payload=body(p),key=payload.plate_normalized+'|'+payload.province_code;
   const idem=need(p.idempotencyKey,'IDEMPOTENCY_KEY',100);
   const digest=security.sha256(JSON.stringify({...p,campaignToken:undefined}));
-  return store.atomic(()=>{
+  return store.withLock(()=>{
    const campaign=campaigns.getCampaign(p.campaignToken,{requireCapacity:false});
    const idemKey=security.sha256('registration:'+campaign.campaign_id+':'+idem);
    const old=store.one('vc_idempotency',{key:idemKey});
@@ -75,7 +75,7 @@ export function createVehicleOperations({store,security,campaigns}) {
  function registrationReview(p,a){
   const requestId=need(p.requestId,'REQUEST_ID');
   if(!['APPROVE','REJECT'].includes(p.decision))throw new Error('INVALID_DECISION');
-  return store.atomic(()=>{
+  return store.withLock(()=>{
    const r=store.one('vc_registration_requests',{request_id:requestId});
    if(!r||r.status!=='PENDING_APPROVAL')throw new Error('INVALID_REQUEST_STATE');
    const app=JSON.parse(r.application_json),decision=p.decision;
@@ -124,7 +124,7 @@ export function createVehicleOperations({store,security,campaigns}) {
  function vehicleHistory(p){const idValue=need(p.vehicleId,'VEHICLE_ID');return store.list('vc_change_audit',{entity_id:idValue}).slice(-100);}
  function vehicleUpdate(p,a){
   const idValue=need(p.vehicleId,'VEHICLE_ID');
-  return store.atomic(()=>{
+  return store.withLock(()=>{
    const v=activeVehicle(idValue),version=Number(v.version);
    if(!Number.isInteger(p.expectedVersion)||p.expectedVersion!==version)throw new Error('VERSION_CONFLICT');
    const patch={updated_at:now(),updated_by:a.userId,version:version+1};
@@ -148,7 +148,7 @@ export function createVehicleOperations({store,security,campaigns}) {
  }
  function vehicleCancel(p,a){
   const vehicleId=need(p.vehicleId,'VEHICLE_ID');
-  return store.atomic(()=>{
+  return store.withLock(()=>{
    const v=activeVehicle(vehicleId);assertVehicleTransition(v.status,'INACTIVE');
    const retention=Number(store.one('vc_settings',{key:'retention_days'})?.value);
    if(!Number.isSafeInteger(retention)||retention<1)throw new Error('RETENTION_POLICY_NOT_CONFIGURED');
@@ -167,7 +167,7 @@ export function createVehicleOperations({store,security,campaigns}) {
  }
  function contactUpdate(p,a){
   const v=activeVehicle(p.vehicleId);
-  return store.atomic(()=>{
+  return store.withLock(()=>{
    const list=store.list('vc_vehicle_contacts',{vehicle_id:v.vehicle_id}).filter(x=>x.status==='ACTIVE'&&x.is_primary===true);
    if(list.length!==1)throw new Error('PRIMARY_CONTACT_INVARIANT');
    const patch={updated_at:now()};
@@ -185,7 +185,7 @@ export function createVehicleOperations({store,security,campaigns}) {
   for(const f of ['contactName','contactPhone','brand','model','color'])if(p[f]!==undefined)delta[f]=f==='contactPhone'?phone(p[f]):need(p[f],f);
   if(!Object.keys(delta).length)throw new Error('NO_CHANGES');
   const reqId=id();
-  store.atomic(()=>{store.insert('vc_change_requests',{change_id:reqId,vehicle_id:v.vehicle_id,proposed_delta:JSON.stringify(delta),
+  store.sequence(()=>{store.insert('vc_change_requests',{change_id:reqId,vehicle_id:v.vehicle_id,proposed_delta:JSON.stringify(delta),
    status:'PENDING',submitted_by:a.userId,submitted_at:now(),reviewed_by:'',reviewed_at:''});audit(a,'change',reqId,'CHANGE_SUBMITTED')});
   return {requestId:reqId,status:'PENDING'};
  }
@@ -196,7 +196,7 @@ export function createVehicleOperations({store,security,campaigns}) {
  function changeReview(p,a){
   const requestId=need(p.requestId,'REQUEST_ID');
   if(!['APPROVE','REJECT'].includes(p.decision))throw new Error('INVALID_DECISION');
-  return store.atomic(()=>{
+  return store.withLock(()=>{
    const r=store.one('vc_change_requests',{change_id:requestId});
    if(!r||r.status!=='PENDING')throw new Error('INVALID_REQUEST_STATE');
    if(p.decision==='APPROVE'){
@@ -227,7 +227,7 @@ export function createVehicleOperations({store,security,campaigns}) {
  }
  function manageQr(p,a,mode){
   const vehicleId=need(p.vehicleId,'VEHICLE_ID');
-  return store.atomic(()=>{
+  return store.withLock(()=>{
    activeVehicle(vehicleId);
    const active=store.list('vc_qr_tokens',{vehicle_id:vehicleId}).filter(q=>q.status==='ACTIVE');
    if(active.length>1)throw new Error('MULTIPLE_ACTIVE_QR');

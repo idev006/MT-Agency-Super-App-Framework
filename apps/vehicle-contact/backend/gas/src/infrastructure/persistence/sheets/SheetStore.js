@@ -1,5 +1,6 @@
 import { DATABASE_SCHEMA } from '../../../domain/ports/SchemaRepository.js';
-// Google Sheets table gateway. Call atomic() for ALL writes; never expose this adapter directly to HTTP.
+// Google Sheets table gateway. Ordinary writes are simple sequential writes, NOT transactions.
+// Use withLock only for critical read-check-write races; never expose this adapter to HTTP.
 export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
  if(!spreadsheetApp||!spreadsheetId||!lockService)throw new Error('STORAGE_NOT_CONFIGURED');
  let locked=false;
@@ -29,9 +30,8 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
   if(!Number.isSafeInteger(limit)||limit<1||limit>5000)throw new Error('INVALID_LIMIT');
   return records(name,filter).slice(-limit).map(x=>({...x.data}));
  }
- function mustLock(){if(!locked)throw new Error('LOCK_REQUIRED');}
  function insert(name,data){
-  mustLock();const t=table(name);
+  const t=table(name);
   for(const c of DATABASE_SCHEMA.tables[name].columns)if(c.required&&(data[c.name]===undefined||data[c.name]===''))throw new Error('REQUIRED_FIELD:'+c.name);
   const key=DATABASE_SCHEMA.tables[name].columns.find(c=>c.key==='primary')?.name;
   if(key&&records(name,{[key]:data[key]}).length)throw new Error('DUPLICATE_KEY');
@@ -40,7 +40,7 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
   return {...data};
  }
  function update(name,filter,patch){
-  mustLock();const t=table(name),hits=t.records.filter(x=>match(x.data,filter));
+  const t=table(name),hits=t.records.filter(x=>match(x.data,filter));
   if(hits.length!==1)throw new Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
   if(!patch||Object.keys(patch).some(k=>!t.headers.includes(k)))throw new Error('INVALID_PATCH');
   const next={...hits[0].data,...patch};
@@ -48,16 +48,19 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
   return next;
  }
  function remove(name,filter){
-  mustLock();const t=table(name),hits=t.records.filter(x=>match(x.data,filter));
+  const t=table(name),hits=t.records.filter(x=>match(x.data,filter));
   if(hits.length!==1)throw new Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
   t.sheet.deleteRow(hits[0].row);return true;
  }
- function atomic(fn){
+ function withLock(fn){
   if(locked)return fn();
   const lock=lockService.getScriptLock();
-  if(!lock.tryLock(25000))throw new Error('BUSY');
+  if(!lock.tryLock(15000))throw new Error('BUSY');
   locked=true;
-  try{return fn();}finally{locked=false;lock.releaseLock();}
+  try{return fn();}finally{
+   try{if(typeof spreadsheetApp.flush==='function')spreadsheetApp.flush();}
+   finally{locked=false;lock.releaseLock();}
+  }
  }
- return Object.freeze({one,list,listNewest,insert,update,remove,atomic});
+ return Object.freeze({one,list,listNewest,insert,update,remove,withLock,sequence:fn=>fn()});
 }
