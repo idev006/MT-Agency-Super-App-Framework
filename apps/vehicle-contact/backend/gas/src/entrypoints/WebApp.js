@@ -7,10 +7,13 @@ export function doGet(e) {
   return gasJson(createApplication().dispatch({apiVersion:"v1",group:"system",action:"health",payload:{}},"GET"));
 }
 export function doPost(e) {
-  if (!e || !e.postData || typeof e.postData.contents !== "string" || e.postData.contents.length>8192)
+  if (!e || !e.postData || typeof e.postData.contents !== "string" || e.postData.contents.length>8*1024*1024)
     return gasJson(apiFailure("BAD_REQUEST","Missing or oversized request",null));
   try {
-    return gasJson(createApplication().dispatch(JSON.parse(e.postData.contents),"POST"));
+    const request=JSON.parse(e.postData.contents);
+    const isMedia=request&&request.group==='photos'&&['upload','replace'].includes(request.action);
+    if(!isMedia&&e.postData.contents.length>8192)return gasJson(apiFailure("BAD_REQUEST","Oversized request",null));
+    return gasJson(createApplication().dispatch(request,"POST"));
   } catch (_) { return gasJson(apiFailure("BAD_REQUEST","Malformed request",null)); }
 }
 // Trusted Editor entrypoints only; NEVER expose these operations via doGet/doPost.
