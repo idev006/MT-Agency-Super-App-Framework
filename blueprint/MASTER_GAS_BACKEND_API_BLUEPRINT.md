@@ -1,7 +1,7 @@
 # MT Master GAS Backend API Blueprint — Architecture & Design Patterns
 
 **Document ID:** MT-GAS-MBP-001  
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Effective baseline:** 2026-11-17  
 **Decision status:** **MANDATORY architecture direction as instructed by the repository owner; NOT a production/security/legal release approval**  
 **Scope:** Every new or materially modified Google Apps Script (GAS) backend/API within `apps/<app-id>/backend/gas/` of this repository.
@@ -363,6 +363,22 @@ Choose by functional need, security posture, scale, cost and operational support
 - **Object/file storage:** use approved Drive or HTTPS storage adapters with scoped access, MIME/size checks, time-limited download access and retention rules. Do not assume file storage replaces a transactional record database.
 - For **every provider**, prove that GAS can connect safely in the chosen execution mode, with representative integration, concurrency, error, unauthorized-access and recovery tests **before production**.
 
+## 8A. MT-GAS-SCHEMA-SYNC-001 — Controlled Schema Synchronization (MUST when Sheets is a datastore)
+
+**One source of truth, bidirectional observation:** Every app using Google Sheets as database MUST maintain its own `apps/<app-id>/schema/database.schema.json` as the canonical machine-readable data dictionary in GitHub. A human-readable document is a view of that contract, not a second authority. The deployed GAS bundle may embed a versioned copy generated from this JSON; Google Sheets remains the actual data store, **never an alternate canonical schema**.
+
+**GAS/Sheets → GitHub:** Sheet edits (new/reordered/renamed/deleted columns or tabs) are **detected** and converted to a reviewable `Schema Change Proposal`; they MUST NOT silently rewrite the GitHub dictionary. Any change by GAS API/Sheets API may not fire a spreadsheet change trigger; use an admin-only inspection function and scheduled reconciliation as needed. Triggers are advisory signals, not proof of full synchronization. A restricted GitHub App/CI identity, with least-privilege approval and protected branch, may create a PR proposal; never embed a write-capable GitHub token in browser code, public GAS endpoint or a sheet cell.
+
+**GitHub → GAS/Sheets:** Versioned schema changes require review and signed-off migration plans, impact analysis, backup, compatibility/deprecation strategy and tests. A newly declared optional column may qualify for an **approved additive migration**; rename, removal, type conversion and destructive changes MUST require explicit separate approval and verified recovery plan. Default mode is `DETECT_AND_PROPOSE` (read-only) and MUST be fail-closed if unexpected/missing mandatory fields exist. No auto-repair or blind header overwrite.
+
+**Minimal schema contract:** schema ID, version, status, table and field names, order, logical types, nullable/required, logical PK/FK/unique identifiers, defaults where appropriate, data classification, validation hints, and migration history. Do not infer business field meaning or type from Google Sheets header strings; unresolved fields become pending proposals. All physical data changes require app-specific ADR/owner signoff.
+
+**Comparison semantics:** Inspect all actual headers and table names, not merely the first N expected columns. Detect added, missing, duplicated and reordered headers and unexpected tabs; compare schema versions and ensure no stale deployment writes to a newer structure. Column reordering should be handled through header-based mapping only after the changed schema is verified. Manual changes are detected but not implicitly endorsed.
+
+**GAS runtime:** expose `inspectSchemaDriftFromEditor` / `proposeSchemaChangeFromEditor` as administrator-only editor/approved trigger entrypoints, never as anonymous API actions. Only compare header metadata; avoid logging row content and personal information. A scheduled trigger, when installed and authorized, must honor quotas, security, notification and least privilege. Bundled schema MUST match canonical JSON at CI build time; tests MUST inject a fake Sheet provider for extra/missing/renamed/reordered columns, missing/extra tabs and write-protection.
+
+**Deployment/runtime safeguards:** stop unsafe write operations on schema drift; maintain a schema migration journal with exact input version, output version, approval ID, backup reference, actor, timestamp and verification; do not claim cross-service atomicity between Drive, GAS and GitHub. Current implementations may deliver `DETECT_AND_PROPOSE` first and must state explicitly when triggers, PR automation and migrations are not implemented.
+
 ## 9. External API adapters and integration standards
 
 - Encapsulate `UrlFetchApp` in infrastructure adapters: approved base URL and hostname allowlist, auth injection from approved secret store, bounded timeouts, error sanitization, and provider DTO mapping.
@@ -441,4 +457,4 @@ Choose by functional need, security posture, scale, cost and operational support
 - [Apps Script Web App manifest](https://developers.google.com/apps-script/manifest/web-app-api-executable) — access and executeAs.
 - [LockService](https://developers.google.com/apps-script/reference/lock/lock-service) — concurrent access control.
 
-**End of normative blueprint MT-GAS-MBP-001 (v1.4.0).**
+**End of normative blueprint MT-GAS-MBP-001 (v1.5.0).**
