@@ -30,12 +30,16 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
   if(!Number.isSafeInteger(limit)||limit<1||limit>5000)throw new Error('INVALID_LIMIT');
   return records(name,filter).slice(-limit).map(x=>({...x.data}));
  }
+ // Store user-entered text as literal cells; prevents Sheets formula evaluation.
+ function literalCell(value){
+  return typeof value==='string'&&/^[\\s]*[=+@-]/.test(value)?"'"+value:value;
+ }
  function insert(name,data){
   const t=table(name);
   for(const c of DATABASE_SCHEMA.tables[name].columns)if(c.required&&(data[c.name]===undefined||data[c.name]===''))throw new Error('REQUIRED_FIELD:'+c.name);
   const key=DATABASE_SCHEMA.tables[name].columns.find(c=>c.key==='primary')?.name;
   if(key&&records(name,{[key]:data[key]}).length)throw new Error('DUPLICATE_KEY');
-  const values=t.headers.map(h=>data[h]===undefined?'':data[h]);
+  const values=t.headers.map(h=>literalCell(data[h]===undefined?'':data[h]));
   t.sheet.appendRow(values);
   return {...data};
  }
@@ -44,7 +48,7 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
   if(hits.length!==1)throw new Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
   if(!patch||Object.keys(patch).some(k=>!t.headers.includes(k)))throw new Error('INVALID_PATCH');
   const next={...hits[0].data,...patch};
-  t.sheet.getRange(hits[0].row,1,1,t.headers.length).setValues([t.headers.map(h=>next[h]===undefined?'':next[h])]);
+  t.sheet.getRange(hits[0].row,1,1,t.headers.length).setValues([t.headers.map(h=>literalCell(next[h]===undefined?'':next[h]))]);
   return next;
  }
  function remove(name,filter){
