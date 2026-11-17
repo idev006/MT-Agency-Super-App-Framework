@@ -3,7 +3,7 @@
 **Document ID:** P6VC-KANBAN-001  
 **Created:** 2026-11-17 | **Status:** OPERATIONAL ISSUE-BASED KANBAN; **NOT** a native GitHub Projects v2 board  
 **Canonical planning document:** [Development Roadmap](DEVELOPMENT_ROADMAP_PHASE1.md)  
-**Work-tracking source:** [GitHub Issues](https://github.com/idev006/MT-Agency-Super-App-Framework/issues) with stable issue IDs `VC-W01`–`VC-W28`. Actual issue state and `status:*` label supersede this document's initial snapshot.
+**Work-tracking source:** [GitHub Issues](https://github.com/idev006/MT-Agency-Super-App-Framework/issues) with stable issue IDs `VC-W01`–`VC-W29`. Actual issue state and `status:*` label supersede this document's initial snapshot.
 
 ## 1. Live Kanban lanes
 
@@ -75,7 +75,7 @@ Every issue MUST include: specific user/business need; links to authoritative re
 
 Track weekly: total work items by live lane, throughput (# evidenced closed this week), cycle time (first in-progress to accepted), age of blocked items, WIP count, PR review lead time, CI pass/fail, defect reopen rate and critical security gate status. Compute from real issue history; do not fabricate baselines or completion percentages.
 
-**Initial snapshot:** 28 tracked issues; 4 DONE-EVIDENCED (documents/schema source+CI only), 16 BLOCKED, 6 TODO, 1 REVIEW, 1 ON-HOLD. **0 real backend deployments/production approvals confirmed.**
+**Initial snapshot (2026-11-17 before deployment tracking):** 28 issues. **Current tracking extension:** [VC-W29](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/29) added as **BLOCKED**, awaiting OAuth secret and target GAS backup/first push. Total 29 issues (4 DONE-EVIDENCED, 17 BLOCKED, 6 TODO, 1 REVIEW, 1 ON-HOLD). Follow live filters for current counts. **0 real backend deployments/production approvals confirmed.**
 
 ## 8. Native GitHub Projects board status
 
