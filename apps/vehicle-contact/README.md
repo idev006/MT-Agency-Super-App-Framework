@@ -13,6 +13,9 @@
 ## Phase 1 technology direction (2026-11-17)
 **Approved architecture direction:** Vehicle Contact Phase 1 uses Google Sheets as the primary datastore: **one worksheet/tab = one logical table** within an application spreadsheet. The app-specific GAS Backend API accesses these tables via domain ports and Sheets repository adapters. Frontend communicates through its GAS API adapter and a verified, non-bypassable security boundary. **Username/Password Phase 1 authentication** replaces reliance on the unfinished MT-I-AM; production credential/session design and direct GAS endpoint protection are still open security gates. Earlier Supabase-centric design paragraphs are historical draft alternatives, not the Phase 1 choice. See [Phase 1 Google Sheets Data Architecture](docs/PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).
 
+## GAS deployment automation
+- [Manually dispatched GitHub Actions → GAS deployment](../../../.github/workflows/deploy-vehicle-gas.yml) targets the user-supplied Script ID. [Setup and security runbook](docs/GAS_GITHUB_ACTIONS_DEPLOYMENT.md). **Workflow configured, not yet authenticated/executed; no Web App deployment.**
+
 ## Live Agile Kanban tracking
 - [Agile Kanban — live GitHub Issues lanes](docs/AGILE_KANBAN.md) and [repository Issues](https://github.com/idev006/MT-Agency-Super-App-Framework/issues): **28 work items VC-W01–VC-W28 created**, 4 completed with evidence and closed; remaining items tracked via `status:*`, `area:*`, `priority:*` labels.
 - This is an **issue-backed Kanban** with live filtered GitHub lists; **no native GitHub Projects board has been created**. Owner/review assignments and target dates are pending actual team decisions.
