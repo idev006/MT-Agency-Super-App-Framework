@@ -43,3 +43,15 @@ export function migrateVehicleSchemaFromEditor() {
  Logger.log(JSON.stringify(result));
  return result;
 }
+
+// Explicitly gated GAS Editor action. Never callable over HTTP.
+export function applyVehicleSchemaFromEditor() {
+ const props=PropertiesService.getScriptProperties();
+ if(props.getProperty('VEHICLE_SCHEMA_MIGRATION_APPROVED')!=='true')
+  throw new Error('EXPLICIT_MIGRATION_APPROVAL_REQUIRED');
+ const a=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp,
+   lockService:LockService,driveApp:DriveApp});
+ const result=a.migrateSchema({dryRun:false,approvalCode:'APPROVE_ADDITIVE_SCHEMA_MIGRATION'});
+ Logger.log(JSON.stringify({status:result.status,schemaVersion:result.schemaVersion,backupCreated:Boolean(result.backupRef)}));
+ return result;
+}

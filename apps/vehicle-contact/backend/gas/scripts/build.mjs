@@ -11,7 +11,7 @@ const out=join(root,'dist');
 const maxLines=800;
 const entryFile='backend/gas/src/entrypoints/WebApp.js';
 const allowedFolders=['entrypoints','api','application','domain','infrastructure','composition'];
-const entrypoints=['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor'];
+const entrypoints=['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor'];
 
 function scan(dir) {
   return readdirSync(dir,{withFileTypes:true}).flatMap(d=>{

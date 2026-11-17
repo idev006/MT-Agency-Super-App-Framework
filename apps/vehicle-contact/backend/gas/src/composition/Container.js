@@ -42,7 +42,7 @@ export function createApplication(deps={}) {
     dispatch:router.dispatch,
     migrateSchema(options){
       const id=deps.propertiesService.getScriptProperties().getProperty("VEHICLE_SHEET_ID");
-      return createAdditiveMigration({spreadsheetApp:deps.spreadsheetApp,spreadsheetId:id,lockService:deps.lockService}).run(options);
+      return createAdditiveMigration({spreadsheetApp:deps.spreadsheetApp,spreadsheetId:id,lockService:deps.lockService,driveApp:deps.driveApp,propertiesService:deps.propertiesService}).run(options);
     },
     verifySchema(){return verifySchemaUseCase(schemaRepository());},
     inspectSchemaDrift(){
