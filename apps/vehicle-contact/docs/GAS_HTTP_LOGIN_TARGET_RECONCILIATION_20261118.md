@@ -34,3 +34,23 @@ Added **manual-only**, **account-specific** test source [`login-http-acceptance.
 5. Review security exposure and rotate the already disclosed `VEHICLE_AUTH_PEPPER` with operational coordination; pepper rotation alone does not automatically revoke extant sessions. Do not reset the original admin or rewrite the database merely to get a synthetic runner passing.
 
 **Status:** Target and test account **confirmed from Sheet**; successful real HTTP `auth.login` **NOT YET TESTED** because the correct password has not been supplied through a secure runner secret. **Workflow safety update:** commit `b5d493b` restricts target URL and dispatch owner/branch; no Workflow dispatch or Google login has occurred. Tests have not been run automatically by committing the workflow. Separate security/PDPA release gates remain unchanged.
+
+## Real manual login attempts (2026-11-18, Bangkok time)
+
+The owner manually dispatched the original commit `72df8e6a47cccb829441dd20aba2d49c3ace2f69` twice before the restricted target/owner workflow change was applied. Sources: [Run #1](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44136273370) job `134226558511`, [Run #2](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44136808594) job `134228468244`. Both failed at exactly the same assertion.
+
+| Case | Run #1 | Run #2 |
+| --- | --- | --- |
+| LOGIN-01.HEALTH | PASS (1584 ms) | PASS (1873 ms) |
+| LOGIN-02.INVALID_EMPTY_PAYLOAD | PASS (1449 ms) | PASS (1849 ms) |
+| LOGIN-03.UNAUTHENTICATED_SESSION | PASS (2020 ms) | PASS (1802 ms) |
+| LOGIN-04.VALID_CREDENTIALS | **FAIL (5402 ms)**: `LOGIN_DENIED_INVALID_CREDENTIALS` | **FAIL (5411 ms)**: `LOGIN_DENIED_INVALID_CREDENTIALS` |
+| LOGIN-05..08 | NOT RUN | NOT RUN |
+
+The `P6VC_HTTP_LOGIN_PASSWORD` environment variable was present in both runs, shown masked (`***`) by GitHub. This proves **a secret was supplied**, not that the correct password was supplied. The GAS HTTP API reached its login logic and returned the same generic rejection in both attempts. There was **no successful login or authorized session**. Two failed attempts were made against the same username; the app rate-limit design allows six failures over 15 minutes, so avoid repeated guesses/retries. No login token/secret or personal data was printed.
+
+**Differential diagnosis, not yet proven:** actual bootstrap temporary password does not match configured Actions secret (copy/paste, whitespace, another secret), or stored hash/provider compatibility bug. The code inspection of `IdentityOperations.login`, `GasSecurity.verifyPassword` and `BootstrapAdmin` shows that `password_change_required=true` should **not** prevent correct initial login; it affects follow-up protected operations. Pepper supplies entropy to new salt/token generation in this current implementation; existing password verification uses the stored PBKDF2 salt and hash, so rotating pepper alone is not a fix for this failure.
+
+**Next safe diagnostic:** Owner verifies locally, without posting password, that the repository secret is the **exact password originally supplied to `VEHICLE_BOOTSTRAP_TEMP_PASSWORD`**, including case/symbols/no stray whitespace. If uncertain, follow a separately approved credential reset path; do not repeat `bootstrapVehicleAdminFromEditor` on populated tables, inspect/expose stored hashes, or brute-force the existing account. After any reset, invalidate sessions as appropriate. Re-run the **pinned-target manual-only** workflow only once after confirmed corrective action, not speculatively. If it still fails, collect sanitized API error and independent GAS cryptographic compatibility evidence before further login attempts.
+
+**Acceptance:** `HTTP_LOGIN_FAIL_INVALID_CREDENTIALS`; 3 of 4 executed checks PASS, 1 FAIL; **8 total defined, remaining 4 not run**. This is not a production release or IAM certification.
