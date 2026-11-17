@@ -251,3 +251,11 @@ Run these in parallel where dependencies permit. **Do not** implement public log
 **Immediate review questions:** Is this system an in-scope service provider for computer traffic-data retention? Which exact fields and retention rule apply? Is GAS capable of authoritative source IP and tamper-resistant logs? Is any separate traffic-log gateway/storage necessary? Which PDPA provisions and agency exceptions apply? Who is the legal controller/processor, incident owner and records custodian? Until answered, schema v2 remains proposal-only and protected routes/pilot remain blocked.
 
 **No invented staffing:** assigning this AI role does not add a real GitHub assignee or represent that legal counsel has reviewed the project. Record the actual reviewer identity and signed outcome when the organization appoints one.
+
+### Legal review decision policy — user-approved 2026-11-17
+
+The AI advisory legal reviewer may **automatically clear the internal advisory review gate** when its completed, source-cited applicability matrix has no unresolved applicable-law issues, no missing mandatory controls, no material residual legal risks, and no ambiguous applicability requiring a qualified human interpretation. Record outcome `ADVISORY_PASS` and proceed to the next **already authorized** engineering/review stage without asking the project sponsor for redundant approval.
+
+Use `CONDITIONAL_PASS` only for explicitly documented non-blocking observations with owner, deadline and follow-up verification. Use `BLOCKED` for material noncompliance, missing evidence, contested interpretation or an unresolved mandatory control; escalate with a concrete question.
+
+**Separation of authority:** `ADVISORY_PASS` does not mean `LEGAL_APPROVED`, does not substitute for statutory/agency approval or a qualified human legal opinion, and cannot authorize a live Spreadsheet migration, protected API enablement, personal-data processing, or pilot/release where separate security, data-owner, change-control or human legal sign-off is required. Existing M1/M5/M6 release gates remain in force. Never mark the legal review completed merely because this policy is recorded; actual review findings and authoritative citations must be attached.
