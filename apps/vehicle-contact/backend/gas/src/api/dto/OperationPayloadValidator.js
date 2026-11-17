@@ -54,6 +54,7 @@ const SCHEMAS={
  'audit.query':[{}, {vehicleId:'s',limit:'n'}],
  'audit.export':[{}, {vehicleId:'s',limit:'n'}]
 };
+export const DTO_SCHEMAS=Object.freeze(SCHEMAS);
 export const DTO_OPERATIONS=Object.freeze(Object.keys(SCHEMAS));
 export function validateOperationPayload(operation,payload){
  const spec=SCHEMAS[operation];
