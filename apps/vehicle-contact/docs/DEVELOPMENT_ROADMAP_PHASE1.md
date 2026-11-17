@@ -69,6 +69,12 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 - [GitHub Actions run 44035053861](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44035053861) **PASS**: 14 `.gs` files + manifest pushed to existing Script ID; **GAS Version 5 created**. Each generated module <=800 lines; tests validate runtime order independence and API fail-closed.
 - Manual-only Workflow restored after one-shot test. Actual GAS Editor + Sheet schema verification remains required before closing runtime acceptance.
 
+## 2F. Real /exec API smoke — 7/7 pass (2026-11-17)
+
+- External GitHub Actions [run 44036525176](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44036525176) verified actual HTTP GET and POST `system.health`, bad API version, unknown group, and denied protected vehicle/contact/QR actions.
+- [Live API evidence](GAS_LIVE_API_TEST_EVIDENCE.md) records exact expected outcomes; **not** security acceptance for enabled protected business APIs.
+- Next gates: editor schema verification against real Sheets, deployment-version inspection, and secure staging integration.
+
 ## 3. Milestone sequence (relative, not scheduled dates)
 
 | Milestone | Outcome / exit condition | Depends on |
