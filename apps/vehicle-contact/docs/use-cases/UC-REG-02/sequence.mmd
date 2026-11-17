@@ -1,0 +1,26 @@
+sequenceDiagram
+  autonumber
+  actor Admin as REGISTRATION_ADMIN
+  participant FE as Vue Approval UI
+  participant API as GAS API / RBAC
+  participant Review as VehicleOperations
+  participant DB as Sheets
+  Admin->>FE: Open pending applications
+  FE->>API: registrations.listPending / detail
+  API->>API: Require vehicle.registration.approve
+  API->>DB: Read pending application and 5 media refs
+  API-->>FE: Review details and photo references
+  Admin->>FE: Inspect plate photo then approve or reject
+  FE->>API: registrations.review(decision,platePhotoVerified)
+  API->>Review: Acquire ScriptLock and reload pending state
+  alt Approve with verified plate and no active duplicate
+    Review->>DB: Create ACTIVE vehicle + primary contact + five photos
+    Review->>DB: Insert QR digest, update review status and append audit
+    API-->>FE: APPROVED and one-time QR token
+  else Reject
+    Review->>DB: Mark REJECTED and append audit
+    API-->>FE: REJECTED (campaign quota remains used)
+  else Unauthorized, unreadable plate, conflict
+    API-->>FE: FORBIDDEN / PLATE_PHOTO_NOT_VERIFIED / conflict
+  end
+  Note over Review,DB: Approval multi-write recovery not yet fully proven on abrupt timeout

@@ -1,0 +1,26 @@
+sequenceDiagram
+  autonumber
+  actor Admin as REGISTRATION_ADMIN
+  actor Sys as SYSTEM_ADMIN
+  participant FE as Vue Admin
+  participant API as GAS API
+  participant Vehicle as VehicleOperations
+  participant Retention as MediaRetentionOperations
+  participant DB as Sheets
+  Admin->>FE: Cancel registered vehicle
+  FE->>API: vehicles.cancel(vehicleId,session)
+  API->>API: Require vehicle.update
+  Vehicle->>DB: Lock, require ACTIVE and retention_days
+  alt Valid cancellation
+    Vehicle->>DB: Set INACTIVE and increment version
+    Vehicle->>DB: Revoke all active QR and create WAITING_RETENTION job
+    Vehicle->>DB: Append cancellation audit
+    API-->>FE: vehicle INACTIVE
+  else Invalid state or policy
+    API-->>FE: Error, do not expose cancelled vehicle
+  end
+  Sys->>API: retention.listDue(limit)
+  API->>API: Require retention.read
+  Retention->>DB: Read due jobs, exclude legal_hold
+  API-->>Sys: Due jobs list
+  Note over API,DB: Automatic scheduler/notification specified in baseline is not implemented

@@ -1,0 +1,689 @@
+{
+  "documentId": "P6VC-UC-CATALOG-001",
+  "version": "1.0.0-draft",
+  "date": "2026-11-17",
+  "source": "API v1 inventory and Backend main 6a4f913...",
+  "status": "SOURCE_DESIGN_REVIEWED_LIVE_GAS_PENDING",
+  "cases": [
+    {
+      "id": "UC-AUTH-01",
+      "title": "Local login, session check and logout",
+      "actor": "Pre-provisioned user (STAFF / REGISTRATION_ADMIN / SYSTEM_ADMIN / OWNER / RETENTION_WORKER)",
+      "ops": [
+        "auth.login",
+        "auth.session",
+        "auth.logout"
+      ],
+      "tests": [
+        "TC-AUTH-01",
+        "TC-AUTH-02",
+        "TC-AUTH-03",
+        "TC-SESS-01",
+        "TC-SESS-02",
+        "GAS-AUTH-LOGIN",
+        "GAS-AUTH.LOGOUT_REVOKE"
+      ],
+      "pre": "Account exists and ACTIVE; server-side pepper and idle-timeout setting are configured; protected API explicitly enabled only in isolated staging.",
+      "success": "Issue only an opaque session token to client; store token digest in vc_sessions; validate role and session per protected call; revoke on logout.",
+      "failure": "Unknown/suspended user, password mismatch, retry limit, expired/idle/revoked session return safe denial; username enumeration timing remains under review.",
+      "tables": [
+        "vc_users",
+        "vc_security_events",
+        "vc_sessions",
+        "vc_settings",
+        "vc_user_roles",
+        "vc_user_permissions"
+      ],
+      "notes": "Login reads vc_security_events for 15-minute failed-attempt limit (6 failures). The actual GAS implementation creates a server session, but protected public /exec remains gated.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/IdentityOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/auth-session-integration.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-AUTH-02",
+      "title": "First-login password change and administrator reset",
+      "actor": "Authenticated user / SYSTEM_ADMIN",
+      "ops": [
+        "auth.changePassword",
+        "users.resetPassword"
+      ],
+      "tests": [
+        "TC-AUTH-04",
+        "TC-AUTH-05",
+        "ACTOR-01",
+        "GAS-AUTH.INITIAL_CHANGE_REQUIRED"
+      ],
+      "pre": "User is pre-provisioned and has an active session; password_change_required may be set. System Admin has users.manage for resets.",
+      "success": "Verify old password, write new PBKDF2 hash, clear first-login flag, revoke all sessions; admin reset sets flag again and revokes sessions.",
+      "failure": "Wrong old password or insufficient permission fails; admin-reset error does not create a new session. Abrupt Sheets partial writes need review.",
+      "tables": [
+        "vc_users",
+        "vc_sessions",
+        "vc_change_audit"
+      ],
+      "notes": "First login can use auth.session, auth.logout and auth.changePassword while other protected business operations are blocked.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/IdentityOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/auth-session-integration.test.mjs",
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-AUTH-03",
+      "title": "Google identity linking and pre-provisioned Google sign-in",
+      "actor": "Authenticated account holder / linked Google identity",
+      "ops": [
+        "auth.linkGoogle",
+        "auth.googleLogin"
+      ],
+      "tests": [
+        "ACTOR-07",
+        "TC-AUTH-02"
+      ],
+      "pre": "A locally authenticated account exists for linking; Google OIDC client audience and trusted verifier configured.",
+      "success": "Verified Google subject (sub) is linked uniquely to an existing user; later login issues server-side session only for that linked ACTIVE account.",
+      "failure": "Unknown/unlinked sub, invalid Google token, reused sub, wrong local password or disabled user fails; no Google auto-provisioning.",
+      "tables": [
+        "vc_user_identities",
+        "vc_users",
+        "vc_sessions",
+        "vc_change_audit"
+      ],
+      "notes": "Google token validation uses UrlFetchApp to Google tokeninfo and must check audience, issuer, expiry, email_verified. OIDC live provider test is not yet verified.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/IdentityOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/auth-session-integration.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-ADMIN-01",
+      "title": "User provisioning, maintenance, suspension and role assignment",
+      "actor": "SYSTEM_ADMIN",
+      "ops": [
+        "users.create",
+        "users.list",
+        "users.update",
+        "users.suspend",
+        "users.assignRoles"
+      ],
+      "tests": [
+        "ACTOR-01",
+        "TC-RBAC-03",
+        "MATRIX-02"
+      ],
+      "pre": "System Admin has users.manage; username and roles meet allowlist; server session active.",
+      "success": "Create a STAFF account with temporary password, edit profile, assign valid roles, suspend account, revoke sessions, write change audit.",
+      "failure": "Duplicate username, invalid roles, self-suspend, self-demotion and lack of users.manage are denied; no self-signup.",
+      "tables": [
+        "vc_users",
+        "vc_user_roles",
+        "vc_sessions",
+        "vc_change_audit"
+      ],
+      "notes": "Role assignment removes existing assignments then reinserts requested roles under a Sheets lock; mid-write interruption may leave a partial assignment and needs recovery plan.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/IdentityOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-ADMIN-02",
+      "title": "Police hierarchy and external organization master",
+      "actor": "SYSTEM_ADMIN (write) / STAFF or REGISTRATION_ADMIN (read)",
+      "ops": [
+        "organizations.list",
+        "organizations.create",
+        "organizations.update",
+        "organizations.disable"
+      ],
+      "tests": [
+        "ACTOR-01",
+        "MATRIX-02"
+      ],
+      "pre": "Authenticated reader has organizations.read; writes require organizations.manage; POLICE parent may be hierarchical; EXTERNAL remains flat.",
+      "success": "List active/disabled organizations; create POLICE or EXTERNAL records; update allowed fields; disable rather than silently delete.",
+      "failure": "Invalid org_type, missing parent, self-parent and unauthorized writes are rejected.",
+      "tables": [
+        "vc_organizations",
+        "vc_change_audit"
+      ],
+      "notes": "Source checks a direct self-parent but not arbitrary multi-level cycles; cyclic hierarchy prevention is a design-review gap.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/AdministrationOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-ADMIN-03",
+      "title": "System settings and public health check",
+      "actor": "SYSTEM_ADMIN / anonymous monitor (health only)",
+      "ops": [
+        "system.health",
+        "system.config.get",
+        "system.config.update"
+      ],
+      "tests": [
+        "LIVE-01",
+        "LIVE-02",
+        "ACTOR-01",
+        "MATRIX-00"
+      ],
+      "pre": "Public health may be checked without credentials; settings require a server-verified SYSTEM_ADMIN session.",
+      "success": "Health returns minimal status; settings allow idle_timeout_minutes (1–480) and retention_days (1–3650), audit writes.",
+      "failure": "Unauthorized get/update, unsupported keys, invalid integer ranges are denied; health must not disclose secrets.",
+      "tables": [
+        "vc_settings",
+        "vc_change_audit"
+      ],
+      "notes": "Health is special public route in Router, not one of 49 protected DTO handler operations.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/api/routes/Router.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-rbac-matrix.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-CAMP-01",
+      "title": "Create, list and revoke registration campaigns",
+      "actor": "SYSTEM_ADMIN",
+      "ops": [
+        "campaigns.create",
+        "campaigns.list",
+        "campaigns.revoke"
+      ],
+      "tests": [
+        "ACTOR-02",
+        "EDGE-04",
+        "EDGE-05"
+      ],
+      "pre": "Authenticated System Admin with campaigns.manage; request includes start/end and submission limit.",
+      "success": "Store campaign token digest, schedule window and max quota; return raw token once to Admin; revoke invalidates subsequent use.",
+      "failure": "Invalid period/capacity, non-admin creation, reuse of revoked token denied.",
+      "tables": [
+        "vc_campaigns",
+        "vc_change_audit"
+      ],
+      "notes": "Raw campaign token is returned only at creation; do not put in logs, analytics or referrer-bearing links.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/AdministrationOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-CAMP-02",
+      "title": "Validate a public registration campaign token",
+      "actor": "Anonymous registrant",
+      "ops": [
+        "campaigns.validate"
+      ],
+      "tests": [
+        "ACTOR-02",
+        "EDGE-05"
+      ],
+      "pre": "Registrant opens a campaign URL with opaque token; a campaign has been created by System Admin.",
+      "success": "Server checks digest, ACTIVE status, start/end window, revocation and available quota; returns validity without privileged data.",
+      "failure": "Malformed, unknown, expired, revoked or full campaign token returns CAMPAIGN_INVALID.",
+      "tables": [
+        "vc_campaigns"
+      ],
+      "notes": "Validation is advisory before form submission; actual quota check repeats inside registrations.submit under ScriptLock.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/AdministrationOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-PHOTO-01",
+      "title": "Upload five staged vehicle photos",
+      "actor": "Anonymous registrant with valid campaign",
+      "ops": [
+        "photos.upload"
+      ],
+      "tests": [
+        "ACTOR-03",
+        "EDGE-01",
+        "EDGE-08",
+        "EDGE-10",
+        "GAS-FLOW.MEDIA_FRONT"
+      ],
+      "pre": "Active campaign token; image JPEG/PNG/WebP with allowed signature, MIME and size; five slots FRONT, REAR, LEFT, RIGHT, FRONT_ANGLE.",
+      "success": "Create Drive file and vc_photo_staging metadata; return photoId/slot for subsequent registration.submit.",
+      "failure": "Invalid MIME/signature/slot, revoked campaign, staging quota or failed Sheet write triggers safe failure and best-effort Drive trash.",
+      "tables": [
+        "vc_campaigns",
+        "vc_photo_staging",
+        "vc_operation_journal"
+      ],
+      "notes": "Upload occurs before acquiring Sheets lock; if cleanup trash fails an orphan may remain and needs reconciliation. Parent-folder Anyone-with-link exposure is an accepted risk in approved requirements.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/MediaRetentionOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-REG-01",
+      "title": "Public vehicle application submission with five photos",
+      "actor": "Anonymous registrant with valid campaign",
+      "ops": [
+        "registrations.submit"
+      ],
+      "tests": [
+        "ACTOR-03",
+        "EDGE-01",
+        "EDGE-03",
+        "EDGE-04",
+        "EDGE-09",
+        "GAS-FLOW.REGISTRATION_SUBMIT"
+      ],
+      "pre": "Campaign active with available quota; organization active; all mandatory vehicle/contact fields present; exactly five staged photo IDs.",
+      "success": "Store PENDING_APPROVAL registration, claim media, increment quota once, persist idempotency response and operation journal.",
+      "failure": "Duplicate plate+province, invalid campaign, staged photo mismatch, quota exhaustion or idempotency conflict denied; caught write errors compensated but abrupt timeout requires manual recovery.",
+      "tables": [
+        "vc_campaigns",
+        "vc_organizations",
+        "vc_photo_staging",
+        "vc_registration_requests",
+        "vc_idempotency",
+        "vc_operation_journal",
+        "vc_vehicles"
+      ],
+      "notes": "Exactly one primary contact is created only during approval. Sheets compensation is not atomic database rollback; journal PREPARED after crash is a release blocker.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/VehicleOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-REG-02",
+      "title": "Administrator review, approval or rejection of vehicle registration",
+      "actor": "REGISTRATION_ADMIN",
+      "ops": [
+        "registrations.listPending",
+        "registrations.detail",
+        "registrations.review"
+      ],
+      "tests": [
+        "ACTOR-03",
+        "EDGE-02",
+        "GAS-FLOW.APPROVE"
+      ],
+      "pre": "Registration request exists as PENDING_APPROVAL; Registration Admin has vehicle.registration.approve; readable plate photo manually verified for APPROVE.",
+      "success": "APPROVE creates ACTIVE vehicle, one primary contact, five active photo records, QR token digest and audit; REJECT only updates request and audit.",
+      "failure": "Insufficient approval permission, unreadable plate, duplicate active vehicle, already-reviewed request denied; mid-approval Sheets failure needs reconciliation.",
+      "tables": [
+        "vc_registration_requests",
+        "vc_vehicles",
+        "vc_vehicle_contacts",
+        "vc_vehicle_photos",
+        "vc_qr_tokens",
+        "vc_change_audit"
+      ],
+      "notes": "The backend checks platePhotoVerified boolean supplied by admin session; actual human visual verification is outside code and requires UAT. Current approve path performs multiple Sheets writes without full durable compensation.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/VehicleOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-VEH-01",
+      "title": "Authorized cross-org plate search, details and contact/photo disclosure",
+      "actor": "STAFF / REGISTRATION_ADMIN with permissions",
+      "ops": [
+        "vehicles.lookup",
+        "vehicles.detail",
+        "vehicles.history",
+        "contacts.read",
+        "photos.list"
+      ],
+      "tests": [
+        "ACTOR-03",
+        "ACTOR-04",
+        "GAS-AUTH-LOOKUP.STAFF",
+        "GAS-AUTH-CONTACT.READ"
+      ],
+      "pre": "Valid server session; permissions vehicle.lookup, vehicle.contact.read, vehicle.photos.read and optionally vehicle.history.read; vehicle ACTIVE.",
+      "success": "Search normalized Thai plate+province across organizations; show permitted contact and 5 photo references with lookup audit; allow user-initiated phone dial.",
+      "failure": "Unknown/inactive vehicle, missing permission, revoked session or ambiguous active duplicate fail safely; don't expose public contact directory.",
+      "tables": [
+        "vc_vehicles",
+        "vc_vehicle_contacts",
+        "vc_vehicle_photos",
+        "vc_lookup_audit",
+        "vc_change_audit"
+      ],
+      "notes": "Approved business baseline permits immediate contact/5-photo visibility to authorized staff, no reason prompt. Images may be link-accessible outside app because of shared parent folder risk.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/VehicleOperations.js",
+        "backend/gas/src/application/use-cases/MediaRetentionOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-VEH-02",
+      "title": "Direct authorized vehicle or primary contact correction",
+      "actor": "REGISTRATION_ADMIN",
+      "ops": [
+        "vehicles.update",
+        "contacts.update"
+      ],
+      "tests": [
+        "ACTOR-04",
+        "GAS-FLOW.REGISTER_OWNER"
+      ],
+      "pre": "Vehicle ACTIVE, Registration Admin has vehicle.update, expectedVersion equals persisted version for vehicles.update.",
+      "success": "Apply permitted vehicle fields or primary contact changes; version increment and change audit; ownership can be assigned only to ACTIVE user.",
+      "failure": "Stale version, duplicate plate+province, nonexistent owner, missing single primary contact or missing permission are rejected.",
+      "tables": [
+        "vc_vehicles",
+        "vc_users",
+        "vc_vehicle_contacts",
+        "vc_change_audit"
+      ],
+      "notes": "Vehicle update uses ScriptLock and optimistic version; contact update checks one primary active contact. Contact update is permission vehicle.update in deployed code.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/VehicleOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-OWNER-01",
+      "title": "Owner proposes a change; Registration Admin approves",
+      "actor": "OWNER (submit) / REGISTRATION_ADMIN (review)",
+      "ops": [
+        "changes.submit",
+        "changes.listPending",
+        "changes.review"
+      ],
+      "tests": [
+        "ACTOR-04",
+        "GAS-FLOW.OWNER_PROPOSE",
+        "GAS-FLOW.REG_APPROVE_CHANGE"
+      ],
+      "pre": "Owner account authenticated and linked to ACTIVE vehicle via owner_user_id, or has explicit vehicle.update; Admin has vehicle.change.approve.",
+      "success": "Store proposed_delta PENDING with audit; review APPROVE patches authorized vehicle/contact fields and audit; REJECT leaves current vehicle data unchanged.",
+      "failure": "Unverified ownership, empty change, invalid contact phone, unauthorized approver or already-reviewed request denied.",
+      "tables": [
+        "vc_change_requests",
+        "vc_vehicles",
+        "vc_vehicle_contacts",
+        "vc_change_audit"
+      ],
+      "notes": "Anonymous owner verification/claim procedure is NOT implemented. Existing Owner change submit derives identity from server session; campaign token alone does not grant owner edit.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/VehicleOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-QR-01",
+      "title": "Authenticated QR scan and resolve",
+      "actor": "STAFF / REGISTRATION_ADMIN",
+      "ops": [
+        "qr.resolve"
+      ],
+      "tests": [
+        "ACTOR-03",
+        "EDGE-06",
+        "GAS-AUTH-QR.RESOLVE"
+      ],
+      "pre": "Mobile scanner successfully decodes an opaque 64-character token; user has valid session and vehicle.lookup permission.",
+      "success": "Hash token, find ACTIVE QR and ACTIVE vehicle, append lookup audit, return only fields authorized by caller.",
+      "failure": "Malformed, unknown, revoked or cancelled QR fails without releasing private data; revoked lookup may return null.",
+      "tables": [
+        "vc_qr_tokens",
+        "vc_vehicles",
+        "vc_lookup_audit",
+        "vc_vehicle_contacts",
+        "vc_vehicle_photos"
+      ],
+      "notes": "QR token must contain no PII. Camera permission, real mobile scanning and QR deep-link route are future frontend/device acceptance.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/VehicleOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-QR-02",
+      "title": "Issue, revoke and rotate vehicle QR token",
+      "actor": "REGISTRATION_ADMIN / SYSTEM_ADMIN with qr.manage",
+      "ops": [
+        "qr.issue",
+        "qr.revoke",
+        "qr.replace"
+      ],
+      "tests": [
+        "ACTOR-04",
+        "EDGE-06",
+        "GAS-FLOW.ROTATE_QR"
+      ],
+      "pre": "Authenticated actor with qr.manage; vehicle ACTIVE and at most one ACTIVE QR.",
+      "success": "Issue opaque token only if none active; rotate revokes old then creates new digest; revoke fails closed for older QR, audit mutations.",
+      "failure": "Two active QR conflict, issue with existing token, inactive vehicle, unauthorized mutation blocked.",
+      "tables": [
+        "vc_qr_tokens",
+        "vc_vehicles",
+        "vc_change_audit"
+      ],
+      "notes": "Under Sheets lock old QR is revoked and new one inserted. If GAS times out between writes, recovery must handle state; no claim of ACID.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/VehicleOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-PHOTO-02",
+      "title": "List or replace a registered vehicle photo",
+      "actor": "REGISTRATION_ADMIN (replace) / STAFF (read via UC-VEH-01)",
+      "ops": [
+        "photos.replace"
+      ],
+      "tests": [
+        "ACTOR-05",
+        "GAS-FLOW.REPLACE_PHOTO"
+      ],
+      "pre": "ACTIVE vehicle; permitted admin, existing exactly one ACTIVE photo row for chosen slot; valid replacement PNG/JPEG/WebP.",
+      "success": "Upload new file to Drive outside lock, swap metadata under lock, audit; trash old file after persistence.",
+      "failure": "Invalid slot/MIME, missing photo row, Drive upload error; on failed Sheet write trash new file best-effort; failed old-file cleanup journals follow-up.",
+      "tables": [
+        "vc_vehicle_photos",
+        "vc_vehicles",
+        "vc_operation_journal",
+        "vc_change_audit"
+      ],
+      "notes": "Listing is covered by UC-VEH-01 as photos.list; outside-app Drive folder link access is an approved privacy risk that must be tested in UAT.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/MediaRetentionOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-RET-01",
+      "title": "Cancel vehicle and list retention work due",
+      "actor": "REGISTRATION_ADMIN (cancel) / SYSTEM_ADMIN (due list)",
+      "ops": [
+        "vehicles.cancel",
+        "retention.listDue"
+      ],
+      "tests": [
+        "ACTOR-06",
+        "EDGE-07",
+        "GAS-FLOW.CANCEL"
+      ],
+      "pre": "Vehicle ACTIVE; Registration Admin has vehicle.update; retention_days configured; due listing requires retention.read.",
+      "success": "Mark vehicle INACTIVE, revoke ACTIVE QR tokens, create WAITING_RETENTION job; later due list excludes legal holds.",
+      "failure": "Unauthorized cancel, missing policy, already inactive vehicle, legal hold or not-due jobs excluded from due list.",
+      "tables": [
+        "vc_vehicles",
+        "vc_qr_tokens",
+        "vc_retention_jobs",
+        "vc_settings",
+        "vc_change_audit"
+      ],
+      "notes": "Baseline envisions DELETION_PENDING_APPROVAL + notification trigger; current implementation creates WAITING_RETENTION and lists due jobs but does not implement the notification scheduler. Explicit gap.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/VehicleOperations.js",
+        "backend/gas/src/application/use-cases/MediaRetentionOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs",
+        "backend/gas/tests/acceptance-failures.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-RET-02",
+      "title": "Retention approval, worker deletion and job status",
+      "actor": "SYSTEM_ADMIN (approve) / RETENTION_WORKER (execute)",
+      "ops": [
+        "retention.approve",
+        "retention.execute",
+        "retention.jobStatus"
+      ],
+      "tests": [
+        "ACTOR-06",
+        "EDGE-07",
+        "GAS-FLOW.WORKER_DELETE"
+      ],
+      "pre": "Retention job due; legal_hold false; System Admin approves; worker receives retention.worker permission; destructive deletion explicitly enabled in isolated staging only.",
+      "success": "Approve status and audit; worker trashes Drive files, deletes related Sheets rows, keeps required change/lookup audit; job DELETION_COMPLETED.",
+      "failure": "Not due, hold, missing approver, disabled worker flag, storage fault produces retry-required; partial deletion reconciliation and idempotent retries still incomplete.",
+      "tables": [
+        "vc_retention_jobs",
+        "vc_vehicle_photos",
+        "vc_vehicle_contacts",
+        "vc_qr_tokens",
+        "vc_vehicles",
+        "vc_change_audit",
+        "vc_lookup_audit"
+      ],
+      "notes": "Deletion first trashes Drive then mutates multiple Sheets tables; abrupt interruption and repeated file trash calls can leave DELETION_FAILED and need verified reconciliation.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/MediaRetentionOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/acceptance-failures.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    },
+    {
+      "id": "UC-AUD-01",
+      "title": "Restricted lookup/change audit query and JSON export",
+      "actor": "SYSTEM_ADMIN / explicitly granted audit.read",
+      "ops": [
+        "audit.query",
+        "audit.export"
+      ],
+      "tests": [
+        "ACTOR-06",
+        "TC-RBAC-02",
+        "MATRIX-02"
+      ],
+      "pre": "Active server session and audit.read permission; optional vehicleId scoped filter and bounded limit.",
+      "success": "Read vc_lookup_audit + vc_change_audit, combine and sort by timestamp; export JSON structure with capped rows.",
+      "failure": "Unauthorized actor, malformed limit or revoked session denied; never include raw tokens/passwords or unredacted secrets.",
+      "tables": [
+        "vc_lookup_audit",
+        "vc_change_audit"
+      ],
+      "notes": "Current audit exporter returns JSON DTO (not a downloadable file). Audit append-only immutability and independent retention need further verification.",
+      "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
+      "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
+      "source": [
+        "backend/gas/src/application/use-cases/MediaRetentionOperations.js"
+      ],
+      "testSources": [
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+      ],
+      "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
+    }
+  ]
+}

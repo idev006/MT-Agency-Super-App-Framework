@@ -1,0 +1,19 @@
+sequenceDiagram
+  autonumber
+  actor Registrant
+  participant FE as Vue Public Registration
+  participant API as GAS API
+  participant Campaign as Campaign Use Case
+  participant DB as Sheets
+  Registrant->>FE: Open shared campaign link
+  FE->>API: campaigns.validate(campaignToken)
+  API->>Campaign: Validate token format / hash digest
+  Campaign->>DB: Read vc_campaigns
+  alt Active, within window, below submission quota
+    Campaign-->>API: valid=true / campaignId
+    API-->>FE: Show registration form
+  else Revoked, expired, invalid, or full
+    API-->>FE: CAMPAIGN_INVALID
+    FE-->>Registrant: Form unavailable / retry later
+  end
+  Note over API,DB: Submit must recheck quota under LockService; never trust this precheck
