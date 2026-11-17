@@ -23,6 +23,9 @@
 - [Data Dictionary workflow](docs/GAS_DATA_DICTIONARY.md) and [Schema Sync implementation](docs/SCHEMA_SYNC_IMPLEMENTATION.md) define **detect-and-propose only**. Changes made in Google Sheets can be identified as a review-required proposal; they do not auto-update GitHub or alter columns.
 - Admin-only GAS editor functions inspect existing Sheets headers after GAS deployment; these operations are **not** public API routes. Migration and scheduled triggers are deferred.
 
+## Phase 1 vehicle photo storage
+The selected media root is Google Drive [uploads](https://drive.google.com/drive/folders/1H_gIVF04LfLlgDRvOApcrY835Rd4LGEW), a child of the private project folder. Under it, `vehicles/`, `staging/`, and `quarantine/` were created; per-vehicle photo folders are **on-demand design only**, not operational yet. See [Media Storage Design](docs/VEHICLE_MEDIA_STORAGE_DESIGN.md). Folder/share security and the five-photo minimum are not approved for production.
+
 ## Documents
 - [DOCUMENT_CONSISTENCY_QC_2026-11-17.md](docs/DOCUMENT_CONSISTENCY_QC_2026-11-17.md) — รายงานตรวจความสอดคล้องเอกสาร ประเด็นแก้ไข และรายการรออนุมัติ (QC 17 พ.ย. 2569)
 - [REQUIREMENTS_TRACEABILITY.md](docs/REQUIREMENTS_TRACEABILITY.md) — ตรวจการเชื่อมโยงข้อกำหนด/เอกสาร/โค้ด/หลักฐาน และรายการที่ขัดแย้งรออนุมัติ
