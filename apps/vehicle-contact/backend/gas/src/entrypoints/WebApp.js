@@ -1,5 +1,6 @@
 import {runStagingAuthAcceptance,runStagingLifecycleAcceptance} from '../infrastructure/testing/StagingAcceptanceProbe.js';
 import {benchmarkStagingPasswordHash} from '../infrastructure/security/HashDiagnostics.js';
+import {createOneTimeAdminPasswordReset} from '../infrastructure/security/AdminPasswordReset.js';
 import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
 import { createApplication } from "../composition/Container.js";
 import { apiFailure } from "../api/responses/ResponseFactory.js";
@@ -88,5 +89,27 @@ export function runVehicleStagingLifecycleTestsFromEditor() {
   utilities:Utilities,driveApp:DriveApp,urlFetchApp:UrlFetchApp});
  Logger.log(JSON.stringify(result));
  if(result.failed)throw new Error('STAGING_LIFECYCLE_ACCEPTANCE_FAILED:'+result.failed);
+ return result;
+}
+
+// Trusted GAS Editor ONLY. PREVIEW reads account/backup policy; NEVER changes rows.
+export function inspectVehicleAdminResetFromEditor() {
+ const tool=createOneTimeAdminPasswordReset({
+  spreadsheetApp:SpreadsheetApp,lockService:LockService,
+  utilities:Utilities,propertiesService:PropertiesService,driveApp:DriveApp
+ });
+ const result=tool.inspect();
+ Logger.log(JSON.stringify(result)); // No secret, hash, userId or backup file ID.
+ return result;
+}
+
+// Explicitly approved one-time reset. This is NOT an HTTP operation.
+export function resetVehicleAdminPasswordFromEditor() {
+ const tool=createOneTimeAdminPasswordReset({
+  spreadsheetApp:SpreadsheetApp,lockService:LockService,
+  utilities:Utilities,propertiesService:PropertiesService,driveApp:DriveApp
+ });
+ const result=tool.apply();
+ Logger.log(JSON.stringify(result)); // Sanitized counters and state ONLY.
  return result;
 }
