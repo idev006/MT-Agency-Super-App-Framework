@@ -1,0 +1,103 @@
+name: Deploy P6 Vehicle Contact GAS (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type PUSH_VEHICLE_GAS to authorize replacing the target Apps Script project source'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-p6-vehicle-gas
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build, test and push to assigned GAS Script ID
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'PUSH_VEHICLE_GAS'
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/vehicle-contact/backend/gas
+    env:
+      TARGET_SCRIPT_ID: '1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX'
+    steps:
+      - name: Checkout canonical source from main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build and run contract tests
+        run: npm run check
+
+      - name: Verify deployment artifact
+        run: |
+          test -s dist/Code.gs
+          test -s dist/appsscript.json
+          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 2
+          node -e 'const f=require("fs");const m=JSON.parse(f.readFileSync("dist/appsscript.json","utf8"));if(m.runtimeVersion!=="V8")process.exit(1)'
+
+      - name: Install pinned clasp 3.4.1
+        run: npm install --global @google/clasp@3.4.1 --no-audit --no-fund
+
+      - name: Configure authenticated clasp for this script
+        env:
+          CLASPRC_JSON: ${{ secrets.P6VC_CLASPRC_JSON }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import os from 'node:os';
+          import path from 'node:path';
+          const raw=process.env.CLASPRC_JSON;
+          if(!raw || !raw.trim()){
+            console.error('Missing required GitHub Actions secret P6VC_CLASPRC_JSON');
+            process.exit(1);
+          }
+          let auth;
+          try {auth=JSON.parse(raw);} catch {
+            console.error('P6VC_CLASPRC_JSON is not valid JSON');process.exit(1);
+          }
+          if(!auth || typeof auth!=='object' || Array.isArray(auth)){
+            console.error('Invalid clasp authentication object');process.exit(1);
+          }
+          const authPath=path.join(os.homedir(),'.clasprc.json');
+          fs.writeFileSync(authPath,raw,{mode:0o600,flag:'w'});
+          fs.chmodSync(authPath,0o600);
+          fs.writeFileSync('.clasp.json',JSON.stringify({
+            scriptId:process.env.TARGET_SCRIPT_ID,rootDir:'dist'
+          },null,2)+'\n',{mode:0o600,flag:'w'});
+          fs.chmodSync('.clasp.json',0o600);
+          console.log('Clasp credentials configured; target script ID set without printing credentials');
+          NODE
+
+      - name: Push tested artifact to target GAS project
+        run: clasp push --force
+
+      - name: Create immutable source version for traceability (not Web App deployment)
+        run: clasp create-version "P6VC GitHub commit ${GITHUB_SHA}"
+
+      - name: Deployment record
+        run: |
+          echo "### P6 Vehicle Contact GAS source push" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- GAS Script ID: \`$TARGET_SCRIPT_ID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Scope: clasp push + version only. **No Web App deployment was published.**" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Authentication/security/PDPA release gates remain separate." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove temporary credentials
+        if: always()
+        run: |
+          rm -f .clasp.json "$HOME/.clasprc.json"
