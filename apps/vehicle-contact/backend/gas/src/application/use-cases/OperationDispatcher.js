@@ -1,3 +1,4 @@
+import {validateOperationPayload,DTO_OPERATIONS} from '../../api/dto/OperationPayloadValidator.js';
 import {validateApiRequest} from '../../api/dto/RequestValidator.js';
 import {apiSuccess,apiFailure} from '../../api/responses/ResponseFactory.js';
 import {createIdentityOperations} from './IdentityOperations.js';
@@ -41,7 +42,8 @@ export function createOperationDispatcher({store,security,sessions,drivePhotos,a
  };
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
- if(entries.length!==49||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
+ if(entries.length!==49||DTO_OPERATIONS.length!==49||entries.some(op=>!DTO_OPERATIONS.includes(op))
+  ||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
   throw new Error('INCOMPLETE_API_DISPATCH');
  function dispatch(request){
   const requestId=typeof request?.requestId==='string'&&/^[A-Za-z0-9_-]{1,80}$/.test(request.requestId)?request.requestId:null;
@@ -49,6 +51,7 @@ export function createOperationDispatcher({store,security,sessions,drivePhotos,a
    validateApiRequest(request);
    const op=request.group+'.'+request.action;
    if(!Object.prototype.hasOwnProperty.call(handlers,op))return apiFailure('NOT_FOUND','Unavailable operation',requestId);
+   validateOperationPayload(op,request.payload||{});
    const principal=publicOps.has(op)?null:sessions.authorize(request.sessionToken,permissions[op],{
     allowPasswordChange:['auth.changePassword','auth.logout','auth.session'].includes(op)
    });
