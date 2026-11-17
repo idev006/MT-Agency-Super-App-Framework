@@ -8,6 +8,11 @@
 - `src/infrastructure/persistence/sheets/SheetsSchemaRepository.js` validates table headers as an **admin-only** function; it never returns data rows to a public caller.
 - Follow [central GAS Master Blueprint](../../../../blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md) and [application-specific contract](../../docs/GAS_API_SPEC.md).
 
+## Canonical schema sync (detect and propose only)
+- GitHub [database.schema.json](../../schema/database.schema.json) is the single field definition authority. Build bundles that JSON into GAS-compatible code; Node 22 test imports the JSON with its required import attribute.
+- Run the editor-only functions `verifyVehicleSchemaFromEditor()`, `inspectVehicleSchemaDriftFromEditor()` and `proposeVehicleSchemaChangeFromEditor()` after configuring the Apps Script project. Only **sheet names and header cells** are inspected. No PR, migration, scheduled trigger or changed column is created automatically.
+- Any physical Sheets edit (including new columns) produces drift until the responsible reviewer signs off a change to the JSON SSOT and an approved migration. Never expose the inspector as an anonymous public API.
+
 ## Developer build and first script setup
 
 ```bash
