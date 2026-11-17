@@ -1,6 +1,6 @@
 # P6 Vehicle Contact — GAS Backend Bootstrap
 
-**State:** SAFE BOOTSTRAP; not deployed; data CRUD and sign-in intentionally disabled.
+**State:** SAFE BOOTSTRAP; **source pushed to GAS as 5-file bundle (Version 4)**, but Web App not published; protected data CRUD and sign-in intentionally disabled.
 
 - Canonical source: this folder on GitHub (not Google Sheets cells).
 - Google Sheets is the Phase 1 private datastore with one tab per logical table, provisioned in the owner's Drive project root.
@@ -16,7 +16,7 @@
 ## GitHub Actions deployment to target Script ID
 - **Manual, main-branch only:** [Deploy P6 Vehicle Contact GAS](../../../../.github/workflows/deploy-vehicle-gas.yml). An authorized maintainer must configure the `P6VC_CLASPRC_JSON` GitHub Actions secret (never in source/chat) and type `PUSH_VEHICLE_GAS` to dispatch.
 - Target Apps Script ID is fixed in the workflow to the owner-provided project. Workflow runs `npm run check`, then `clasp push --force` and `clasp create-version`. No Web App deployment is published; the entire target Apps Script project source is replaced, so back up current GAS code first.
-- **Current deployment status:** workflow and runbook added to GitHub; no Google account OAuth Secret was configured by this change and no push was performed or proven. See [GAS GitHub Actions Deployment Runbook](../../docs/GAS_GITHUB_ACTIONS_DEPLOYMENT.md).
+- **Current deployment status:** authenticated GitHub Actions source push verified [run 44034261629](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44034261629), five namespaced GAS files and manifest, GAS version 4. Workflow restored to **manual-only**; no Web App /exec published. See [GAS GitHub Actions Deployment Runbook](../../docs/GAS_GITHUB_ACTIONS_DEPLOYMENT.md).
 
 ## Developer build and first script setup
 
@@ -35,6 +35,6 @@ clasp push
 
 `clasp push` updates script code, not automatically a published versioned Web App. Do **not** publish the protected API or owner-privileged public endpoints until the auth/session gateway design and direct-URL bypass security gates pass. Script secrets and `.clasp.json` should be kept out of Git; the provided `.clasp.json.example` is safe sample configuration.
 
-**Code packaging:** canonical GitHub code uses JavaScript ES Modules; `npm run build` uses pinned esbuild to bundle imports into a GAS V8-compatible IIFE named `P6VC`, exports only global `doGet`, `doPost`, and admin-only `verifyVehicleSchemaFromEditor`, and copies `appsscript.json` into `dist/`. The runtime does not load source `import/export` files directly. Run `npm install`, then `npm run check` before configuring clasp. No cloud deployment is performed by this build.
+**Code packaging — Multi-File GAS:** canonical GitHub code uses JavaScript ES Modules. `npm run build` uses pinned esbuild to generate **five independently namespaced, self-contained GAS IIFEs**, each exposing exactly one allowed global entrypoint, plus `appsscript.json` in `dist/`. Files are named `ENTRY$WebGet.gs`, `ENTRY$WebPost.gs`, `ADMIN$VerifySchema.gs`, `ADMIN$InspectSchema.gs`, `ADMIN$ProposeSchema.gs`. Each compiled `.gs` must be at most **800 lines**; build fails closed if exceeded. This design deliberately duplicates some shared source code across generated runtime bundles rather than depending on GAS file ordering. Source imports are not executed in GAS. Contract tests execute all generated files in both forward/reverse order. Build itself never deploys; GitHub Actions handles controlled pushes.
 
 **Important:** Google Drive connector supports the Sheet but currently cannot create or push an Apps Script Project. The Apps Script project must be created/authorized with the owner's Google account before any first `clasp push`.
