@@ -4,6 +4,8 @@
 **QC note (2026-11-17):** The currently approved frontend baseline is Vue 3, Vue Router, Pinia, Tailwind, DaisyUI and Vite. Historical React statements in this draft must not be used to choose the implementation stack; backend choices and integration remain proposals pending their own gates.  
 **Parent:** [Master Blueprint](../../../blueprint/platform/MASTER_BLUEPRINT.md)
 
+> **Phase 1 override (2026-11-17):** [Google Sheets Data Architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md) is the current owner-directed technology choice: Google Sheets as primary Phase 1 datastore, one worksheet/tab per logical table; dedicated GAS Backend API; Username/Password phase-1 auth (MT-I-AM deferred). Supabase-based primary storage, SSO and SQL/Edge-Function routing described below are **historical proposals superseded for Phase 1**, not a current implementation plan. Existing business rules and privacy decisions are still subject to app-specific approvals. Do not interpret this addendum as production authorization.
+
 ## 1. System design
 **Client:** [Historical proposed React + TypeScript shell, superseded for frontend implementation by approved Vue 3 Web App Blueprint](../../../blueprint/MASTER_WEB_APP_BLUEPRINT.md); HTTPS host, candidate GitHub Pages. Native camera QR works by web URL, in-app scanner uses browser camera APIs.
 
