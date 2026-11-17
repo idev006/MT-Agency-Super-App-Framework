@@ -41,10 +41,11 @@ function makeRunner(options) {
    requestId:'syntheticEditorAcceptance'
   },'POST');
  };
- const reports=[];
+ const reports=[],startedAt=Date.now();
  const test=(id,fn)=>{
-  try{fn();reports.push({id,result:'PASS'});}
-  catch(e){reports.push({id,result:'FAIL',reason:String(e&&e.message||'UNKNOWN').slice(0,100)});}
+  const started=Date.now();
+  try{fn();reports.push({id,result:'PASS',durationMs:Date.now()-started});}
+  catch(e){reports.push({id,result:'FAIL',durationMs:Date.now()-started,reason:String(e&&e.message||'UNKNOWN').slice(0,100)});}
  };
  const ok=(r,description)=>{
   if(!r||r.ok!==true)throw new Error(description+':'+(r?.error?.code||'NO_RESPONSE'));
@@ -58,7 +59,7 @@ function makeRunner(options) {
  const finalize=phase=>({
   phase,environment:'ISOLATED_GAS_EDITOR_AND_REAL_SHEETS',
   sandboxId:SANDBOX_ID,tests:reports.length,passed:reports.filter(x=>x.result==='PASS').length,
-  failed:reports.filter(x=>x.result==='FAIL').length,cases:reports
+  failed:reports.filter(x=>x.result==='FAIL').length,elapsedMs:Date.now()-startedAt,cases:reports
  });
  return {request,test,ok,denied,login,finalize,env};
 }
