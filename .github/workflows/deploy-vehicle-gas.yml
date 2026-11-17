@@ -45,9 +45,12 @@ jobs:
 
       - name: Verify deployment artifact
         run: |
-          test -s dist/Code.gs
           test -s dist/appsscript.json
-          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 2
+          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 6
+          for file in 'ENTRY$WebGet.gs' 'ENTRY$WebPost.gs' 'ADMIN$VerifySchema.gs' 'ADMIN$InspectSchema.gs' 'ADMIN$ProposeSchema.gs'; do
+            test -s "dist/$file"
+            test "$(wc -l < "dist/$file")" -le 800
+          done
           node -e 'const f=require("fs");const m=JSON.parse(f.readFileSync("dist/appsscript.json","utf8"));if(m.runtimeVersion!=="V8")process.exit(1)'
 
       - name: Install pinned clasp 3.4.1
@@ -83,7 +86,7 @@ jobs:
           console.log('Clasp credentials configured; target script ID set without printing credentials');
           NODE
 
-      - name: Push tested artifact to target GAS project
+      - name: Push tested multi-file artifact to target GAS project
         run: clasp push --force
 
       - name: Create immutable source version for traceability (not Web App deployment)
