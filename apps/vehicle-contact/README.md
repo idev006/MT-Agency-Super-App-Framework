@@ -13,6 +13,9 @@
 ## Phase 1 technology direction (2026-11-17)
 **Approved architecture direction:** Vehicle Contact Phase 1 uses Google Sheets as the primary datastore: **one worksheet/tab = one logical table** within an application spreadsheet. The app-specific GAS Backend API accesses these tables via domain ports and Sheets repository adapters. Frontend communicates through its GAS API adapter and a verified, non-bypassable security boundary. **Username/Password Phase 1 authentication** replaces reliance on the unfinished MT-I-AM; production credential/session design and direct GAS endpoint protection are still open security gates. Earlier Supabase-centric design paragraphs are historical draft alternatives, not the Phase 1 choice. See [Phase 1 Google Sheets Data Architecture](docs/PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).
 
+## Live GAS HTTP API test
+- [7/7 real GET/POST API tests PASS](docs/GAS_LIVE_API_TEST_EVIDENCE.md) via [GitHub Actions](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44036525176), using synthetic requests only. Protected groups remain disabled and untested for production security.
+
 ## GitHub source-mirrored GAS modules (2026-11-17)
 - [Exact GitHub source → 14 Apps Script file mapping](docs/GAS_MODULE_MAPPING.md). [Verified GitHub Actions run 44035053861](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44035053861) pushed 15 files and created GAS version 5; Web App publication and live runtime tests remain open.
 - GAS project file list is flat; path segments appear in filenames with `# P6 Vehicle Contact — App 001
