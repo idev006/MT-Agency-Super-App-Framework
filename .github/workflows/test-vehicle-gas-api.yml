@@ -1,0 +1,39 @@
+name: Test P6 Vehicle Contact Live GAS API
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/vehicle-contact/backend/gas/api-smoke/initial-live-check.txt'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p6vc-live-api-smoke
+  cancel-in-progress: false
+
+jobs:
+  live-api-smoke:
+    name: GET and POST public health plus denied API operations
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      P6VC_GAS_EXEC_URL: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Live API HTTP smoke and negative checks (synthetic requests only)
+        run: node apps/vehicle-contact/backend/gas/scripts/smoke-api.mjs
+      - name: Record limited scope
+        if: always()
+        run: |
+          echo "### P6 Vehicle Contact GAS API live HTTP smoke" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Endpoint tested: owner-supplied existing public /exec URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Test: 7 non-sensitive GET/POST operations; no vehicle, phone, QR tokens or credentials used" >> "$GITHUB_STEP_SUMMARY"
+          echo "- This does not prove authenticated endpoints, physical Google Sheets, RBAC, PDPA or deployment version" >> "$GITHUB_STEP_SUMMARY"
