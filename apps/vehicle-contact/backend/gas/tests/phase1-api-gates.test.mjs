@@ -32,12 +32,12 @@ function makeFakeSheets(headers) {
   return {service,calls};
 }
 
-test('G1 Schema integration: exact six-header Sheet projection passes without reading PII rows',()=>{
+test('G1 Schema integration: current canonical Sheet projection passes without reading PII rows',()=>{
   const headers=Object.fromEntries(Object.entries(VEHICLE_SCHEMA_V1).map(([k,v])=>[k,[...v]]));
   const {service,calls}=makeFakeSheets(headers);
   const result=createSheetsSchemaRepository(service,'synthetic-sheet').verifyHeaders();
   assert.deepEqual(result,{ok:true,mismatches:[]});
-  assert.equal(calls.filter(x=>x[0]==='header').length,6);
+  assert.equal(calls.filter(x=>x[0]==='header').length,Object.keys(VEHICLE_SCHEMA_V1).length);
   assert.ok(calls.filter(x=>x[0]==='header').every(x=>x[2]===1&&x[4]===1));
 });
 
@@ -55,7 +55,7 @@ test('G2 AuthN/AuthZ: only health allowed, forged identity, scopes and admin rol
     for(const forged of [{},{role:'admin'},{authenticated:true,permissions:['*']},{actorId:'owner',scope:'global'}]){
       const result=call(group,action,forged);
       assert.equal(result.ok,false,group+'.'+action);
-      assert.equal(result.error.code,'NOT_FOUND');
+      assert.equal(result.error.code,(['vehicles.lookup','contacts.read','qr.resolve'].includes(group+'.'+action)?'SERVICE_UNAVAILABLE':'NOT_FOUND'));
       assert.equal(result.data,null);
     }
   }
@@ -70,7 +70,7 @@ test('G2 AuthN/AuthZ: invalid versions/payloads and prototype-like groups are re
   assert.equal(call('__proto__','constructor').ok,false);
 });
 
-test('G3 Registration: six-table data model has stable vehicle IDs and a separate photo metadata relationship',()=>{
+test('G3 Registration: canonical data model has stable vehicle IDs and a separate photo metadata relationship',()=>{
   const tables=DATABASE_SCHEMA.tables;
   assert.ok(tables.vc_vehicles);
   assert.ok(tables.vc_vehicle_contacts);
@@ -87,7 +87,7 @@ test('G4 Media: file binaries and direct public URLs are not stored as column he
   assert.ok(fields.includes('storage_ref'));
   for(const forbidden of ['public_url','image_base64','raw_photo','file_binary'])assert.ok(!fields.includes(forbidden));
   assert.equal(call('vehicles','upload-photo',{slot:'FRONT',role:'admin'}).ok,false);
-  // The Drive adapter and 5-slot upload path are NOT implemented; this protects against accidental enablement.
+  // Unknown media routes remain unavailable; source adapters still require separate runtime verification.
 });
 
 test('G5 QR: digest-based token metadata exists; issue, resolve and revoke remain disabled until authorization',()=>{
@@ -97,7 +97,7 @@ test('G5 QR: digest-based token metadata exists; issue, resolve and revoke remai
   for(const action of ['issue','resolve','revoke']){
     const result=call('qr',action,{role:'admin',token:'synthetic-not-a-secret'});
     assert.equal(result.ok,false);
-    assert.equal(result.error.code,'NOT_FOUND');
+    assert.equal(result.error.code,'SERVICE_UNAVAILABLE');
   }
 });
 
@@ -108,9 +108,9 @@ test('G3 Registration: synthetic draft validation rejects missing stable vehicle
 });
 
 test('G4 Media: exactly five stable slots; reject duplicate, extra and unknown photo labels',()=>{
-  assert.deepEqual(VEHICLE_PHOTO_SLOTS,['FRONT','REAR','LEFT','RIGHT','THREE_QUARTER']);
+  assert.deepEqual(VEHICLE_PHOTO_SLOTS,['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE']);
   assert.equal(validatePhotoSlotSelection(VEHICLE_PHOTO_SLOTS.map(slot=>({slot}))).valid,true);
-  assert.equal(validatePhotoSlotSelection([]).valid,true); // Minimum required photos not yet approved.
+  assert.equal(validatePhotoSlotSelection([]).valid,false); // Approved baseline requires all five slots
   assert.equal(validatePhotoSlotSelection([{slot:'FRONT'},{slot:'FRONT'}]).errors.includes('DUPLICATE_SLOT'),true);
   assert.equal(validatePhotoSlotSelection([{slot:'OVERHEAD'}]).errors.includes('INVALID_SLOT'),true);
   assert.equal(validatePhotoSlotSelection([...VEHICLE_PHOTO_SLOTS.map(slot=>({slot})),{slot:'FRONT'}]).errors.includes('TOO_MANY_PHOTOS'),true);

@@ -13,8 +13,9 @@ export function createApiRouter({createProtectedDispatcher}={}) {
    if(method!=='POST')return apiFailure('METHOD_NOT_ALLOWED','POST required',id);
    if(typeof createProtectedDispatcher!=='function')return apiFailure('SERVICE_UNAVAILABLE','Feature not enabled',id);
    return createProtectedDispatcher().dispatch(request);
-  }catch(_){
-   return apiFailure('SERVICE_UNAVAILABLE','Operation unavailable or invalid',id);
+  }catch(e){
+   if(e&&e.message==='BAD_REQUEST')return apiFailure('BAD_REQUEST','Invalid request',id);
+   return apiFailure('SERVICE_UNAVAILABLE','Operation unavailable',id);
   }
  }});
 }
