@@ -6,6 +6,7 @@
 
 | ID | Requirement / control | Existing authority / source | Related design or evidence | Current audit result | Next action |
 | --- | --- | --- | --- | --- | --- |
+| VC-T12 | System Analyst Phase-1 baseline and executable development roadmap (M0–M6, VC-W01–VC-W22) | Owner instruction 2026-11-17 | [SA baseline](SYSTEM_ANALYST_BASELINE_PHASE1.md), [Development Roadmap](DEVELOPMENT_ROADMAP_PHASE1.md) | DOCUMENTED / DELIVERY WORK REMAINS | Implement and attach tests/approval per work item; never infer production-ready status |
 | VC-T10 | Phase 1 storage = Google Sheets (one tab per logical table), GAS backend repository adapter | Owner direction 2026-11-17 | [Phase 1 data architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md); older Supabase-centric TECHNICAL_DESIGN.md is historical for Phase 1 | ARCHITECTURE CHOICE APPROVED / NO BACKEND VERIFIED | Specify schema, provider adapter and staged integration tests |
 | VC-T11 | Phase 1 Username/Password login; MT-I-AM deferred | Owner direction 2026-11-17 | [Phase 1 data architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md) | ARCHITECTURE CHOICE APPROVED / AUTHENTICATION SECURITY OPEN | Choose trusted auth/session provider, verify access and direct GAS URL bypass controls |
 | VC-T01 | Find a reachable registered responsible contact for each vehicle | `SYSTEM_ANALYSIS_V2.md`, `PRODUCT_REQUIREMENTS.md` | `TECHNICAL_DESIGN.md`; no integrated production backend | DOCUMENTED / NOT IMPLEMENTED | Verify roles and contact source |
