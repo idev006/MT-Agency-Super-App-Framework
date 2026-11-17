@@ -217,3 +217,23 @@ Run these in parallel where dependencies permit. **Do not** implement public log
 - Require a linked branch/PR, tests, commit SHA and reviewer before moving to DONE-EVIDENCED; GitHub Actions CI alone does not prove GAS Web App deployment.
 - Use existing Issues for acceptance evidence and `AGILE_KANBAN.md` for board operations; do not duplicate a project management document.
 - Native milestone numbers cannot be safely assigned until the exact objects exist and their IDs are verified. The connected integration does not expose native milestone or Projects board creation; do not fabricate completion.
+
+
+## 6. Mandatory Thai cyber law, traffic-data and privacy compliance gate (2026-11-17 requirement)
+
+**Status: REQUIRED / LEGAL APPLICABILITY AND IMPLEMENTATION NOT YET VERIFIED.** This is a Phase-1 cross-cutting acceptance gate, not a claim of legal compliance or approval. Existing M0–M6 and work IDs remain authoritative; use VC-W02/W03 (owner and policy), VC-W04–06 (security), VC-W19 (security testing), VC-W20 (UAT/PDPA), VC-W21 (pilot) for execution rather than duplicating an issue or a new planning document.
+
+### Sources and applicability questions
+
+1. Computer Crime Act B.E. 2550 as amended B.E. 2560, section 26, and Ministry of Digital Economy and Society Notification on Computer Traffic Data Retention B.E. 2564 ([official ministry publication](https://mdes.go.th/storage/contents/file/aKZWEjqNLyG6DPKX8jVbvkrewbOG5Wsc8K2zt3OT.pdf)). Legal/security reviewer must classify whether the agency and this app act as an in-scope service provider, which appendix fields apply, and which infrastructure/cloud provider supplies which logs. For in-scope providers the general minimum is **90 days**, with possible lawful preservation orders up to statutory limits; this is **not** a blanket retention policy for all business records.
+2. Cybersecurity Act B.E. 2562: assess public-agency obligations, applicable national/agency cyber standards, risk management and incident response; do **not** assert that this app is automatically designated critical information infrastructure.
+3. Personal Data Protection Act B.E. 2562: review lawful basis, notice, purpose limitation, access scope, processors, retention/deletion, breach response and data-subject rights **to the extent applicable**, including any public-authority exceptions or sector-specific rules requiring legal interpretation.
+
+### Required engineering controls and evidence
+
+- **Separate** (a) application security/audit events (login success/failure, role decision, QR resolve, plate search, contact reveal, mutations, administrative actions) from (b) network/computer traffic data prescribed for the applicable provider category. Neither is automatically a substitute for the other.
+- Record UTC timestamp and synchronized clocks, request/correlation ID, trusted actor/session reference, event/action, resource reference, decision/outcome, source IP and proxy attribution **where lawfully available and technically trustworthy**, user-agent/device context where justified. Never log passwords, bearer/session tokens, raw QR secrets, contact numbers, photo bytes or unredacted payloads.
+- Confirm whether Apps Script web app can supply authoritative client IP/network metadata and adequate ingress logs. **Do not invent IP provenance**; if GAS cannot satisfy the required traffic-log fields, choose a compliant controlled ingress/logging architecture through an approved security design and update the application-specific decision log; do not silently bypass Master Blueprints.
+- Protect logs with least-privilege read access, write-once/tamper-evident or independently protected centralized storage, encryption, retention/expiry, integrity checks, clock synchronization, controlled export and documented incident/legal hold. A mutable Google Sheet by itself is **not** accepted as tamper-resistant traffic-log storage.
+- Test unauthorized access, direct GAS `/exec` bypass, event coverage, retention/expiry, immutable/tamper detection, timestamp correctness, safe redaction, incident escalation and evidence export in synthetic staging. Record test date, owner/reviewer, CI/PR and outcome.
+- **Release block:** M1 security proof and M5 security/legal/privacy sign-off must be evidenced before M6 pilot. Legal applicability, exact field list, retention schedule, host/cloud responsibility and actual deployment configuration remain open decisions, not assumed pass.
