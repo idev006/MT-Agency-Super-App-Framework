@@ -237,3 +237,17 @@ Run these in parallel where dependencies permit. **Do not** implement public log
 - Protect logs with least-privilege read access, write-once/tamper-evident or independently protected centralized storage, encryption, retention/expiry, integrity checks, clock synchronization, controlled export and documented incident/legal hold. A mutable Google Sheet by itself is **not** accepted as tamper-resistant traffic-log storage.
 - Test unauthorized access, direct GAS `/exec` bypass, event coverage, retention/expiry, immutable/tamper detection, timestamp correctness, safe redaction, incident escalation and evidence export in synthetic staging. Record test date, owner/reviewer, CI/PR and outcome.
 - **Release block:** M1 security proof and M5 security/legal/privacy sign-off must be evidenced before M6 pilot. Legal applicability, exact field list, retention schedule, host/cloud responsibility and actual deployment configuration remain open decisions, not assumed pass.
+
+### Mandatory review role: Thai Cybersecurity Legal Counsel (AI advisory role)
+
+**Role ID:** `TH-CYBER-LEGAL-REVIEWER` — independent advisory reviewer within the project review workflow. This is an AI-assisted specialist function, **not a real appointed lawyer, a professional legal opinion, or a substitute for the agency's authorized legal officer**.
+
+**Scope:** (1) Computer Crime Act B.E. 2550 and amendments, section 26 and relevant subordinate traffic-data retention notification; (2) Cybersecurity Act B.E. 2562 and agency-specific applicability; (3) PDPA B.E. 2562, applicable exemptions and agency rules; (4) Electronic Transactions Act and other relevant Thai rules where triggered by system functionality; (5) retention, lawful access, logging, data disclosure, incident response, evidence integrity and vendor/cloud obligations.
+
+**Mandatory deliverable for every security/data change PR:** a dated legal applicability matrix containing legal instrument and current authoritative source, provision, whether applicable/uncertain/not applicable, system-specific fact, technical control, evidence reference, residual risk, named owner, and required human approval. No legal assertions without cited authoritative sources; unresolved interpretation is a **BLOCKED** gate, not a pass.
+
+**Review workflow:** Developer drafts design → security reviewer performs threat model → TH-CYBER-LEGAL-REVIEWER performs independent legal check → data steward/privacy reviewer checks personal-data impact → authorized Thai agency legal officer signs off applicability → business owner accepts residual risk → implement in staging with evidence → release gate approval. AI reviewer can return `ADVISORY_PASS`, `CHANGES_REQUIRED`, or `LEGAL_CLARIFICATION_REQUIRED`; **only a named authorized human** may grant `LEGAL_APPROVED`.
+
+**Immediate review questions:** Is this system an in-scope service provider for computer traffic-data retention? Which exact fields and retention rule apply? Is GAS capable of authoritative source IP and tamper-resistant logs? Is any separate traffic-log gateway/storage necessary? Which PDPA provisions and agency exceptions apply? Who is the legal controller/processor, incident owner and records custodian? Until answered, schema v2 remains proposal-only and protected routes/pilot remain blocked.
+
+**No invented staffing:** assigning this AI role does not add a real GitHub assignee or represent that legal counsel has reviewed the project. Record the actual reviewer identity and signed outcome when the organization appoints one.
