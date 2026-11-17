@@ -16,6 +16,18 @@
 | Per-operation authorization and direct endpoint bypass | **NOT IMPLEMENTED / BLOCKING** |
 | QR, data CRUD, concurrency, PDPA | **NOT IMPLEMENTED / BLOCKING** |
 
+## Multi-file GAS proof — VERIFIED 2026-11-17 (Version 4)
+
+- **Workflow run:** [Run 44034261629](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44034261629), conclusion **success**, deployed commit `2083899ebe9e9b0a4779563f8e69203109abf058`.
+- **Target script:** `1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX`.
+- **Verified build:** five independent GAS IIFE files, one manifest, each file within the agreed 800-line limit. `ENTRY$WebGet.gs` (646), `ENTRY$WebPost.gs` (652), `ADMIN$VerifySchema.gs` (644), `ADMIN$InspectSchema.gs` (644), `ADMIN$ProposeSchema.gs` (644).
+- **Tests:** Node contract tests pass, including positive `system.health`, rejected protected routes, fake Sheets Schema Drift and both forward/reverse file execution ordering.
+- **Deployment:** `clasp push --force` reports **Pushed 6 files**; subsequent `clasp create-version` reports **Created version 4**. This is a successful **GAS script source push** and Apps Script version creation, not a live Web App deployment.
+- **One-shot action:** a temporary deployment trigger was permitted solely for this explicit user-requested push, then removed. Workflow restored to **manual-only** `workflow_dispatch`.
+- **Limitations:** each generated file is an independently tree-shaken self-contained bundle for its global entrypoint, so some code is duplicated across generated files. They are **not** separate runtime ES Modules. GAS editor function execution, actual Sheets verification, exposure/authorization and frontend E2E are not confirmed.
+- **Source:** [Multi-file builder](../backend/gas/scripts/build.mjs) and [contract tests](../backend/gas/tests/contract.test.mjs).
+- **Next quality step:** inspect GAS editor for five generated files, run admin-only schema verification with authorized identity, and retain source/version evidence. Never publish the privileged Web App surface before Security/PDPA gates.
+
 ## First authenticated GitHub Actions → GAS source push — VERIFIED 2026-11-17
 
 - **Workflow run:** [Deploy P6 Vehicle Contact GAS #1](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44033187307), conclusion **success**, 2026-11-17 06:42 UTC (13:42 Asia/Bangkok).
