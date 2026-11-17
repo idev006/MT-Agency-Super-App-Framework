@@ -1,0 +1,357 @@
+{
+  "documentId": "P6VC-API-PERMISSIONS-001",
+  "status": "PROPOSED_NOT_SECURITY_APPROVED",
+  "securityPrinciple": "Never accept identity, role, campaignVerified, or permissions from client payload; only server-verified context.",
+  "operations": [
+    {
+      "id": "VC-SYSTEM-001",
+      "operation": "system.health",
+      "requiredPermission": null,
+      "identitySource": "PUBLIC",
+      "enabled": false
+    },
+    {
+      "id": "VC-SYSTEM-002",
+      "operation": "system.config.get",
+      "requiredPermission": "system.settings.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-SYSTEM-003",
+      "operation": "system.config.update",
+      "requiredPermission": "system.settings.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-AUTH-001",
+      "operation": "auth.login",
+      "requiredPermission": null,
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-AUTH-002",
+      "operation": "auth.googleLogin",
+      "requiredPermission": null,
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-AUTH-003",
+      "operation": "auth.changePassword",
+      "requiredPermission": "session.authenticated",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-AUTH-004",
+      "operation": "auth.logout",
+      "requiredPermission": "session.authenticated",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-AUTH-005",
+      "operation": "auth.session",
+      "requiredPermission": "session.authenticated",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-AUTH-006",
+      "operation": "auth.linkGoogle",
+      "requiredPermission": "session.authenticated",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-USERS-001",
+      "operation": "users.create",
+      "requiredPermission": "users.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-USERS-002",
+      "operation": "users.list",
+      "requiredPermission": "users.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-USERS-003",
+      "operation": "users.update",
+      "requiredPermission": "users.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-USERS-004",
+      "operation": "users.suspend",
+      "requiredPermission": "users.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-USERS-005",
+      "operation": "users.resetPassword",
+      "requiredPermission": "users.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-USERS-006",
+      "operation": "users.assignRoles",
+      "requiredPermission": "users.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-ORGANIZATIONS-001",
+      "operation": "organizations.list",
+      "requiredPermission": "organizations.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-ORGANIZATIONS-002",
+      "operation": "organizations.create",
+      "requiredPermission": "organizations.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-ORGANIZATIONS-003",
+      "operation": "organizations.update",
+      "requiredPermission": "organizations.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-ORGANIZATIONS-004",
+      "operation": "organizations.disable",
+      "requiredPermission": "organizations.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-CAMPAIGNS-001",
+      "operation": "campaigns.create",
+      "requiredPermission": "campaigns.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-CAMPAIGNS-002",
+      "operation": "campaigns.list",
+      "requiredPermission": "campaigns.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-CAMPAIGNS-003",
+      "operation": "campaigns.validate",
+      "requiredPermission": null,
+      "identitySource": "SERVER_VERIFIED_CAMPAIGN",
+      "enabled": false
+    },
+    {
+      "id": "VC-CAMPAIGNS-004",
+      "operation": "campaigns.revoke",
+      "requiredPermission": "campaigns.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-REGISTRATIONS-001",
+      "operation": "registrations.submit",
+      "requiredPermission": "campaign.token.valid",
+      "identitySource": "SERVER_VERIFIED_CAMPAIGN",
+      "enabled": false
+    },
+    {
+      "id": "VC-REGISTRATIONS-002",
+      "operation": "registrations.listPending",
+      "requiredPermission": "vehicle.registration.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-REGISTRATIONS-003",
+      "operation": "registrations.detail",
+      "requiredPermission": "vehicle.registration.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-REGISTRATIONS-004",
+      "operation": "registrations.review",
+      "requiredPermission": "vehicle.registration.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-VEHICLES-001",
+      "operation": "vehicles.lookup",
+      "requiredPermission": "vehicle.lookup",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-VEHICLES-002",
+      "operation": "vehicles.detail",
+      "requiredPermission": "vehicle.lookup",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-VEHICLES-003",
+      "operation": "vehicles.update",
+      "requiredPermission": "vehicle.update",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-VEHICLES-004",
+      "operation": "vehicles.cancel",
+      "requiredPermission": "vehicle.update",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-VEHICLES-005",
+      "operation": "vehicles.history",
+      "requiredPermission": "vehicle.history.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-CONTACTS-001",
+      "operation": "contacts.read",
+      "requiredPermission": "vehicle.contact.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-CONTACTS-002",
+      "operation": "contacts.update",
+      "requiredPermission": "vehicle.contact.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-CHANGES-001",
+      "operation": "changes.submit",
+      "requiredPermission": "campaign.token.valid",
+      "identitySource": "SERVER_VERIFIED_CAMPAIGN",
+      "enabled": false
+    },
+    {
+      "id": "VC-CHANGES-002",
+      "operation": "changes.listPending",
+      "requiredPermission": "vehicle.change.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-CHANGES-003",
+      "operation": "changes.review",
+      "requiredPermission": "vehicle.change.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-QR-001",
+      "operation": "qr.resolve",
+      "requiredPermission": "vehicle.lookup",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-QR-002",
+      "operation": "qr.issue",
+      "requiredPermission": "qr.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-QR-003",
+      "operation": "qr.revoke",
+      "requiredPermission": "qr.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-QR-004",
+      "operation": "qr.replace",
+      "requiredPermission": "qr.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-PHOTOS-001",
+      "operation": "photos.upload",
+      "requiredPermission": "campaign.token.valid",
+      "identitySource": "SERVER_VERIFIED_CAMPAIGN",
+      "enabled": false
+    },
+    {
+      "id": "VC-PHOTOS-002",
+      "operation": "photos.list",
+      "requiredPermission": "vehicle.photos.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-PHOTOS-003",
+      "operation": "photos.replace",
+      "requiredPermission": "vehicle.update",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-RETENTION-001",
+      "operation": "retention.listDue",
+      "requiredPermission": "retention.delete.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-RETENTION-002",
+      "operation": "retention.approve",
+      "requiredPermission": "retention.delete.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-RETENTION-003",
+      "operation": "retention.execute",
+      "requiredPermission": "retention.worker",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-RETENTION-004",
+      "operation": "retention.jobStatus",
+      "requiredPermission": "retention.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-AUDIT-001",
+      "operation": "audit.query",
+      "requiredPermission": "audit.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-AUDIT-002",
+      "operation": "audit.export",
+      "requiredPermission": "audit.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    }
+  ]
+}
