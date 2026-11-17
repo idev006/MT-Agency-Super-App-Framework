@@ -3,6 +3,7 @@
 **Document ID:** P6VC-PLAN-001  
 **Version:** 1.0.0 | **Baseline date:** 2026-11-17  
 **Plan status:** ACTIVE PLANNING / NOT A COMMITTED RELEASE DATE  
+**Agile work tracking:** [Issue-backed Kanban with live lane filters](AGILE_KANBAN.md) — 28 GitHub Issues VC-W01–VC-W28 created 2026-11-17; label/status links are live; milestone table below remains a baseline snapshot  
 **Scope:** Phase 1 only; visitor/pass exchange **OFF**  
 **SA baseline:** [P6VC-SA-001](SYSTEM_ANALYST_BASELINE_PHASE1.md)  
 **Technical foundations:** [Phase-1 Sheets Architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md), [GAS Data Model](GAS_DATA_MODEL.md), [GAS API Contract](GAS_API_SPEC.md), [GAS Test Evidence](GAS_TEST_EVIDENCE.md) and [Decision Log](DECISION_LOG.md)
