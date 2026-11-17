@@ -1,7 +1,7 @@
 # MT Master GAS Backend API Blueprint — Architecture & Design Patterns
 
 **Document ID:** MT-GAS-MBP-001  
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Effective baseline:** 2026-11-17  
 **Decision status:** **MANDATORY architecture direction as instructed by the repository owner; NOT a production/security/legal release approval**  
 **Scope:** Every new or materially modified Google Apps Script (GAS) backend/API within `apps/<app-id>/backend/gas/` of this repository.
@@ -50,10 +50,10 @@ Application Use Cases / Services
 Domain Entities, Rules, Value Objects, Ports
       ^
       | implementations
-Infrastructure Adapters: SheetsRepository / DriveRepository / UrlFetch Client
+Infrastructure Adapters: Sheets / SQL-API / NoSQL-API / Object Storage / External API
       |
       v
-Google Sheets / Drive / Third-party APIs
+Google Sheets / PostgreSQL / MySQL / NoSQL / Drive / Object Storage / approved services
 ```
 
 **Important:** Diagram is a request-flow view, not source-import direction. The composition root wires use cases to port implementations. Domain must never import infrastructure. Application may depend on domain ports; infrastructure implements those ports. Entry point may wire modules but must not embed use-case logic.
@@ -75,7 +75,7 @@ Google Sheets / Drive / Third-party APIs
 
 **Required for every real backend**
 - **Ports & Adapters / Dependency Inversion:** domain/application-owned contracts with infrastructure implementations.
-- **Repository Pattern:** persistence operations such as `findById`, `findByKey`, `save` and `listPage` separated from Google Sheets layout.
+- **Repository Pattern:** persistence operations such as `findById`, `findByKey`, `save` and `listPage` separated from **any** database/storage provider, wire protocol and schema.
 - **Application Service / Use Case:** each exposed operation delegates to an explicit use case.
 - **DTO + Mapper:** transport request/response models are independent of sheet column indexes and domain entities.
 - **Composition Root / DI:** construct dependencies at the edge of the runtime, allowing test doubles.
@@ -98,7 +98,7 @@ apps/<app-id>/
   README.md
   docs/
     GAS_API_SPEC.md                 # app contract, operations and DTOs
-    GAS_DATA_MODEL.md               # sheets, column schema, constraints, migration
+    GAS_DATA_MODEL.md               # chosen database/storage, schema, constraints, migration
     GAS_SECURITY_AND_PRIVACY.md     # trust model, scopes, lawful basis, retention
     GAS_TEST_EVIDENCE.md            # dated test results and deployment references
   src/
@@ -119,8 +119,11 @@ apps/<app-id>/
           ports/
           policies/
         infrastructure/
-          sheets/
-          drive/
+          persistence/           # provider-specific repository adapters
+            sheets/
+            sql-api/
+            nosql-api/
+          storage/               # Drive/object storage adapters
           external-api/
           auth/
           logging/
@@ -203,18 +206,50 @@ Security invariants:
 
 **Gateway caveat:** A gateway that alone checks the browser while a publicly accessible GAS URL still has owner-level privileges is **not sufficient**. The GAS endpoint's direct-access threat must be blocked by platform access controls or an independently verifiable service-to-service mechanism; otherwise use a backend that supports the required security posture. Security reviewer must document and test bypass attempts.
 
-## 8. Google Sheets Repository / persistence contract
+## 8. Database-agnostic persistence & storage architecture (MANDATORY)
+
+**Core rule:** Google Apps Script is an API/application runtime, **not a prescribed database**. Every GAS backend MAY use **any appropriate, supported and authorized database or storage service**, including Google Sheets, PostgreSQL/Supabase, MySQL, SQL Server, Firestore, MongoDB-compatible services, Google Drive, Cloud Storage, or an existing authorized REST/GraphQL data service. Provider selection is an **application-specific architecture decision**, not a global default.
+
+**GAS connectivity caveat:** 'Any database' means **any provider reachable through an approved, technically supported integration**. GAS Web Apps do not provide arbitrary network sockets or a Node.js database runtime. Where Apps Script's documented JDBC service supports a target (and required connectivity, networking, credentials and quota controls are met), a JDBC adapter may be viable; otherwise use an authenticated HTTPS API, server-side gateway, or platform SDK actually supported in Apps Script. **Do not assume direct PostgreSQL/TCP, arbitrary npm drivers or unrestricted VPC access works.** Verify reachability, firewall/IP allowlisting, TLS, data residency, provider terms and quotas before selecting the adapter.
+
+### 8.1 Required storage port contracts
+
+- Domain/Application define the **provider-agnostic port** (e.g. `VehicleRepository`, `FileStoragePort`). Contracts specify domain-oriented operations, invariants, pagination, conflict/version semantics and errors, not Sheet row indexes, SQL queries, Drive paths or SDK objects.
+- Infrastructure implements the selected adapter: `SheetsVehicleRepository`, `RestSqlVehicleRepository`, `FirestoreVehicleRepository`, `DriveFileStorageAdapter`, etc.
+- Composition root selects the adapter using approved deployment config. Avoid user-controlled provider selection and hidden runtime switching.
+- A single app MAY combine multiple stores (e.g. Sheets for configuration, PostgreSQL for transactions, Drive for files) with **explicit data ownership and consistency boundaries**. Do not duplicate authoritative records silently; cross-store writes require compensation/reconciliation plans.
+- Validate DTO mapping, authorized scopes, connection failure, conflict, retry/idempotency and schema migration separately for **each adapter**. Domain/application tests MUST use fake/mock ports and MUST NOT require a live database.
+
+### 8.2 Per-app data-store decision and controls
+
+Document in `apps/<app-id>/docs/GAS_DATA_MODEL.md`:
+1. Provider and purpose of each store; data classification, controller, source of truth and ownership.
+2. Schema/collection/table/tab, identifiers, validation constraints, indexes or key strategy, migration and backup/restore.
+3. AuthN/AuthZ and least-privilege credentials; secret storage and rotation; encryption in transit/at rest as applicable.
+4. Expected throughput/volume, quota, concurrency limits, latency budget, availability and recovery.
+5. Transaction guarantees, conflict handling, retention/deletion, audit and consistency across multiple stores.
+6. Connectivity from GAS (HTTP API/gateway, supported JDBC or other tested adapter), regional compliance, and deployment/test evidence.
+
+Choose by functional need, security posture, scale, cost and operational support; **Google Sheets is one option, not the mandatory or default backend**.
+
+### 8.3 Google Sheets adapter-specific requirements (only if selected)
 
 - Treat Sheets as a **tabular store**, not an ACID relational database. Record per-app scalability/data classification decision before use.
 - Per tab: explicit column schema, stable headers, types, required fields, unique-key rules, status fields, version or updated timestamp, and migration path in `GAS_DATA_MODEL.md`. Never hard-code sheet columns in use cases.
-- Centralize `SpreadsheetApp` usage in `infrastructure/sheets/`; define one adapter per bounded data concern (vehicle/contact/audit/etc.).
-- Prefer bounded range reads, batched `getValues/setValues` and column-index mapping initialized from schema. Avoid `getDataRange()` for unbounded growth and per-cell loops.
-- Validate writes in domain/application before data adapter; escape/sanitize untrusted values to avoid spreadsheet formula injection where user strings could be interpreted as formulas.
-- For conflicting writes, select a documented concurrency strategy (e.g. `LockService.getScriptLock()` plus version check and bounded lock acquisition). `getDocumentLock()` may be `null` in standalone/web-app contexts; select lock scope intentionally. `SpreadsheetApp.flush()` before releasing locks when required.
-- A lock does **not** create a cross-sheet transaction or guarantee exactly-once processing. Model partial failure, conflict and reconciliation.
-- Implement deterministic identifiers and idempotency keys for retryable mutations; prohibit accidental duplicate registrations on network retries.
-- Enforce paging and maximum read volume; measure expected row counts, latency, concurrency and API quotas. For high-volume transaction-heavy or sensitive IAM data, evaluate a database service instead of Sheets.
-- Backup/export and migration/restore tests must be recorded in each app's evidence document; no production test with personal data by default.
+- Centralize `SpreadsheetApp` usage in `infrastructure/persistence/sheets/`; define one adapter per bounded data concern.
+- Prefer bounded range reads, batched `getValues/setValues` and column-index mapping initialized from schema. Avoid unbounded `getDataRange()` and per-cell loops.
+- Validate writes before adapter calls; escape/sanitize untrusted strings that could be interpreted as spreadsheet formulas.
+- For conflicting writes, choose a documented concurrency strategy (e.g. `LockService.getScriptLock()` plus version check and bounded wait). `getDocumentLock()` may be `null` in standalone/web-app contexts; select scope intentionally. `SpreadsheetApp.flush()` before releasing locks when required.
+- A lock does **not** create a cross-sheet transaction or exactly-once delivery. Design partial failure, conflicts and reconciliation.
+- Enforce paging/read caps, verified backup/restore, per-store access permissions, and test dataset separation.
+
+### 8.4 SQL, NoSQL, REST, and object storage adapter-specific requirements
+
+- **SQL providers:** enforce parameterized queries at the trusted database/API boundary, schema migrations, least-privilege database users, bounded pagination, transaction-aware conflict handling, and explicit connection pooling/limits in the actual server layer; GAS itself need not hold a direct DB connection.
+- **NoSQL providers:** document document/key structure, query/index limits, consistency model, security rules and transactional boundaries; never trust only UI filtering.
+- **HTTPS database gateways / REST / GraphQL:** use `UrlFetchApp` or a supported library in infrastructure; authenticate both caller and downstream, allowlist hosts, use safe DTO mapping and never embed privileged API keys in browser code.
+- **Object/file storage:** use approved Drive or HTTPS storage adapters with scoped access, MIME/size checks, time-limited download access and retention rules. Do not assume file storage replaces a transactional record database.
+- For **every provider**, prove that GAS can connect safely in the chosen execution mode, with representative integration, concurrency, error, unauthorized-access and recovery tests **before production**.
 
 ## 9. External API adapters and integration standards
 
@@ -227,7 +262,7 @@ Security invariants:
 ## 10. GAS quotas, performance, concurrency and resilience
 
 - The Apps Script execution runtime is currently limited to **6 minutes per execution** (official quota page; must recheck before release). Quotas vary by account type and may change.
-- Budget calls to Sheets, Drive and external HTTP providers; batch reads/writes and avoid repeated service initialization.
+- Budget calls to the **selected** database, storage and external HTTP providers; batch work where supported and avoid repeated service initialization.
 - Define app-specific limits for requests, rows, payload, pagination, response size, concurrency and processing deadline. Publish measured performance SLOs as targets, not achieved facts.
 - Use short-lived cache only where safe and scope-correct. Never cache private user data globally without explicit access segmentation and invalidation.
 - Define circuit-breaker-like graceful failure at the caller/gateway where feasible; do not promise durable background execution from a single request.
@@ -236,7 +271,7 @@ Security invariants:
 ## 11. CI/CD: GitHub as canonical source; clasp as deployment transport
 
 1. Each GAS backend has a dedicated GAS Script ID and environment mapping, **not** a shared mutable production script by default.
-2. Dev, staging, production MUST be isolated by deployment targets (prefer distinct Apps Script projects and test Sheets). No real production spreadsheet used by automated tests.
+2. Dev, staging, production MUST be isolated by deployment targets (prefer distinct Apps Script projects and separate test databases/storage). No production datastore or personal data used by automated tests.
 3. GitHub contains version-controlled `.gs` / `.js` / `.ts` source and manifest; generated bundle only as disposable CI artifact; OAuth/clasp credentials in protected secrets, not committed.
 4. Pull Request gate: directory + import-boundary check, lint/typecheck, unit tests, API contract tests, security/static scan, configuration validation, schema migration review.
 5. Merge to approved development branch may run `clasp push` to a **dev** script after build, with scoped credentials. This updates script source, not necessarily a production Web App deployment.
@@ -256,7 +291,7 @@ Security invariants:
 | GAS-G02 Dependency | Domain/Application do not import GAS services, adapters implement ports | Fail PR |
 | GAS-G03 API Contract | Valid/invalid requests, unknown operation, version, paging, error codes, DTO mapping | Fail PR |
 | GAS-G04 AuthZ | Anonymous, invalid identity, wrong app role/scope, direct-GAS URL bypass, data enumeration | Block release until independently tested |
-| GAS-G05 Sheets | Column schema, batch operations, duplicates, conflicts, locks, rollback/reconciliation | Fail staging |
+| GAS-G05 Persistence & Storage | Selected provider's schema, migrations, access policy, conflicts, idempotency, transactions/consistency, backups, adapter contracts, rollback/reconciliation; Sheets-specific locks/batching only if using Sheets | Fail staging |
 | GAS-G06 External API | Timeouts, bounded retry, errors, no secret leakage | Fail staging |
 | GAS-G07 Quotas/performance | Representative row count, concurrency and expiration/recovery | Fail release if untested for production load |
 | GAS-G08 Privacy | Data classification, lawful basis, access, ROPA/notices/retention approval when applicable | Block real personal data until approved |
@@ -274,12 +309,12 @@ Security invariants:
 2. Declare API operations/contracts and backend choice.
 3. Select trust boundary, auth mechanism and deployment execution identity.
 4. Implement domain ports + use cases + GAS adapters + mapping.
-5. Implement deterministic packaging, dependency tests and mock Sheets tests.
+5. Implement deterministic packaging, dependency tests and mock **selected persistence/storage ports** tests.
 6. Run staged integration, negative security, quota/concurrency and operational tests.
 7. Deploy via controlled version, record acceptance evidence.
 8. Register published app in central Portal **only** under accurate prototype/staging/production label.
 
-**No backwards policy change:** This blueprint does not silently change Vehicle Contact policy, mandate Google Sheets for every app, enforce a particular IAM product, or authorize personal-data deployment.
+**No backwards policy change:** This blueprint does not silently change Vehicle Contact policy, prescribe **any** database product for every app, enforce a particular IAM product, or authorize personal-data deployment.
 
 ## 14. Official platform references (verification source)
 
@@ -289,4 +324,4 @@ Security invariants:
 - [Apps Script Web App manifest](https://developers.google.com/apps-script/manifest/web-app-api-executable) — access and executeAs.
 - [LockService](https://developers.google.com/apps-script/reference/lock/lock-service) — concurrent access control.
 
-**End of normative blueprint MT-GAS-MBP-001.**
+**End of normative blueprint MT-GAS-MBP-001 (v1.1.0).**
