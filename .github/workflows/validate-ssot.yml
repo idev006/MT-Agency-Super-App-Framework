@@ -1,0 +1,24 @@
+name: Validate Repository SSOT
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check scripts
+        run: |
+          node --check scripts/build-pages.mjs
+          node --check scripts/validate-ssot.mjs
+      - name: Validate sources
+        run: node scripts/validate-ssot.mjs
+      - name: Build generated site
+        run: node scripts/build-pages.mjs _site
+      - name: Confirm published output matches SSOT
+        run: node scripts/validate-ssot.mjs --built _site
