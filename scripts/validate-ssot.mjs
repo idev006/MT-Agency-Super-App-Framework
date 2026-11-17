@@ -12,6 +12,7 @@ const canonical='apps/vehicle-contact/poc/qr-scanner/index.html';
 const docs='apps/vehicle-contact/docs';
 const required=[
  'README.md','blueprint/MASTER_WEB_APP_BLUEPRINT.md',
+ 'blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md',
  'blueprint/platform/MASTER_BLUEPRINT.md','blueprint/standards/APPLICATION_STRUCTURE.md',
  'blueprint/decisions/ADR-002-SSOT-BOUNDARIES.md',
  'apps/vehicle-contact/README.md',canonical,
@@ -36,6 +37,31 @@ if(has('portal/apps.json')){
   }
  }catch(e){failures.push('Invalid portal/apps.json: '+e.message)}
 }
+
+// Conditional GAS backend compliance: POCs without a GAS backend are exempt.
+const appsRoot=file('apps');
+if(existsSync(appsRoot)){
+ for(const app of readdirSync(appsRoot,{withFileTypes:true}).filter(e=>e.isDirectory())){
+  const base='apps/'+app.name;
+  const gas=base+'/backend/gas';
+  if(!has(gas))continue;
+  for(const p of [
+    gas+'/appsscript.json',
+    gas+'/src/entrypoints',
+    gas+'/src/transport',
+    gas+'/src/application',
+    gas+'/src/domain',
+    gas+'/src/infrastructure',
+    gas+'/src/composition',
+    gas+'/tests',
+    base+'/docs/GAS_API_SPEC.md',
+    base+'/docs/GAS_DATA_MODEL.md',
+    base+'/docs/GAS_SECURITY_AND_PRIVACY.md',
+    base+'/docs/GAS_TEST_EVIDENCE.md'
+  ])check(has(p),'GAS Blueprint missing required location: '+p);
+ }
+}
+
 function walk(dir,files=[]){
  if(!existsSync(dir))return files;
  for(const ent of readdirSync(dir,{withFileTypes:true})){
