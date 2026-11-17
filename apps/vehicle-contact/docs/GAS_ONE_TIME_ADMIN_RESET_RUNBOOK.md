@@ -2,7 +2,7 @@
 
 **Document ID:** P6VC-RESET-001  
 **Approval:** Project Owner approved implementation on 2026-11-18 (Asia/Bangkok).  
-**Status:** CODE FOR REVIEW / NOT EXECUTED ON OWNER'S DATABASE.  
+**Status:** PR #42 MERGED (commit `92f880f`), GAS Editor source PUSHED (GitHub Actions [run #10](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44142149132), 50 files and GAS version 13). **No admin password reset run or user-row mutation has been authorized/executed by the deployment.**  
 **Scope:** Recover the existing `admin` account only; no schema migration, user recreation or vehicle/contact operation.
 
 ## 1. Security boundaries
@@ -23,7 +23,7 @@
 1. Verify the correct GAS Script Project, connected Sheet and a named authorized maintainer. The owner-selected workbook is **P6 Vehicle Contact — Phase 1 Database**. Do **not** repoint `VEHICLE_SHEET_ID` to another workbook.
 2. Inspect `vc_users` first: existing `admin` account ID in column `A` (copy privately from its row), username `admin`, role `SYSTEM_ADMIN`. Do not put the user ID into chat/GitHub.
 3. Make a private, owner-accessible Google Drive backup copy of the entire workbook. Confirm it is a native Google Sheet, located in a restricted folder with no anyone-link sharing, and record the copy's **file ID** privately. The reset function only validates that a distinct native Sheet backup is accessible, not its snapshot contents or ACL: operator verification of these remains mandatory.
-4. Obtain reviewed and merged source for `AdminPasswordReset.js`, `WebApp.js` and the GAS build entrypoint registry. Run CI synthetic tests, manually push the source to the correct GAS Script Project using existing controlled deployment procedure. **No GitHub code commit automatically runs/reset accounts**.
+4. **COMPLETED 2026-11-18:** Reviewed source PR #42 merged, 7/7 synthetic reset tests passed, `clasp push --force` pushed 50 GAS files and `clasp create-version` created version 13 in [run #10](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44142149132). This is an Editor source push, **not** a published Web App deployment or real password reset. Refresh the intended Editor and check that both global functions are available.
 5. In GAS **Project Settings → Script Properties**, set the following operator-specific values. DO NOT set the approval property yet:
 
 | Script Property | Required value |
