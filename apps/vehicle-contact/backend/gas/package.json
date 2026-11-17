@@ -1,0 +1,9 @@
+{
+  "name": "@p6/vehicle-contact-gas",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node tests/contract.test.mjs"
+  }
+}
