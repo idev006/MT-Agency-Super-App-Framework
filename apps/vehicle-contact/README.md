@@ -13,6 +13,11 @@
 ## Phase 1 technology direction (2026-11-17)
 **Approved architecture direction:** Vehicle Contact Phase 1 uses Google Sheets as the primary datastore: **one worksheet/tab = one logical table** within an application spreadsheet. The app-specific GAS Backend API accesses these tables via domain ports and Sheets repository adapters. Frontend communicates through its GAS API adapter and a verified, non-bypassable security boundary. **Username/Password Phase 1 authentication** replaces reliance on the unfinished MT-I-AM; production credential/session design and direct GAS endpoint protection are still open security gates. Earlier Supabase-centric design paragraphs are historical draft alternatives, not the Phase 1 choice. See [Phase 1 Google Sheets Data Architecture](docs/PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).
 
+## Development management — Phase 1 (2026-11-17)
+- [System Analyst Baseline](docs/SYSTEM_ANALYST_BASELINE_PHASE1.md) — problem, actors, business processes, requirements, use cases, architecture, data model and open decisions; planning baseline, **not policy/PDPA release approval**.
+- [Development Roadmap & Backlog](docs/DEVELOPMENT_ROADMAP_PHASE1.md) — M0–M6 milestones, VC-W01–VC-W22 work items, dependencies, acceptance evidence, security-first critical path and Phase-1 no-pass boundaries.
+- **Next safe work:** data dictionary / fake Sheets repository tests / Vue mock shell / secure-auth ADR. Protected PII APIs stay disabled until direct-GAS bypass protection, username/password session and permissions are proven.
+
 ## Documents
 - [DOCUMENT_CONSISTENCY_QC_2026-11-17.md](docs/DOCUMENT_CONSISTENCY_QC_2026-11-17.md) — รายงานตรวจความสอดคล้องเอกสาร ประเด็นแก้ไข และรายการรออนุมัติ (QC 17 พ.ย. 2569)
 - [REQUIREMENTS_TRACEABILITY.md](docs/REQUIREMENTS_TRACEABILITY.md) — ตรวจการเชื่อมโยงข้อกำหนด/เอกสาร/โค้ด/หลักฐาน และรายการที่ขัดแย้งรออนุมัติ
