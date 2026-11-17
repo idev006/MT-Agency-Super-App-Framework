@@ -1,0 +1,42 @@
+name: P6VC Live HTTP Acceptance (isolated one-off)
+on:
+  push:
+    branches:
+      - test/p6vc-live-http-e2e-20261117
+    paths:
+      - '.github/workflows/p6vc-live-http-acceptance-oneoff.yml'
+      - 'apps/vehicle-contact/backend/gas/scripts/verify-live-gateway.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    name: Live /exec ingress and guarded synthetic business E2E
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      P6VC_GAS_EXEC_URL: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Live public and guarded synthetic-only HTTP tests
+        run: node apps/vehicle-contact/backend/gas/scripts/verify-live-gateway.mjs
+      - name: Save sanitized machine-readable evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6vc-live-http-acceptance-evidence
+          path: test-results/p6vc-live-http-acceptance.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Record gate semantics
+        if: always()
+        run: |
+          echo "### P6VC Live HTTP Acceptance" >> "$GITHUB_STEP_SUMMARY"
+          echo "Validated real /exec ingress; all business mutations require successful synthetic sysadmin + staff login AND known synthetic vehicle fingerprint." >> "$GITHUB_STEP_SUMMARY"
+          echo "A 49-operation BLOCKED record means the Web App feature flag is off; it does not mean 49 tests ran or passed." >> "$GITHUB_STEP_SUMMARY"
+          echo "No real credentials, raw HTTP auth tokens, or live contact data are printed." >> "$GITHUB_STEP_SUMMARY"
