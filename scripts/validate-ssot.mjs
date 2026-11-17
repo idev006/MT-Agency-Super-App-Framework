@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Read-only repository structure and canonical-source checks. No dependencies.
-import {existsSync, readFileSync, readdirSync, statSync} from 'node:fs';
+import {existsSync, readFileSync, readdirSync} from 'node:fs';
 import {resolve, dirname, join, relative} from 'node:path';
 const root=resolve(import.meta.dirname,'..');
 const failures=[]; const warnings=[];
@@ -57,7 +57,7 @@ for(const p of walk(root)){
   if(!dest)continue;
   try{dest=decodeURIComponent(dest)}catch{}
   if(!existsSync(resolve(dirname(p),dest))){
-   warnings.push('Broken local link: '+relative(root,p)+' -> '+m[1]);
+   failures.push('Broken local link: '+relative(root,p)+' -> '+m[1]);
   }
  }
 }
