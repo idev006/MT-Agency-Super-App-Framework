@@ -70,6 +70,8 @@ const expected=[
  'ENTRYPOINTS$WebApp.gs',
  'INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs',
  'APPLICATION$migrations$MigrationPlanner.gs',
+ 'APPLICATION$migrations$MigrationJournal.gs',
+ 'APPLICATION$migrations$MigrationRunner.gs',
  'INFRASTRUCTURE$migrations$SheetsMigrationAdapter.gs',
  'DOMAIN$policies$SecurityEventPolicy.gs',
  'SCHEMA$database.schema.gs'
