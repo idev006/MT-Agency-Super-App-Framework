@@ -23,7 +23,11 @@ jobs:
   deploy:
     name: Build, test and push to assigned GAS Script ID
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.confirmation == 'PUSH_VEHICLE_GAS') || (github.event_name == 'push' && github.actor == 'idev006' && github.event.head_commit.message == 'deploy(vehicle-gas): approved one-shot multi-file proof'))
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      ((github.event_name == 'workflow_dispatch' && inputs.confirmation == 'PUSH_VEHICLE_GAS') ||
+       (github.event_name == 'push' && github.actor == 'idev006' &&
+        github.event.head_commit.message == 'deploy(vehicle-gas): approved one-shot multi-file proof'))
     timeout-minutes: 15
     defaults:
       run:
