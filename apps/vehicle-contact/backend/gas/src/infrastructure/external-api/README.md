@@ -1,0 +1,1 @@
+# External API adapters\n\nNo outbound service adapter is required for the Phase 1 bootstrap. Add provider-specific adapters only when needed.\n
