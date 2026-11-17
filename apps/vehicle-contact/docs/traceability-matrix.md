@@ -63,7 +63,7 @@ This matrix maps each of the **50 canonical API v1 operations to one primary own
 - **C2 Source review:** `backend/gas/src/api/routes/Router.js`, `backend/gas/src/api/controllers/OperationController.js`, four use-case service modules, `SessionService.js`, `SheetStore.js` and `DrivePhotos.js`.
 - **C3 CI:** [GAS acceptance report](BACKEND_ACCEPTANCE_REPORT_20261117.md) shows source test evidence; compiled fake-Sheets V8 VM 19+21 cases and RBAC 220 pairs.
 - **C4 GAS:** **PASS (scope-limited):** owner GAS Editor logs show `AUTH_AND_READ` 19/19 (37.651 s), `FULL_LIFECYCLE` 21/21 (123.387 s), 2026-11-17. This proves covered Editor-dispatched use cases on real Sheets/Drive, **not all 50 operations via authenticated public HTTP**. See [Backend Acceptance Report](BACKEND_ACCEPTANCE_REPORT_20261117.md).
-- **C5 HTTP:** 11/11 historical public-safe /exec smoke tests; **authenticated protected business HTTP paths still NOT RUN** after GAS Editor pass.
+- **C5 HTTP:** **12/12** new live HTTPS public gateway tests [run #44127658157](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44127658157) PASS. Protected dispatcher returned `SERVICE_UNAVAILABLE`; **49 non-health operations still BLOCKED / not authenticated E2E tested**, consistent with feature disabled or configuration failure. Separate synthetic-only Script Project and published authenticated /exec required.
 - **C6 FE:** Vue UI and live API adapter **NOT WIRED**.
 
 ## Open contract and design discrepancies
