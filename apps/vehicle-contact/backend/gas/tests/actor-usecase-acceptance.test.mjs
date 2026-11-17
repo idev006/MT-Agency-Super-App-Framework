@@ -47,7 +47,7 @@ test('ACTOR-03 REGISTRATION: anonymous 5-photo staging, idempotent submit, admin
  assertError(assert,h.as('sys','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'FORBIDDEN','SYSTEM_ADMIN cannot approve without separate permission');
  assert.equal(assertOk(assert,h.as('reg','registrations.listPending',{}),'pending list')[0].requestId,r.requestId);
  assert.equal(assertOk(assert,h.as('reg','registrations.detail',{requestId:r.requestId}),'pending detail').application.contactPhone,'+66810000001');
- assertError(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:false}),'INVALID_REQUEST','photo verification false rejected');
+ assertError(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:false}),'PLATE_PHOTO_NOT_VERIFIED','photo verification false rejected');
  const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve registration');
  assert.equal(approved.status,'APPROVED');
  assert.match(approved.qrToken,/^[a-f0-9]{64}$/);
