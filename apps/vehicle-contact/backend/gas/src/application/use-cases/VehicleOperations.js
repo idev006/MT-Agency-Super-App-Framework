@@ -2,7 +2,7 @@ import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition} from '../
 export function createVehicleOperations({store,security,campaigns}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
- const phone=v=>{if(typeof v!=='string'||!/^\\+[1-9][0-9]{6,14}$/.test(v))throw new Error('INVALID_PHONE_E164');return v;};
+ const phone=v=>{if(typeof v!=='string'||!/^\+[1-9][0-9]{6,14}$/.test(v))throw new Error('INVALID_PHONE_E164');return v;};
  const audit=(actor,kind,entity,action)=>store.insert('vc_change_audit',{
   audit_id:id(),actor_id:actor&&actor.userId||'PUBLIC_CAMPAIGN',entity_type:kind,entity_id:entity,
   action,redacted_summary:action,correlation_id:id().slice(0,16),created_at:now()
