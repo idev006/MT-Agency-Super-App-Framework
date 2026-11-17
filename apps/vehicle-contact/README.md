@@ -36,7 +36,7 @@
 . Build + tests enforce <=800 lines per file.
 
 ## GAS deployment automation
-- [Manually dispatched GitHub Actions → GAS deployment](../../../.github/workflows/deploy-vehicle-gas.yml) targets the user-supplied Script ID. [Setup and security runbook](docs/GAS_GITHUB_ACTIONS_DEPLOYMENT.md). **Workflow configured, not yet authenticated/executed; no Web App deployment.**
+- [Manually dispatched GitHub Actions → GAS deployment](../../.github/workflows/deploy-vehicle-gas.yml) targets the user-supplied Script ID. [Setup and security runbook](docs/GAS_GITHUB_ACTIONS_DEPLOYMENT.md). **Workflow configured, not yet authenticated/executed; no Web App deployment.**
 
 ## Live Agile Kanban tracking
 - [Agile Kanban — live GitHub Issues lanes](docs/AGILE_KANBAN.md) and [repository Issues](https://github.com/idev006/MT-Agency-Super-App-Framework/issues): **29 work items VC-W01–VC-W29 created**, 4 completed with evidence and closed; remaining items tracked via `status:*`, `area:*`, `priority:*` labels.

@@ -34,8 +34,11 @@ jobs:
       - name: Check generated GAS code and manifest
         run: |
           test -s dist/appsscript.json
-          test "$(find dist -maxdepth 1 -type f -name '*.gs' | wc -l)" -eq 17
-          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 18
+          expected_gs=$(( $(find src -type f -name '*.js' | wc -l) + 1 ))
+          actual_gs=$(find dist -maxdepth 1 -type f -name '*.gs' | wc -l)
+          test "$actual_gs" -eq "$expected_gs"
+          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq "$((expected_gs + 1))"
+          echo "Verified $actual_gs generated GAS modules (sources + schema) and manifest"
           test -s 'dist/ENTRYPOINTS$WebApp.gs'
           test -s 'dist/API$routes$Router.gs'
           test -s 'dist/INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs'

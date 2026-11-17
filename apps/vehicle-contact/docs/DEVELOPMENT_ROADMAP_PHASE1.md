@@ -3,7 +3,7 @@
 **Document ID:** P6VC-PLAN-001  
 **Version:** 1.0.0 | **Baseline date:** 2026-11-17  
 **Plan status:** ACTIVE PLANNING / NOT A COMMITTED RELEASE DATE  
-**Agile work tracking:** [Issue-backed Kanban with live lane filters](AGILE_KANBAN.md) — 28 GitHub Issues VC-W01–VC-W28 created 2026-11-17; label/status links are live; milestone table below remains a baseline snapshot  
+**Agile work tracking:** [Issue-backed Kanban with live lane filters](AGILE_KANBAN.md) — 31 GitHub Issues VC-W01–VC-W31 tracked as of 2026-11-17; label/status links are live; milestone table below remains a baseline snapshot  
 **Scope:** Phase 1 only; visitor/pass exchange **OFF**  
 **SA baseline:** [P6VC-SA-001](SYSTEM_ANALYST_BASELINE_PHASE1.md)  
 **Technical foundations:** [Phase-1 Sheets Architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md), [GAS Data Model](GAS_DATA_MODEL.md), [GAS API Contract](GAS_API_SPEC.md), [GAS Test Evidence](GAS_TEST_EVIDENCE.md) and [Decision Log](DECISION_LOG.md)
@@ -185,3 +185,77 @@ Run these in parallel where dependencies permit. **Do not** implement public log
 - [GAS Test Evidence](GAS_TEST_EVIDENCE.md)
 
 **Interpretation:** This is a specific, evidence-gated development plan; implementing the tasks does not authorize deploying personal contact information or activating future visitor-pass features.
+
+
+## 5. Execution refinement — 2026-11-17 (proposed; no release gate bypass)
+
+**Decision:** Retain the existing **M0–M6** milestones and work IDs. Do not renumber or create a competing project plan. Labels `area:m0`…`area:m6` are the existing milestone mapping; native GitHub milestone objects have not been created or verified. The issue-backed Kanban is operational, while a native Projects board is not evidenced.
+
+### Parallel tracks and exit gates
+
+| Track | Existing issues | Immediate action | Exit / guardrail |
+|---|---|---|---|
+| Governance critical path | VC-W02, W03, W04–W06 | Obtain named owner/approver, approve photo/contact policy, select identity/session and demonstrate direct `/exec` denial | **Blocked** until actual decisions and negative security tests; no PII API enabled |
+| Data synthetic-only | VC-W07, W08, W09, W26–W28 | Review canonical six-tab dictionary; extend Fake Sheets tests for duplicate/optimistic version, missing record and rollback-safe errors | VC-W08's dependency on VC-W07 is **not waived**; draft tests can be developed for review but no real Sheets writes/migrations |
+| Frontend synthetic-only | VC-W15, W18 | Vue 3 mock shell, responsive routes, scanner POC integration behind a mock adapter | No privileged `/exec` calls, no live contacts, no claim of authenticated E2E |
+| Runtime evidence | VC-W29, W30, W31 | Reconcile GAS source push/version, inspect actual deployed `/exec` version and editor-to-Sheets read-only evidence | Version 5 is last evidenced push; 17-module CI is **not** proof of a later push; bootstrap 7/7 is not protected API acceptance |
+| Protected vertical slice and pilot | VC-W10–W14, W16–W21 | Only after M1 security and M2 data gates, then staged synthetic E2E, UAT and approved pilot | No production release before owner, security and PDPA sign-off |
+
+### Milestone acceptance protocol
+
+1. **M0:** named business/data/security owners, explicit decision log and scope approval; document-only completion does not close ownership gaps.
+2. **M1:** auth/session provider, RBAC, direct GAS URL bypass threat test, deny-by-default proof and reviewer approval.
+3. **M2:** approved dictionary, synthetic repository integrity tests, schema drift handling; live Sheet adapter only with controlled test data and approved access.
+4. **M3:** authorized vehicle/contact/QR use cases with persistence, audit, revocation and negative tests; no raw QR token in Sheets.
+5. **M4:** Vue 3 vertical slice on approved adapter, route guards, accessibility, device camera and safe contact-action tests.
+6. **M5:** staging security, PDPA, UAT, rollback and operations runbook with dated reviewer evidence.
+7. **M6:** controlled pilot go/no-go signed by owner; real rollout separately authorized.
+
+### Board operating constraints
+
+- WIP target: **at most 2 synthetic engineering tasks** concurrently, plus 1 governance/security decision item; adjust only when team capacity is known.
+- Require a linked branch/PR, tests, commit SHA and reviewer before moving to DONE-EVIDENCED; GitHub Actions CI alone does not prove GAS Web App deployment.
+- Use existing Issues for acceptance evidence and `AGILE_KANBAN.md` for board operations; do not duplicate a project management document.
+- Native milestone numbers cannot be safely assigned until the exact objects exist and their IDs are verified. The connected integration does not expose native milestone or Projects board creation; do not fabricate completion.
+
+
+## 6. Mandatory Thai cyber law, traffic-data and privacy compliance gate (2026-11-17 requirement)
+
+**Status: REQUIRED / LEGAL APPLICABILITY AND IMPLEMENTATION NOT YET VERIFIED.** This is a Phase-1 cross-cutting acceptance gate, not a claim of legal compliance or approval. Existing M0–M6 and work IDs remain authoritative; use VC-W02/W03 (owner and policy), VC-W04–06 (security), VC-W19 (security testing), VC-W20 (UAT/PDPA), VC-W21 (pilot) for execution rather than duplicating an issue or a new planning document.
+
+### Sources and applicability questions
+
+1. Computer Crime Act B.E. 2550 as amended B.E. 2560, section 26, and Ministry of Digital Economy and Society Notification on Computer Traffic Data Retention B.E. 2564 ([official ministry publication](https://mdes.go.th/storage/contents/file/aKZWEjqNLyG6DPKX8jVbvkrewbOG5Wsc8K2zt3OT.pdf)). Legal/security reviewer must classify whether the agency and this app act as an in-scope service provider, which appendix fields apply, and which infrastructure/cloud provider supplies which logs. For in-scope providers the general minimum is **90 days**, with possible lawful preservation orders up to statutory limits; this is **not** a blanket retention policy for all business records.
+2. Cybersecurity Act B.E. 2562: assess public-agency obligations, applicable national/agency cyber standards, risk management and incident response; do **not** assert that this app is automatically designated critical information infrastructure.
+3. Personal Data Protection Act B.E. 2562: review lawful basis, notice, purpose limitation, access scope, processors, retention/deletion, breach response and data-subject rights **to the extent applicable**, including any public-authority exceptions or sector-specific rules requiring legal interpretation.
+
+### Required engineering controls and evidence
+
+- **Separate** (a) application security/audit events (login success/failure, role decision, QR resolve, plate search, contact reveal, mutations, administrative actions) from (b) network/computer traffic data prescribed for the applicable provider category. Neither is automatically a substitute for the other.
+- Record UTC timestamp and synchronized clocks, request/correlation ID, trusted actor/session reference, event/action, resource reference, decision/outcome, source IP and proxy attribution **where lawfully available and technically trustworthy**, user-agent/device context where justified. Never log passwords, bearer/session tokens, raw QR secrets, contact numbers, photo bytes or unredacted payloads.
+- Confirm whether Apps Script web app can supply authoritative client IP/network metadata and adequate ingress logs. **Do not invent IP provenance**; if GAS cannot satisfy the required traffic-log fields, choose a compliant controlled ingress/logging architecture through an approved security design and update the application-specific decision log; do not silently bypass Master Blueprints.
+- Protect logs with least-privilege read access, write-once/tamper-evident or independently protected centralized storage, encryption, retention/expiry, integrity checks, clock synchronization, controlled export and documented incident/legal hold. A mutable Google Sheet by itself is **not** accepted as tamper-resistant traffic-log storage.
+- Test unauthorized access, direct GAS `/exec` bypass, event coverage, retention/expiry, immutable/tamper detection, timestamp correctness, safe redaction, incident escalation and evidence export in synthetic staging. Record test date, owner/reviewer, CI/PR and outcome.
+- **Release block:** M1 security proof and M5 security/legal/privacy sign-off must be evidenced before M6 pilot. Legal applicability, exact field list, retention schedule, host/cloud responsibility and actual deployment configuration remain open decisions, not assumed pass.
+
+### Mandatory review role: Thai Cybersecurity Legal Counsel (AI advisory role)
+
+**Role ID:** `TH-CYBER-LEGAL-REVIEWER` — independent advisory reviewer within the project review workflow. This is an AI-assisted specialist function, **not a real appointed lawyer, a professional legal opinion, or a substitute for the agency's authorized legal officer**.
+
+**Scope:** (1) Computer Crime Act B.E. 2550 and amendments, section 26 and relevant subordinate traffic-data retention notification; (2) Cybersecurity Act B.E. 2562 and agency-specific applicability; (3) PDPA B.E. 2562, applicable exemptions and agency rules; (4) Electronic Transactions Act and other relevant Thai rules where triggered by system functionality; (5) retention, lawful access, logging, data disclosure, incident response, evidence integrity and vendor/cloud obligations.
+
+**Mandatory deliverable for every security/data change PR:** a dated legal applicability matrix containing legal instrument and current authoritative source, provision, whether applicable/uncertain/not applicable, system-specific fact, technical control, evidence reference, residual risk, named owner, and required human approval. No legal assertions without cited authoritative sources; unresolved interpretation is a **BLOCKED** gate, not a pass.
+
+**Review workflow:** Developer drafts design → security reviewer performs threat model → TH-CYBER-LEGAL-REVIEWER performs independent legal check → data steward/privacy reviewer checks personal-data impact → authorized Thai agency legal officer signs off applicability → business owner accepts residual risk → implement in staging with evidence → release gate approval. AI reviewer can return `ADVISORY_PASS`, `CHANGES_REQUIRED`, or `LEGAL_CLARIFICATION_REQUIRED`; **only a named authorized human** may grant `LEGAL_APPROVED`.
+
+**Immediate review questions:** Is this system an in-scope service provider for computer traffic-data retention? Which exact fields and retention rule apply? Is GAS capable of authoritative source IP and tamper-resistant logs? Is any separate traffic-log gateway/storage necessary? Which PDPA provisions and agency exceptions apply? Who is the legal controller/processor, incident owner and records custodian? Until answered, schema v2 remains proposal-only and protected routes/pilot remain blocked.
+
+**No invented staffing:** assigning this AI role does not add a real GitHub assignee or represent that legal counsel has reviewed the project. Record the actual reviewer identity and signed outcome when the organization appoints one.
+
+### Legal review decision policy — user-approved 2026-11-17
+
+The AI advisory legal reviewer may **automatically clear the internal advisory review gate** when its completed, source-cited applicability matrix has no unresolved applicable-law issues, no missing mandatory controls, no material residual legal risks, and no ambiguous applicability requiring a qualified human interpretation. Record outcome `ADVISORY_PASS` and proceed to the next **already authorized** engineering/review stage without asking the project sponsor for redundant approval.
+
+Use `CONDITIONAL_PASS` only for explicitly documented non-blocking observations with owner, deadline and follow-up verification. Use `BLOCKED` for material noncompliance, missing evidence, contested interpretation or an unresolved mandatory control; escalate with a concrete question.
+
+**Separation of authority:** `ADVISORY_PASS` does not mean `LEGAL_APPROVED`, does not substitute for statutory/agency approval or a qualified human legal opinion, and cannot authorize a live Spreadsheet migration, protected API enablement, personal-data processing, or pilot/release where separate security, data-owner, change-control or human legal sign-off is required. Existing M1/M5/M6 release gates remain in force. Never mark the legal review completed merely because this policy is recorded; actual review findings and authoritative citations must be attached.

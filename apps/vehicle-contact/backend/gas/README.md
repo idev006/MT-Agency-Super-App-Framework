@@ -1,77 +1,88 @@
-# P6 Vehicle Contact — GAS Backend Bootstrap
+# P6 Vehicle Contact — GAS Backend source
 
-**State:** SAFE BOOTSTRAP; **GitHub-source-mirrored GAS modules pushed (14 .gs files + manifest, Version 5)**, but Web App not published; protected data CRUD and sign-in intentionally disabled.
+**Current source state (2026-11-17):** All **50 logical v1 operations** are represented by source handlers/health route. **No new build, execution, end-to-end test, Apps Script deployment or production release is claimed.** Protected operations remain **disabled by default** via server-side `VEHICLE_API_ENABLED` Script Property.
 
-- Canonical source: this folder on GitHub (not Google Sheets cells).
-- Google Sheets is the Phase 1 private datastore with one tab per logical table, provisioned in the owner's Drive project root.
-- GAS runtime entrypoints: `src/entrypoints/WebApp.js`. API groups include `system.health` only; all protected operations fail closed.
-- `src/infrastructure/persistence/sheets/SheetsSchemaRepository.js` validates table headers as an **admin-only** function; it never returns data rows to a public caller.
-- Follow [central GAS Master Blueprint](../../../../blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md) and [application-specific contract](../../docs/GAS_API_SPEC.md).
+## Architecture
 
-## Canonical schema sync (detect and propose only)
-- GitHub [database.schema.json](../../schema/database.schema.json) is the single field definition authority. Build bundles that JSON into GAS-compatible code; Node 22 test imports the JSON with its required import attribute.
-- Run the editor-only functions `verifyVehicleSchemaFromEditor()`, `inspectVehicleSchemaDriftFromEditor()` and `proposeVehicleSchemaChangeFromEditor()` after configuring the Apps Script project. Only **sheet names and header cells** are inspected. No PR, migration, scheduled trigger or changed column is created automatically.
-- Any physical Sheets edit (including new columns) produces drift until the responsible reviewer signs off a change to the JSON SSOT and an approved migration. Never expose the inspector as an anonymous public API.
-
-## GitHub Actions deployment to target Script ID
-- **Manual, main-branch only:** [Deploy P6 Vehicle Contact GAS](../../../../.github/workflows/deploy-vehicle-gas.yml). An authorized maintainer must configure the `P6VC_CLASPRC_JSON` GitHub Actions secret (never in source/chat) and type `PUSH_VEHICLE_GAS` to dispatch.
-- Target Apps Script ID is fixed in the workflow to the owner-provided project. Workflow runs `npm run check`, then `clasp push --force` and `clasp create-version`. No Web App deployment is published; the entire target Apps Script project source is replaced, so back up current GAS code first.
-- **Current deployment status:** authenticated GitHub Actions source push verified [run 44035053861](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44035053861), 14 source-mirrored GAS files plus manifest, GAS version 5. See [GAS module mapping](../../docs/GAS_MODULE_MAPPING.md). Workflow restored to **manual-only**; no Web App /exec published. See [GAS GitHub Actions Deployment Runbook](../../docs/GAS_GITHUB_ACTIONS_DEPLOYMENT.md).
-
-## Developer build and first script setup
-
-```bash
-cd apps/vehicle-contact/backend/gas
-npm install
-npm run check
-# Open your existing target Spreadsheet in Google Sheets > Extensions > Apps Script
-# Create a bound or standalone Apps Script Project. Record its Script ID.
-# Set Script Property VEHICLE_SHEET_ID in Apps Script Project Settings.
-# Configure clasp credentials in a secure workstation (never in Git).
-# Copy .clasp.json.example to .clasp.json and replace Script ID.
-clasp push
-# Run verifyVehicleSchemaFromEditor() with authorized admin Google identity.
+```
+src/entrypoints/WebApp.js                 doGet/doPost; Editor-only admin entrypoints
+  → src/api/routes/Router.js              Versioned request envelope, public health, feature gate
+  → src/api/controllers/OperationController.js
+      → src/api/dto/OperationPayloadValidator.js       Per-operation allowlisted DTOs
+      → src/application/security/SessionService.js     Server-side identity/RBAC/session
+      → IdentityOperations.js / AdministrationOperations.js /
+        VehicleOperations.js / MediaRetentionOperations.js
+      → src/infrastructure/persistence/sheets/SheetStore.js
+      → src/infrastructure/security/GasSecurity.js
+      → src/infrastructure/media/DrivePhotos.js
+  → src/domain/policies/                   Pure business invariants
 ```
 
-`clasp push` updates script code, not automatically a published versioned Web App. Do **not** publish the protected API or owner-privileged public endpoints until the auth/session gateway design and direct-URL bypass security gates pass. Script secrets and `.clasp.json` should be kept out of Git; the provided `.clasp.json.example` is safe sample configuration.
+Other legacy prototype modules remain present for reference; only modules wired through `OperationController.js` are part of the new feature-gated path.
 
-**Code packaging — Source-module mirrored GAS:** canonical GitHub source uses ES Modules. `npm run build` converts each module to an individual named GAS script file `LAYER$subfolder$Module.gs` via pinned esbuild CJS transform and lazily registered `P6VC_Runtime` factories. The canonical JSON database schema is its own generated module. GAS has a flat file view, not folders; the delimiter `# P6 Vehicle Contact — GAS Backend Bootstrap
+## v1 source inventory (50 operations)
 
-**State:** SAFE BOOTSTRAP; **GitHub-source-mirrored GAS modules pushed (14 .gs files + manifest, Version 5)**, but Web App not published; protected data CRUD and sign-in intentionally disabled.
+| Group | Count |
+|---|---:|
+| system | 3 |
+| auth | 6 |
+| users | 6 |
+| organizations | 4 |
+| campaigns | 4 |
+| registrations | 4 |
+| vehicles | 5 |
+| contacts | 2 |
+| changes | 3 |
+| qr | 4 |
+| photos | 3 |
+| retention | 4 |
+| audit | 2 |
+| **Total** | **50** |
 
-- Canonical source: this folder on GitHub (not Google Sheets cells).
-- Google Sheets is the Phase 1 private datastore with one tab per logical table, provisioned in the owner's Drive project root.
-- GAS runtime entrypoints: `src/entrypoints/WebApp.js`. API groups include `system.health` only; all protected operations fail closed.
-- `src/infrastructure/persistence/sheets/SheetsSchemaRepository.js` validates table headers as an **admin-only** function; it never returns data rows to a public caller.
-- Follow [central GAS Master Blueprint](../../../../blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md) and [application-specific contract](../../docs/GAS_API_SPEC.md).
+Authoritative operation names: [API inventory](../../contracts/api-inventory.v1.json). All `implementationVerified`, `integrationVerified` and `liveVerified` flags remain false pending evidence. A source handler is **not proof** of correct behavior, secure deployment or API completion.
 
-## Canonical schema sync (detect and propose only)
-- GitHub [database.schema.json](../../schema/database.schema.json) is the single field definition authority. Build bundles that JSON into GAS-compatible code; Node 22 test imports the JSON with its required import attribute.
-- Run the editor-only functions `verifyVehicleSchemaFromEditor()`, `inspectVehicleSchemaDriftFromEditor()` and `proposeVehicleSchemaChangeFromEditor()` after configuring the Apps Script project. Only **sheet names and header cells** are inspected. No PR, migration, scheduled trigger or changed column is created automatically.
-- Any physical Sheets edit (including new columns) produces drift until the responsible reviewer signs off a change to the JSON SSOT and an approved migration. Never expose the inspector as an anonymous public API.
+## Schema and migration
 
-## GitHub Actions deployment to target Script ID
-- **Manual, main-branch only:** [Deploy P6 Vehicle Contact GAS](../../../../.github/workflows/deploy-vehicle-gas.yml). An authorized maintainer must configure the `P6VC_CLASPRC_JSON` GitHub Actions secret (never in source/chat) and type `PUSH_VEHICLE_GAS` to dispatch.
-- Target Apps Script ID is fixed in the workflow to the owner-provided project. Workflow runs `npm run check`, then `clasp push --force` and `clasp create-version`. No Web App deployment is published; the entire target Apps Script project source is replaced, so back up current GAS code first.
-- **Current deployment status:** authenticated GitHub Actions source push verified [run 44035053861](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44035053861), 14 source-mirrored GAS files plus manifest, GAS version 5. See [GAS module mapping](../../docs/GAS_MODULE_MAPPING.md). Workflow restored to **manual-only**; no Web App /exec published. See [GAS GitHub Actions Deployment Runbook](../../docs/GAS_GITHUB_ACTIONS_DEPLOYMENT.md).
+The canonical [database.schema.json](../../schema/database.schema.json) has a **0.2.0-draft physical extension** with 24 tabs and append-only columns, based on existing approved business requirements. It has **not** been applied to the user's production spreadsheet. The Infrastructure-owned editor-only migration executor performs a pre-change Drive backup, Script Properties journal, additive table/header changes and post-change header comparison. Any drift requiring destructive changes is blocked. Details: [GAS migration runbook](../../docs/GAS_MIGRATION_RUNBOOK.md).
 
-## Developer build and first script setup
+GAS Editor entrypoints:
+- `verifyVehicleSchemaFromEditor`, `inspectVehicleSchemaDriftFromEditor`, `proposeVehicleSchemaChangeFromEditor`
+- `migrateVehicleSchemaFromEditor` — dry-run only
+- `applyVehicleSchemaFromEditor` — requires `VEHICLE_SCHEMA_MIGRATION_APPROVED=true` Script Property
+- `bootstrapVehicleAdminFromEditor` — one-time, staging-only, approved admin initialization
 
-```bash
-cd apps/vehicle-contact/backend/gas
-npm install
-npm run check
-# Open your existing target Spreadsheet in Google Sheets > Extensions > Apps Script
-# Create a bound or standalone Apps Script Project. Record its Script ID.
-# Set Script Property VEHICLE_SHEET_ID in Apps Script Project Settings.
-# Configure clasp credentials in a secure workstation (never in Git).
-# Copy .clasp.json.example to .clasp.json and replace Script ID.
-clasp push
-# Run verifyVehicleSchemaFromEditor() with authorized admin Google identity.
-```
+## Staging configuration
 
-`clasp push` updates script code, not automatically a published versioned Web App. Do **not** publish the protected API or owner-privileged public endpoints until the auth/session gateway design and direct-URL bypass security gates pass. Script secrets and `.clasp.json` should be kept out of Git; the provided `.clasp.json.example` is safe sample configuration.
+Set Script Properties securely (not in Git):
+- `VEHICLE_SHEET_ID` — private staging database spreadsheet
+- `VEHICLE_AUTH_PEPPER` — high-entropy server secret
+- `VEHICLE_GOOGLE_CLIENT_ID` — Google OIDC audience for linked accounts
+- `VEHICLE_PHOTOS_FOLDER_ID` — Drive parent folder ID (see documented public-link risk)
+- `VEHICLE_API_ENABLED` — **leave false until staging security and API acceptance**
+- `VEHICLE_RETENTION_EXECUTE_ENABLED` — separate destructive worker gate, **leave false**
+- Migration and bootstrap flags explained in their own runbooks.
 
- encodes folder hierarchy. Each generated `.gs` must be <=800 lines; build/tests fail if violated. Source `import/export` is compiled away, module linking is deferred and cached; tests evaluate all generated scripts in forward and reverse order. Build does not perform deployment. See [mapping document](../../docs/GAS_MODULE_MAPPING.md).
+See [first-admin bootstrap instructions](../../docs/GAS_STAGING_BOOTSTRAP.md). No password, token or ID is hardcoded into source.
 
-**Important:** Google Drive connector supports the Sheet but currently cannot create or push an Apps Script Project. The Apps Script project must be created/authorized with the owner's Google account before any first `clasp push`.
+## Build/deploy boundary
+
+`npm run build` uses esbuild to compile ESM modules into separate mirrored `.gs` files under `dist/`. `npm run check` includes tests and may expose integration regressions; **this revision has not been run through it yet**. Building does not deploy. GitHub Actions deployment is manual and **main-branch only**; this code is on `docs/vehicle-management-gates-20261117` and must be reviewed/merged before that workflow can use it.
+
+Do not run `clasp push` or enable public/protected data handlers without code review, synthetic staging migration, identity/authorization threat model, verified schema, media/PDPA risk review and test evidence. See [approved business baseline](../../docs/APPROVED_REQUIREMENTS_BASELINE_R01_R26.md).
+
+## Known gaps / release blockers
+
+1. **Verification:** source has not been built or tested in this development increment. GAS Runtime, Authorization, LockService concurrency, Drive sharing and 50 API success/failure cases require separate evidence.
+2. **Recoverability:** Sheets is not ACID. Multi-row writes, staged media, deletion retries, migration recovery and idempotency need fault-injection/reconciliation testing and potentially further hardening.
+3. **Operational:** scheduler notifications, full per-operation JSON Schema/OpenAPI specifications, production-ready owner-claim proof and session/privacy/security sign-off remain open.
+4. **Deployment:** branch is not main and no new `clasp` action, Apps Script version or live Web App deployment has occurred.
+
+## 2026-11-17 source wiring and concurrency refactor
+
+- GAS `WebApp.doPost` → `api/routes/Router.js` → `api/routes/GroupRoutes.js` (13 business groups / 50 allowed operation names) → `api/controllers/OperationController.js` (DTO, server-side session/RBAC, response/error mapping) → injected application use cases → `infrastructure/persistence/sheets/SheetStore.js` and `infrastructure/media/DrivePhotos.js`.
+- `composition/Container.js` wires the dependencies and checks the server-owned `VEHICLE_API_ENABLED` gate.
+- Regular Google Sheets writes are sequential writes. `store.sequence(fn)` is a clarity-only wrapper around `fn()`: **no implicit transaction, rollback, or lock**.
+- `store.withLock(fn)` is used only around critical concurrent read/check/write sequences (registration quota/duplicate, approval, plate version, QR rotation, user uniqueness, photo slot/quota and retention state). It flushes pending Spreadsheet writes before releasing the GAS script lock.
+- Drive image transfers occur **outside** the script-lock window; only associated bounded metadata writes/counts are guarded.
+- Migration executor is in `infrastructure/migrations/ExecuteAdditiveMigration.js`, invoked only from editor-only entrypoints via the composition root.
+- **Source wiring reviewed, not executed.** No new build, tests, live GAS calls, or deployments have been performed for this refactor. Store-level APIs remain generic; richer domain-owned repository ports and resource-scoped authorization require further engineering review.

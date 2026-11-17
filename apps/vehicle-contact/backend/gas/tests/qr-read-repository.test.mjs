@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {createQrReadRepository} from '../src/infrastructure/persistence/sheets/QrReadRepository.js';
+const digest='b'.repeat(64), token='a'.repeat(64);
+const tables={vc_qr_tokens:[['vehicle_id','token_digest','status'],['v1',digest,'ACTIVE']],vc_vehicles:[['vehicle_id','status'],['v1','ACTIVE']]};
+const app={openById(id){assert.equal(id,'test');return {getSheetByName(t){return tables[t]?{getDataRange(){return {getValues(){return tables[t]}}}}:null}}}};
+const repo=createQrReadRepository(app,'test',value=>value===token?digest:'c'.repeat(64));
+assert.deepEqual(repo.resolveQr(token),{vehicleId:'v1',status:'ACTIVE'});
+assert.equal(repo.resolveQr('c'.repeat(64)),null);
+assert.throws(()=>repo.resolveQr('bad'),/INVALID_QR_TOKEN/);
+tables.vc_qr_tokens.push(['v2',digest,'ACTIVE']);
+assert.throws(()=>repo.resolveQr(token),/DUPLICATE_ACTIVE_QR/);
+tables.vc_qr_tokens.pop();
+tables.vc_vehicles[1][1]='INACTIVE';
+assert.equal(repo.resolveQr(token),null);
+tables.vc_vehicles[1][1]='ACTIVE';
+tables.vc_qr_tokens[0][1]='wrong';
+assert.throws(()=>repo.resolveQr(token),/SCHEMA_MISMATCH/);
+console.log('QR read repository tests passed');

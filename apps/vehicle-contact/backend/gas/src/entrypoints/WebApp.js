@@ -1,3 +1,4 @@
+import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
 import { createApplication } from "../composition/Container.js";
 import { apiFailure } from "../api/responses/ResponseFactory.js";
 function gasJson(value) {
@@ -7,10 +8,13 @@ export function doGet(e) {
   return gasJson(createApplication().dispatch({apiVersion:"v1",group:"system",action:"health",payload:{}},"GET"));
 }
 export function doPost(e) {
-  if (!e || !e.postData || typeof e.postData.contents !== "string" || e.postData.contents.length>8192)
+  if (!e || !e.postData || typeof e.postData.contents !== "string" || e.postData.contents.length>8*1024*1024)
     return gasJson(apiFailure("BAD_REQUEST","Missing or oversized request",null));
   try {
-    return gasJson(createApplication().dispatch(JSON.parse(e.postData.contents),"POST"));
+    const request=JSON.parse(e.postData.contents);
+    const isMedia=request&&request.group==='photos'&&['upload','replace'].includes(request.action);
+    if(!isMedia&&e.postData.contents.length>8192)return gasJson(apiFailure("BAD_REQUEST","Oversized request",null));
+    return gasJson(createApplication().dispatch(request,"POST"));
   } catch (_) { return gasJson(apiFailure("BAD_REQUEST","Malformed request",null)); }
 }
 // Trusted Editor entrypoints only; NEVER expose these operations via doGet/doPost.
@@ -31,4 +35,32 @@ export function proposeVehicleSchemaChangeFromEditor() {
   const proposal=a.proposeSchemaDrift();
   Logger.log(JSON.stringify(proposal));
   return proposal;
+}
+
+// Run only from GAS Editor. Dry-run by default; no public HTTP access.
+export function migrateVehicleSchemaFromEditor() {
+ const a=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp,lockService:LockService});
+ const result=a.migrateSchema({dryRun:true});
+ Logger.log(JSON.stringify(result));
+ return result;
+}
+
+// Explicitly gated GAS Editor action. Never callable over HTTP.
+export function applyVehicleSchemaFromEditor() {
+ const props=PropertiesService.getScriptProperties();
+ if(props.getProperty('VEHICLE_SCHEMA_MIGRATION_APPROVED')!=='true')
+  throw new Error('EXPLICIT_MIGRATION_APPROVAL_REQUIRED');
+ const a=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp,
+   lockService:LockService,driveApp:DriveApp});
+ const result=a.migrateSchema({dryRun:false,approvalCode:'APPROVE_ADDITIVE_SCHEMA_MIGRATION'});
+ Logger.log(JSON.stringify({status:result.status,schemaVersion:result.schemaVersion,backupCreated:Boolean(result.backupRef)}));
+ return result;
+}
+
+// Run only after additive migration, in a synthetic staging spreadsheet. Never over HTTP.
+export function bootstrapVehicleAdminFromEditor() {
+ const result=bootstrapStagingAdmin({spreadsheetApp:SpreadsheetApp,lockService:LockService,
+  utilities:Utilities,propertiesService:PropertiesService});
+ Logger.log(JSON.stringify(result));
+ return result;
 }
