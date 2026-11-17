@@ -32,4 +32,10 @@ jobs:
       - name: Source, adapter and bundled GAS contract tests
         run: npm test
       - name: Check generated GAS code and manifest
-        run: test -s dist/Code.gs && test -s dist/appsscript.json
+        run: |
+          test -s dist/appsscript.json
+          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 6
+          for file in 'ENTRY$WebGet.gs' 'ENTRY$WebPost.gs' 'ADMIN$VerifySchema.gs' 'ADMIN$InspectSchema.gs' 'ADMIN$ProposeSchema.gs'; do
+            test -s "dist/$file"
+            test "$(wc -l < "dist/$file")" -le 800
+          done
