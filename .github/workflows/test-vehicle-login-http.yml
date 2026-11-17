@@ -2,43 +2,49 @@ name: P6VC Single-Account HTTP Login Acceptance (manual only)
 on:
   workflow_dispatch:
     inputs:
-      exec_url:
-        description: 'Existing owner-approved GAS /exec target, bound to the approved Phase-1 sheet'
-        type: string
-        required: true
-        default: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
-      username:
-        description: 'Exact active account in specified Sheet'
-        type: string
-        required: true
-        default: 'admin'
       confirmation:
-        description: 'Type TEST_LOGIN_ON_APPROVED_SHEET to accept login/session audit writes'
+        description: 'Type TEST_LOGIN_ON_APPROVED_SHEET to permit test-only auth/session writes'
         type: string
         required: true
+
 permissions:
   contents: read
+
 jobs:
   login-test:
     runs-on: ubuntu-latest
     timeout-minutes: 6
-    if: ${{ inputs.confirmation == 'TEST_LOGIN_ON_APPROVED_SHEET' }}
-    env:
-      P6VC_GAS_EXEC_URL: ${{ inputs.exec_url }}
-      P6VC_HTTP_LOGIN_USERNAME: ${{ inputs.username }}
-      P6VC_HTTP_LOGIN_PASSWORD: ${{ secrets.P6VC_HTTP_LOGIN_PASSWORD }}
     steps:
+      - name: Authorize exact owner, main branch and explicit confirmation
+        env:
+          P6VC_CONFIRMATION: ${{ inputs.confirmation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "$GITHUB_ACTOR" != "idev006" ]; then
+            echo "DENIED: only the repository owner may dispatch this privileged account test"; exit 1
+          fi
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "DENIED: only main may run this test"; exit 1
+          fi
+          if [ "$P6VC_CONFIRMATION" != "TEST_LOGIN_ON_APPROVED_SHEET" ]; then
+            echo "DENIED: explicit owner test confirmation required"; exit 1
+          fi
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Fail closed unless private password secret is configured
+      - name: Auth-only real HTTPS test against fixed owner-approved GAS target
+        env:
+          P6VC_GAS_EXEC_URL: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
+          P6VC_HTTP_LOGIN_USERNAME: 'admin'
+          P6VC_HTTP_LOGIN_PASSWORD: ${{ secrets.P6VC_HTTP_LOGIN_PASSWORD }}
         shell: bash
         run: |
+          set -euo pipefail
           if [ -z "$P6VC_HTTP_LOGIN_PASSWORD" ]; then
-            echo 'BLOCKED: P6VC_HTTP_LOGIN_PASSWORD must be configured in GitHub Actions Secrets'; exit 1;
+            echo 'BLOCKED: repository secret P6VC_HTTP_LOGIN_PASSWORD is missing'; exit 1
           fi
-      - name: Auth-only real HTTPS test, redact credentials and tokens
-        run: node apps/vehicle-contact/backend/gas/scripts/login-http-acceptance.mjs
+          node apps/vehicle-contact/backend/gas/scripts/login-http-acceptance.mjs
