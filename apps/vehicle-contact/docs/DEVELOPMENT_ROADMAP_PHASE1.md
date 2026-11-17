@@ -30,7 +30,7 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 ## 2C. GitHub Actions → GAS manual source deploy (2026-11-17)
 - New [manual gated deployment workflow](../../../.github/workflows/deploy-vehicle-gas.yml) targeting the owner-provided Apps Script ID; source build/tests required, manual `PUSH_VEHICLE_GAS` confirmation on main, `clasp push --force` and immutable source version creation.
 - [Deployment setup / safe overwrite runbook](GAS_GITHUB_ACTIONS_DEPLOYMENT.md).
-- **Status: WORKFLOW SOURCE CONFIGURED; NOT AUTHENTICATED/NOT DEPLOYED.** OAuth secret `P6VC_CLASPRC_JSON`, verifying target script contents/backups and first authorized run are pending. No Web App `/exec` publication or production security approval.
+- **Tracking:** [VC-W29](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/29), separate from auth issue VC-W04. **Status: WORKFLOW SOURCE CONFIGURED; NOT AUTHENTICATED/NOT DEPLOYED.** OAuth secret `P6VC_CLASPRC_JSON`, verifying target script contents/backups and first authorized run are pending. No Web App `/exec` publication or production security approval.
 
 ## 2A. Controlled Schema Sync — M2 scope (2026-11-17)
 
