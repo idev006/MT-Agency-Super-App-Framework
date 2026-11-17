@@ -1,7 +1,7 @@
 # Executive Policy Brief — MT Vehicle Contact v1.0
 
 **Date:** 2026-10-30 | **Status:** PROPOSED — for command review | **Document type:** Executive-facing summary  
-**Parent documents:** [Product Requirements](PRODUCT_REQUIREMENTS.md) · [Test & Delivery](TEST_AND_DELIVERY.md) · [Master Blueprint](../../docs/MASTER_BLUEPRINT.md)
+**Parent documents:** [Product Requirements](PRODUCT_REQUIREMENTS.md) · [Test & Delivery](TEST_AND_DELIVERY.md) · [Master Blueprint](../../../blueprint/platform/MASTER_BLUEPRINT.md)
 
 ## คำตอบสำหรับผู้บริหาร (Executive Message)
 **พบรถที่ต้องเคลื่อนย้าย → สแกน QR → ทราบผู้รับผิดชอบรถที่ลงทะเบียน → กดโทรติดต่อได้ทันที**
