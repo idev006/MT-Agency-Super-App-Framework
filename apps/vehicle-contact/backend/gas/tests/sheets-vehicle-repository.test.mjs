@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import {createSheetsVehicleRepository} from "../src/infrastructure/persistence/sheets/SheetsVehicleRepository.js";
+const tables={vc_vehicles:[["vehicle_id","plate_normalized","province_code","status"],["v1","กข1234","TH-10","ACTIVE"],["v2","ขค5678","TH-10","CANCELLED"]],vc_change_audit:[["entity_type","entity_id","action","created_at"],["vehicle","v1","CREATE","2026-01-01"],["vehicle","v1","UPDATE","2026-01-02"]]};
+const app={openById(id){assert.equal(id,"test");return {getSheetByName(name){const data=tables[name];return data?{getDataRange(){return {getValues(){return data;}};}}:null;}};}};
+const repo=createSheetsVehicleRepository(app,"test");
+assert.equal(repo.lookupByBusinessKey("กข 1234|TH-10").vehicle_id,"v1");
+assert.equal(repo.lookupByBusinessKey("ขค5678|TH-10"),null);
+assert.equal(repo.getVehicle("v2"),null);
+assert.equal(repo.getVehicleHistory("v1").length,2);
+assert.throws(()=>repo.lookupByBusinessKey("a|bad"),/INVALID_PROVINCE/);
+assert.throws(()=>repo.lookupByBusinessKey("bad"),/INVALID_BUSINESS_KEY/);
+tables.vc_vehicles.push(["v3","กข1234","TH-10","ACTIVE"]);
+assert.throws(()=>repo.lookupByBusinessKey("กข1234|TH-10"),/DUPLICATE_ACTIVE_VEHICLE/);
+tables.vc_vehicles.pop();
+tables.vc_vehicles[0][1]="wrong";
+assert.throws(()=>repo.getVehicle("v1"),/SCHEMA_MISMATCH/);
+console.log("Sheets vehicle repository tests passed");
