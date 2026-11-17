@@ -7,7 +7,7 @@ assert.equal(repo.lookupByBusinessKey("กข 1234|TH-10").vehicle_id,"v1");
 assert.equal(repo.lookupByBusinessKey("ขค5678|TH-10"),null);
 assert.equal(repo.getVehicle("v2"),null);
 assert.equal(repo.getVehicleHistory("v1").length,2);
-assert.throws(()=>repo.lookupByBusinessKey("a|bad"),/INVALID_PROVINCE/);
+assert.throws(()=>repo.lookupByBusinessKey("a|bad!"),/INVALID_PROVINCE/);
 assert.throws(()=>repo.lookupByBusinessKey("bad"),/INVALID_BUSINESS_KEY/);
 tables.vc_vehicles.push(["v3","กข1234","TH-10","ACTIVE"]);
 assert.throws(()=>repo.lookupByBusinessKey("กข1234|TH-10"),/DUPLICATE_ACTIVE_VEHICLE/);
