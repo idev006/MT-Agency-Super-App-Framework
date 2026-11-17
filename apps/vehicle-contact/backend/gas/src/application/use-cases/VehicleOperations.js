@@ -41,6 +41,10 @@ export function createVehicleOperations({store,security,campaigns}) {
    const idemKey=security.sha256('registration:'+campaign.campaign_id+':'+idem);
    const old=store.one('vc_idempotency',{key:idemKey});
    if(old){if(old.request_digest!==digest||old.status!=='COMPLETED')throw new Error('IDEMPOTENCY_CONFLICT');return JSON.parse(old.result_json);}
+   // A script timeout may interrupt a previous attempt before it writes the idempotency result.
+   // Refuse to create a second application; the operation journal requires reconciliation.
+   if(store.list('vc_registration_requests',{idempotency_key:idemKey},2).length)
+    throw new Error('OPERATION_RECOVERY_REQUIRED');
    if(Number(campaign.submitted_count)>=Number(campaign.max_submissions))throw new Error('CAMPAIGN_INVALID');
    const org=store.one('vc_organizations',{organization_id:payload.organization_id});
    if(!org||org.status!=='ACTIVE')throw new Error('ORGANIZATION_INACTIVE');
@@ -48,17 +52,46 @@ export function createVehicleOperations({store,security,campaigns}) {
    if(duplicate||store.list('vc_registration_requests',{status:'PENDING_APPROVAL'}).some(r=>{
     const x=JSON.parse(r.application_json);return x.plate_normalized+'|'+x.province_code===key;
    }))throw new Error('DUPLICATE_VEHICLE');
-   const media=photos(p,campaign.campaign_id),requestId=id(),vehicleId=id();
+   const media=photos(p,campaign.campaign_id),requestId=id(),vehicleId=id(),eventId=id();
    const snapshot={...payload,photos:media.map(f=>({photoId:f.photo_id,slot:f.slot,storageRef:f.storage_ref,mimeType:f.mime_type,sizeBytes:f.size_bytes}))};
-   store.insert('vc_operation_journal',{event_id:id(),operation:'registrations.submit',entity_id:requestId,actor_id:'PUBLIC_CAMPAIGN',status:'PREPARED',detail_json:'',created_at:now()});
-   store.insert('vc_registration_requests',{request_id:requestId,vehicle_id:vehicleId,campaign_id:campaign.campaign_id,
-    status:'PENDING_APPROVAL',submitted_at:now(),reviewed_by:'',reviewed_at:'',application_json:JSON.stringify(snapshot),idempotency_key:idemKey});
-   for(const file of media)store.update('vc_photo_staging',{photo_id:file.photo_id},{status:'CLAIMED',used_at:now()});
-   store.update('vc_campaigns',{campaign_id:campaign.campaign_id},{submitted_count:Number(campaign.submitted_count)+1});
-   const result={requestId,vehicleId,status:'PENDING_APPROVAL'};
-   store.insert('vc_idempotency',{key:idemKey,operation:'registrations.submit',actor_id:'PUBLIC_CAMPAIGN',request_digest:digest,
-    result_json:JSON.stringify(result),status:'COMPLETED',created_at:now()});
-   return result;
+   const journal={operation:'registrations.submit',requestId,vehicleId,campaignId:campaign.campaign_id,idempotencyKey:idemKey,requestDigest:digest};
+   // PREPARED is persisted before applying writes. A timeout leaves evidence for manual recovery.
+   store.insert('vc_operation_journal',{event_id:eventId,operation:'registrations.submit',entity_id:requestId,actor_id:'PUBLIC_CAMPAIGN',
+    status:'PREPARED',detail_json:JSON.stringify(journal),created_at:now()});
+   let requestWritten=false,claimed=[],quotaWritten=false,idemWritten=false;
+   try {
+    store.insert('vc_registration_requests',{request_id:requestId,vehicle_id:vehicleId,campaign_id:campaign.campaign_id,
+     status:'PENDING_APPROVAL',submitted_at:now(),reviewed_by:'',reviewed_at:'',application_json:JSON.stringify(snapshot),idempotency_key:idemKey});
+    requestWritten=true;
+    for(const file of media){
+     store.update('vc_photo_staging',{photo_id:file.photo_id},{status:'CLAIMED',used_at:now()});
+     claimed.push(file.photo_id);
+    }
+    store.update('vc_campaigns',{campaign_id:campaign.campaign_id},{submitted_count:Number(campaign.submitted_count)+1});
+    quotaWritten=true;
+    const result={requestId,vehicleId,status:'PENDING_APPROVAL'};
+    store.insert('vc_idempotency',{key:idemKey,operation:'registrations.submit',actor_id:'PUBLIC_CAMPAIGN',request_digest:digest,
+     result_json:JSON.stringify(result),status:'COMPLETED',created_at:now()});
+    idemWritten=true;
+    store.update('vc_operation_journal',{event_id:eventId},{status:'APPLIED'});
+    return result;
+   } catch(error) {
+    // Apps Script/Sheets cannot guarantee rollback on timeout. For caught errors,
+    // compensate in reverse order under the same script lock and expose recovery state.
+    const errors=[];
+    const attempt=fn=>{try{fn();}catch(e){errors.push(String(e?.message||'COMPENSATION_FAILED').slice(0,64));}};
+    if(idemWritten)attempt(()=>store.remove('vc_idempotency',{key:idemKey}));
+    if(quotaWritten)attempt(()=>store.update('vc_campaigns',{campaign_id:campaign.campaign_id},{submitted_count:Number(campaign.submitted_count)}));
+    for(const photoId of claimed.reverse())
+     attempt(()=>store.update('vc_photo_staging',{photo_id:photoId},{status:'STAGED',used_at:''}));
+    if(requestWritten)attempt(()=>store.remove('vc_registration_requests',{request_id:requestId}));
+    attempt(()=>store.update('vc_operation_journal',{event_id:eventId},{
+     status:errors.length?'RECOVERY_REQUIRED':'ROLLED_BACK',
+     detail_json:JSON.stringify({...journal,recoveryErrors:errors})
+    }));
+    if(errors.length)throw new Error('OPERATION_RECOVERY_REQUIRED');
+    throw error;
+   }
   });
  }
  function registrationPending(p){
