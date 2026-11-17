@@ -1,0 +1,4 @@
+One-time source-to-GAS-module structural mirroring proof requested by owner.
+Target Apps Script ID: 1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX
+Expected: 14 source-aligned GAS files + appsscript.json.
+CI must pass before clasp push, no public Web App deployment.
