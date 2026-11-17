@@ -46,10 +46,14 @@ jobs:
       - name: Verify deployment artifact
         run: |
           test -s dist/appsscript.json
-          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 6
-          for file in 'ENTRY$WebGet.gs' 'ENTRY$WebPost.gs' 'ADMIN$VerifySchema.gs' 'ADMIN$InspectSchema.gs' 'ADMIN$ProposeSchema.gs'; do
-            test -s "dist/$file"
-            test "$(wc -l < "dist/$file")" -le 800
+          test "$(find dist -maxdepth 1 -type f -name '*.gs' | wc -l)" -eq 14
+          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq 15
+          test -s 'dist/ENTRYPOINTS$WebApp.gs'
+          test -s 'dist/API$routes$Router.gs'
+          test -s 'dist/INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs'
+          find dist -maxdepth 1 -type f -name '*.gs' -print0 | while IFS= read -r -d '' file; do
+            test -s "$file"
+            test "$(wc -l < "$file")" -le 800
           done
           node -e 'const f=require("fs");const m=JSON.parse(f.readFileSync("dist/appsscript.json","utf8"));if(m.runtimeVersion!=="V8")process.exit(1)'
 
