@@ -140,5 +140,5 @@
 - [Executive Brief](EXECUTIVE_BRIEF.md)
 - [Product Requirements](PRODUCT_REQUIREMENTS.md)
 - [QR Scanner POC Report](POC_QR_SCANNER.md)
-- [QR Scanner POC Source](../../docs/qr-scanner-poc/index.html)
-- [Master Blueprint](../../docs/MASTER_BLUEPRINT.md)
+- [QR Scanner POC Source](../poc/qr-scanner/index.html)
+- [Master Blueprint](../../../blueprint/platform/MASTER_BLUEPRINT.md)
