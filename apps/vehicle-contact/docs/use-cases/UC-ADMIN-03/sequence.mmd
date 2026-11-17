@@ -1,0 +1,24 @@
+sequenceDiagram
+  autonumber
+  actor Monitor
+  actor Admin as SYSTEM_ADMIN
+  participant FE as Vue UI
+  participant API as GAS Router / Controller
+  participant Settings as AdministrationOperations
+  participant DB as Sheets
+  Monitor->>API: GET system.health (public)
+  API-->>Monitor: Minimal bootstrap status, no secrets
+  Admin->>FE: View or edit settings
+  FE->>API: system.config.get(sessionToken)
+  API->>API: Require system.settings.read
+  API->>DB: Read two vc_settings keys
+  API-->>FE: Bounded setting values
+  FE->>API: system.config.update(values)
+  API->>API: Require system.settings.manage
+  alt Valid keys and integer bounds
+    API->>Settings: updateSettings()
+    Settings->>DB: Update vc_settings and append audit
+    API-->>FE: Updated setting values
+  else Invalid / unauthorized
+    API-->>FE: INVALID_SETTINGS / FORBIDDEN
+  end

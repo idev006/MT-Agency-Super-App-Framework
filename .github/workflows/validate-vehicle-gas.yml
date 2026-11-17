@@ -5,6 +5,10 @@ on:
       - 'apps/vehicle-contact/backend/gas/**'
       - 'apps/vehicle-contact/schema/**'
       - 'apps/vehicle-contact/docs/GAS_*'
+      - 'apps/vehicle-contact/docs/use-cases/**'
+      - 'apps/vehicle-contact/docs/traceability-matrix.md'
+      - 'blueprint/standards/USE_CASE_SEQUENCE_STANDARD.md'
+      - 'scripts/validate-usecase-ssot.mjs'
       - '.github/workflows/validate-vehicle-gas.yml'
   pull_request:
     paths:
@@ -25,6 +29,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Validate Use Case and Sequence Diagram SSOT
+        working-directory: .
+        run: node scripts/validate-usecase-ssot.mjs
       - name: Install pinned dependencies
         run: npm install --no-audit --no-fund
       - name: Build Apps Script artifact

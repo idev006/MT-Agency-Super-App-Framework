@@ -1,0 +1,25 @@
+sequenceDiagram
+  autonumber
+  actor Admin as SYSTEM_ADMIN
+  participant FE as Vue Admin UI
+  participant API as GAS API / RBAC
+  participant Users as IdentityOperations
+  participant DB as Sheets
+  Admin->>FE: Manage user account
+  FE->>API: users.list / users.create
+  API->>API: Require users.manage
+  alt Authorized create
+    API->>Users: Hash temp password; normalize username
+    Users->>DB: Script lock, deduplicate vc_users
+    Users->>DB: Insert vc_users + default STAFF role
+    Users->>DB: Append vc_change_audit
+    API-->>FE: userId
+    FE->>API: users.update / users.assignRoles
+    API->>Users: Verify role allowlist and self-demotion
+    Users->>DB: Replace vc_user_roles; revoke user sessions
+    API-->>FE: Updated roles
+    FE->>API: users.suspend
+    Users->>DB: Suspend vc_users; revoke all sessions; audit
+  else Duplicate / unauthorized / invalid role
+    API-->>FE: DUPLICATE_USERNAME / FORBIDDEN / INVALID_ROLES
+  end

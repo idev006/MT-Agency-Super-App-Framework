@@ -16,8 +16,11 @@ jobs:
         run: |
           node --check scripts/build-pages.mjs
           node --check scripts/validate-ssot.mjs
+          node --check scripts/validate-usecase-ssot.mjs
       - name: Validate sources
-        run: node scripts/validate-ssot.mjs
+        run: |
+          node scripts/validate-ssot.mjs
+          node scripts/validate-usecase-ssot.mjs
       - name: Build generated site
         run: node scripts/build-pages.mjs _site
       - name: Confirm published output matches SSOT

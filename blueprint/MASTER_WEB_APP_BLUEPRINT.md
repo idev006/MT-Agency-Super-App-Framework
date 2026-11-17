@@ -52,6 +52,7 @@ _site/                     # temporary generated Pages artifact, never committed
 - [Application structure](standards/APPLICATION_STRUCTURE.md)
 - [Security](standards/SECURITY_STANDARD.md)
 - [Testing and deployment](standards/TESTING_AND_DEPLOYMENT.md)
+- [Use Case & Sequence Diagram SSOT](standards/USE_CASE_SEQUENCE_STANDARD.md)
 - [Architecture decisions](decisions/README.md)
 
 ## Enforcement gates
