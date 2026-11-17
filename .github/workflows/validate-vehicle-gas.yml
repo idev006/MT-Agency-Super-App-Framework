@@ -1,0 +1,31 @@
+name: Validate Vehicle Contact GAS Backend
+on:
+  push:
+    paths:
+      - 'apps/vehicle-contact/backend/gas/**'
+      - 'apps/vehicle-contact/docs/GAS_*'
+      - '.github/workflows/validate-vehicle-gas.yml'
+  pull_request:
+    paths:
+      - 'apps/vehicle-contact/backend/gas/**'
+      - 'apps/vehicle-contact/docs/GAS_*'
+      - '.github/workflows/validate-vehicle-gas.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/vehicle-contact/backend/gas
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: API contract tests
+        run: npm test
+      - name: Build Apps Script artifact
+        run: npm run build
+      - name: Check generated GAS code and manifest
+        run: test -s dist/Code.gs && test -s dist/appsscript.json
