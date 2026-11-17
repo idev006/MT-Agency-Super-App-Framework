@@ -78,7 +78,7 @@ function loadGAS(order) {
 // GAS file ordering is implementation detail, not an architectural dependency.
 for(const order of [gasFiles,[...gasFiles].reverse()]){
  const context=loadGAS(order);
- for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor'])
+ for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor','bootstrapVehicleAdminFromEditor'])
    assert.equal(typeof context[name],'function');
  assert.equal(JSON.parse(context.doGet({}).value).data.status,'bootstrap');
  assert.equal(JSON.parse(context.doPost({postData:{contents:'not JSON'}}).value).ok,false);

@@ -1,3 +1,4 @@
+import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
 import { createApplication } from "../composition/Container.js";
 import { apiFailure } from "../api/responses/ResponseFactory.js";
 function gasJson(value) {
@@ -53,5 +54,13 @@ export function applyVehicleSchemaFromEditor() {
    lockService:LockService,driveApp:DriveApp});
  const result=a.migrateSchema({dryRun:false,approvalCode:'APPROVE_ADDITIVE_SCHEMA_MIGRATION'});
  Logger.log(JSON.stringify({status:result.status,schemaVersion:result.schemaVersion,backupCreated:Boolean(result.backupRef)}));
+ return result;
+}
+
+// Run only after additive migration, in a synthetic staging spreadsheet. Never over HTTP.
+export function bootstrapVehicleAdminFromEditor() {
+ const result=bootstrapStagingAdmin({spreadsheetApp:SpreadsheetApp,lockService:LockService,
+  utilities:Utilities,propertiesService:PropertiesService});
+ Logger.log(JSON.stringify(result));
  return result;
 }
