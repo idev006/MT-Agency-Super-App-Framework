@@ -13,8 +13,8 @@
 | VC-T05 | Photo minimum vs optional photos | Prior planning discussed minimum 1; `PRODUCT_REQUIREMENTS.md` and app README currently say 0–5 optional | `WORKFLOW_AND_MEDIA_PIPELINE.md` | **POLICY CONFLICT — OPEN** | Project sponsor to confirm minimum; no change to live rule without approval |
 | VC-T06 | Regular QR compliance; visitor/pass exchange | `SYSTEM_ANALYSIS_V2.md` states phase-1 pass-exchange OFF; later phases require separate approval | `WORKFLOW_SOP_POLICY_REVIEW.md` | **PHASE GATE — OPEN** | Confirm currently approved phase and SOP before activation |
 | VC-T07 | Parking access/zone entitlements | `PRODUCT_REQUIREMENTS.md` excludes v1; operating policy may require sticker/guard checks | `SYSTEM_ANALYSIS_V2.md` | **SCOPE RECONCILIATION — OPEN** | Separate physical policy from digital access-control functionality |
-| VC-T08 | Contact personal data, role permissions, audit, retention | PDPA set within `docs/`; master security standards in `../../blueprint/` | `PDPA_REVIEW_CHECKLIST.md`, `TEST_AND_DELIVERY.md` | DRAFT / LEGAL AND DPO REVIEW OPEN | Obtain documented lawful basis, access and retention decisions |
-| VC-T09 | Reproducible scanner publishing from one source | `../poc/qr-scanner/index.html`, `../../blueprint/decisions/ADR-002-SSOT-BOUNDARIES.md` | `.github/workflows/deploy-pages-ssot.yml` | SOURCE VERIFIED / DEPLOY FAILED IN PRIOR RUN | Verify Pages settings and Actions run |
+| VC-T08 | Contact personal data, role permissions, audit, retention | PDPA set within `docs/`; master security standards in `../../../blueprint/` | `PDPA_REVIEW_CHECKLIST.md`, `TEST_AND_DELIVERY.md` | DRAFT / LEGAL AND DPO REVIEW OPEN | Obtain documented lawful basis, access and retention decisions |
+| VC-T09 | Reproducible scanner publishing from one source | `../poc/qr-scanner/index.html`, `../../../blueprint/decisions/ADR-002-SSOT-BOUNDARIES.md` | `../../../.github/workflows/deploy-pages-ssot.yml` | SOURCE VERIFIED / DEPLOY FAILED IN PRIOR RUN | Verify Pages settings and Actions run |
 
 ## Decision control
 - **Approved**: explicit approval and evidence link, approver, date and scoped change.
