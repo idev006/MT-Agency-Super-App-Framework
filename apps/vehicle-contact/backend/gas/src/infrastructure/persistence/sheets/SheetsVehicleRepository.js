@@ -35,6 +35,27 @@ export function createSheetsVehicleRepository(spreadsheetApp, spreadsheetId) {
       return found[0] || null;
     },
     getVehicle,
+    getVehicleContact(vehicleId) {
+      if (!getVehicle(vehicleId)) return null;
+      const rows = read("vc_vehicle_contacts",["contact_id","vehicle_id","status"]);
+      return rows.filter(c => c.vehicle_id === vehicleId && c.status === "ACTIVE")
+        .sort((a,b) => Number(Boolean(b.is_primary)) - Number(Boolean(a.is_primary)));
+    },
+    listPhotos(vehicleId) {
+      if (!getVehicle(vehicleId)) return [];
+      return read("vc_vehicle_photos",["photo_id","vehicle_id","slot","status"])
+        .filter(p => p.vehicle_id === vehicleId && p.status === "ACTIVE");
+    },
+    queryAudit(query = {}) {
+      const limit = query.limit === undefined ? 20 : query.limit;
+      if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new Error("INVALID_LIMIT");
+      const rows = read("vc_lookup_audit",["audit_id","actor_id","vehicle_id","created_at"]);
+      const filtered = query.vehicleId ? rows.filter(a => a.vehicle_id === query.vehicleId) : rows;
+      return filtered.sort((a,b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0,limit);
+    },
+    exportAudit(query = {}) {
+      return {format:"JSON",rows:this.queryAudit({...query,limit:100})};
+    }
     getVehicleHistory(vehicleId) {
       if (!getVehicle(vehicleId)) return [];
       return read("vc_change_audit",["entity_type","entity_id","action","created_at"])
