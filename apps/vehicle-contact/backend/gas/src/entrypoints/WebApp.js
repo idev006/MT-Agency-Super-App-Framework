@@ -1,7 +1,5 @@
 import { createApplication } from "../composition/Container.js";
 import { apiFailure } from "../api/responses/ResponseFactory.js";
-
-// GAS global entrypoints are emitted by the bundler footer; this module stays testable.
 function gasJson(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
@@ -9,19 +7,28 @@ export function doGet(e) {
   return gasJson(createApplication().dispatch({apiVersion:"v1",group:"system",action:"health",payload:{}},"GET"));
 }
 export function doPost(e) {
-  if (!e || !e.postData || typeof e.postData.contents !== "string" || e.postData.contents.length > 8192) {
+  if (!e || !e.postData || typeof e.postData.contents !== "string" || e.postData.contents.length>8192)
     return gasJson(apiFailure("BAD_REQUEST","Missing or oversized request",null));
-  }
   try {
-    const req = JSON.parse(e.postData.contents);
-    return gasJson(createApplication().dispatch(req,"POST"));
-  } catch (_) {
-    return gasJson(apiFailure("BAD_REQUEST","Malformed request",null));
-  }
+    return gasJson(createApplication().dispatch(JSON.parse(e.postData.contents),"POST"));
+  } catch (_) { return gasJson(apiFailure("BAD_REQUEST","Malformed request",null)); }
 }
+// Trusted Editor entrypoints only; NEVER expose these operations via doGet/doPost.
 export function verifyVehicleSchemaFromEditor() {
-  // Invoked by a trusted admin in Apps Script Editor, never through the API router.
-  const result = createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp}).verifySchema();
-  Logger.log(JSON.stringify({ok:result.ok,mismatches:result.mismatches}));
+  const a=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp});
+  const result=a.verifySchema();
+  Logger.log(JSON.stringify(result));
   return result;
+}
+export function inspectVehicleSchemaDriftFromEditor() {
+  const a=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp});
+  const diff=a.inspectSchemaDrift();
+  Logger.log(JSON.stringify(diff));
+  return diff;
+}
+export function proposeVehicleSchemaChangeFromEditor() {
+  const a=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp});
+  const proposal=a.proposeSchemaDrift();
+  Logger.log(JSON.stringify(proposal));
+  return proposal;
 }
