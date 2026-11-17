@@ -1,7 +1,7 @@
 # MT Master GAS Backend API Blueprint — Architecture & Design Patterns
 
 **Document ID:** MT-GAS-MBP-001  
-**Version:** 1.2.0  
+**Version:** 1.2.1  
 **Effective baseline:** 2026-11-17  
 **Decision status:** **MANDATORY architecture direction as instructed by the repository owner; NOT a production/security/legal release approval**  
 **Scope:** Every new or materially modified Google Apps Script (GAS) backend/API within `apps/<app-id>/backend/gas/` of this repository.
@@ -90,20 +90,25 @@ For internal-only GAS automations with **no client-facing API**, an approved ADR
 
 ## 4. Required design patterns
 
+**Review authority:** [Evidence-based GAS Design Pattern Review and decision matrix](architecture/GAS_DESIGN_PATTERN_REVIEW_2026-11-17.md) classifies which patterns are required, conditional, or optional. The table is a repository engineering standard, not a statement that Google requires those patterns.
+
+
 **Required for every real backend**
 - **Ports & Adapters / Dependency Inversion:** domain/application-owned contracts with infrastructure implementations.
-- **Repository Pattern:** persistence operations such as `findById`, `findByKey`, `save` and `listPage` separated from **any** database/storage provider, wire protocol and schema.
+- **Repository Pattern (required when persistence exists):** persistence operations such as `findById`, `findByKey`, `save` and `listPage` separated from **any** database/storage provider, wire protocol and schema. For an API-only service without persistence, use its domain/application-owned outbound service port and adapter; never create a dummy repository.
 - **Application Service / Use Case:** each exposed operation delegates to an explicit use case.
 - **DTO + Mapper:** transport request/response models are independent of sheet column indexes and domain entities.
 - **Composition Root / DI:** construct dependencies at the edge of the runtime, allowing test doubles.
 - **Error Taxonomy:** predictable validation, authentication, authorization, not-found, conflict, dependency, quota and internal errors.
+- **API Route/Controller and security policy (for client-serving GAS):** versioned allowlist, DTO validation and protected operation checks, separately testable from GAS entrypoints.
 
 **Conditional patterns**
 - **Strategy:** when the same port has multiple real implementations (Sheets, REST, database).
 - **Factory:** for choosing adapters by approved environment/config.
 - **Anti-corruption Layer:** when third-party API schemas are unstable or materially different.
 - **Cache-aside:** only for non-sensitive/appropriately scoped data with TTL and invalidation; no implicit authorization cache.
-- **Idempotency:** mandatory for external retryable mutations; enforce through server-side deduplication/key ownership and expiry.
+- **Idempotency:** mandatory for retryable mutations; enforce through server-side deduplication/key ownership and expiry.
+- **Unit of Work:** only if the selected datastore provides demonstrable transaction semantics; for nontransactional Sheets or multiple stores use documented bounded locks, compensation and reconciliation rather than implying atomicity.
 - **Outbox/queue-like workflow:** only if a durable, testable store and recovery mechanism exist; GAS triggers alone do not guarantee exactly-once delivery.
 
 Avoid design-pattern proliferation without a concrete use case.
@@ -232,6 +237,8 @@ Security invariants:
 
 **Core rule:** Google Apps Script is an API/application runtime, **not a prescribed database**. Every GAS backend MAY use **any appropriate, supported and authorized database or storage service**, including Google Sheets, PostgreSQL/Supabase, MySQL, SQL Server, Firestore, MongoDB-compatible services, Google Drive, Cloud Storage, or an existing authorized REST/GraphQL data service. Provider selection is an **application-specific architecture decision**, not a global default.
 
+**Verified provider capability note (Google JDBC guide):** GAS JDBC supports configured connections to PostgreSQL and supported MySQL, SQL Server, Oracle and Cloud SQL databases, subject to deployment networking, supported drivers and authentication. This does not mean all arbitrary drivers or direct network protocols work.
+
 **GAS connectivity caveat:** 'Any database' means **any provider reachable through an approved, technically supported integration**. GAS Web Apps do not provide arbitrary network sockets or a Node.js database runtime. Where Apps Script's documented JDBC service supports a target (and required connectivity, networking, credentials and quota controls are met), a JDBC adapter may be viable; otherwise use an authenticated HTTPS API, server-side gateway, or platform SDK actually supported in Apps Script. **Do not assume direct PostgreSQL/TCP, arbitrary npm drivers or unrestricted VPC access works.** Verify reachability, firewall/IP allowlisting, TLS, data residency, provider terms and quotas before selecting the adapter.
 
 ### 8.1 Required storage port contracts
@@ -340,10 +347,15 @@ Choose by functional need, security posture, scale, cost and operational support
 
 ## 14. Official platform references (verification source)
 
+- [GAS Backend Design Pattern Review](architecture/GAS_DESIGN_PATTERN_REVIEW_2026-11-17.md) — documented findings, policy classifications and test gates.
+- [Google Apps Script Best Practices](https://developers.google.com/apps-script/guides/support/best-practices) — batching, minimizing service calls and caching.
+- [Google Apps Script JDBC](https://developers.google.com/apps-script/guides/jdbc) — supported database and network conditions.
+- [AWS Hexagonal Architecture](https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/hexagonal-architecture.html) — port/adapter testability and tradeoffs.
+
 - [Google Apps Script Web Apps](https://developers.google.com/apps-script/guides/web) — `doGet`, `doPost`, events, execution/access model.
 - [Google Apps Script Quotas](https://developers.google.com/apps-script/guides/services/quotas) — time and service limits (subject to change).
 - [Google Apps Script clasp](https://developers.google.com/apps-script/guides/clasp) — source sync and versioned deployments.
 - [Apps Script Web App manifest](https://developers.google.com/apps-script/manifest/web-app-api-executable) — access and executeAs.
 - [LockService](https://developers.google.com/apps-script/reference/lock/lock-service) — concurrent access control.
 
-**End of normative blueprint MT-GAS-MBP-001 (v1.2.0).**
+**End of normative blueprint MT-GAS-MBP-001 (v1.2.1).**
