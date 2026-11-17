@@ -1,3 +1,4 @@
+import {isDeclaredRoute} from './GroupRoutes.js';
 import {validateApiRequest} from '../dto/RequestValidator.js';
 import {apiSuccess,apiFailure} from '../responses/ResponseFactory.js';
 import {systemHealth} from '../groups/system/SystemGroup.js';
@@ -7,6 +8,7 @@ export function createApiRouter({createProtectedDispatcher}={}) {
   const id=typeof request?.requestId==='string'&&/^[a-zA-Z0-9_-]{1,80}$/.test(request.requestId)?request.requestId:null;
   try{
    validateApiRequest(request);
+   if(!isDeclaredRoute(request.group,request.action))return apiFailure('NOT_FOUND','Unknown API operation',id);
    if(request.group==='system'&&request.action==='health')return apiSuccess(systemHealth(),id);
    if(method!=='POST')return apiFailure('METHOD_NOT_ALLOWED','POST required',id);
    if(typeof createProtectedDispatcher!=='function')return apiFailure('SERVICE_UNAVAILABLE','Feature not enabled',id);

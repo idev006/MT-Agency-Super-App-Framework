@@ -1,9 +1,9 @@
-import {createOperationDispatcher} from '../application/use-cases/OperationDispatcher.js';
+import {createOperationController} from '../api/controllers/OperationController.js';
 import {createSessionService} from '../application/security/SessionService.js';
 import {createSheetStore} from '../infrastructure/persistence/sheets/SheetStore.js';
 import {createGasSecurity} from '../infrastructure/security/GasSecurity.js';
 import {createDrivePhotos} from '../infrastructure/media/DrivePhotos.js';
-import { createAdditiveMigration } from "../application/schema-sync/ExecuteMigration.js";
+import { createAdditiveMigration } from "../infrastructure/migrations/ExecuteAdditiveMigration.js";
 import { createApiRouter } from "../api/routes/Router.js";
 import { createSheetsSchemaRepository } from "../infrastructure/persistence/sheets/SheetsSchemaRepository.js";
 import { verifySchemaUseCase } from "../application/use-cases/VerifySchema.js";
@@ -30,7 +30,7 @@ export function createApplication(deps={}) {
     const drivePhotos=folderId?createDrivePhotos({driveApp:s.driveApp,utilities:s.utilities,folderId}):{
       upload(){throw new Error('DRIVE_NOT_CONFIGURED');},trash(){throw new Error('DRIVE_NOT_CONFIGURED');}
     };
-    return createOperationDispatcher({store,security,sessions,drivePhotos,
+    return createOperationController({store,security,sessions,drivePhotos,
       allowDestructiveRetention:props.getProperty('VEHICLE_RETENTION_EXECUTE_ENABLED')==='true'});
   }});
 

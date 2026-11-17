@@ -1,10 +1,10 @@
-import {validateOperationPayload,DTO_OPERATIONS} from '../../api/dto/OperationPayloadValidator.js';
-import {validateApiRequest} from '../../api/dto/RequestValidator.js';
-import {apiSuccess,apiFailure} from '../../api/responses/ResponseFactory.js';
-import {createIdentityOperations} from './IdentityOperations.js';
-import {createAdministrationOperations} from './AdministrationOperations.js';
-import {createVehicleOperations} from './VehicleOperations.js';
-import {createMediaRetentionOperations} from './MediaRetentionOperations.js';
+import {validateOperationPayload,DTO_OPERATIONS} from '../dto/OperationPayloadValidator.js';
+import {validateApiRequest} from '../dto/RequestValidator.js';
+import {apiSuccess,apiFailure} from '../responses/ResponseFactory.js';
+import {createIdentityOperations} from '../../application/use-cases/IdentityOperations.js';
+import {createAdministrationOperations} from '../../application/use-cases/AdministrationOperations.js';
+import {createVehicleOperations} from '../../application/use-cases/VehicleOperations.js';
+import {createMediaRetentionOperations} from '../../application/use-cases/MediaRetentionOperations.js';
 const permissions={
  'system.config.get':'system.settings.read','system.config.update':'system.settings.manage',
  'auth.changePassword':'session.authenticated','auth.logout':'session.authenticated','auth.session':'session.authenticated','auth.linkGoogle':'session.authenticated',
@@ -33,7 +33,7 @@ const safeErrors=new Set([
  'INVALID_LIMIT','NO_CHANGES','ORGANIZATION_INACTIVE','PARENT_NOT_FOUND','INVALID_ORG_TYPE','INVALID_ORG_PARENT',
  'SELF_DEMOTION_DENIED','SELF_SUSPEND_DENIED','RETENTION_POLICY_NOT_CONFIGURED','OPERATION_DISABLED'
 ]);
-export function createOperationDispatcher({store,security,sessions,drivePhotos,allowDestructiveRetention=false}) {
+export function createOperationController({store,security,sessions,drivePhotos,allowDestructiveRetention=false}) {
  const admin=createAdministrationOperations({store,security});
  const handlers={
   ...createIdentityOperations({store,security,sessions}),...admin,
