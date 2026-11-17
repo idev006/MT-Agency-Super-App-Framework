@@ -2,6 +2,7 @@ import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition} from '../
 export function createVehicleOperations({store,security,campaigns}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
+ const phone=v=>{if(typeof v!=='string'||!/^\\+[1-9][0-9]{6,14}$/.test(v))throw new Error('INVALID_PHONE_E164');return v;};
  const audit=(actor,kind,entity,action)=>store.insert('vc_change_audit',{
   audit_id:id(),actor_id:actor&&actor.userId||'PUBLIC_CAMPAIGN',entity_type:kind,entity_id:entity,
   action,redacted_summary:action,correlation_id:id().slice(0,16),created_at:now()
@@ -21,7 +22,7 @@ export function createVehicleOperations({store,security,campaigns}) {
   plate_type:need(p.plateType,'PLATE_TYPE'),vehicle_type:need(p.vehicleType,'VEHICLE_TYPE'),
   make:need(p.brand,'BRAND'),model:need(p.model,'MODEL'),color:need(p.color,'COLOR'),
   organization_id:need(p.organizationId,'ORGANIZATION_ID'),relationship:need(p.relationship,'RELATIONSHIP'),
-  contactName:need(p.contactName,'CONTACT_NAME'),contactPhone:need(p.contactPhone,'CONTACT_PHONE',32)
+  contactName:need(p.contactName,'CONTACT_NAME'),contactPhone:phone(p.contactPhone)
  });
  function photos(p,campaignId){
   if(!validateFivePhotos(p.photos))throw new Error('FIVE_PHOTOS_REQUIRED');
@@ -171,7 +172,7 @@ export function createVehicleOperations({store,security,campaigns}) {
    if(list.length!==1)throw new Error('PRIMARY_CONTACT_INVARIANT');
    const patch={updated_at:now()};
    if(p.contactName!==undefined)patch.display_name=need(p.contactName,'CONTACT_NAME');
-   if(p.contactPhone!==undefined)patch.phone_e164=need(p.contactPhone,'CONTACT_PHONE',32);
+   if(p.contactPhone!==undefined)patch.phone_e164=phone(p.contactPhone);
    if(Object.keys(patch).length===1)throw new Error('NO_CHANGES');
    store.update('vc_vehicle_contacts',{contact_id:list[0].contact_id},patch);audit(a,'vehicle',v.vehicle_id,'CONTACT_UPDATED');
    return {vehicleId:v.vehicle_id,updated:true};
@@ -181,7 +182,7 @@ export function createVehicleOperations({store,security,campaigns}) {
   const v=activeVehicle(p.vehicleId);
   if(!a||!(v.owner_user_id===a.userId||a.permissions.includes('vehicle.update')))throw new Error('OWNERSHIP_NOT_VERIFIED');
   const delta={};
-  for(const f of ['contactName','contactPhone','brand','model','color'])if(p[f]!==undefined)delta[f]=need(p[f],f);
+  for(const f of ['contactName','contactPhone','brand','model','color'])if(p[f]!==undefined)delta[f]=f==='contactPhone'?phone(p[f]):need(p[f],f);
   if(!Object.keys(delta).length)throw new Error('NO_CHANGES');
   const reqId=id();
   store.atomic(()=>{store.insert('vc_change_requests',{change_id:reqId,vehicle_id:v.vehicle_id,proposed_delta:JSON.stringify(delta),
