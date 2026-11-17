@@ -1,5 +1,7 @@
 # Phase 1 Google Sheets Data Model — Candidate Schema
 
+> **Canonical machine-readable SSOT:** [database.schema.json](../schema/database.schema.json). This is only a human-readable reference snapshot. Field type/required/key definitions in canonical JSON are **provisional** pending data-owner review. See [Data Dictionary Workflow](GAS_DATA_DICTIONARY.md) and [Schema Sync](SCHEMA_SYNC_IMPLEMENTATION.md).
+
 **Status:** Working technical schema, NOT approved final business/PDPA schema.  
 **Storage:** A single private spreadsheet in the user-specified `p6-vehicle-contact` Google Drive folder. One tab = one logical table. Exact file ID is supplied to the GAS runtime through the `VEHICLE_SHEET_ID` Script Property; do not hardcode secrets/IDs in committed source. See [Phase 1 architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).
 
