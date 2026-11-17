@@ -3,7 +3,7 @@
 **Document ID:** P6VC-PLAN-001  
 **Version:** 1.0.0 | **Baseline date:** 2026-11-17  
 **Plan status:** ACTIVE PLANNING / NOT A COMMITTED RELEASE DATE  
-**Agile work tracking:** [Issue-backed Kanban with live lane filters](AGILE_KANBAN.md) — 28 GitHub Issues VC-W01–VC-W28 created 2026-11-17; label/status links are live; milestone table below remains a baseline snapshot  
+**Agile work tracking:** [Issue-backed Kanban with live lane filters](AGILE_KANBAN.md) — 31 GitHub Issues VC-W01–VC-W31 tracked as of 2026-11-17; label/status links are live; milestone table below remains a baseline snapshot  
 **Scope:** Phase 1 only; visitor/pass exchange **OFF**  
 **SA baseline:** [P6VC-SA-001](SYSTEM_ANALYST_BASELINE_PHASE1.md)  
 **Technical foundations:** [Phase-1 Sheets Architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md), [GAS Data Model](GAS_DATA_MODEL.md), [GAS API Contract](GAS_API_SPEC.md), [GAS Test Evidence](GAS_TEST_EVIDENCE.md) and [Decision Log](DECISION_LOG.md)
@@ -185,3 +185,35 @@ Run these in parallel where dependencies permit. **Do not** implement public log
 - [GAS Test Evidence](GAS_TEST_EVIDENCE.md)
 
 **Interpretation:** This is a specific, evidence-gated development plan; implementing the tasks does not authorize deploying personal contact information or activating future visitor-pass features.
+
+
+## 5. Execution refinement — 2026-11-17 (proposed; no release gate bypass)
+
+**Decision:** Retain the existing **M0–M6** milestones and work IDs. Do not renumber or create a competing project plan. Labels `area:m0`…`area:m6` are the existing milestone mapping; native GitHub milestone objects have not been created or verified. The issue-backed Kanban is operational, while a native Projects board is not evidenced.
+
+### Parallel tracks and exit gates
+
+| Track | Existing issues | Immediate action | Exit / guardrail |
+|---|---|---|---|
+| Governance critical path | VC-W02, W03, W04–W06 | Obtain named owner/approver, approve photo/contact policy, select identity/session and demonstrate direct `/exec` denial | **Blocked** until actual decisions and negative security tests; no PII API enabled |
+| Data synthetic-only | VC-W07, W08, W09, W26–W28 | Review canonical six-tab dictionary; extend Fake Sheets tests for duplicate/optimistic version, missing record and rollback-safe errors | VC-W08's dependency on VC-W07 is **not waived**; draft tests can be developed for review but no real Sheets writes/migrations |
+| Frontend synthetic-only | VC-W15, W18 | Vue 3 mock shell, responsive routes, scanner POC integration behind a mock adapter | No privileged `/exec` calls, no live contacts, no claim of authenticated E2E |
+| Runtime evidence | VC-W29, W30, W31 | Reconcile GAS source push/version, inspect actual deployed `/exec` version and editor-to-Sheets read-only evidence | Version 5 is last evidenced push; 17-module CI is **not** proof of a later push; bootstrap 7/7 is not protected API acceptance |
+| Protected vertical slice and pilot | VC-W10–W14, W16–W21 | Only after M1 security and M2 data gates, then staged synthetic E2E, UAT and approved pilot | No production release before owner, security and PDPA sign-off |
+
+### Milestone acceptance protocol
+
+1. **M0:** named business/data/security owners, explicit decision log and scope approval; document-only completion does not close ownership gaps.
+2. **M1:** auth/session provider, RBAC, direct GAS URL bypass threat test, deny-by-default proof and reviewer approval.
+3. **M2:** approved dictionary, synthetic repository integrity tests, schema drift handling; live Sheet adapter only with controlled test data and approved access.
+4. **M3:** authorized vehicle/contact/QR use cases with persistence, audit, revocation and negative tests; no raw QR token in Sheets.
+5. **M4:** Vue 3 vertical slice on approved adapter, route guards, accessibility, device camera and safe contact-action tests.
+6. **M5:** staging security, PDPA, UAT, rollback and operations runbook with dated reviewer evidence.
+7. **M6:** controlled pilot go/no-go signed by owner; real rollout separately authorized.
+
+### Board operating constraints
+
+- WIP target: **at most 2 synthetic engineering tasks** concurrently, plus 1 governance/security decision item; adjust only when team capacity is known.
+- Require a linked branch/PR, tests, commit SHA and reviewer before moving to DONE-EVIDENCED; GitHub Actions CI alone does not prove GAS Web App deployment.
+- Use existing Issues for acceptance evidence and `AGILE_KANBAN.md` for board operations; do not duplicate a project management document.
+- Native milestone numbers cannot be safely assigned until the exact objects exist and their IDs are verified. The connected integration does not expose native milestone or Projects board creation; do not fabricate completion.
