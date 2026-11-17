@@ -10,6 +10,9 @@
 
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
+## Phase 1 technology direction (2026-11-17)
+**Approved architecture direction:** Vehicle Contact Phase 1 uses Google Sheets as the primary datastore: **one worksheet/tab = one logical table** within an application spreadsheet. The app-specific GAS Backend API accesses these tables via domain ports and Sheets repository adapters. Frontend communicates through its GAS API adapter and a verified, non-bypassable security boundary. **Username/Password Phase 1 authentication** replaces reliance on the unfinished MT-I-AM; production credential/session design and direct GAS endpoint protection are still open security gates. Earlier Supabase-centric design paragraphs are historical draft alternatives, not the Phase 1 choice. See [Phase 1 Google Sheets Data Architecture](docs/PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).
+
 ## Documents
 - [DOCUMENT_CONSISTENCY_QC_2026-11-17.md](docs/DOCUMENT_CONSISTENCY_QC_2026-11-17.md) — รายงานตรวจความสอดคล้องเอกสาร ประเด็นแก้ไข และรายการรออนุมัติ (QC 17 พ.ย. 2569)
 - [REQUIREMENTS_TRACEABILITY.md](docs/REQUIREMENTS_TRACEABILITY.md) — ตรวจการเชื่อมโยงข้อกำหนด/เอกสาร/โค้ด/หลักฐาน และรายการที่ขัดแย้งรออนุมัติ
