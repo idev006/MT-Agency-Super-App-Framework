@@ -26,6 +26,23 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 | Vehicle/contact/QR CRUD, real UI, live GAS | **NOT IMPLEMENTED / NOT VERIFIED** | Only `system.health` safe bootstrap is routed |
 | PDPA approvals and field/UAT | **OPEN** | Operational/legal decisions pending |
 
+## 2A. Controlled Schema Sync — M2 scope (2026-11-17)
+
+**SSOT authority:** [Canonical database schema](../schema/database.schema.json) is the only authoritative dictionary. [Human-readable Data Dictionary](GAS_DATA_DICTIONARY.md) and [implementation record](SCHEMA_SYNC_IMPLEMENTATION.md) are documentation projections.
+
+**New work items / separate feature gate:**
+
+| ID | Milestone | Task | Initial status | Exit evidence |
+|---|---|---|---|---|
+| VC-W23 | M2 | Canonical JSON dictionary for six Sheets; schema reference in GAS runtime bundle | CODE ADDED / CI REVIEW | JSON matches live headers; fake-Sheets and bundle tests green |
+| VC-W24 | M2 | Detect added/missing/renamed/reordered/duplicate columns and extra/missing tabs | CODE ADDED / CI REVIEW | Read-only drift report with negative tests |
+| VC-W25 | M2 | Propose change without type guesses, GitHub writes or automatic migration | CODE ADDED / CI REVIEW | Review-required proposal, no writes |
+| VC-W26 | M2 | Approved GitHub PR proposal automation and notification | TODO | Least-privilege token, protected PR policy and audit verified |
+| VC-W27 | M2 | Controlled additive migration/rollback and migration journal | BLOCKED — owner approval/security | Backup, approval, staged migration and recovery verified |
+| VC-W28 | M2 | Optional authorized onChange trigger + scheduled reconciliation | TODO | Real GAS trigger ownership, quota, notifications and drift reconciliation tested |
+
+**Non-negotiable:** user edits in Google Sheets are candidate proposals, NOT SSOT updates. Protected business API operations remain off until security gates pass. No background sync or trigger is claimed to exist by this documentation.
+
 ## 3. Milestone sequence (relative, not scheduled dates)
 
 | Milestone | Outcome / exit condition | Depends on |
