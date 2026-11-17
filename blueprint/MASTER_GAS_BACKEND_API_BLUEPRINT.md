@@ -1,7 +1,7 @@
 # MT Master GAS Backend API Blueprint — Architecture & Design Patterns
 
 **Document ID:** MT-GAS-MBP-001  
-**Version:** 1.1.0  
+**Version:** 1.2.0  
 **Effective baseline:** 2026-11-17  
 **Decision status:** **MANDATORY architecture direction as instructed by the repository owner; NOT a production/security/legal release approval**  
 **Scope:** Every new or materially modified Google Apps Script (GAS) backend/API within `apps/<app-id>/backend/gas/` of this repository.
@@ -21,7 +21,7 @@
 
 ## 2. Architecture principles (MUST)
 
-1. **Single Responsibility:** Entry point dispatches; application coordinates; domain owns business rules; infrastructure communicates with Google services and external systems.
+1. **Single Responsibility:** GAS entry point only bridges the runtime; the mandatory API Layer exposes contracts and routes clients to use cases; application coordinates; domain owns business rules; infrastructure communicates with storage and external systems.
 2. **Dependency Inversion / Ports & Adapters:** Domain has no dependency on `SpreadsheetApp`, `DriveApp`, `UrlFetchApp`, `PropertiesService`, `ContentService`, or transport-specific event objects. Infrastructure implements ports owned by Domain/Application.
 3. **API Provider Independence:** Replace an infrastructure adapter without rewriting domain use cases when the declared port contract remains valid.
 4. **Per-app isolation:** Each app owns its GAS service, data-access adapters, configuration, tests and release cycle. Shared libraries are approved, versioned and app-neutral; no hidden cross-app database or runtime coupling.
@@ -29,47 +29,64 @@
 6. **Explicit errors & contracts:** Validate request shape/size and normalize data; stable operation/version, DTO schema, success/failure codes and correlation ID; never leak stack traces, secrets or private data.
 7. **Evidence-gated delivery:** Static checks do not substitute for integration, permissions, quota/concurrency, deployment and field tests.
 
-## 3. Logical layers, permitted dependencies and composition
+## 3. Mandatory API Layer and layered architecture
+
+Every GAS Backend that serves clients **MUST implement a dedicated API Layer**, separate from the GAS runtime entry points, application use cases, domain and infrastructure. This layer is a logical and testable module, **not a claim that Apps Script supports a full HTTP server**.
 
 ```text
-Vue Presentation
-      |  app-specific API port + adapter
-      v
-Trusted API Gateway / BFF (when required by security/CORS/auth contract)
-      |
-      v
-GAS ingress: doGet(e) / doPost(e) or approved Apps Script execution surface
-      |
-      v
-Transport Router + Input/DTO Validation + Security Enforcement
-      |
-      v
-Application Use Cases / Services
-      |
-      v
-Domain Entities, Rules, Value Objects, Ports
-      ^
-      | implementations
-Infrastructure Adapters: Sheets / SQL-API / NoSQL-API / Object Storage / External API
-      |
-      v
-Google Sheets / PostgreSQL / MySQL / NoSQL / Drive / Object Storage / approved services
+Web / Mobile / Other Authorized Client
+     |  client-owned API adapter
+     v
+Trusted Gateway / BFF where security, OAuth, CORS or HTTP semantics require it
+     |
+     v
+GAS Runtime Entry Points: doGet(e) / doPost(e)
+     |
+     v
+API Layer: Versioned Router → Request Parser/Validation
+           → Auth Context & Authorization Enforcement
+           → API Controller → Response Mapper / Error Envelope
+     |
+     v
+Application Layer: Use Cases / Orchestration
+     |
+     v
+Domain Layer: Entities / Policies / Repository & Storage Ports
+     ^
+     | implementations (dependency inversion)
+Infrastructure: SQL/NoSQL/Sheets/Drive/HTTP Adapters
+     |
+     v
+Authorized Database / Storage / External Service
 ```
 
-**Important:** Diagram is a request-flow view, not source-import direction. The composition root wires use cases to port implementations. Domain must never import infrastructure. Application may depend on domain ports; infrastructure implements those ports. Entry point may wire modules but must not embed use-case logic.
+**Diagram shows request flow, not source dependency direction.** Domain and Application must not import GAS APIs, HTTP request objects, API controllers or infrastructure implementations. The Composition Root wires use cases to port implementations.
 
-### Layer responsibility matrix
+### Required API Layer responsibilities
 
-| Layer / module | MUST own | MUST NOT own |
+1. **Stable public contract:** document allowed operations, client types, `apiVersion`, payload and response DTOs, pagination and deprecation in the app's `GAS_API_SPEC.md`.
+2. **Routing and controller dispatch:** explicit allowlist of `(apiVersion, operation)` to an API controller; no `eval`, dynamic global-function lookup, or arbitrary provider query execution.
+3. **Request boundary validation:** parse allowed content type, enforce supported version, bounded input size, schemas, required fields and normalized request identifiers.
+4. **Authentication and authorization boundary:** accept only identity/context proven at a trusted boundary. Ensure every operation has a verified permission and resource-scope policy. A gateway is not sufficient if clients can bypass it to a privileged GAS URL.
+5. **Controller → use case mapping:** each controller invokes an application use case through an injected interface, not through `SpreadsheetApp`, `UrlFetchApp`, storage SDKs or business logic inside `doPost`.
+6. **Response mapping:** map domain/application result into explicit documented DTO and sanitized error envelope; do not disclose private internals, credentials, stack traces or privileged identifiers.
+7. **Observability:** correlation IDs, safe outcome/latency logging, error categories and idempotency handling for retryable mutations, following approved privacy policy.
+8. **Contract tests:** unknown operation/version, malformed/oversized payload, permission-denied and direct-GAS endpoint bypass, DTO compatibility and safe failure responses.
+
+For internal-only GAS automations with **no client-facing API**, an approved ADR may replace public routing with a typed internal service interface while retaining separation and security requirements.
+
+### Layer responsibilities
+
+| Layer | MUST own | MUST NOT own |
 |---|---|---|
-| Entry points + Transport | GAS `doGet/doPost`, event parsing, dispatch to known handlers, serializing output | Spreadsheet writes, rules, authentication assumptions |
-| Presentation / Transport | API DTO validation, request/response mapping, consistent error envelope | Domain policy, direct storage calls |
-| Application | Use-case orchestration, permission-aware operations, idempotency policy, transaction-like coordination | Direct GAS globals for storage and outbound HTTP |
-| Domain | Entities/value objects, invariant validation, ports/interfaces, domain errors | Google service objects, request globals, deployment details |
-| Infrastructure | Implement Sheets/Drive/HTTP ports, mapping, bounded retries, metrics/log sinks, GAS service integration | Redefining business invariants or silently granting permissions |
-| Composition / configuration | Provider selection, dependency wiring, environment-specific configuration | Embedded secrets committed to Git |
+| GAS Runtime Entry Points | Only `doGet/doPost` / approved invocation bridge to the API Layer; minimal event conversion | Routing rules, business logic, storage operations, security assumptions |
+| **API Layer** | Versioned routes, DTO validation/mapping, API controllers, verified security context and policy enforcement, consistent responses | Business rules, direct data-store/provider access, client-supplied trust assumptions |
+| Application | Use-case orchestration, business transaction coordination, idempotency policy | GAS globals or HTTP transport semantics |
+| Domain | Business rules, entities, value objects, repository/storage ports | API DTOs, Google services, provider credentials or adapters |
+| Infrastructure | Implement ports via database/Sheets/Drive/outbound-HTTP adapters, persistence mapping and bounded retries | Granting permissions or modifying domain invariants |
+| Composition Root | Bind API controllers, use cases, ports and adapters per environment | Committed production secrets |
 
-**MUST NOT:** Put direct `SpreadsheetApp`, `DriveApp`, `UrlFetchApp` calls in domain/application use cases or ingress; let browser or Pinia call Sheets directly for sensitive data; infer caller authorization from a front-end flag or unverified user email.
+**MUST NOT:** Call `SpreadsheetApp`, `DriveApp`, `UrlFetchApp` or database providers from API controllers, entry points, application or domain modules. Only the infrastructure adapter performs the provider interaction. Security enforcement must occur at a trusted boundary, with explicit direct-endpoint threat testing.
 
 ## 4. Required design patterns
 
@@ -110,8 +127,13 @@ apps/<app-id>/
   backend/
     gas/
       src/
-        entrypoints/               # WebApp.gs, doGet/doPost only
-        transport/                 # Router.gs, RequestValidator.gs, ResponseMapper.gs
+        entrypoints/               # WebApp.gs, GAS runtime bridge only
+        api/                       # mandatory client-serving API Layer
+          routes/                 # versioned operation allowlist
+          controllers/            # use case invocation, no business logic
+          dto/                    # request/response validation & mapping
+          security/               # verified auth context and authorization
+          responses/              # safe success/error envelopes
         application/
           use-cases/
         domain/
@@ -138,11 +160,11 @@ apps/<app-id>/
 
 **POC exception:** Existing HTML-only QR scanner under `apps/vehicle-contact/poc/` is a client camera POC, not a GAS service. Do not create an empty GAS backend just to satisfy this document.
 
-## 6. API contract: bounded GAS transport
+## 6. API Layer contract: bounded GAS transport
 
 ### Ingress limitations and routing
 - Official GAS Web Apps expose `doGet(e)` and `doPost(e)` returning `HtmlOutput` or `TextOutput`; **do not claim native PATCH/PUT/DELETE handlers or arbitrary status/header control**.
-- If routing multiple actions through POST, use an explicit **allowlisted operation name** with API version, not eval/dynamic function invocation; enforce action-specific authentication/authorization.
+- Client operations MUST pass through the dedicated **API Layer**. If routing multiple actions through POST, use an explicit **allowlisted operation name** with API version, not eval/dynamic function invocation; enforce action-specific authentication/authorization.
 - GET MUST be read-only; sensitive GET URLs and query parameters must not contain tokens, phone numbers or other personal data.
 - If real HTTP status codes, custom authentication headers, standard CORS preflight, high-volume REST semantics or direct OAuth token verification are essential, use a **trusted gateway/BFF** or choose a more suitable backend. Do not fake HTTP semantics in ways clients might mistake for secure behavior.
 - Browser access to a GAS Web App across origins requires verified integration behavior; do not assume JSON POST works from all browsers or WebViews. Test redirect, CORS, cookies and identity in target clients.
@@ -287,9 +309,9 @@ Choose by functional need, security posture, scale, cost and operational support
 
 | Gate | Minimum evidence | Release policy |
 |---|---|---|
-| GAS-G01 Structure | Required layers; manifest; no app docs under `blueprint/` | Fail PR if missing for declared GAS backend |
+| GAS-G01 Structure | Mandatory `src/api/{routes,controllers,dto,security,responses}` for client-serving GAS, entrypoint/application/domain/infrastructure/composition layers, manifest; no app docs under `blueprint/` | Fail PR if missing for declared GAS backend |
 | GAS-G02 Dependency | Domain/Application do not import GAS services, adapters implement ports | Fail PR |
-| GAS-G03 API Contract | Valid/invalid requests, unknown operation, version, paging, error codes, DTO mapping | Fail PR |
+| GAS-G03 API Layer & Contract | Versioned router/controller mappings, valid/invalid requests, unknown operation, version, paging, error envelope, DTO mapping, security-policy negative tests | Fail PR |
 | GAS-G04 AuthZ | Anonymous, invalid identity, wrong app role/scope, direct-GAS URL bypass, data enumeration | Block release until independently tested |
 | GAS-G05 Persistence & Storage | Selected provider's schema, migrations, access policy, conflicts, idempotency, transactions/consistency, backups, adapter contracts, rollback/reconciliation; Sheets-specific locks/batching only if using Sheets | Fail staging |
 | GAS-G06 External API | Timeouts, bounded retry, errors, no secret leakage | Fail staging |
@@ -324,4 +346,4 @@ Choose by functional need, security posture, scale, cost and operational support
 - [Apps Script Web App manifest](https://developers.google.com/apps-script/manifest/web-app-api-executable) — access and executeAs.
 - [LockService](https://developers.google.com/apps-script/reference/lock/lock-service) — concurrent access control.
 
-**End of normative blueprint MT-GAS-MBP-001 (v1.1.0).**
+**End of normative blueprint MT-GAS-MBP-001 (v1.2.0).**
