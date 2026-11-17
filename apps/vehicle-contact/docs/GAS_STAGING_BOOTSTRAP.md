@@ -15,3 +15,9 @@
 5. This procedure cannot be invoked through public `doGet`/`doPost`. It is not production release approval.
 
 Protected API ingress remains disabled unless `VEHICLE_API_ENABLED=true` is separately set after security review and staging tests. Google OIDC also requires `VEHICLE_GOOGLE_CLIENT_ID`. Media APIs require `VEHICLE_PHOTOS_FOLDER_ID`. The destructive retention worker requires an additional `VEHICLE_RETENTION_EXECUTE_ENABLED=true` and a separately authorized worker role.
+
+## GAS password hashing performance fix (2026-11-17)
+
+Earlier Version 7 attempted 150,000 PBKDF2-HMAC-SHA256 iterations via 150,000 calls to the Apps Script `Utilities` service and could exceed the per-execution runtime. `infrastructure/security/Pbkdf2.js` now performs the inner iterations in GAS V8 JavaScript; the hash format remains `pbkdf2-sha256$150000$salt$hash`. Standard SHA-256 PBKDF2 output is checked against Node's `crypto.pbkdf2Sync`, including a 150,000-round Unicode vector and verification of the full `createGasSecurity` adapter.
+
+**This is CI evidence, not a measured GAS runtime benchmark or a production security certification.** If staging bootstrap timed out before user creation, confirm `vc_users` and `vc_user_roles` state first. Never blindly clear partial rows or rotate the pepper. Rebuild and manually re-run the existing source-push Workflow after this fix is merged; Editor executions use latest pushed source, while published `/exec` deployments require independent version update. Do not send temporary passwords or `VEHICLE_AUTH_PEPPER` to chat, logs or GitHub.
