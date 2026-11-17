@@ -11,6 +11,7 @@
 **MVP core flow:** register vehicle → issue QR → scan QR (or manual plate search) → show matched vehicle/person → tap to call.
 
 ## Documents
+- [DOCUMENT_CONSISTENCY_QC_2026-11-17.md](docs/DOCUMENT_CONSISTENCY_QC_2026-11-17.md) — รายงานตรวจความสอดคล้องเอกสาร ประเด็นแก้ไข และรายการรออนุมัติ (QC 17 พ.ย. 2569)
 - [REQUIREMENTS_TRACEABILITY.md](docs/REQUIREMENTS_TRACEABILITY.md) — ตรวจการเชื่อมโยงข้อกำหนด/เอกสาร/โค้ด/หลักฐาน และรายการที่ขัดแย้งรออนุมัติ
 - [DECISION_LOG.md](docs/DECISION_LOG.md) — บันทึกการตัดสินใจเฉพาะโครงการและสถานะอนุมัติ
 - [QR_STICKER_COST_COMPARISON_2026-10-31.md](docs/QR_STICKER_COST_COMPARISON_2026-10-31.md) — ราคาสำรวจและเปรียบเทียบ Solution A4+เคลือบ กับจ้างพิมพ์ UV/กันน้ำ 1 ปี
