@@ -16,6 +16,15 @@
 | Per-operation authorization and direct endpoint bypass | **NOT IMPLEMENTED / BLOCKING** |
 | QR, data CRUD, concurrency, PDPA | **NOT IMPLEMENTED / BLOCKING** |
 
+## GitHub source-mirrored multi-file GAS — VERIFIED 2026-11-17 (Version 5)
+
+- **Workflow run:** [44035053861](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44035053861), conclusion **success**, commit `b1ea83d1f6e67d65952754b013651b23edff6b8b`.
+- **GAS upload:** `clasp push --force` recorded **Pushed 15 files** = 14 named `.gs` modules + `appsscript.json`; `clasp create-version` recorded **Created version 5**.
+- **Packaging:** one generated `.gs` per GitHub source file, plus one for canonical JSON schema. Names flatten source paths into `LAYER$subfolder$Module.gs` because Apps Script has no nested source folders. See [exact mapping](GAS_MODULE_MAPPING.md).
+- **CI:** all 14 files meet the 800-line maximum, contract tests pass for forward/reverse loading, fake Sheets, schema drift and safe API denial.
+- **Workflow restored:** manual-only dispatch after the one-time experiment, with `PUSH_VEHICLE_GAS` confirmation.
+- **Not established:** independent live Editor functional test; real Sheets access; a published Web App, security/PDPA approvals. **Do not equate version creation to Web App deployment.**
+
 ## Multi-file GAS proof — VERIFIED 2026-11-17 (Version 4)
 
 - **Workflow run:** [Run 44034261629](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44034261629), conclusion **success**, deployed commit `2083899ebe9e9b0a4779563f8e69203109abf058`.
