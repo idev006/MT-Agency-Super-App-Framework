@@ -69,6 +69,9 @@ const expected=[
  'DOMAIN$policies$QrTokenPolicy.gs',
  'ENTRYPOINTS$WebApp.gs',
  'INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs',
+ 'APPLICATION$migrations$MigrationPlanner.gs',
+ 'INFRASTRUCTURE$migrations$SheetsMigrationAdapter.gs',
+ 'DOMAIN$policies$SecurityEventPolicy.gs',
  'SCHEMA$database.schema.gs'
 ].sort();
 assert.deepEqual(gasFiles,expected);
