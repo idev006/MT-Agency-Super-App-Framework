@@ -4,7 +4,7 @@ import {normalizePlate} from '../../../domain/policies/VehicleLifecycle.js';
 function table(book,name) {
  const sheet=book.getSheetByName(name);
  if(!sheet)throw new Error('MISSING_TABLE_'+name);
- const rows=sheet.getDataRange().getValues();
+ const rows=sheet.getDataRange().getValues().map(row=>[...row]);
  if(!rows.length)return [];
  const headers=rows.shift().map(String);
  if(new Set(headers).size!==headers.length||headers.some(h=>!h))throw new Error('INVALID_TABLE_HEADERS');
