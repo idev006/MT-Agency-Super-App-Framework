@@ -50,6 +50,7 @@ if(existsSync(appsRoot)){
     gas+'/src/entrypoints',
     gas+'/src/api',
     gas+'/src/api/routes',
+    gas+'/src/api/groups',
     gas+'/src/api/controllers',
     gas+'/src/api/dto',
     gas+'/src/api/security',
