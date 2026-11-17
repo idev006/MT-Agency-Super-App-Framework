@@ -18,6 +18,11 @@
 - [Development Roadmap & Backlog](docs/DEVELOPMENT_ROADMAP_PHASE1.md) — M0–M6 milestones, VC-W01–VC-W22 work items, dependencies, acceptance evidence, security-first critical path and Phase-1 no-pass boundaries.
 - **Next safe work:** data dictionary / fake Sheets repository tests / Vue mock shell / secure-auth ADR. Protected PII APIs stay disabled until direct-GAS bypass protection, username/password session and permissions are proven.
 
+## Canonical Data Dictionary & Controlled Schema Sync (Phase 1)
+- [Canonical database.schema.json](schema/database.schema.json) is the **single authoritative schema** for the six candidate Sheets tables, not a second dictionary in Google Sheets.
+- [Data Dictionary workflow](docs/GAS_DATA_DICTIONARY.md) and [Schema Sync implementation](docs/SCHEMA_SYNC_IMPLEMENTATION.md) define **detect-and-propose only**. Changes made in Google Sheets can be identified as a review-required proposal; they do not auto-update GitHub or alter columns.
+- Admin-only GAS editor functions inspect existing Sheets headers after GAS deployment; these operations are **not** public API routes. Migration and scheduled triggers are deferred.
+
 ## Documents
 - [DOCUMENT_CONSISTENCY_QC_2026-11-17.md](docs/DOCUMENT_CONSISTENCY_QC_2026-11-17.md) — รายงานตรวจความสอดคล้องเอกสาร ประเด็นแก้ไข และรายการรออนุมัติ (QC 17 พ.ย. 2569)
 - [REQUIREMENTS_TRACEABILITY.md](docs/REQUIREMENTS_TRACEABILITY.md) — ตรวจการเชื่อมโยงข้อกำหนด/เอกสาร/โค้ด/หลักฐาน และรายการที่ขัดแย้งรออนุมัติ
