@@ -71,6 +71,7 @@ const expected=[
  'DOMAIN$policies$QrTokenPolicy.gs',
  'ENTRYPOINTS$WebApp.gs',
  'INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs',
+ 'INFRASTRUCTURE$persistence$sheets$SheetsVehicleReadRepository.gs',
  'APPLICATION$migrations$MigrationPlanner.gs',
  'APPLICATION$migrations$MigrationJournal.gs',
  'APPLICATION$migrations$MigrationRunner.gs',
