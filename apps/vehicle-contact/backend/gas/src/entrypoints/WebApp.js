@@ -1,3 +1,4 @@
+import {runStagingAuthAcceptance,runStagingLifecycleAcceptance} from '../infrastructure/testing/StagingAcceptanceProbe.js';
 import {benchmarkStagingPasswordHash} from '../infrastructure/security/HashDiagnostics.js';
 import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
 import { createApplication } from "../composition/Container.js";
@@ -70,5 +71,22 @@ export function bootstrapVehicleAdminFromEditor() {
 export function benchmarkVehiclePasswordHashFromEditor() {
  const result=benchmarkStagingPasswordHash({utilities:Utilities,propertiesService:PropertiesService});
  Logger.log(JSON.stringify(result));
+ return result;
+}
+
+
+// Editor-only: test actual GAS+Sheets on isolated synthetic sandbox; no production Script Properties edits.
+export function runVehicleStagingAuthTestsFromEditor() {
+ const result=runStagingAuthAcceptance({spreadsheetApp:SpreadsheetApp,lockService:LockService,
+  utilities:Utilities,driveApp:DriveApp,urlFetchApp:UrlFetchApp});
+ Logger.log(JSON.stringify(result));
+ if(result.failed)throw new Error('STAGING_AUTH_ACCEPTANCE_FAILED:'+result.failed);
+ return result;
+}
+export function runVehicleStagingLifecycleTestsFromEditor() {
+ const result=runStagingLifecycleAcceptance({spreadsheetApp:SpreadsheetApp,lockService:LockService,
+  utilities:Utilities,driveApp:DriveApp,urlFetchApp:UrlFetchApp});
+ Logger.log(JSON.stringify(result));
+ if(result.failed)throw new Error('STAGING_LIFECYCLE_ACCEPTANCE_FAILED:'+result.failed);
  return result;
 }
