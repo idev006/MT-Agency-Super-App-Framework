@@ -2,10 +2,6 @@ name: Test P6 Vehicle Contact Live GAS API
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'apps/vehicle-contact/backend/gas/api-smoke/initial-live-check.txt'
 
 permissions:
   contents: read
