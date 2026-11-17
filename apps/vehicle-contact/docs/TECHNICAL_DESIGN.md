@@ -2,7 +2,7 @@
 
 **Status:** PROPOSED. Technical decisions are candidates until PoC/security review.  
 **QC note (2026-11-17):** The currently approved frontend baseline is Vue 3, Vue Router, Pinia, Tailwind, DaisyUI and Vite. Historical React statements in this draft must not be used to choose the implementation stack; backend choices and integration remain proposals pending their own gates.  
-**Parent:** [Master Blueprint](../../docs/MASTER_BLUEPRINT.md)
+**Parent:** [Master Blueprint](../../../blueprint/platform/MASTER_BLUEPRINT.md)
 
 ## 1. System design
 **Client:** [Historical proposed React + TypeScript shell, superseded for frontend implementation by approved Vue 3 Web App Blueprint](../../../blueprint/MASTER_WEB_APP_BLUEPRINT.md); HTTPS host, candidate GitHub Pages. Native camera QR works by web URL, in-app scanner uses browser camera APIs.
