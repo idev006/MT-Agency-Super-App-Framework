@@ -68,3 +68,7 @@
 **Not yet implemented or verified:** real backup/copy, distributed lock, durable journal, immutable checksums, controlled executor, recovery job, approved v2 canonical schema, CI success, live GAS push, live Sheet mutation or Web App deployment. No production migration should be triggered from this source. The user has authorized engineering work, **not** bypassing the independent release/security/change-control gates.
 
 **Next implementation gates:** build a deterministic migration registry and checksum verification; protected backup and staging fixtures; durable journal and lock with failure-injection tests; verified post-apply schema and row-preservation checks; then CI and reviewed rollout. Keep all live operations disabled until evidence and authorization exist.
+
+## Engineering source update — additive executor (unverified)
+
+The prior sections describe the older detect/propose-only baseline. Source code now includes an editor-only additive executor in `backend/gas/src/infrastructure/migrations/ExecuteAdditiveMigration.js`, connected through `Container.migrateSchema()`. It supports dry-run, blocked-drift handling, pre-change Drive backup, Script Properties journal, optional journal worksheet, additive tab/header changes, and verification. The Script Properties gate `VEHICLE_SCHEMA_MIGRATION_APPROVED=true` is necessary for the apply entrypoint. **No actual migration was run.** Failure recovery requires manual reconciliation; this is not transactional rollback. See [migration runbook](GAS_MIGRATION_RUNBOOK.md).

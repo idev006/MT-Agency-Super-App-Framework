@@ -7,7 +7,7 @@
 ```
 src/entrypoints/WebApp.js                 doGet/doPost; Editor-only admin entrypoints
   → src/api/routes/Router.js              Versioned request envelope, public health, feature gate
-  → src/application/use-cases/OperationDispatcher.js
+  → src/api/controllers/OperationController.js
       → src/api/dto/OperationPayloadValidator.js       Per-operation allowlisted DTOs
       → src/application/security/SessionService.js     Server-side identity/RBAC/session
       → IdentityOperations.js / AdministrationOperations.js /
@@ -18,7 +18,7 @@ src/entrypoints/WebApp.js                 doGet/doPost; Editor-only admin entryp
   → src/domain/policies/                   Pure business invariants
 ```
 
-Other legacy prototype modules remain present for reference; only modules wired through `OperationDispatcher.js` are part of the new feature-gated path.
+Other legacy prototype modules remain present for reference; only modules wired through `OperationController.js` are part of the new feature-gated path.
 
 ## v1 source inventory (50 operations)
 
@@ -43,7 +43,7 @@ Authoritative operation names: [API inventory](../../contracts/api-inventory.v1.
 
 ## Schema and migration
 
-The canonical [database.schema.json](../../schema/database.schema.json) has a **0.2.0-draft physical extension** with 24 tabs and append-only columns, based on existing approved business requirements. It has **not** been applied to the user's production spreadsheet. The editor-only migration executor performs a pre-change Drive backup, Script Properties journal, additive table/header changes and post-change header comparison. Any drift requiring destructive changes is blocked. Details: [GAS migration runbook](../../docs/GAS_MIGRATION_RUNBOOK.md).
+The canonical [database.schema.json](../../schema/database.schema.json) has a **0.2.0-draft physical extension** with 24 tabs and append-only columns, based on existing approved business requirements. It has **not** been applied to the user's production spreadsheet. The Infrastructure-owned editor-only migration executor performs a pre-change Drive backup, Script Properties journal, additive table/header changes and post-change header comparison. Any drift requiring destructive changes is blocked. Details: [GAS migration runbook](../../docs/GAS_MIGRATION_RUNBOOK.md).
 
 GAS Editor entrypoints:
 - `verifyVehicleSchemaFromEditor`, `inspectVehicleSchemaDriftFromEditor`, `proposeVehicleSchemaChangeFromEditor`
@@ -76,3 +76,13 @@ Do not run `clasp push` or enable public/protected data handlers without code re
 2. **Recoverability:** Sheets is not ACID. Multi-row writes, staged media, deletion retries, migration recovery and idempotency need fault-injection/reconciliation testing and potentially further hardening.
 3. **Operational:** scheduler notifications, full per-operation JSON Schema/OpenAPI specifications, production-ready owner-claim proof and session/privacy/security sign-off remain open.
 4. **Deployment:** branch is not main and no new `clasp` action, Apps Script version or live Web App deployment has occurred.
+
+## 2026-11-17 source wiring and concurrency refactor
+
+- GAS `WebApp.doPost` → `api/routes/Router.js` → `api/routes/GroupRoutes.js` (13 business groups / 50 allowed operation names) → `api/controllers/OperationController.js` (DTO, server-side session/RBAC, response/error mapping) → injected application use cases → `infrastructure/persistence/sheets/SheetStore.js` and `infrastructure/media/DrivePhotos.js`.
+- `composition/Container.js` wires the dependencies and checks the server-owned `VEHICLE_API_ENABLED` gate.
+- Regular Google Sheets writes are sequential writes. `store.sequence(fn)` is a clarity-only wrapper around `fn()`: **no implicit transaction, rollback, or lock**.
+- `store.withLock(fn)` is used only around critical concurrent read/check/write sequences (registration quota/duplicate, approval, plate version, QR rotation, user uniqueness, photo slot/quota and retention state). It flushes pending Spreadsheet writes before releasing the GAS script lock.
+- Drive image transfers occur **outside** the script-lock window; only associated bounded metadata writes/counts are guarded.
+- Migration executor is in `infrastructure/migrations/ExecuteAdditiveMigration.js`, invoked only from editor-only entrypoints via the composition root.
+- **Source wiring reviewed, not executed.** No new build, tests, live GAS calls, or deployments have been performed for this refactor. Store-level APIs remain generic; richer domain-owned repository ports and resource-scoped authorization require further engineering review.
