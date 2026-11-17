@@ -50,12 +50,31 @@ tabs.unapproved_table=['a'];
 assert.equal(compareSchema(DATABASE_SCHEMA,tabs).changes.some(c=>c.kind==='UNDECLARED_TABLE'),true);
 delete tabs.unapproved_table;
 const root=resolve(import.meta.dirname,'..');
-const bundle=readFileSync(join(root,'dist/Code.gs'),'utf8');
+const gasFiles=[
+ 'ENTRY$WebGet.gs',
+ 'ENTRY$WebPost.gs',
+ 'ADMIN$VerifySchema.gs',
+ 'ADMIN$InspectSchema.gs',
+ 'ADMIN$ProposeSchema.gs'
+];
 const mockContent={MimeType:{JSON:'JSON'},createTextOutput(v){return {value:v,setMimeType(){return this;}};}};
-const context=vm.createContext({ContentService:mockContent,console});
-vm.runInContext(bundle,context);
-for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor'])assert.equal(typeof context[name],'function');
-assert.equal(JSON.parse(context.doGet({}).value).data.status,'bootstrap');
-const denied=JSON.parse(context.doPost({postData:{contents:JSON.stringify({apiVersion:'v1',group:'vehicles',action:'lookup',payload:{role:'admin'}})}}).value);
-assert.equal(denied.ok,false);
-console.log('Canonical schema, drift/proposal, fake Sheets and global GAS bundle tests PASSED');
+function loadGAS(order){
+  const ctx=vm.createContext({ContentService:mockContent,console});
+  for(const file of order){
+    const code=readFileSync(join(root,'dist',file),'utf8');
+    assert.ok(code.split(/\r?\n/).length<=800,`File ${file} exceeds 800 lines`);
+    new vm.Script(code,{filename:file}).runInContext(ctx);
+  }
+  return ctx;
+}
+// Independently scoped IIFE files must work even if GAS loads them in reverse order.
+for(const order of [gasFiles,[...gasFiles].reverse()]){
+ const context=loadGAS(order);
+ for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor'])
+   assert.equal(typeof context[name],'function');
+ assert.equal(JSON.parse(context.doGet({}).value).data.status,'bootstrap');
+ const denied=JSON.parse(context.doPost({postData:{contents:JSON.stringify({apiVersion:'v1',group:'vehicles',action:'lookup',payload:{role:'admin'}})}}).value);
+ assert.equal(denied.ok,false);
+ assert.equal(JSON.parse(context.doPost({postData:{contents:'bad json'}}).value).ok,false);
+}
+console.log('Canonical schema, multi-file independent GAS, drift/proposal, and fake Sheets contracts PASSED');
