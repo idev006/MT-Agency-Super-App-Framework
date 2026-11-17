@@ -1,3 +1,4 @@
+import {benchmarkStagingPasswordHash} from '../infrastructure/security/HashDiagnostics.js';
 import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
 import { createApplication } from "../composition/Container.js";
 import { apiFailure } from "../api/responses/ResponseFactory.js";
@@ -61,6 +62,13 @@ export function applyVehicleSchemaFromEditor() {
 export function bootstrapVehicleAdminFromEditor() {
  const result=bootstrapStagingAdmin({spreadsheetApp:SpreadsheetApp,lockService:LockService,
   utilities:Utilities,propertiesService:PropertiesService});
+ Logger.log(JSON.stringify(result));
+ return result;
+}
+
+// Safe GAS Editor-only performance diagnostic. Never logs secret/password/hash or mutates users.
+export function benchmarkVehiclePasswordHashFromEditor() {
+ const result=benchmarkStagingPasswordHash({utilities:Utilities,propertiesService:PropertiesService});
  Logger.log(JSON.stringify(result));
  return result;
 }

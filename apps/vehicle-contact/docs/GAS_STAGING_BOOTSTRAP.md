@@ -21,3 +21,9 @@ Protected API ingress remains disabled unless `VEHICLE_API_ENABLED=true` is sepa
 Earlier Version 7 attempted 150,000 PBKDF2-HMAC-SHA256 iterations via 150,000 calls to the Apps Script `Utilities` service and could exceed the per-execution runtime. `infrastructure/security/Pbkdf2.js` now performs the inner iterations in GAS V8 JavaScript; the hash format remains `pbkdf2-sha256$150000$salt$hash`. Standard SHA-256 PBKDF2 output is checked against Node's `crypto.pbkdf2Sync`, including a 150,000-round Unicode vector and verification of the full `createGasSecurity` adapter.
 
 **This is CI evidence, not a measured GAS runtime benchmark or a production security certification.** If staging bootstrap timed out before user creation, confirm `vc_users` and `vc_user_roles` state first. Never blindly clear partial rows or rotate the pepper. Rebuild and manually re-run the existing source-push Workflow after this fix is merged; Editor executions use latest pushed source, while published `/exec` deployments require independent version update. Do not send temporary passwords or `VEHICLE_AUTH_PEPPER` to chat, logs or GitHub.
+
+## Synthetic GAS hash benchmark (after deploying optimized source)
+
+Once the source commit containing `HashDiagnostics.js` has been pushed to GAS, authorized Editor users can run **`benchmarkVehiclePasswordHashFromEditor()`**. This function computes and verifies a fixed synthetic password in memory using the configured server-side `VEHICLE_AUTH_PEPPER` and reports only `hashMillis`, `verifyMillis`, the algorithm, the iteration count, and a `verified` boolean. It creates **no** `vc_users`, `vc_user_roles` or session row, and never logs the verifier or secret.
+
+The initial `admin` / `SYSTEM_ADMIN` bootstrap was **completed successfully** before this fix. **Never rerun** `bootstrapVehicleAdminFromEditor()` on that Spreadsheet; it must remain one-time. Keep the business API feature flag disabled until the separate approved staging tests.

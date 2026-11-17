@@ -44,3 +44,12 @@ Editor-only migration: WebApp.js -> Container.js -> infrastructure/migrations/Ex
 Ordinary writes are **sequential** GAS calls, not ACID transactions. Do not implement Unit of Work, SQL rollback or distributed transaction framework for Google Sheets. Use `store.withLock(fn)` only for a bounded critical section where two requests can corrupt uniqueness, quotas, lifecycle or permissions. Keep slow Drive uploads outside locks and flush before release. A partially completed multi-row workflow remains possible and requires business-level reconciliation, not a fictitious rollback.
 
 **Final assessment:** The primary backend components are structurally wired to the intended API execution path. They are **not verified end to end** and do not yet satisfy every Master Blueprint requirement (notably business-facing repository-port isolation and operational recovery). **Do not mark the project fully complete or deploy protected endpoints yet.**
+
+## GAS runtime optimization review — 2026-11-17
+
+- A real GAS Editor bootstrap completed successfully in approximately **4 minutes 53 seconds** using the old Version 7 PBKDF2 implementation. The `admin` user and `SYSTEM_ADMIN` role row were created; **do not rerun bootstrap**.
+- The previously merged PBKDF2 fix replaces 150,000 Google Utilities HMAC service calls with a locally executed V8 PBKDF2 routine, preserving the stored hash format. CI tests against standard cryptographic vectors passed; **GAS runtime speed and independent security review remain unverified** until actual staging tests.
+- `SheetStore` now lazily opens one Spreadsheet per request, keeps one execution-local table snapshot, uses bounded rectangular reads (10,000 data rows maximum per table), and invalidates snapshots after insert/update/delete and when acquiring/releasing the critical write lock. It does not use shared `CacheService` or process-global data to cache personal information.
+- If a table exceeds the bounded scan, it throws `SCAN_LIMIT_EXCEEDED` instead of attempting an unbounded read. Pagination/index-based repository methods are a future requirement before such scale.
+- Writes remain ordinary Sheets calls, not SQL-like transactions. Continue to apply targeted `LockService` and `SpreadsheetApp.flush()` before releasing the lock.
+- Source-level Node/GAS-mock regression test `sheet-store-gas-efficiency.test.mjs` verifies reduced service reads, lock freshness, mutation invalidation and formula escaping. **No Sheets staging call or real GAS timing evidence yet.**
