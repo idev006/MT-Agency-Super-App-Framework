@@ -133,6 +133,14 @@
           "key": null,
           "classification": "internal",
           "notes": "Approved business required attribute; nullable for legacy rows; validate on new writes"
+        },
+        {
+          "name": "owner_user_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Verified account owner link; empty until authorized linkage"
         }
       ]
     },

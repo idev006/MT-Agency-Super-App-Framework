@@ -36,10 +36,11 @@ export function createVehicleOperations({store,security,campaigns}) {
   const idem=need(p.idempotencyKey,'IDEMPOTENCY_KEY',100);
   const digest=security.sha256(JSON.stringify({...p,campaignToken:undefined}));
   return store.atomic(()=>{
-   const campaign=campaigns.getCampaign(p.campaignToken);
+   const campaign=campaigns.getCampaign(p.campaignToken,{requireCapacity:false});
    const idemKey=security.sha256('registration:'+campaign.campaign_id+':'+idem);
    const old=store.one('vc_idempotency',{key:idemKey});
    if(old){if(old.request_digest!==digest||old.status!=='COMPLETED')throw new Error('IDEMPOTENCY_CONFLICT');return JSON.parse(old.result_json);}
+   if(Number(campaign.submitted_count)>=Number(campaign.max_submissions))throw new Error('CAMPAIGN_INVALID');
    const org=store.one('vc_organizations',{organization_id:payload.organization_id});
    if(!org||org.status!=='ACTIVE')throw new Error('ORGANIZATION_INACTIVE');
    const duplicate=store.list('vc_vehicles').some(v=>v.plate_normalized===payload.plate_normalized&&v.province_code===payload.province_code&&v.status!=='INACTIVE');
@@ -77,7 +78,9 @@ export function createVehicleOperations({store,security,campaigns}) {
    const r=store.one('vc_registration_requests',{request_id:requestId});
    if(!r||r.status!=='PENDING_APPROVAL')throw new Error('INVALID_REQUEST_STATE');
    const app=JSON.parse(r.application_json),decision=p.decision;
+   let qrToken=null,qrId=null;
    if(decision==='APPROVE'){
+    if(p.platePhotoVerified!==true)throw new Error('PLATE_PHOTO_NOT_VERIFIED');
     if(store.list('vc_vehicles').some(v=>v.plate_normalized===app.plate_normalized&&v.province_code===app.province_code&&v.status==='ACTIVE'))throw new Error('DUPLICATE_VEHICLE');
     store.insert('vc_vehicles',{vehicle_id:r.vehicle_id,plate_normalized:app.plate_normalized,province_code:app.province_code,
      vehicle_type:app.vehicle_type,make:app.make,model:app.model,color:app.color,status:'ACTIVE',version:1,
@@ -86,10 +89,14 @@ export function createVehicleOperations({store,security,campaigns}) {
      relationship:app.relationship,is_primary:true,status:'ACTIVE',verified_at:now(),created_at:now(),updated_at:now()});
     for(const f of app.photos)store.insert('vc_vehicle_photos',{photo_id:f.photoId,vehicle_id:r.vehicle_id,
      slot:f.slot,storage_ref:f.storageRef,mime_type:f.mimeType,size_bytes:f.sizeBytes,status:'ACTIVE',version:1,created_at:now()});
+    qrToken=id();qrId=id();
+    store.insert('vc_qr_tokens',{qr_id:qrId,vehicle_id:r.vehicle_id,token_digest:security.sha256(qrToken),
+     issued_at:now(),revoked_at:'',issued_by:a.userId,reason:'REGISTRATION_APPROVED',status:'ACTIVE'});
    }
    store.update('vc_registration_requests',{request_id:requestId},{status:decision==='APPROVE'?'APPROVED':'REJECTED',reviewed_by:a.userId,reviewed_at:now()});
    audit(a,'registration',requestId,decision==='APPROVE'?'REGISTRATION_APPROVED':'REGISTRATION_REJECTED');
-   return {requestId,vehicleId:r.vehicle_id,status:decision==='APPROVE'?'APPROVED':'REJECTED',qrPending:decision==='APPROVE'};
+   return {requestId,vehicleId:r.vehicle_id,status:decision==='APPROVE'?'APPROVED':'REJECTED',
+    ...(qrToken?{qrToken,qrId}:{})};
   });
  }
  function vehicleView(v,actor,source) {
@@ -109,7 +116,7 @@ export function createVehicleOperations({store,security,campaigns}) {
   const [plate,province]=vehicleBusinessKey(p.plate,p.province).split('|');
   const list=store.list('vc_vehicles').filter(v=>v.plate_normalized===plate&&v.province_code===province&&v.status==='ACTIVE');
   if(list.length>1)throw new Error('DUPLICATE_ACTIVE_VEHICLE');
-  if(!list.length)return null;
+  if(!list.length){lookupAudit(a,'NO_MATCH','PLATE','NOT_FOUND');return null;}
   return vehicleView(list[0],a,'PLATE');
  }
  function vehicleDetail(p,a){return vehicleView(activeVehicle(p.vehicleId),a,'DETAIL');}
@@ -122,6 +129,11 @@ export function createVehicleOperations({store,security,campaigns}) {
    const patch={updated_at:now(),updated_by:a.userId,version:version+1};
    for(const [client,field] of [['brand','make'],['model','model'],['color','color'],['plateType','plate_type'],['vehicleType','vehicle_type']]){
     if(p[client]!==undefined)patch[field]=need(p[client],client);
+   }
+   if(p.ownerUserId!==undefined){
+    const owner=store.one('vc_users',{user_id:need(p.ownerUserId,'OWNER_USER_ID')});
+    if(!owner||owner.status!=='ACTIVE')throw new Error('OWNER_NOT_FOUND');
+    patch.owner_user_id=owner.user_id;
    }
    if(p.plate!==undefined||p.province!==undefined){
     const [plate,province]=vehicleBusinessKey(p.plate??v.plate_normalized,p.province??v.province_code).split('|');
@@ -208,7 +220,7 @@ export function createVehicleOperations({store,security,campaigns}) {
   const token=need(p.token,'TOKEN');
   if(!/^[a-f0-9]{64}$/i.test(token))throw new Error('INVALID_QR');
   const qr=store.one('vc_qr_tokens',{token_digest:security.sha256(token.toLowerCase())});
-  if(!qr||qr.status!=='ACTIVE')return null;
+  if(!qr||qr.status!=='ACTIVE'){lookupAudit(a,'NO_MATCH','QR','NOT_FOUND');return null;}
   const v=store.one('vc_vehicles',{vehicle_id:qr.vehicle_id});
   return vehicleView(v,a,'QR');
  }

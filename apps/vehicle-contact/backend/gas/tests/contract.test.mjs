@@ -52,35 +52,17 @@ delete tabs.unapproved_table;
 const root=resolve(import.meta.dirname,'..');
 const {readdirSync}=await import('node:fs');
 const gasFiles=readdirSync(join(root,'dist')).filter(f=>f.endsWith('.gs')).sort();
-const expected=[
- 'API$controllers$VehicleController.gs',
- 'API$dto$RequestValidator.gs',
- 'API$groups$system$SystemGroup.gs',
- 'API$responses$ResponseFactory.gs',
- 'API$routes$Router.gs',
- 'API$routes$ProtectedRouter.gs',
- 'API$security$Policy.gs',
- 'APPLICATION$schema-sync$CompareSchema.gs',
- 'APPLICATION$schema-sync$ProposeMigration.gs',
- 'APPLICATION$use-cases$VerifySchema.gs',
- 'APPLICATION$use-cases$VehicleApi.gs',
- 'COMPOSITION$Container.gs',
- 'DOMAIN$ports$SchemaRepository.gs',
- 'DOMAIN$policies$VehicleRegistration.gs',
- 'DOMAIN$policies$PhotoSlots.gs',
- 'DOMAIN$policies$QrTokenPolicy.gs',
- 'ENTRYPOINTS$WebApp.gs',
- 'INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs',
- 'INFRASTRUCTURE$persistence$sheets$SheetsVehicleReadRepository.gs',
- 'APPLICATION$migrations$MigrationPlanner.gs',
- 'APPLICATION$migrations$MigrationJournal.gs',
- 'APPLICATION$migrations$MigrationRunner.gs',
- 'INFRASTRUCTURE$migrations$SheetsMigrationAdapter.gs',
- 'DOMAIN$policies$SecurityEventPolicy.gs',
- 'DOMAIN$policies$VehicleLifecycle.gs',
- 'DOMAIN$policies$SessionPolicy.gs',
- 'SCHEMA$database.schema.gs'
-].sort();
+const {relative}=await import('node:path');
+function walkSources(dir){
+ return readdirSync(dir,{withFileTypes:true}).flatMap(entry=>{
+  const full=join(dir,entry.name);
+  return entry.isDirectory()?walkSources(full):entry.isFile()&&entry.name.endsWith('.js')?[full]:[];
+ });
+}
+const expected=[...walkSources(join(root,'src')).map(file=>{
+ const parts=relative(join(root,'src'),file).split(/[\\/]/);
+ return parts[0].toUpperCase()+'$'+parts.slice(1).join('$').replace(/\.js$/,'.gs');
+}),'SCHEMA$database.schema.gs'].sort();
 assert.deepEqual(gasFiles,expected);
 const mockContent={MimeType:{JSON:'JSON'},createTextOutput(v){return {value:v,setMimeType(){return this;}};}};
 function loadGAS(order) {
@@ -96,7 +78,7 @@ function loadGAS(order) {
 // GAS file ordering is implementation detail, not an architectural dependency.
 for(const order of [gasFiles,[...gasFiles].reverse()]){
  const context=loadGAS(order);
- for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor'])
+ for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor'])
    assert.equal(typeof context[name],'function');
  assert.equal(JSON.parse(context.doGet({}).value).data.status,'bootstrap');
  assert.equal(JSON.parse(context.doPost({postData:{contents:'not JSON'}}).value).ok,false);
