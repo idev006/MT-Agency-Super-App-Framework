@@ -10,6 +10,10 @@
 
 ## Start here
 
+- **[Master Web Application Blueprint](blueprint/MASTER_WEB_APP_BLUEPRINT.md)** — mandatory for all web apps
+- **[Master GAS Backend API Blueprint](blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md)** — mandatory for each app's GAS backend, if used
+
+
 - **[MASTER BLUEPRINT — primary project design reference](blueprint/platform/MASTER_BLUEPRINT.md)** (v1.0.0-draft; proposed, not approved for production)
 - [Project Charter](blueprint/platform/PROJECT_CHARTER.md)
 - [Architecture Baseline](blueprint/platform/ARCHITECTURE.md)
