@@ -60,6 +60,8 @@ test('ACTOR-03 REGISTRATION: anonymous 5-photo staging, idempotent submit, admin
  assertError(assert,h.call('vehicles.lookup',{plate:'กข1234',province:'TH-10'}),'UNAUTHENTICATED','anonymous lookup blocked');
  const lookup=assertOk(assert,h.as('staff','vehicles.lookup',{plate:'กข 1234',province:'TH-10'}),'staff lookup');
  assert.equal(lookup.vehicleId,approved.vehicleId);assert.equal(lookup.contacts.length,1);assert.equal(lookup.photos.length,5);
+ const detail=assertOk(assert,h.as('staff','vehicles.detail',{vehicleId:approved.vehicleId}),'authorized vehicle detail');
+ assert.equal(detail.vehicleId,approved.vehicleId);
  const qrLookup=assertOk(assert,h.as('staff','qr.resolve',{token:approved.qrToken}),'authorized QR resolve');
  assert.equal(qrLookup.vehicleId,approved.vehicleId);
  assert.equal(assertOk(assert,h.as('staff','contacts.read',{vehicleId:approved.vehicleId}),'contact read')[0].phone,'+66810000001');
