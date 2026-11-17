@@ -27,3 +27,14 @@ After 19/19 AUTH PASS, run **`runVehicleStagingLifecycleTestsFromEditor`**.
 Send execution logs containing the JSON test summary and `cases` array (redact any tokens if Google logs unexpectedly include them). Record the new GitHub source commit, GAS version and start/end timestamps. Only then may these gates be marked as actual GAS PASS.
 
 **Deferred to dedicated staging Web App:** Use a distinct Script Project / deployment and the synthetic workbook, then enable authenticated protected business endpoints there and run POST /exec tests. The existing `/exec` URL is feature-gated and real auth over it has **not** yet been tested. Keep backend release gate open until this is done.
+
+## Actual execution and pass record — 2026-11-17
+
+Operator supplied GAS Editor execution logs show:
+
+- `runVehicleStagingAuthTestsFromEditor`: **19/19 PASS**, `elapsedMs=37651`, 23:18:51–23:19:31 Bangkok.
+- `runVehicleStagingLifecycleTestsFromEditor`: **21/21 PASS**, `elapsedMs=123387`, 23:20:11–23:22:17 Bangkok.
+- Real sandbox retention job was independently re-read as `DELETION_COMPLETED`; generated vehicle was deleted while original synthetic fixture remained.
+- The historical instructions above are kept for reproducible future runs. Do **not** rerun the full destructive lifecycle merely to measure a single endpoint; it creates a new synthetic Drive folder and additional test rows.
+- Performance work item: capture isolated per-operation durations, including realistic image uploads, and compare after approved GAS-safe optimization. The fastest next evidence is **authenticated HTTP /exec in a dedicated synthetic-only staging project**, not another source push to existing business-data GAS.
+- Remaining work **NOT RUN**: authenticated public HTTP API, concurrency, uncontrolled execution timeout recovery, actual Android/iOS UI, and source-pushed GAS version verification.

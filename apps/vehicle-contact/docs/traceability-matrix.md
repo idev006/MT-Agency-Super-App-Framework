@@ -62,8 +62,8 @@ This matrix maps each of the **50 canonical API v1 operations to one primary own
 - **C1 Business authority:** [Business baseline](APPROVED_REQUIREMENTS_BASELINE_R01_R26.md) (section-level, not fabricated R number), [Implementation test matrix](IMPLEMENTATION_TEST_MATRIX_PHASE1.md).
 - **C2 Source review:** `backend/gas/src/api/routes/Router.js`, `backend/gas/src/api/controllers/OperationController.js`, four use-case service modules, `SessionService.js`, `SheetStore.js` and `DrivePhotos.js`.
 - **C3 CI:** [GAS acceptance report](BACKEND_ACCEPTANCE_REPORT_20261117.md) shows source test evidence; compiled fake-Sheets V8 VM 19+21 cases and RBAC 220 pairs.
-- **C4 GAS:** Actual GAS Editor execution on isolated 24-Sheet test sandbox remains **NOT RUN** in this documentation revision.
-- **C5 HTTP:** 11/11 historical public-safe /exec smoke tests; **authenticated protected business HTTP paths NOT RUN**.
+- **C4 GAS:** **PASS (scope-limited):** owner GAS Editor logs show `AUTH_AND_READ` 19/19 (37.651 s), `FULL_LIFECYCLE` 21/21 (123.387 s), 2026-11-17. This proves covered Editor-dispatched use cases on real Sheets/Drive, **not all 50 operations via authenticated public HTTP**. See [Backend Acceptance Report](BACKEND_ACCEPTANCE_REPORT_20261117.md).
+- **C5 HTTP:** 11/11 historical public-safe /exec smoke tests; **authenticated protected business HTTP paths still NOT RUN** after GAS Editor pass.
 - **C6 FE:** Vue UI and live API adapter **NOT WIRED**.
 
 ## Open contract and design discrepancies
