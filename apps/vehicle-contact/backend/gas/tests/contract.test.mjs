@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+import {resolve,join} from 'node:path';
+const root=resolve(import.meta.dirname,'..');
+const files=['src/domain/ports/SchemaRepository.js','src/api/dto/RequestValidator.js','src/api/responses/ResponseFactory.js','src/api/groups/system/SystemGroup.js','src/api/routes/Router.js'];
+const ctx=vm.createContext({});
+for(const f of files)vm.runInContext(readFileSync(join(root,f),'utf8'),ctx);
+assert.equal(ctx.apiDispatch_({apiVersion:'v1',group:'system',action:'health',payload:{}},'POST').ok,true);
+assert.equal(ctx.apiDispatch_({apiVersion:'v1',group:'vehicles',action:'lookup',payload:{}},'POST').ok,false);
+assert.equal(ctx.apiDispatch_({apiVersion:'v2',group:'system',action:'health',payload:{}},'POST').ok,false);
+assert.equal(ctx.apiDispatch_({apiVersion:'v1',group:'__proto__',action:'foo',payload:{}},'POST').ok,false);
+console.log('Safe bootstrap routing contract tests passed');
