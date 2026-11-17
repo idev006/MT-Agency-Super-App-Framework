@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   live-api-smoke:
-    name: GET and POST public health plus denied API operations
+    name: Live HTTP GET/POST public health and default-deny checks
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
@@ -24,12 +24,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Live API HTTP smoke and negative checks (synthetic requests only)
+      - name: Live API HTTP smoke and default-deny checks
         run: node apps/vehicle-contact/backend/gas/scripts/smoke-api.mjs
-      - name: Record limited scope
+      - name: Record scope and exclusions
         if: always()
         run: |
-          echo "### P6 Vehicle Contact GAS API live HTTP smoke" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Endpoint tested: owner-supplied existing public /exec URL" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Test: 7 non-sensitive GET/POST operations; no vehicle, phone, QR tokens or credentials used" >> "$GITHUB_STEP_SUMMARY"
-          echo "- This does not prove authenticated endpoints, physical Google Sheets, RBAC, PDPA or deployment version" >> "$GITHUB_STEP_SUMMARY"
+          echo "### P6 Vehicle Contact GAS API safe live HTTP smoke" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Target: owner-supplied existing public /exec URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "- 11 GET/POST cases; no real credentials, PII, vehicle data, QR tokens or media submitted." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Protected API requests intentionally malformed to avoid business/Sheets writes even if feature flag is accidentally enabled." >> "$GITHUB_STEP_SUMMARY"
+          echo "- Live health/deny responses do NOT prove authenticated API, Sheets persistence, RBAC, PDPA or deployment version." >> "$GITHUB_STEP_SUMMARY"

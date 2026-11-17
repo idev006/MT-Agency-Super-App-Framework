@@ -35,3 +35,25 @@
 | pending | pending | pending | pending | pending | pending | not run | NOT RUN | pending |
 
 **Never convert a planned test into PASS without its actual execution result.**
+
+## Execution campaign — 2026-11-17 (auth/session/RBAC and live HTTP)
+
+**Test source:** `backend/gas/tests/auth-session-integration.test.mjs` (synthetic Router → Controller → Use Cases → Session Service) and `backend/gas/scripts/smoke-api.mjs` (11 safe requests against owner-supplied /exec). Neither live test sends an admin credential or submits real PII.
+
+| ID | Target | Test oracle | Evidence type |
+|---|---|---|---|
+| TC-AUTH-01 | Synthetic admin login | Session token returned; only digest persisted; forced password change | Node integration |
+| TC-AUTH-02 | Unknown user / bad password | Identical `INVALID_CREDENTIALS`; no sessions | Node integration |
+| TC-AUTH-03 | Password retry limit | 6 failures within 15 minutes then `LOGIN_RATE_LIMIT` | Node integration |
+| TC-AUTH-04 | Forced password change | Protected ops refused; change succeeds; old session revoked | Node integration |
+| TC-AUTH-05 | Wrong old password | Password not changed | Node integration |
+| TC-SESS-01 | Expiry / idle / revoked / invalid token | Fail closed with expected codes | Node integration |
+| TC-SESS-02 | Session touch and logout | Refresh last-seen, revoke session | Node integration |
+| TC-RBAC-01 | Admin role and body spoofing | No implicit vehicle permission or role promotion | Node integration |
+| TC-RBAC-02 | Staff role least privilege | Admin/retention/audit/users ops denied | Node integration |
+| TC-RBAC-03 | Suspended account | Old session no longer authorized | Node integration |
+| TC-API-01 | Envelope/version/method/unknown operation | Fail closed | Node integration |
+| TC-API-02 | Failure response secrecy | No input password in response | Node integration |
+| LIVE-01..11 | Public GET/POST health, request correlation, invalid version/shape, unknown routes, forged roles | Version-compatible JSON envelope; protected routes fail as SERVICE_UNAVAILABLE when backend feature-gated | Real /exec HTTP (no credentials) |
+
+**Acceptance / caution:** CI passes prove the synthetic code path, not GAS/physical Sheets. Live smoke verifies only public safe operations. A deployed older bootstrap Web App can return `NOT_FOUND` for routes that current source knows but feature-gates; treat such mismatches as a deployment-version discrepancy to investigate, not as a reason to turn on `VEHICLE_API_ENABLED`. Authenticated live /exec testing remains BLOCKED until ingress/credential exposure and staging-only boundaries are independently approved. Never put plaintext admin passwords, pepper or token values into GitHub Actions logs or command arguments.
