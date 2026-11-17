@@ -292,8 +292,7 @@
       "failure": "Invalid MIME/signature/slot, revoked campaign, staging quota or failed Sheet write triggers safe failure and best-effort Drive trash.",
       "tables": [
         "vc_campaigns",
-        "vc_photo_staging",
-        "vc_operation_journal"
+        "vc_photo_staging"
       ],
       "notes": "Upload occurs before acquiring Sheets lock; if cleanup trash fails an orphan may remain and needs reconciliation. Parent-folder Anyone-with-link exposure is an accepted risk in approved requirements.",
       "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",

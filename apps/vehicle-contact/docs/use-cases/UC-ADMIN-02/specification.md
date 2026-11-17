@@ -54,7 +54,7 @@ sequenceDiagram
   FE->>API: organizations.create / update / disable
   API->>API: Require organizations.manage
   alt Valid POLICE hierarchy or flat EXTERNAL
-    API->>Orgs: Validate type, parent and cycle guard available
+    API->>Orgs: Validate type and direct parent; full ancestor-cycle guard missing
     Orgs->>DB: Insert or update vc_organizations
     Orgs->>DB: Append change audit
     API-->>FE: Organization ID / success

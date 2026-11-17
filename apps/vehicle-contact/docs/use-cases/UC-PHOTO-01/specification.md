@@ -20,7 +20,6 @@ Invalid MIME/signature/slot, revoked campaign, staging quota or failed Sheet wri
 ## 5. Persistence / external side effects
 - `vc_campaigns`
 - `vc_photo_staging`
-- `vc_operation_journal`
 
 ## 6. Acceptance trace
 - Test case IDs: `ACTOR-03`, `EDGE-01`, `EDGE-08`, `EDGE-10`, `GAS-FLOW.MEDIA_FRONT`.
