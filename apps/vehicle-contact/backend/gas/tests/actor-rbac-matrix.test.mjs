@@ -30,9 +30,9 @@ test('MATRIX-00 inventory = 50 routes (49 DTOs + health), public endpoints inten
 test('MATRIX-01 every protected route rejects missing session using a valid DTO, before doing business work',()=>{
  let count=0;
  for(const op of declared.filter(x=>x!=='system.health'&&!publicOps.has(x))){
-  const h=createAcceptanceHarness(),response=h.call(op,validPayload(op));
+  const h=createAcceptanceHarness(),before=h.io.writes,response=h.call(op,validPayload(op));
   assert.equal(response.error?.code,'UNAUTHENTICATED',op+': '+JSON.stringify(response));
-  assert.equal(h.io.writes,14,'unauthorized call must have no data writes beyond 5 seeded sessions/roles/users and 2 settings');
+  assert.equal(h.io.writes,before,'unauthorized call must have no business data writes');
   count++;
  }
  assert.equal(count,44);
