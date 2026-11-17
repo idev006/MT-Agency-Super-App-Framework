@@ -2,7 +2,6 @@ name: Build and deploy Pages from SSOT
 on:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,19 +18,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate builder syntax
-        run: node --check scripts/build-pages.mjs
-      - name: Build ephemeral Pages artifact
+      - name: Validate scripts and canonical sources
+        run: |
+          node --check scripts/build-pages.mjs
+          node --check scripts/validate-ssot.mjs
+          node scripts/validate-ssot.mjs
+      - name: Build disposable Pages artifact
         run: node scripts/build-pages.mjs _site
-      - name: Verify scanner artifact matches source
-        run: cmp apps/vehicle-contact/poc/qr-scanner/index.html _site/apps/vehicle-contact/poc/qr-scanner/index.html
+      - name: Verify generated artifact against SSOT
+        run: node scripts/validate-ssot.mjs --built _site
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
       - name: Upload Pages artifact
-        if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
   deploy:
-    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     environment:
