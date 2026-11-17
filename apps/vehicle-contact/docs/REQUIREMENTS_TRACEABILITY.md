@@ -6,6 +6,8 @@
 
 | ID | Requirement / control | Existing authority / source | Related design or evidence | Current audit result | Next action |
 | --- | --- | --- | --- | --- | --- |
+| VC-T10 | Phase 1 storage = Google Sheets (one tab per logical table), GAS backend repository adapter | Owner direction 2026-11-17 | [Phase 1 data architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md); older Supabase-centric TECHNICAL_DESIGN.md is historical for Phase 1 | ARCHITECTURE CHOICE APPROVED / NO BACKEND VERIFIED | Specify schema, provider adapter and staged integration tests |
+| VC-T11 | Phase 1 Username/Password login; MT-I-AM deferred | Owner direction 2026-11-17 | [Phase 1 data architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md) | ARCHITECTURE CHOICE APPROVED / AUTHENTICATION SECURITY OPEN | Choose trusted auth/session provider, verify access and direct GAS URL bypass controls |
 | VC-T01 | Find a reachable registered responsible contact for each vehicle | `SYSTEM_ANALYSIS_V2.md`, `PRODUCT_REQUIREMENTS.md` | `TECHNICAL_DESIGN.md`; no integrated production backend | DOCUMENTED / NOT IMPLEMENTED | Verify roles and contact source |
 | VC-T02 | QR contains non-PII opaque identifier, contact lookup is authorized | `PRODUCT_REQUIREMENTS.md`, `TECHNICAL_DESIGN.md` | `POC_QR_SCANNER.md` only covers camera | DOCUMENTED / NOT END-TO-END TESTED | Backend and permission negative tests |
 | VC-T03 | Android/iOS QR scanning and camera selection | `PRODUCT_REQUIREMENTS.md`, `POC_QR_SCANNER.md` | `../poc/qr-scanner/index.html` v7 | CAMERA ACCESS USER-REPORTED; DECODE AND SWITCH UNVERIFIED | Real device evidence matrix |
