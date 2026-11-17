@@ -64,6 +64,9 @@ const expected=[
  'APPLICATION$use-cases$VerifySchema.gs',
  'COMPOSITION$Container.gs',
  'DOMAIN$ports$SchemaRepository.gs',
+ 'DOMAIN$policies$VehicleRegistration.gs',
+ 'DOMAIN$policies$PhotoSlots.gs',
+ 'DOMAIN$policies$QrTokenPolicy.gs',
  'ENTRYPOINTS$WebApp.gs',
  'INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs',
  'SCHEMA$database.schema.gs'
