@@ -2,7 +2,7 @@
 
 **Document ID:** P6VC-DEPLOY-001  
 **Date:** 2026-11-17  
-**State:** DEPLOYMENT WORKFLOW SOURCE CREATED; NOT YET AUTHENTICATED OR PUSHED TO GOOGLE APPS SCRIPT  
+**State:** FIRST AUTHENTICATED SOURCE PUSH VERIFIED — [run 44033187307](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44033187307), commit `75c26b39`, 2 files pushed, GAS version 3 created. NOT A WEB APP DEPLOYMENT; editor verification remains open.  
 **GitHub SSOT:** [deploy-vehicle-gas.yml](../../../.github/workflows/deploy-vehicle-gas.yml)  
 **Target GAS Script ID (provided by owner):** `1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX`  
 **Script editor:** https://script.google.com/d/1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX/edit
@@ -56,13 +56,13 @@ E. Confirm that GAS Script Property `VEHICLE_SHEET_ID` is set to the existing in
 5. Verify Apps Script Editor source matches the bundle (five GAS global entrypoints) and invoke admin-only schema inspection with an authorized Google identity.
 6. Add actual evidence/commit/run ID and test results to [GAS Test Evidence](GAS_TEST_EVIDENCE.md) and the appropriate Agile Issue.
 
-**No action should be initiated until the destination project and backup are verified.** A missing `P6VC_CLASPRC_JSON` secret fails the workflow **before** `clasp push`.
+**First manual dispatch has succeeded according to GitHub Actions logs (2026-11-17); the following remains the safety checklist for future dispatches.** Before another run, check the destination project's backup and expected source. A missing `P6VC_CLASPRC_JSON` secret fails the workflow **before** `clasp push`.
 
 ## 4. What this does NOT do
 - Does **not** publish, update or expose a Web App /exec deployment URL.
 - Does **not** configure end-user login/session, RBAC, protection against direct GAS URL bypass or Google Drive media permissions.
 - Does **not** auto-run on every commit, auto-approve production deployment, or migrate Google Sheets/Drive files.
-- Does **not** assert that the Google target project has been authenticated, inspected, backed up or successfully pushed. These require first-run evidence.
+- **First authenticated source push is evidenced** by GitHub Actions. It does **not** establish that old target code was independently backed up, that GAS editor verification succeeded, or that a public Web App was released.
 
 ## 5. Next improvement
 Create separate approved staging and production Script IDs with isolated credentials and controlled GitHub Environments. Once staging is demonstrated, require environment reviewers and branch protection before any production source overwrite; release Web App deployments only after security/PDPA gates.
