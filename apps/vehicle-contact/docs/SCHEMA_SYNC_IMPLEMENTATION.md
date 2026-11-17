@@ -55,3 +55,16 @@
 7. Keep protected business routes disabled until security, legal and PDPA release gates are evidenced. This proposal alone does not authorize production writes.
 
 **Open blockers:** legal applicability and retention schedule, source IP/edge logging feasibility, ownership approvals, approved authentication/session provider, secure log store, full header and ACL verification, staging backup and migration executor. Do not mark VC-W27 complete.
+
+## Reusable GAS Migration Engine implementation status — 2026-11-17
+
+**Implemented in draft branch (source only):**
+- `application/migrations/MigrationPlanner.js`: additive-only `create_table` and `add_column` dry-run planning, checksum and previously-applied guard, existing-table/header drift refusal.
+- `application/migrations/MigrationJournal.js`: pure state-transition validator with PREPARED → BACKED_UP → APPLYING → VERIFYING → APPLIED, failure/recovery branches and evidence requirements; pure readiness checks for approvals, backup, lock, journal, staging, legal and security.
+- `application/migrations/MigrationRunner.js`: dry-run orchestration; execution deliberately throws `MIGRATION_EXECUTION_NOT_IMPLEMENTED`.
+- `infrastructure/migrations/SheetsMigrationAdapter.js`: read-only header inspection; `apply()` deliberately throws `MIGRATION_EXECUTOR_NOT_AUTHORIZED`.
+- Synthetic unit tests added and included in `npm test`; GAS output contract updated to **22** modules and deployment workflow expected artifact count adjusted accordingly.
+
+**Not yet implemented or verified:** real backup/copy, distributed lock, durable journal, immutable checksums, controlled executor, recovery job, approved v2 canonical schema, CI success, live GAS push, live Sheet mutation or Web App deployment. No production migration should be triggered from this source. The user has authorized engineering work, **not** bypassing the independent release/security/change-control gates.
+
+**Next implementation gates:** build a deterministic migration registry and checksum verification; protected backup and staging fixtures; durable journal and lock with failure-injection tests; verified post-apply schema and row-preservation checks; then CI and reviewed rollout. Keep all live operations disabled until evidence and authorization exist.
