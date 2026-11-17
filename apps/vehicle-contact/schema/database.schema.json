@@ -1,0 +1,485 @@
+{
+  "schemaId": "p6-vehicle-contact/phase1",
+  "schemaVersion": "0.1.0-draft",
+  "status": "PROPOSED_NOT_BUSINESS_APPROVED",
+  "storage": "google-sheets",
+  "policy": {
+    "oneWorksheetPerTable": true,
+    "fieldOrder": "declared",
+    "unknownColumn": "detect-and-propose-no-write",
+    "removeRenameTypeChange": "manual-approval-only",
+    "sensitiveDataProductionAllowed": false
+  },
+  "tables": {
+    "vc_vehicles": {
+      "description": "Phase 1 candidate worksheet vc_vehicles",
+      "columns": [
+        {
+          "name": "vehicle_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "plate_normalized",
+          "type": "string",
+          "required": true,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "province_code",
+          "type": "string",
+          "required": true,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "vehicle_type",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "make",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "model",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "color",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "created_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "updated_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        }
+      ]
+    },
+    "vc_vehicle_contacts": {
+      "description": "Phase 1 candidate worksheet vc_vehicle_contacts",
+      "columns": [
+        {
+          "name": "contact_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "string",
+          "required": true,
+          "key": "foreign",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "display_name",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "phone_e164",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "relationship",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "is_primary",
+          "type": "boolean",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "verified_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        }
+      ]
+    },
+    "vc_qr_tokens": {
+      "description": "Phase 1 candidate worksheet vc_qr_tokens",
+      "columns": [
+        {
+          "name": "qr_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "string",
+          "required": true,
+          "key": "foreign",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "token_digest",
+          "type": "string",
+          "required": true,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "issued_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "revoked_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "issued_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "reason",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        }
+      ]
+    },
+    "vc_vehicle_photos": {
+      "description": "Phase 1 candidate worksheet vc_vehicle_photos",
+      "columns": [
+        {
+          "name": "photo_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "string",
+          "required": true,
+          "key": "foreign",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "slot",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "storage_ref",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "mime_type",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "size_bytes",
+          "type": "integer",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        }
+      ]
+    },
+    "vc_lookup_audit": {
+      "description": "Phase 1 candidate worksheet vc_lookup_audit",
+      "columns": [
+        {
+          "name": "audit_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "actor_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "string",
+          "required": true,
+          "key": "foreign",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "lookup_source",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "result",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "correlation_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        }
+      ]
+    },
+    "vc_change_audit": {
+      "description": "Phase 1 candidate worksheet vc_change_audit",
+      "columns": [
+        {
+          "name": "audit_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "actor_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "entity_type",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "entity_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "action",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "redacted_summary",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "correlation_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Candidate; pending business/data steward approval"
+        }
+      ]
+    }
+  }
+}
