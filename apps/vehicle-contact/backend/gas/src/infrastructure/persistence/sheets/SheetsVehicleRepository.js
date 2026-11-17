@@ -13,13 +13,13 @@ export function createSheetsVehicleRepository(spreadsheetApp, spreadsheetId) {
   const vehicles = () => read("vc_vehicles",["vehicle_id","plate_normalized","province_code","status"]);
   const normalizePlate = p => {
     if (typeof p !== "string") throw new Error("INVALID_PLATE");
-    const value = p.normalize("NFKC").replace(/[\s\-]/g,"").toUpperCase();
+    const value = p.normalize("NFKC").replace(/[\s\u200b\u200c\u200d\-]/g,"").toUpperCase();
     if (!value || value.length > 24) throw new Error("INVALID_PLATE");
     return value;
   };
   const normalizeProvince = p => {
-    if (typeof p !== "string" || !/^[A-Z0-9-]{2,24}$/.test(p)) throw new Error("INVALID_PROVINCE");
-    return p;
+    if (typeof p !== "string" || !/^[A-Za-z0-9_-]{1,32}$/.test(p)) throw new Error("INVALID_PROVINCE");
+    return p.toUpperCase();
   };
   const getVehicle = id => {
     if (typeof id !== "string" || !id.trim()) throw new Error("INVALID_VEHICLE_ID");
@@ -55,7 +55,7 @@ export function createSheetsVehicleRepository(spreadsheetApp, spreadsheetId) {
     },
     exportAudit(query = {}) {
       return {format:"JSON",rows:this.queryAudit({...query,limit:100})};
-    }
+    },
     getVehicleHistory(vehicleId) {
       if (!getVehicle(vehicleId)) return [];
       return read("vc_change_audit",["entity_type","entity_id","action","created_at"])
