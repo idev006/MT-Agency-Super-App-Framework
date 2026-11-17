@@ -7,6 +7,10 @@ on:
         description: 'Type PUSH_VEHICLE_GAS to authorize replacing the target Apps Script project source'
         required: true
         type: string
+  push:
+    branches: [main]
+    paths:
+      - 'apps/vehicle-contact/backend/gas/deploy-requests/multifile-v1.txt'
 
 permissions:
   contents: read
@@ -19,7 +23,7 @@ jobs:
   deploy:
     name: Build, test and push to assigned GAS Script ID
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'PUSH_VEHICLE_GAS'
+    if: github.ref == 'refs/heads/main' && ((github.event_name == 'workflow_dispatch' && inputs.confirmation == 'PUSH_VEHICLE_GAS') || (github.event_name == 'push' && github.actor == 'idev006' && github.event.head_commit.message == 'deploy(vehicle-gas): approved one-shot multi-file proof'))
     timeout-minutes: 15
     defaults:
       run:
