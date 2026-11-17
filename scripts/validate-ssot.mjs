@@ -21,7 +21,7 @@ const required=[
 ];
 for(const p of required)check(has(p),'Missing canonical file: '+p);
 check(!has('docs/qr-scanner-poc'),'Legacy QR source exists in docs/qr-scanner-poc');
-check(!has('_site'),'Generated _site must not be committed/present in checkout before build');
+if(process.argv[2]!=='--built')check(!has('_site'),'Generated _site must not be present in checkout before build');
 check(!has('apps/vehicle-contact/docs/qr-scanner-poc'),'Scanner must live in poc/, not docs/');
 if(has(canonical))check(read(canonical).includes('Html5Qrcode'),'QR scanner canonical source missing decoder initialization');
 if(has('portal/apps.json')){
