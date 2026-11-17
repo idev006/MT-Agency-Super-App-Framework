@@ -7,7 +7,7 @@
 
 **Result:** Project owner confirmed the POC can now access/use the camera on **both Android and iOS phones**. This closes the earlier camera-access blocker for the devices used in this test. Evidence source: user feedback in project conversation (not an independent device-lab test). 
 
-**Reference build:** [canonical Vehicle Contact scanner source](../poc/qr-scanner/index.html) (GitHub Pages mirror retained at `docs/qr-scanner-poc/index.html`), diagnostic UI v7, associated fix commit `f0c847d218dde899cb048bc4661eb55597f6d478`. POC source may evolve; tag/pin before production integration.
+**Reference build:** [canonical Vehicle Contact scanner source](../poc/qr-scanner/index.html) (generated GitHub Pages artifact only; no committed mirror), diagnostic UI v7, associated fix commit `f0c847d218dde899cb048bc4661eb55597f6d478`. POC source may evolve; tag/pin before production integration.
 
 **Known observed detail:** Earlier Android test reported 2 devices (front + back), active `camera 0, facing back`, `facingMode=environment`, 480×640 resolution, no last error, and QR decode count 0. Subsequent confirmation indicates camera access works on Android/iOS. Do not infer from this alone that scanning/QR decode succeeds on both OS or that camera switching is proven.
 
@@ -33,8 +33,11 @@ Sources:
 - https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia
 - https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/enumerateDevices
 
+## Current implementation vs target architecture
+The tracked v7 scanner is a standalone HTML/JavaScript test page using `html5-qrcode@2.3.8`, not an implemented Vue 3 application. Vue 3 + multi-layer adapters is the approved **future integration target**. Do not label the standalone POC as a Vue application or claim end-to-end decoding PASS without test evidence.
+
 ## POC scope and exclusions
-**IN:** Vue 3 single-page test UI; HTTPS origin; rear-first camera; tap to toggle front/back; device picker where supported; QR decode; stop/restart stream cleanly; no repeated scans; visible result; error/retry; native-camera QR link test; mobile browser/device matrix.
+**IN:** standalone HTML/JavaScript diagnostic POC UI (current implementation); HTTPS origin; rear-first camera; tap to toggle front/back; device picker where supported; QR decode; stop/restart stream cleanly; no repeated scans; visible result; error/retry; native-camera QR link test; mobile browser/device matrix.
 **OUT:** production personal info, Google Sheets, real user identity, printing production QR stickers, camera photos stored in backend, full Super App login and role management.
 
 ## Frontend algorithm
