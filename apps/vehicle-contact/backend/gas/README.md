@@ -12,8 +12,8 @@
 
 ```bash
 cd apps/vehicle-contact/backend/gas
-npm test
-npm run build
+npm install
+npm run check
 # Open your existing target Spreadsheet in Google Sheets > Extensions > Apps Script
 # Create a bound or standalone Apps Script Project. Record its Script ID.
 # Set Script Property VEHICLE_SHEET_ID in Apps Script Project Settings.
@@ -25,6 +25,6 @@ clasp push
 
 `clasp push` updates script code, not automatically a published versioned Web App. Do **not** publish the protected API or owner-privileged public endpoints until the auth/session gateway design and direct-URL bypass security gates pass. Script secrets and `.clasp.json` should be kept out of Git; the provided `.clasp.json.example` is safe sample configuration.
 
-**Code packaging:** `npm run build` concatenates modular source to `dist/Code.gs` and copies `appsscript.json` (Google Apps Script V8). No cloud deployment is performed by this build.
+**Code packaging:** canonical GitHub code uses JavaScript ES Modules; `npm run build` uses pinned esbuild to bundle imports into a GAS V8-compatible IIFE named `P6VC`, exports only global `doGet`, `doPost`, and admin-only `verifyVehicleSchemaFromEditor`, and copies `appsscript.json` into `dist/`. The runtime does not load source `import/export` files directly. Run `npm install`, then `npm run check` before configuring clasp. No cloud deployment is performed by this build.
 
 **Important:** Google Drive connector supports the Sheet but currently cannot create or push an Apps Script Project. The Apps Script project must be created/authorized with the owner's Google account before any first `clasp push`.
