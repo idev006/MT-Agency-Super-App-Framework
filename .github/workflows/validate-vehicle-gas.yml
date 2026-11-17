@@ -3,11 +3,13 @@ on:
   push:
     paths:
       - 'apps/vehicle-contact/backend/gas/**'
+      - 'apps/vehicle-contact/schema/**'
       - 'apps/vehicle-contact/docs/GAS_*'
       - '.github/workflows/validate-vehicle-gas.yml'
   pull_request:
     paths:
       - 'apps/vehicle-contact/backend/gas/**'
+      - 'apps/vehicle-contact/schema/**'
       - 'apps/vehicle-contact/docs/GAS_*'
       - '.github/workflows/validate-vehicle-gas.yml'
 permissions:
