@@ -39,3 +39,35 @@
 - **API-MEDIA-01:** Test authenticated 5-slot Drive photo upload/replacement and access checks in staging, with no real personal images.
 
 **Do not count bootstrap 7/7 success as full Phase-1 API UAT or production release approval.**
+
+---
+
+## Additional live verification — API Router v1 (2026-11-17, 21:56–21:57 Bangkok)
+
+**Source under test:** current owner-supplied existing `/exec` URL; **published deployment version was not independently read**. The logical error response `SERVICE_UNAVAILABLE` for declared protected routes is consistent with the current feature-gated router and differs from the earlier bootstrap-only `NOT_FOUND` behavior. This is a behavioral fingerprint only, **not** a verified GAS version number.
+
+**GitHub Actions HTTP evidence:** [run 44108687513](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44108687513), job `134128003028`, **success**.
+**Test source:** `backend/gas/scripts/smoke-api.mjs` — 11 synthetic non-sensitive cases. No actual password, API secret, user identifier, registration data, phone, photo or QR token sent.
+
+| Test ID | Operation | Expected/observed envelope | Result |
+|---|---|---|---|
+| LIVE-01 | GET health | HTTP 200; `ok=true`, status bootstrap | PASS |
+| LIVE-02 | POST health | HTTP 200; `ok=true`, status bootstrap | PASS |
+| LIVE-03 | POST invalid API version | HTTP 200; `BAD_REQUEST` | PASS |
+| LIVE-04 | POST invalid payload array | HTTP 200; `BAD_REQUEST` | PASS |
+| LIVE-05 | POST unknown route | HTTP 200; `NOT_FOUND` | PASS |
+| LIVE-06 | POST prototype-like group | HTTP 200; `BAD_REQUEST` | PASS |
+| LIVE-07 | POST protected vehicle lookup with forged role | HTTP 200; `SERVICE_UNAVAILABLE` | PASS |
+| LIVE-08 | POST protected contact read with forged role | HTTP 200; `SERVICE_UNAVAILABLE` | PASS |
+| LIVE-09 | POST protected QR resolve | HTTP 200; `SERVICE_UNAVAILABLE` | PASS |
+| LIVE-10 | POST login without credentials, feature off | HTTP 200; `SERVICE_UNAVAILABLE` | PASS |
+| LIVE-11 | POST health with synthetic requestId | HTTP 200; matching requestId | PASS |
+
+**Result:** `11/11 passed; 0 credential/PII/business-data payloads submitted`.
+The workflow is again **manual-only** after this explicitly scoped branch experiment.
+
+### AuthN/Session/RBAC unit+synthetic integration evidence
+- [CI run 44108687303](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44108687303) — completed successfully with 12 new `TC-*` integration tests.
+- Covers valid and invalid credential flow using a **test double** for hashing; session digest storage, six failed attempts/rate limit, forced password change, session expiry/idle/revocation/logout, role separation, suspended user, input errors and no sensitive values in failure response.
+- Does **not** prove success of real password login on the GAS/Sheets deployment, server-side RBAC during live authorized requests, encrypted transit beyond HTTPS or any production privacy/governance release gate.
+- `VEHICLE_API_ENABLED` should remain disabled until the direct GAS ingress security review and a separately authorized staged functional test plan.

@@ -2,12 +2,6 @@ name: Test P6 Vehicle Contact Live GAS API
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 'test/vehicle-gas-auth-session-rbac-20261117'
-    paths:
-      - 'apps/vehicle-contact/backend/gas/scripts/smoke-api.mjs'
-      - '.github/workflows/test-vehicle-gas-api.yml'
 
 permissions:
   contents: read
