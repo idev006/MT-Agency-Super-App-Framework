@@ -1,6 +1,6 @@
 {
   "schemaId": "p6-vehicle-contact/phase1",
-  "schemaVersion": "0.1.0-draft",
+  "schemaVersion": "0.2.0-draft",
   "status": "PROPOSED_NOT_BUSINESS_APPROVED",
   "storage": "google-sheets",
   "policy": {
@@ -117,6 +117,22 @@
           "key": null,
           "classification": "internal",
           "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "plate_type",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Approved business required attribute; nullable for legacy rows; validate on new writes"
+        },
+        {
+          "name": "organization_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Approved business required attribute; nullable for legacy rows; validate on new writes"
         }
       ]
     },
@@ -478,6 +494,1072 @@
           "key": null,
           "classification": "internal",
           "notes": "Candidate; pending business/data steward approval"
+        }
+      ]
+    },
+    "vc_users": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "username_normalized",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "display_name",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "password_hash",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "password_salt",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "password_change_required",
+          "type": "boolean",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "org_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_user_identities": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "identity_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "user_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "provider",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "provider_sub",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "linked_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_roles": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "role_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_user_roles": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "assignment_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "user_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "role_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_role_permissions": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "assignment_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "role_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "permission",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_user_permissions": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "assignment_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "user_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "permission",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_sessions": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "session_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "user_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "token_digest",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "issued_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "expires_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "idle_timeout_minutes",
+          "type": "integer",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "last_seen_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "revoked_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_organizations": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "organization_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "org_type",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "parent_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_campaigns": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "token_digest",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "starts_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "ends_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "max_submissions",
+          "type": "integer",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "submitted_count",
+          "type": "integer",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "revoked_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "created_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_registration_requests": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "request_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "submitted_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "application_json",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "idempotency_key",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_change_requests": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "change_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "proposed_delta",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "submitted_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "submitted_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "reviewed_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_retention_jobs": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "job_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "vehicle_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "due_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "approved_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "approved_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "attempts",
+          "type": "integer",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "last_error",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "legal_hold",
+          "type": "boolean",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_settings": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "key",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "updated_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_photo_staging": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "photo_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "campaign_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "slot",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "storage_ref",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "mime_type",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "size_bytes",
+          "type": "integer",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "used_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_idempotency": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "key",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "operation",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "actor_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "request_digest",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "result_json",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_operation_journal": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "event_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "operation",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "entity_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "actor_id",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "detail_json",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_migration_journal": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "migration_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "schema_version",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "backup_ref",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "started_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "completed_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "error",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        }
+      ]
+    },
+    "vc_security_events": {
+      "description": "Phase 1 logical extension; additive migration; no destructive changes",
+      "columns": [
+        {
+          "name": "event_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "username_digest",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "restricted",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Versioned forward-only extension; deployment approval separate"
         }
       ]
     }
