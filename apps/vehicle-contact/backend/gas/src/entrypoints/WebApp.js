@@ -32,3 +32,11 @@ export function proposeVehicleSchemaChangeFromEditor() {
   Logger.log(JSON.stringify(proposal));
   return proposal;
 }
+
+// Run only from GAS Editor. Dry-run by default; no public HTTP access.
+export function migrateVehicleSchemaFromEditor() {
+ const a=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp,lockService:LockService});
+ const result=a.migrateSchema({dryRun:true});
+ Logger.log(JSON.stringify(result));
+ return result;
+}

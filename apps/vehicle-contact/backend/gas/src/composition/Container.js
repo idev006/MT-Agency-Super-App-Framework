@@ -1,3 +1,4 @@
+import { createAdditiveMigration } from "../application/schema-sync/ExecuteMigration.js";
 import { createApiRouter } from "../api/routes/Router.js";
 import { createSheetsSchemaRepository } from "../infrastructure/persistence/sheets/SheetsSchemaRepository.js";
 import { verifySchemaUseCase } from "../application/use-cases/VerifySchema.js";
@@ -11,6 +12,10 @@ export function createApplication(deps={}) {
   }
   return Object.freeze({
     dispatch:router.dispatch,
+    migrateSchema(options){
+      const id=deps.propertiesService.getScriptProperties().getProperty("VEHICLE_SHEET_ID");
+      return createAdditiveMigration({spreadsheetApp:deps.spreadsheetApp,spreadsheetId:id,lockService:deps.lockService}).run(options);
+    },
     verifySchema(){return verifySchemaUseCase(schemaRepository());},
     inspectSchemaDrift(){
       const result=verifySchemaUseCase(schemaRepository());
