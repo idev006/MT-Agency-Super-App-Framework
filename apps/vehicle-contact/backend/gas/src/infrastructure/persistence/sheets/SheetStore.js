@@ -32,7 +32,7 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
  }
  // Store user-entered text as literal cells; prevents Sheets formula evaluation.
  function literalCell(value){
-  return typeof value==='string'&&/^[\\s]*[=+@-]/.test(value)?"'"+value:value;
+  return typeof value==='string'&&/^[\s]*[=+@-]/.test(value)?"'"+value:value;
  }
  function insert(name,data){
   const t=table(name);
