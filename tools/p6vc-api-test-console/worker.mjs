@@ -163,6 +163,67 @@ async function apiProbe(env,req){
   rawResponseIncluded:false,credentialsExposed:false,sessionTokensExposed:false};
 }
 
+
+/* Data-driven dev test runner.
+ * Frontend and future MCP can invoke the same POST /api/run-tests API.
+ * Accepts only read-only operations from server allowlist and bounded JSON.
+ * For each case explicit expected.ok is mandatory (no false positive on HTTP 200).
+ */
+function validateSuite(input){
+ if(!Array.isArray(input.cases)||input.cases.length<1||input.cases.length>10)
+  throw Error("INVALID_CASE_COUNT");
+ const ids=new Set();
+ for(const c of input.cases){
+  if(!c||typeof c!=="object"||Array.isArray(c))throw Error("INVALID_CASE");
+  if(typeof c.id!=="string"||!/^[A-Za-z0-9_.-]{2,64}$/.test(c.id)||ids.has(c.id))
+   throw Error("INVALID_CASE_ID");
+  ids.add(c.id);
+  if(!READ_ONLY_OPERATIONS.has(c.operation)||!safePayload(c.payload))
+   throw Error("UNSAFE_CASE");
+  if(!["GET","POST"].includes(c.method||"POST")||
+     c.method==="GET"&&c.operation!=="system.health")throw Error("INVALID_CASE_METHOD");
+  if(!c.expected||typeof c.expected!=="object"||typeof c.expected.ok!=="boolean")
+   throw Error("EXPECTED_RESULT_REQUIRED");
+  if(c.expected.errorCode!==undefined&&
+     (typeof c.expected.errorCode!=="string"||!/^[A-Z0-9_]{2,80}$/.test(c.expected.errorCode)))
+   throw Error("INVALID_EXPECTED_ERROR");
+ }
+}
+async function runTestSuite(env,input){
+ validateSuite(input);
+ const suiteId=typeof input.suiteId==="string"&&/^[A-Za-z0-9_.-]{2,50}$/.test(input.suiteId)?
+  input.suiteId:"manual-dev-suite";
+ const rows=[];
+ const started=Date.now();
+ for(const c of input.cases){
+  const startedAt=Date.now();
+  let observed=null;
+  try{
+   const result=await apiProbe(env,{
+    operation:c.operation,method:c.method||"POST",payload:c.payload,
+    useTestSession:c.useTestSession===true,
+    username:input.username||"",password:input.password||""
+   });
+   observed={transport:result.transport,ok:result.backend?.ok??null,
+    errorCode:result.backend?.errorCode??null,logoutRevoked:result.logoutRevoked};
+   const passed=!result.error&&!result.loginError&&
+    result.backend?.ok===c.expected.ok&&
+    (c.expected.errorCode===undefined||result.backend?.errorCode===c.expected.errorCode)&&
+    (!result.authenticated||result.logoutRevoked===true);
+   rows.push({id:c.id,operation:c.operation,status:passed?"PASS":"FAIL",
+    ms:Date.now()-startedAt,observed});
+  }catch(e){
+   rows.push({id:c.id,operation:c.operation,status:"FAIL",ms:Date.now()-startedAt,
+    observed:{errorCode:code(e.message)}});
+  }
+ }
+ const passed=rows.filter(x=>x.status==="PASS").length;
+ return {service:"p6vc-api-test-console",kind:"suite",suiteId,generatedAt:new Date().toISOString(),
+  status:passed===rows.length?"PASS":"FAIL",executed:rows.length,passed,failed:rows.length-passed,
+  elapsedMs:Date.now()-started,results:rows,rawResponseIncluded:false,
+  credentialsExposed:false,sessionTokensExposed:false};
+}
+
 const PAGE = [
 '<!doctype html><html lang="th"><head><meta charset="utf-8">',
 '<meta name="viewport" content="width=device-width, initial-scale=1">',
@@ -248,7 +309,7 @@ function serve(){
 export default {async fetch(request,env){
  const path=new URL(request.url).pathname;
  if(request.method==="GET"&&(path==="/"||path==="/index.html"))return serve();
- if(request.method!=="POST"||!["/api/health","/api/auth-suite","/api/probe"].includes(path))return reply({error:"NOT_FOUND"},404);
+ if(request.method!=="POST"||!["/api/health","/api/auth-suite","/api/probe","/api/run-tests"].includes(path))return reply({error:"NOT_FOUND"},404);
  if(!TARGET.test(env.P6VC_GAS_EXEC_URL||"")||!env.BRIDGE_ACCESS_KEY||env.BRIDGE_ACCESS_KEY.length<32)return reply({error:"BRIDGE_NOT_CONFIGURED"},503);
  const header=request.headers.get("authorization")||"";
  const m=/^Bearer (\S+)$/.exec(header);
@@ -266,6 +327,7 @@ export default {async fetch(request,env){
  if(path==="/api/probe"&&(!READ_ONLY_OPERATIONS.has(args.operation)||!safePayload(args.payload)))
   return reply({error:"OPERATION_OR_PAYLOAD_NOT_ALLOWED"},403);
  try{return reply(path==="/api/health"?await health(env):
-   path==="/api/auth-suite"?await auth(env,args):await apiProbe(env,args));}
+   path==="/api/auth-suite"?await auth(env,args):
+   path==="/api/run-tests"?await runTestSuite(env,args):await apiProbe(env,args));}
  catch{return reply({error:"TEST_EXECUTION_ERROR"},500);}
 }};
