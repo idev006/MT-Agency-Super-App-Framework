@@ -1,0 +1,46 @@
+<script setup>
+import { computed, useSlots } from 'vue'
+
+const props = defineProps({
+  eyebrow: { type: String, default: '' },
+  title: { type: String, required: true },
+  description: { type: String, default: '' },
+  size: { type: String, default: 'wide', validator: (value) => ['normal', 'wide', 'full'].includes(value) },
+})
+
+const slots = useSlots()
+const containerClass = computed(() => ({
+  normal: 'max-w-5xl',
+  wide: 'max-w-7xl',
+  full: 'max-w-none',
+}[props.size]))
+const contentClass = computed(() => slots.aside ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,.42fr)]' : '')
+</script>
+
+<template>
+  <article class="page-template mx-auto w-full space-y-6 p-4 sm:p-6 lg:p-8" :class="containerClass">
+    <nav v-if="$slots.breadcrumbs" class="text-sm text-base-content/55" aria-label="เส้นทางหน้าปัจจุบัน">
+      <slot name="breadcrumbs" />
+    </nav>
+
+    <header class="page-template__header">
+      <div class="min-w-0 flex-1">
+        <p v-if="eyebrow" class="text-sm font-bold text-primary">{{ eyebrow }}</p>
+        <h1 class="mt-1 text-3xl font-black leading-tight sm:text-4xl">{{ title }}</h1>
+        <p v-if="description" class="mt-3 max-w-3xl leading-7 text-base-content/65">{{ description }}</p>
+      </div>
+      <div v-if="$slots.actions" class="page-template__actions"><slot name="actions" /></div>
+    </header>
+
+    <section v-if="$slots.status" class="page-template__status" aria-label="สถานะของหน้า">
+      <slot name="status" />
+    </section>
+
+    <div class="page-template__content" :class="contentClass">
+      <main class="min-w-0"><slot /></main>
+      <aside v-if="$slots.aside" class="min-w-0 lg:sticky lg:top-24 lg:self-start"><slot name="aside" /></aside>
+    </div>
+
+    <footer v-if="$slots.footer" class="page-template__footer"><slot name="footer" /></footer>
+  </article>
+</template>

@@ -1,6 +1,6 @@
 # P6VC API Test Console — POC ที่กรอกค่าทดสอบเองได้
 
-> Version: POC 3 — เพิ่ม Direct AI Job Bridge และ Cloudflare KV โดย GAS Backend เดิมไม่เปลี่ยน
+> Version: POC 4 — เพิ่ม Frontend SPA Gateway โดย GAS Backend เดิมไม่เปลี่ยน
 
 ## เป้าหมาย
 
@@ -34,6 +34,18 @@ KV เก็บเฉพาะสถานะ Job และรายงานแ
 | `TEST_LOGIN_PASSWORD` | **Secret (optional)** | Password บัญชีทดสอบสำรอง |
 | `TEST_JOB_STORE` | **KV binding** | Namespace สำหรับ Job status/result และ idempotency |
 | `TEST_JOB_TTL_SECONDS` | Text (optional) | อายุผลลัพธ์ 3600–604800 วินาที; ค่าเริ่มต้น 604800 |
+| `FRONTEND_ALLOWED_ORIGINS` | Text | origin ที่เรียก `/api/frontend` ได้ คั่นด้วย comma เช่น `https://idev006.github.io,http://127.0.0.1:5173` |
+
+## Frontend SPA Gateway
+
+`POST /api/frontend` รับ canonical GAS envelope และ forward ไปยัง `P6VC_GAS_EXEC_URL` ที่กำหนดใน Worker เท่านั้น โดย POC อนุญาตเฉพาะ `system.health`, `auth.login`, `auth.session`, `auth.logout`
+
+- รองรับ `OPTIONS` CORS preflight
+- ไม่ใช้และไม่รับ `BRIDGE_ACCESS_KEY` จาก SPA
+- ไม่รับ GAS target URL จาก browser
+- GAS ยังคงเป็นผู้ตรวจ username/password, session และ role
+- Origin allowlist เป็นเพียง browser boundary ไม่ใช่ authentication
+- ต้องเพิ่ม rate limit/Cloudflare Access และทบทวน ingress ก่อนขยาย operation หรือใช้ข้อมูลจริง
 
 ถ้าไม่ใช้ค่าบัญชีทดสอบที่เก็บเป็น Secret สามารถกรอกทั้ง Username และ Password ใน Input Box ของหน้าเว็บได้ชั่วคราว โดยส่งผ่าน HTTPS และไม่เก็บใน Local Storage / รายงานผล หากกรอกเพียงช่องเดียวจะไม่ยอมทดสอบ Credential Pair
 

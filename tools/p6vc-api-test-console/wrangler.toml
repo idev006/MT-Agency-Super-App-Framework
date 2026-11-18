@@ -1,0 +1,10 @@
+name = "p6vc-api-test-console"
+main = "worker.mjs"
+compatibility_date = "2026-11-18"
+preview_urls = false
+
+[observability]
+enabled = true
+
+[observability.logs]
+enabled = true

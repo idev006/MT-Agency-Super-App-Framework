@@ -100,6 +100,7 @@ if(process.argv[2]==='--built'){
  if(existsSync(built)&&has(canonical))check(readFileSync(built,'utf8')===read(canonical),'Published scanner differs from canonical source');
  check(existsSync(join(out,'index.html')),'Missing generated app directory');
  check(existsSync(join(out,'qr-scanner-poc/index.html')),'Missing legacy URL redirect in generated artifact');
+ check(existsSync(join(out,'apps/vehicle-contact/frontend/index.html')),'Missing generated Vehicle Contact frontend');
 }
 for(const m of warnings)console.warn('WARN '+m);
 for(const m of failures)console.error('FAIL '+m);

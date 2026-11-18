@@ -2,7 +2,7 @@
 The directory source is `portal/apps.json` and `portal/index.template.html`. Application source is **only** in `apps/<app-id>/`; do not maintain copies in `docs/`.
 
 ## Build and deploy
-Run `node scripts/build-pages.mjs _site` to generate a disposable deployment artifact. The GitHub Actions workflow `.github/workflows/deploy-pages-ssot.yml` builds and deploys `_site/` via GitHub Pages Actions; no generated content is committed to Git.
+Build the Vehicle Contact SPA first, then run `node scripts/build-pages.mjs _site` to generate a disposable deployment artifact. The GitHub Actions workflow `.github/workflows/deploy-pages-ssot.yml` performs both steps and deploys `_site/` via GitHub Pages Actions; no generated content is committed to Git.
 
 **One-time setup:** Repository Settings → Pages → Build and deployment → Source = **GitHub Actions** (not “Deploy from a branch”). Without this switch, the legacy `main/docs` Pages source will not serve the new app page.
 

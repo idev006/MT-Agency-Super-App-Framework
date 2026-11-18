@@ -10,6 +10,16 @@
       "path": "./apps/vehicle-contact/poc/qr-scanner/",
       "source": "apps/vehicle-contact/poc/qr-scanner/index.html",
       "notice": "POC สำหรับทดลองกล้องบน Android/iOS — ยังไม่ใช่ระบบใช้งานจริง"
+    },
+    {
+      "id": "vehicle-contact-frontend",
+      "name": "P6 Vehicle Contact — Frontend POC",
+      "description": "Vue SPA สำหรับทดสอบ Sign in, role-based dashboard และการเชื่อมต่อ GAS ผ่าน Cloudflare Worker",
+      "kind": "poc",
+      "stage": "prototype",
+      "path": "./apps/vehicle-contact/frontend/",
+      "source": "apps/vehicle-contact/frontend/index.html",
+      "notice": "Development POC — ห้ามใช้ข้อมูลบุคคลจริงหรือบัญชี production"
     }
   ]
 }

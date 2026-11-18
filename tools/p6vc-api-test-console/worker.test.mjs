@@ -17,6 +17,10 @@ function request(path,body,auth=true,options={}){
   ...(options.headers||{})
  },...(body!==undefined?{body:JSON.stringify(body)}:{})});
 }
+function frontendRequest(body,origin='http://127.0.0.1:5173',method='POST'){
+ return new Request(BASE+'/api/frontend',{method,headers:{origin,'content-type':'application/json'},
+  ...(method==='POST'?{body:JSON.stringify(body)}:{})});
+}
 function memoryKV(){
  const data=new Map();
  return {data,async get(key){return data.get(key)??null;},
@@ -46,6 +50,52 @@ test('page renders input boxes and no embedded password or token',async()=>{
  assert.ok(html.includes('content-security-policy')===false);
  assert.ok(r.headers.get('content-security-policy')?.includes('nonce-'));
  assert.ok(!html.includes(PASSWORD));
+});
+test('frontend gateway preflight allows configured development origin',async()=>{
+ const r=await worker.fetch(frontendRequest(undefined,'http://127.0.0.1:5173','OPTIONS'),env());
+ assert.equal(r.status,204);
+ assert.equal(r.headers.get('access-control-allow-origin'),'http://127.0.0.1:5173');
+ assert.match(r.headers.get('access-control-allow-methods'),/POST/);
+});
+test('frontend gateway rejects unknown origin and operations outside the POC allowlist',async()=>{
+ let r=await worker.fetch(frontendRequest({},'https://evil.invalid','OPTIONS'),env());
+ assert.equal(r.status,403);
+ r=await worker.fetch(frontendRequest({apiVersion:'v1',group:'users',action:'list',payload:{},requestId:'frontend-test-01'}),env());
+ assert.equal(r.status,403);
+ assert.equal((await r.json()).error,'OPERATION_NOT_ALLOWED');
+});
+test('frontend gateway forwards health and preserves canonical GAS envelope',async()=>{
+ const fake=await fakeGAS(body=>{
+  assert.equal(body.group+'.'+body.action,'system.health');
+  return new Response(JSON.stringify({ok:true,requestId:body.requestId,data:{status:'bootstrap'},error:null}),{
+   status:200,headers:{'content-type':'application/json'}
+  });
+ });
+ try{
+  const r=await worker.fetch(frontendRequest({apiVersion:'v1',group:'system',action:'health',payload:{},requestId:'frontend-health-01'}),env());
+  const j=await r.json();
+  assert.equal(r.status,200);assert.equal(j.ok,true);assert.equal(j.data.status,'bootstrap');
+  assert.equal(j.requestId,'frontend-health-01');
+  assert.equal(r.headers.get('access-control-allow-origin'),'http://127.0.0.1:5173');
+ }finally{fake.restore();}
+});
+test('frontend gateway allows login session logout only with strict payloads',async()=>{
+ const fake=await fakeGAS(body=>{
+  if(body.group==='auth'&&body.action==='login')return envelope(true,{sessionToken:TOKEN});
+  if(body.group==='auth'&&body.action==='session')return envelope(true,{roles:['STAFF'],mustChangePassword:false});
+  if(body.group==='auth'&&body.action==='logout')return envelope(true,{revoked:true});
+  throw Error('Unexpected operation');
+ });
+ try{
+  const base={apiVersion:'v1',group:'auth',payload:{},requestId:'frontend-auth-01'};
+  let r=await worker.fetch(frontendRequest({...base,action:'login',payload:{username:'staff',password:PASSWORD}}),env());
+  assert.equal((await r.json()).data.sessionToken,TOKEN);
+  r=await worker.fetch(frontendRequest({...base,action:'session',sessionToken:TOKEN}),env());
+  assert.deepEqual((await r.json()).data.roles,['STAFF']);
+  r=await worker.fetch(frontendRequest({...base,action:'logout',sessionToken:TOKEN}),env());
+  assert.equal((await r.json()).data.revoked,true);
+  assert.deepEqual(fake.calls.map(x=>x.group+'.'+x.action),['auth.login','auth.session','auth.logout']);
+ }finally{fake.restore();}
 });
 test('access key is mandatory even for health and probes',async()=>{
  for(const path of ['/api/health','/api/probe']){

@@ -7,10 +7,22 @@
 const JSON_HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY"};
 const TARGET=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
 const READ_ONLY_OPERATIONS=new Set(["system.health","system.config.get","users.list","organizations.list","campaigns.list","registrations.listPending","vehicles.lookup","vehicles.history","changes.listPending","retention.jobStatus"]);
+const FRONTEND_OPERATIONS=new Set(["system.health","auth.login","auth.session","auth.logout"]);
 const JOB_ID=/^job_[0-9a-f]{32}$/;
 const IDEMPOTENCY_KEY=/^[A-Za-z0-9._:-]{8,128}$/;
 const JOB_TTL_SECONDS=7*24*60*60;
 const reply=(obj,status=200)=>new Response(JSON.stringify(obj),{status,headers:JSON_HEADERS});
+function allowedFrontendOrigin(request,env){
+ const origin=request.headers.get("origin")||"";
+ if(/^http:\/\/(127\.0\.0\.1|localhost):\d{2,5}$/.test(origin))return origin;
+ const configured=String(env.FRONTEND_ALLOWED_ORIGINS||"https://idev006.github.io")
+  .split(",").map(x=>x.trim()).filter(Boolean);
+ return configured.includes(origin)?origin:null;
+}
+function frontendHeaders(origin){return {...JSON_HEADERS,"access-control-allow-origin":origin,
+ "access-control-allow-methods":"POST, OPTIONS","access-control-allow-headers":"content-type",
+ "access-control-max-age":"600","vary":"Origin"};}
+const frontendReply=(origin,obj,status=200)=>new Response(JSON.stringify(obj),{status,headers:frontendHeaders(origin)});
 const code=x=>typeof x==="string"&&/^[A-Z0-9_]{1,80}$/.test(x)?x:"UNKNOWN";
 const summary=(kind,rows)=>({service:"p6vc-api-test-console",kind,generatedAt:new Date().toISOString(),
  result:rows.every(x=>x.result==="PASS")?"PASS":"FAIL",passed:rows.filter(x=>x.result==="PASS").length,
@@ -35,6 +47,38 @@ async function gas(env,group,action,payload={},token=null,method="POST",requestI
  if(!j||typeof j.ok!=="boolean"||!Object.hasOwn(j,"data")||!Object.hasOwn(j,"error"))
   throw Error("GAS_BAD_ENVELOPE");
  return j;
+}
+function validFrontendEnvelope(input){
+ if(!input||typeof input!=="object"||Array.isArray(input))return "INVALID_BODY";
+ const allowedFields=new Set(["apiVersion","group","action","payload","requestId","sessionToken"]);
+ if(Object.keys(input).some(key=>!allowedFields.has(key)))return "FIELDS_NOT_ALLOWED";
+ if(input.apiVersion!=="v1"||typeof input.group!=="string"||typeof input.action!=="string")return "INVALID_ENVELOPE";
+ const operation=input.group+"."+input.action;
+ if(!FRONTEND_OPERATIONS.has(operation))return "OPERATION_NOT_ALLOWED";
+ if(!input.payload||typeof input.payload!=="object"||Array.isArray(input.payload)||JSON.stringify(input.payload).length>1024)
+  return "INVALID_PAYLOAD";
+ if(typeof input.requestId!=="string"||!/^[A-Za-z0-9_-]{8,80}$/.test(input.requestId))return "INVALID_REQUEST_ID";
+ const keys=Object.keys(input.payload);
+ if(operation==="auth.login"){
+  if(keys.some(key=>!["username","password"].includes(key))||typeof input.payload.username!=="string"||
+   input.payload.username.length<1||input.payload.username.length>100||typeof input.payload.password!=="string"||
+   input.payload.password.length<1||input.payload.password.length>128||input.sessionToken!==undefined)return "INVALID_LOGIN_PAYLOAD";
+ }else if(keys.length||operation==="system.health"&&input.sessionToken!==undefined||
+  operation.startsWith("auth.")&&!/^[0-9a-f]{64}$/i.test(input.sessionToken||""))return "INVALID_SESSION_PAYLOAD";
+ return null;
+}
+async function frontendGateway(request,env,origin){
+ const raw=await request.text();
+ if(raw.length>4096)return frontendReply(origin,{error:"REQUEST_TOO_LARGE"},413);
+ if(request.headers.get("content-type")?.split(";")[0]!=="application/json")
+  return frontendReply(origin,{error:"JSON_REQUIRED"},415);
+ let input;try{input=JSON.parse(raw);}catch{return frontendReply(origin,{error:"INVALID_JSON"},400);}
+ const invalid=validFrontendEnvelope(input);
+ if(invalid)return frontendReply(origin,{error:invalid},403);
+ try{
+  const result=await gas(env,input.group,input.action,input.payload,input.sessionToken||null,"POST",input.requestId);
+  return frontendReply(origin,result);
+ }catch{return frontendReply(origin,{error:"GATEWAY_UPSTREAM_ERROR"},502);}
 }
 async function test(rows,id,fn){
  const t=Date.now();
@@ -400,6 +444,14 @@ function serve(){
 export default {async fetch(request,env){
  const path=new URL(request.url).pathname;
  if(request.method==="GET"&&(path==="/"||path==="/index.html"))return serve();
+ if(path==="/api/frontend"){
+  const origin=allowedFrontendOrigin(request,env);
+  if(!origin)return reply({error:"ORIGIN_NOT_ALLOWED"},403);
+  if(request.method==="OPTIONS")return new Response(null,{status:204,headers:frontendHeaders(origin)});
+  if(request.method!=="POST")return frontendReply(origin,{error:"METHOD_NOT_ALLOWED"},405);
+  if(!TARGET.test(env.P6VC_GAS_EXEC_URL||""))return frontendReply(origin,{error:"GATEWAY_NOT_CONFIGURED"},503);
+  return frontendGateway(request,env,origin);
+ }
  const jobMatch=/^\/api\/jobs\/(job_[0-9a-f]{32})$/.exec(path);
  const postAllowed=request.method==="POST"&&["/api/health","/api/auth-suite","/api/probe","/api/run-tests","/api/jobs"].includes(path);
  if(!postAllowed&&!(request.method==="GET"&&jobMatch))return reply({error:"NOT_FOUND"},404);
