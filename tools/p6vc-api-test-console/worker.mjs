@@ -1,0 +1,144 @@
+/* P6VC API Test Console — minimal Cloudflare Worker.
+ * The public GitHub source contains NO GAS password, tokens or access keys.
+ * Secrets required: BRIDGE_ACCESS_KEY, TEST_LOGIN_PASSWORD
+ * Text vars: P6VC_GAS_EXEC_URL, TEST_LOGIN_USERNAME
+ * Restriction: health and auth tests only; never accepts arbitrary URL/action.
+ */
+const JSON_HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY"};
+const TARGET=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
+const reply=(obj,status=200)=>new Response(JSON.stringify(obj),{status,headers:JSON_HEADERS});
+const code=x=>typeof x==="string"&&/^[A-Z0-9_]{1,80}$/.test(x)?x:"UNKNOWN";
+const summary=(kind,rows)=>({service:"p6vc-api-test-console",kind,generatedAt:new Date().toISOString(),
+ result:rows.every(x=>x.result==="PASS")?"PASS":"FAIL",passed:rows.filter(x=>x.result==="PASS").length,
+ failed:rows.filter(x=>x.result==="FAIL").length,tests:rows,credentialsExposed:false,sessionTokensExposed:false});
+async function sameKey(a,b){
+ if(typeof a!=="string"||typeof b!=="string"||a.length<32||b.length<32)return false;
+ const hashed=async s=>new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)));
+ const [x,y]=await Promise.all([hashed(a),hashed(b)]);let diff=0;
+ for(let i=0;i<x.length;i++)diff|=x[i]^y[i];
+ return diff===0;
+}
+async function gas(env,group,action,payload={},token=null,method="POST"){
+ const options={method,redirect:"follow",signal:AbortSignal.timeout(40000),headers:{"accept":"application/json"}};
+ if(method==="POST"){
+  options.headers["content-type"]="text/plain;charset=utf-8";
+  options.body=JSON.stringify({apiVersion:"v1",group,action,payload,...(token?{sessionToken:token}:{})});
+ }
+ let r;
+ try{r=await fetch(env.P6VC_GAS_EXEC_URL,options);}catch{throw Error("GAS_NETWORK_ERROR");}
+ if(r.status!==200)throw Error("GAS_HTTP_ERROR");
+ let j;try{j=await r.json();}catch{throw Error("GAS_NON_JSON");}
+ if(!j||typeof j.ok!=="boolean"||!Object.hasOwn(j,"data")||!Object.hasOwn(j,"error"))
+  throw Error("GAS_BAD_ENVELOPE");
+ return j;
+}
+async function test(rows,id,fn){
+ const t=Date.now();
+ try{const detail=await fn();rows.push({id,result:"PASS",ms:Date.now()-t,detail:detail||""});return true;}
+ catch(e){rows.push({id,result:"FAIL",ms:Date.now()-t,error:code(e.message)});return false;}
+}
+function expect(j,expectedOk,errorCode){
+ if(j.ok!==expectedOk)throw Error("UNEXPECTED_API_STATUS");
+ if(!expectedOk&&j.error?.code!==errorCode)throw Error("UNEXPECTED_API_ERROR");
+}
+async function health(env){
+ const rows=[];
+ await test(rows,"HEALTH-01.GET",async()=>{
+  const j=await gas(env,"system","health",{},null,"GET");expect(j,true);
+  if(j.data?.status!=="bootstrap")throw Error("HEALTH_STATUS_UNEXPECTED");
+ });
+ await test(rows,"HEALTH-02.POST",async()=>{expect(await gas(env,"system","health"),true);});
+ return summary("health",rows);
+}
+async function auth(env){
+ const rows=[];let token=null;
+ if(typeof env.TEST_LOGIN_USERNAME!=="string"||!env.TEST_LOGIN_USERNAME||
+ typeof env.TEST_LOGIN_PASSWORD!=="string"||env.TEST_LOGIN_PASSWORD.length<12)
+ return summary("auth",[{id:"CONFIG",result:"FAIL",error:"TEST_CREDENTIALS_MISSING"}]);
+ await test(rows,"LOGIN-01.HEALTH",async()=>expect(await gas(env,"system","health",{},null,"GET"),true));
+ await test(rows,"LOGIN-02.INVALID_EMPTY_PAYLOAD",async()=>expect(await gas(env,"auth","login",{}),false,"INVALID_REQUEST"));
+ await test(rows,"LOGIN-03.UNAUTHENTICATED_SESSION",async()=>expect(await gas(env,"auth","session"),false,"UNAUTHENTICATED"));
+ const loginOk=await test(rows,"LOGIN-04.VALID_CREDENTIALS",async()=>{
+  const j=await gas(env,"auth","login",{username:env.TEST_LOGIN_USERNAME,password:env.TEST_LOGIN_PASSWORD});
+  if(!j.ok)throw Error("LOGIN_DENIED_"+code(j.error?.code));
+  if(!/^[0-9a-f]{64}$/i.test(j.data?.sessionToken||""))throw Error("SESSION_TOKEN_INVALID");
+  token=j.data.sessionToken;return "login accepted; token hidden";
+ });
+ try{
+  if(loginOk&&token){
+   await test(rows,"LOGIN-05.SESSION_AND_ROLE",async()=>{
+    const j=await gas(env,"auth","session",{},token);expect(j,true);
+    if(!Array.isArray(j.data?.roles)||!j.data.roles.includes("SYSTEM_ADMIN"))throw Error("SYSTEM_ADMIN_MISSING");
+    return "SYSTEM_ADMIN";
+   });
+   await test(rows,"LOGIN-06.PASSWORD_CHANGE_POLICY",async()=>{
+    const j=await gas(env,"auth","session",{},token);expect(j,true);
+    if(j.data?.mustChangePassword!==true)throw Error("PASSWORD_CHANGE_POLICY_INVALID");
+    return "mustChangePassword=true";
+   });
+  }
+ }finally{
+  if(token){
+   const out=await test(rows,"LOGIN-07.LOGOUT",async()=>{
+    const j=await gas(env,"auth","logout",{},token);expect(j,true);
+    if(j.data?.revoked!==true)throw Error("LOGOUT_NOT_REVOKED");
+    return "revoked=true";
+   });
+   if(out)await test(rows,"LOGIN-08.REVOKED_SESSION_DENIAL",async()=>{
+    expect(await gas(env,"auth","session",{},token),false,"UNAUTHENTICATED");
+   });
+  }
+ }
+ return summary("auth",rows);
+}
+const PAGE = [
+'<!doctype html><html lang="th"><head><meta charset="utf-8">',
+'<meta name="viewport" content="width=device-width, initial-scale=1">',
+'<meta name="referrer" content="no-referrer"><title>P6VC API Test Console</title>',
+'<style>body{font:16px system-ui,sans-serif;background:#0c1728;color:#eaf3fa;max-width:760px;margin:auto;padding:26px 16px}',
+'h1{font-size:25px}p{color:#b3ccdb;line-height:1.6}section{background:#15263b;border:1px solid #34516d;border-radius:14px;padding:18px;margin:16px 0}',
+'input{box-sizing:border-box;width:100%;padding:14px;color:white;background:#0b1a2d;border:1px solid #56748b;border-radius:8px}',
+'button{margin:10px 6px 5px 0;padding:12px;border:0;border-radius:8px;background:#5de0de;color:#11232c;font-weight:700}',
+'pre{white-space:pre-wrap;word-break:break-word;max-height:420px;overflow:auto;background:#07101d;padding:14px;border-radius:9px}',
+'.warn{color:#ffd7ab}</style></head><body><h1>P6 Vehicle Contact · API Test Console</h1>',
+'<p>ทดสอบ GAS ผ่าน Cloudflare Worker โดยไม่ผ่าน GitHub Actions</p>',
+'<section><label for="key">Bridge Access Key</label><input id="key" type="password" autocomplete="off">',
+'<p>คีย์นี้ไม่ใช่รหัสผ่าน admin และจะไม่เก็บลงใน Browser Storage</p>',
+'<button id="health">ทดสอบ Health API</button><button id="login">ทดสอบ Login 8 กรณี</button>',
+'<p class="warn">Login จะสร้าง Security Event/Session ทดสอบ และ Logout เมื่อสำเร็จ ไม่ใช้ข้อมูลจริง</p></section>',
+'<section><strong id="state">ยังไม่ได้ทดสอบ</strong><p><button id="copy" disabled>คัดลอกรายงาน JSON</button></p>',
+'<pre id="output">กดปุ่มทดสอบเพื่อเริ่มต้น</pre></section>',
+'<script nonce="__NONCE__">(function(){',
+'const key=document.getElementById("key"),out=document.getElementById("output"),state=document.getElementById("state"),',
+'copy=document.getElementById("copy"),h=document.getElementById("health"),l=document.getElementById("login");',
+'let last="";async function run(path){if(key.value.trim().length<32){state.textContent="กรุณากรอก Access Key";return;}',
+'copy.disabled=true;h.disabled=true;l.disabled=true;out.textContent="กำลังทดสอบ...";state.textContent="กำลังเรียก API";',
+'try{const r=await fetch(path,{method:"POST",headers:{authorization:"Bearer "+key.value.trim()},signal:AbortSignal.timeout(120000),cache:"no-store"});',
+'const j=await r.json();if(!r.ok){state.textContent="ERROR "+r.status;out.textContent=j.error||"UNKNOWN";return;}',
+'last=JSON.stringify(j,null,2);out.textContent=last;state.textContent=j.result+" "+j.passed+"/"+j.tests.length;copy.disabled=false;',
+'}catch{state.textContent="NETWORK_ERROR";out.textContent="ไม่สามารถรับผล HTTP ได้";}',
+'finally{h.disabled=false;l.disabled=false;}}',
+'h.onclick=()=>run("/api/health");l.onclick=()=>run("/api/auth-suite");',
+'copy.onclick=async()=>{try{await navigator.clipboard.writeText(last);state.textContent+=" · คัดลอกแล้ว";}catch{state.textContent+=" · กรุณาเลือกคัดลอกข้อความเอง";}};',
+'})();</script></body></html>'
+].join("");
+function serve(){
+ const nonce=Array.from(crypto.getRandomValues(new Uint8Array(16)),x=>x.toString(16).padStart(2,"0")).join("");
+ return new Response(PAGE.replace("__NONCE__",nonce),{headers:{
+ "content-type":"text/html; charset=utf-8","cache-control":"no-store","x-frame-options":"DENY",
+ "referrer-policy":"no-referrer","x-content-type-options":"nosniff",
+ "content-security-policy":"default-src 'none'; script-src 'nonce-"+nonce+"'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'"
+ }});
+}
+export default {async fetch(request,env){
+ const path=new URL(request.url).pathname;
+ if(request.method==="GET"&&(path==="/"||path==="/index.html"))return serve();
+ if(request.method!=="POST"||!["/api/health","/api/auth-suite"].includes(path))return reply({error:"NOT_FOUND"},404);
+ if(!TARGET.test(env.P6VC_GAS_EXEC_URL||"")||!env.BRIDGE_ACCESS_KEY||env.BRIDGE_ACCESS_KEY.length<32)return reply({error:"BRIDGE_NOT_CONFIGURED"},503);
+ const header=request.headers.get("authorization")||"";
+ const m=/^Bearer (\S+)$/.exec(header);
+ if(!m||!(await sameKey(m[1],env.BRIDGE_ACCESS_KEY)))return reply({error:"UNAUTHORIZED"},401);
+ if((await request.text()).length)return reply({error:"BODY_NOT_ALLOWED"},400);
+ try{return reply(path==="/api/health"?await health(env):await auth(env));}
+ catch{return reply({error:"TEST_EXECUTION_ERROR"},500);}
+}};
