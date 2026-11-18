@@ -150,3 +150,54 @@ test('partial form credential does not silently combine with Worker secret',asyn
  assert.equal(j.result,'FAIL');
  assert.equal(j.tests[0].error,'CREDENTIAL_PAIR_REQUIRED');
 });
+
+test('data-driven suite runs multiple read-only cases, checks business error not just HTTP',async()=>{
+ const mock=await fakeGAS(body=>{
+  if(body.group==='system'&&body.action==='health')return envelope(true,{status:'bootstrap'});
+  if(body.group==='users'&&body.action==='list')
+   return envelope(false,null,{code:'UNAUTHENTICATED',message:'DO_NOT_LEAK'});
+  throw Error('Unexpected operation');
+ });
+ try{
+  const r=await worker.fetch(request('/api/run-tests',{
+   suiteId:'smoke-anonymous',
+   cases:[
+    {id:'S-01',operation:'system.health',method:'POST',payload:{},expected:{ok:true}},
+    {id:'S-02',operation:'users.list',method:'POST',payload:{limit:1},expected:{ok:false,errorCode:'UNAUTHENTICATED'}}
+   ]
+  }),env());
+  assert.equal(r.status,200);
+  const j=await r.json();
+  assert.equal(j.status,'PASS');assert.equal(j.passed,2);assert.equal(j.failed,0);
+  assert.deepEqual(mock.calls.map(c=>c.group+'.'+c.action),['system.health','users.list']);
+  assert.ok(!JSON.stringify(j).includes('DO_NOT_LEAK'));
+ }finally{mock.restore();}
+});
+test('suite marks unexpected API logical error as FAIL, even if HTTP 200',async()=>{
+ const mock=await fakeGAS(()=>envelope(false,null,{code:'UNAUTHENTICATED'}));
+ try{
+  const j=await (await worker.fetch(request('/api/run-tests',{cases:[
+   {id:'S-01',operation:'users.list',payload:{limit:1},expected:{ok:true}}
+  ]}),env())).json();
+  assert.equal(j.passed,0);assert.equal(j.failed,1);assert.equal(j.status,'FAIL');
+  assert.equal(j.results[0].observed.errorCode,'UNAUTHENTICATED');
+ }finally{mock.restore();}
+});
+test('suite refuses write operations, payload with secrets, oversized suites',async()=>{
+ const bad=[
+  {cases:[{id:'S-01',operation:'users.create',payload:{},expected:{ok:true}}]},
+  {cases:[{id:'S-01',operation:'users.list',payload:{sessionToken:'oops'},expected:{ok:true}}]},
+  {cases:Array.from({length:11},(_,i)=>({id:'CASE-'+i,operation:'system.health',payload:{},expected:{ok:true}}))}
+ ];
+ for(const body of bad){
+  const r=await worker.fetch(request('/api/run-tests',body),env());
+  assert.equal(r.status,500);
+  const j=await r.json();assert.equal(j.error,'TEST_EXECUTION_ERROR');
+ }
+});
+test('suite enforces expected result on every test case',async()=>{
+ const r=await worker.fetch(request('/api/run-tests',{cases:[{
+  id:'S-01',operation:'system.health',payload:{}
+ }]}),env());
+ assert.equal(r.status,500);
+});
