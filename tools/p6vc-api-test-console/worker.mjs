@@ -2,11 +2,14 @@
  * The public GitHub source contains NO GAS password, tokens or access keys.
  * Secrets required: BRIDGE_ACCESS_KEY, TEST_LOGIN_PASSWORD
  * Text vars: P6VC_GAS_EXEC_URL, TEST_LOGIN_USERNAME
- * Restriction: health and auth tests only; never accepts arbitrary URL/action.
+ * Restriction: allowlisted read-only tests only; never accepts arbitrary URL/action.
  */
 const JSON_HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY"};
 const TARGET=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
 const READ_ONLY_OPERATIONS=new Set(["system.health","system.config.get","users.list","organizations.list","campaigns.list","registrations.listPending","vehicles.lookup","vehicles.history","changes.listPending","retention.jobStatus"]);
+const JOB_ID=/^job_[0-9a-f]{32}$/;
+const IDEMPOTENCY_KEY=/^[A-Za-z0-9._:-]{8,128}$/;
+const JOB_TTL_SECONDS=7*24*60*60;
 const reply=(obj,status=200)=>new Response(JSON.stringify(obj),{status,headers:JSON_HEADERS});
 const code=x=>typeof x==="string"&&/^[A-Z0-9_]{1,80}$/.test(x)?x:"UNKNOWN";
 const summary=(kind,rows)=>({service:"p6vc-api-test-console",kind,generatedAt:new Date().toISOString(),
@@ -189,10 +192,13 @@ function validateSuite(input){
    throw Error("INVALID_EXPECTED_ERROR");
  }
 }
+function suiteId(input){
+ return typeof input.suiteId==="string"&&/^[A-Za-z0-9_.-]{2,50}$/.test(input.suiteId)?
+  input.suiteId:"manual-dev-suite";
+}
 async function runTestSuite(env,input){
  validateSuite(input);
- const suiteId=typeof input.suiteId==="string"&&/^[A-Za-z0-9_.-]{2,50}$/.test(input.suiteId)?
-  input.suiteId:"manual-dev-suite";
+ const normalizedSuiteId=suiteId(input);
  const rows=[];
  const started=Date.now();
  for(const c of input.cases){
@@ -218,10 +224,74 @@ async function runTestSuite(env,input){
   }
  }
  const passed=rows.filter(x=>x.status==="PASS").length;
- return {service:"p6vc-api-test-console",kind:"suite",suiteId,generatedAt:new Date().toISOString(),
+ return {service:"p6vc-api-test-console",kind:"suite",suiteId:normalizedSuiteId,generatedAt:new Date().toISOString(),
   status:passed===rows.length?"PASS":"FAIL",executed:rows.length,passed,failed:rows.length-passed,
   elapsedMs:Date.now()-started,results:rows,rawResponseIncluded:false,
   credentialsExposed:false,sessionTokensExposed:false};
+}
+
+function jobStore(env){
+ const store=env.TEST_JOB_STORE;
+ return store&&typeof store.get==="function"&&typeof store.put==="function"?store:null;
+}
+function jobTtl(env){
+ const value=Number(env.TEST_JOB_TTL_SECONDS);
+ return Number.isInteger(value)&&value>=3600&&value<=JOB_TTL_SECONDS?value:JOB_TTL_SECONDS;
+}
+async function digest(value){
+ const bytes=new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)));
+ return Array.from(bytes,x=>x.toString(16).padStart(2,"0")).join("");
+}
+async function readJob(store,jobId){
+ const raw=await store.get("job:"+jobId);
+ if(typeof raw!=="string"||!raw)return null;
+ try{return JSON.parse(raw);}catch{return null;}
+}
+async function writeJob(store,record,ttl){
+ await store.put("job:"+record.jobId,JSON.stringify(record),{expirationTtl:ttl});
+}
+async function createTestJob(request,env,input){
+ const store=jobStore(env);
+ if(!store)return reply({error:"JOB_STORE_NOT_CONFIGURED"},503);
+ const key=request.headers.get("idempotency-key")||"";
+ if(!IDEMPOTENCY_KEY.test(key))return reply({error:"IDEMPOTENCY_KEY_REQUIRED"},400);
+ if(Object.keys(input).some(x=>!["suiteId","cases"].includes(x)))
+  return reply({error:"JOB_FIELDS_NOT_ALLOWED"},400);
+ try{validateSuite(input);}catch(e){return reply({error:code(e.message)},400);}
+ const ttl=jobTtl(env),fingerprint=await digest(key),requestHash=await digest(JSON.stringify(input));
+ const idempotencyRecord="idempotency:"+fingerprint,existingRaw=await store.get(idempotencyRecord);
+ let existingMap=null;
+ try{existingMap=typeof existingRaw==="string"?JSON.parse(existingRaw):null;}catch{}
+ if(existingMap?.requestHash&&existingMap.requestHash!==requestHash)
+  return reply({error:"IDEMPOTENCY_KEY_REUSED"},409);
+ if(existingMap&&JOB_ID.test(existingMap.jobId||"")){
+  const existing=await readJob(store,existingMap.jobId);
+  if(existing)return reply({...existing,replayed:true});
+ }
+ const jobId="job_"+crypto.randomUUID().replaceAll("-",""),createdAt=new Date().toISOString();
+ let record={service:"p6vc-api-test-console",kind:"test-job",jobId,
+  suiteId:suiteId(input),
+  status:"RUNNING",createdAt,updatedAt:createdAt,replayed:false,
+  credentialsExposed:false,sessionTokensExposed:false};
+ try{
+  await writeJob(store,record,ttl);
+  await store.put(idempotencyRecord,JSON.stringify({jobId,requestHash}),{expirationTtl:ttl});
+  const report=await runTestSuite(env,input);
+  record={...record,status:"COMPLETED",updatedAt:new Date().toISOString(),report};
+  await writeJob(store,record,ttl);
+  return reply(record,201);
+ }catch{
+  record={...record,status:"FAILED",updatedAt:new Date().toISOString(),error:"TEST_EXECUTION_ERROR"};
+  try{await writeJob(store,record,ttl);}catch{}
+  return reply(record,500);
+ }
+}
+async function getTestJob(env,jobId){
+ const store=jobStore(env);
+ if(!store)return reply({error:"JOB_STORE_NOT_CONFIGURED"},503);
+ if(!JOB_ID.test(jobId))return reply({error:"INVALID_JOB_ID"},400);
+ const record=await readJob(store,jobId);
+ return record?reply(record):reply({error:"JOB_NOT_FOUND"},404);
 }
 
 const PAGE = [
@@ -330,11 +400,14 @@ function serve(){
 export default {async fetch(request,env){
  const path=new URL(request.url).pathname;
  if(request.method==="GET"&&(path==="/"||path==="/index.html"))return serve();
- if(request.method!=="POST"||!["/api/health","/api/auth-suite","/api/probe","/api/run-tests"].includes(path))return reply({error:"NOT_FOUND"},404);
+ const jobMatch=/^\/api\/jobs\/(job_[0-9a-f]{32})$/.exec(path);
+ const postAllowed=request.method==="POST"&&["/api/health","/api/auth-suite","/api/probe","/api/run-tests","/api/jobs"].includes(path);
+ if(!postAllowed&&!(request.method==="GET"&&jobMatch))return reply({error:"NOT_FOUND"},404);
  if(!TARGET.test(env.P6VC_GAS_EXEC_URL||"")||!env.BRIDGE_ACCESS_KEY||env.BRIDGE_ACCESS_KEY.length<32)return reply({error:"BRIDGE_NOT_CONFIGURED"},503);
  const header=request.headers.get("authorization")||"";
  const m=/^Bearer (\S+)$/.exec(header);
  if(!m||!(await sameKey(m[1],env.BRIDGE_ACCESS_KEY)))return reply({error:"UNAUTHORIZED"},401);
+ if(jobMatch)return getTestJob(env,jobMatch[1]);
  const raw=await request.text();
  if(raw.length>8192)return reply({error:"REQUEST_TOO_LARGE"},413);
  let args={};
@@ -347,6 +420,7 @@ export default {async fetch(request,env){
  if(path==="/api/health"&&raw)return reply({error:"BODY_NOT_ALLOWED"},400);
  if(path==="/api/probe"&&(!READ_ONLY_OPERATIONS.has(args.operation)||!safePayload(args.payload)))
   return reply({error:"OPERATION_OR_PAYLOAD_NOT_ALLOWED"},403);
+ if(path==="/api/jobs")return createTestJob(request,env,args);
  try{return reply(path==="/api/health"?await health(env):
    path==="/api/auth-suite"?await auth(env,args):
    path==="/api/run-tests"?await runTestSuite(env,args):await apiProbe(env,args));}

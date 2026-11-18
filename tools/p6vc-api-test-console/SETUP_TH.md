@@ -1,18 +1,28 @@
 # P6VC API Test Console — POC ที่กรอกค่าทดสอบเองได้
 
-> Version: POC 2 — โค้ดเก็บใน GitHub Branch ทดสอบ, Runtime เป็น Cloudflare Worker, GAS Backend เดิมไม่เปลี่ยน
+> Version: POC 3 — เพิ่ม Direct AI Job Bridge และ Cloudflare KV โดย GAS Backend เดิมไม่เปลี่ยน
 
 ## เป้าหมาย
 
-หลัง Deploy POC 2 **เพียงหนึ่งครั้ง** ผู้ใช้สามารถแก้ไขค่าทดสอบแต่ละครั้งผ่าน Input Box ได้ โดย **ไม่ต้อง Deploy ใหม่** ได้แก่ API Operation, Method, JSON Payload, Request ID และ Username/Password สำหรับบัญชีทดสอบแบบชั่วคราว
+หลัง Deploy POC 3 **เพียงหนึ่งครั้ง** ผู้ใช้สามารถแก้ไขค่าทดสอบแต่ละครั้งผ่าน Input Box ได้ โดย **ไม่ต้อง Deploy ใหม่** ได้แก่ API Operation, Method, JSON Payload, Request ID และ Username/Password สำหรับบัญชีทดสอบแบบชั่วคราว
 
 ## ติดตั้งโดยไม่ต้องดาวน์โหลดไฟล์ (มือถือ)
 
-1. เปิด [worker.mjs รุ่น POC 2 บน GitHub](https://github.com/idev006/MT-Agency-Super-App-Framework/blob/feat/p6vc-cloudflare-api-test-console-poc-20261118/tools/p6vc-api-test-console/worker.mjs)
+1. เปิด [worker.mjs รุ่น POC 3 บน GitHub](https://github.com/idev006/MT-Agency-Super-App-Framework/blob/feat/p6vc-cloudflare-api-test-console-poc-20261118/tools/p6vc-api-test-console/worker.mjs)
 2. กด **Copy raw file** หรือ **Raw** แล้วคัดลอกโค้ด (ถ้าปุ่มไม่แสดง ใช้ **Desktop site** ของ Chrome)
 3. เข้า [Cloudflare Dashboard](https://dash.cloudflare.com/) → Workers & Pages → `p6vc-api-test-console` → **Edit code**
 4. **แทนที่โค้ดเดิมทั้งหมด** ด้วยโค้ดรุ่นนี้ แล้วกด **Deploy** (Deploy นี้เป็นครั้งเดียวที่ต้องทำเมื่อเปลี่ยนฟังก์ชันของตัว Console ไม่ต้อง Deploy เมื่อเปลี่ยนค่าทดสอบในฟอร์ม)
 5. **ห้ามลบ/Reset** GAS Login, Google Sheets หรือค่าที่ตั้งไว้ก่อนหน้า เพราะการทดสอบ Health และ Authentication รุ่นเดิมผ่านแล้ว
+
+## เพิ่ม KV สำหรับ AI Job Bridge
+
+1. Cloudflare Dashboard → **Workers & Pages → KV → Create namespace**
+2. ตั้งชื่อ namespace เช่น `p6vc-api-test-jobs-dev`
+3. เปิด Worker `p6vc-api-test-console` → **Settings → Bindings → Add binding → KV Namespace**
+4. Variable name ต้องเป็น `TEST_JOB_STORE` และเลือก namespace ที่สร้างไว้
+5. บันทึก Binding แล้ว Deploy โค้ดรุ่นนี้หนึ่งครั้ง
+
+KV เก็บเฉพาะสถานะ Job และรายงานแบบ redacted ไม่เก็บ Payload ดิบจาก GAS, Password, Bridge Key หรือ Session Token ค่าเริ่มต้นหมดอายุภายใน 7 วัน
 
 ## Cloudflare Variables and Secrets
 
@@ -22,6 +32,8 @@
 | `BRIDGE_ACCESS_KEY` | **Secret** | คีย์ใหม่สุ่ม >=32 ตัวอักษร ไม่ใช่รหัสผ่าน GAS |
 | `TEST_LOGIN_USERNAME` | Text (optional) | Username บัญชีทดสอบสำรอง |
 | `TEST_LOGIN_PASSWORD` | **Secret (optional)** | Password บัญชีทดสอบสำรอง |
+| `TEST_JOB_STORE` | **KV binding** | Namespace สำหรับ Job status/result และ idempotency |
+| `TEST_JOB_TTL_SECONDS` | Text (optional) | อายุผลลัพธ์ 3600–604800 วินาที; ค่าเริ่มต้น 604800 |
 
 ถ้าไม่ใช้ค่าบัญชีทดสอบที่เก็บเป็น Secret สามารถกรอกทั้ง Username และ Password ใน Input Box ของหน้าเว็บได้ชั่วคราว โดยส่งผ่าน HTTPS และไม่เก็บใน Local Storage / รายงานผล หากกรอกเพียงช่องเดียวจะไม่ยอมทดสอบ Credential Pair
 
@@ -33,6 +45,37 @@
 4. **API Explorer** — เลือก Operation ที่อยู่ใน Read-only Allowlist, เลือก GET เฉพาะ system.health หรือ POST, แก้ `Payload JSON` และ `Request ID` ได้เอง
 5. **Use Test Session** — ถ้าเลือก ระบบ Login ชั่วคราวจากบัญชีทดสอบก่อนยิง Read-only API แล้วพยายาม Logout ใน `finally` โดยไม่ส่ง Session Token กลับ Browser
 6. **Copy Report** — คัดลอกรายงานแบบตัดข้อมูลสำคัญ (ไม่รวม Response Data, PII, Password, Session Token)
+
+## เรียกจาก AI/Codex ผ่าน HTTPS โดยตรง
+
+เก็บคีย์ไว้ใน Environment Variable ของเครื่องที่รัน Codex ห้ามใส่ค่าจริงในไฟล์ Source:
+
+```powershell
+$headers = @{
+  Authorization = "Bearer $env:P6VC_BRIDGE_ACCESS_KEY"
+  "Idempotency-Key" = "p6vc-health-20261118-001"
+}
+$suite = @{
+  suiteId = "health-smoke"
+  cases = @(@{
+    id = "H-01"
+    operation = "system.health"
+    method = "POST"
+    payload = @{}
+    expected = @{ ok = $true }
+  })
+} | ConvertTo-Json -Depth 8
+
+$job = Invoke-RestMethod `
+  -Uri "https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/jobs" `
+  -Method Post -Headers $headers -ContentType "application/json" -Body $suite
+
+Invoke-RestMethod `
+  -Uri "https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/jobs/$($job.jobId)" `
+  -Method Get -Headers @{ Authorization = "Bearer $env:P6VC_BRIDGE_ACCESS_KEY" }
+```
+
+การส่ง `Idempotency-Key` เดิมพร้อม JSON เดิมจะคืน Job เดิมและไม่ยิง GAS ซ้ำ หากใช้ key เดิมกับ JSON คนละชุดจะได้ HTTP 409 `IDEMPOTENCY_KEY_REUSED`
 
 ## POC Read-only Allowlist
 

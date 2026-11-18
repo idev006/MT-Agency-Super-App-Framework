@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import worker from './worker.mjs';
 
 const BASE='https://console.example';
@@ -7,13 +8,19 @@ const GAS='https://script.google.com/macros/s/TEST-DEPLOY-ID/exec';
 const KEY='a'.repeat(48);
 const PASSWORD='test-password-only-not-real-1234';
 const TOKEN='a'.repeat(64);
-function env(){return {P6VC_GAS_EXEC_URL:GAS,BRIDGE_ACCESS_KEY:KEY,
- TEST_LOGIN_USERNAME:'staging-admin',TEST_LOGIN_PASSWORD:PASSWORD};}
-function request(path,body,auth=true){
- return new Request(BASE+path,{method:'POST',headers:{
+function env(overrides={}){return {P6VC_GAS_EXEC_URL:GAS,BRIDGE_ACCESS_KEY:KEY,
+ TEST_LOGIN_USERNAME:'staging-admin',TEST_LOGIN_PASSWORD:PASSWORD,...overrides};}
+function request(path,body,auth=true,options={}){
+ return new Request(BASE+path,{method:options.method||'POST',headers:{
   ...(auth?{authorization:'Bearer '+KEY}:{}),
-  ...(body!==undefined?{'content-type':'application/json'}:{})
+  ...(body!==undefined?{'content-type':'application/json'}:{}),
+  ...(options.headers||{})
  },...(body!==undefined?{body:JSON.stringify(body)}:{})});
+}
+function memoryKV(){
+ const data=new Map();
+ return {data,async get(key){return data.get(key)??null;},
+  async put(key,value){data.set(key,value);}};
 }
 const envelope=(ok,data=null,error=null)=>new Response(JSON.stringify({ok,data,error}),{
  status:200,headers:{'content-type':'application/json'}
@@ -200,4 +207,82 @@ test('suite enforces expected result on every test case',async()=>{
   id:'S-01',operation:'system.health',payload:{}
  }]}),env());
  assert.equal(r.status,500);
+});
+
+test('direct AI job executes once, persists redacted report, and can be retrieved',async()=>{
+ const store=memoryKV();
+ const mock=await fakeGAS(()=>envelope(true,{status:'bootstrap',private:'DO_NOT_STORE'}));
+ try{
+  const suite={suiteId:'ai-health-smoke',cases:[
+   {id:'AI-01',operation:'system.health',method:'POST',payload:{},expected:{ok:true}}
+  ]};
+  const first=await worker.fetch(request('/api/jobs',suite,true,{headers:{'idempotency-key':'ai-health-smoke-001'}}),env({TEST_JOB_STORE:store}));
+  assert.equal(first.status,201);
+  const job=await first.json();
+  assert.match(job.jobId,/^job_[0-9a-f]{32}$/);
+  assert.equal(job.status,'COMPLETED');
+  assert.equal(job.report.status,'PASS');
+  assert.equal(mock.calls.length,1);
+  const stored=JSON.stringify([...store.data.values()]);
+  for(const secret of ['DO_NOT_STORE',PASSWORD,TOKEN,KEY])assert.ok(!stored.includes(secret),secret);
+
+  const fetched=await worker.fetch(request('/api/jobs/'+job.jobId,undefined,true,{method:'GET'}),env({TEST_JOB_STORE:store}));
+  assert.equal(fetched.status,200);
+  assert.deepEqual(await fetched.json(),job);
+ }finally{mock.restore();}
+});
+test('idempotency key replays completed job without a second GAS request',async()=>{
+ const store=memoryKV();
+ const mock=await fakeGAS(()=>envelope(true,{status:'bootstrap'}));
+ const suite={suiteId:'idempotent-smoke',cases:[
+  {id:'AI-01',operation:'system.health',payload:{},expected:{ok:true}}
+ ]};
+ try{
+  const options={headers:{'idempotency-key':'same-command-001'}};
+  const first=await (await worker.fetch(request('/api/jobs',suite,true,options),env({TEST_JOB_STORE:store}))).json();
+  const replayResponse=await worker.fetch(request('/api/jobs',suite,true,options),env({TEST_JOB_STORE:store}));
+  const replay=await replayResponse.json();
+  assert.equal(replayResponse.status,200);
+  assert.equal(replay.jobId,first.jobId);
+  assert.equal(replay.replayed,true);
+  assert.equal(mock.calls.length,1);
+  const changed={...suite,cases:[
+   {id:'AI-02',operation:'system.health',payload:{},expected:{ok:true}}
+  ]};
+  const conflict=await worker.fetch(request('/api/jobs',changed,true,options),env({TEST_JOB_STORE:store}));
+  assert.equal(conflict.status,409);
+  assert.equal((await conflict.json()).error,'IDEMPOTENCY_KEY_REUSED');
+  assert.equal(mock.calls.length,1);
+ }finally{mock.restore();}
+});
+test('job API requires KV, idempotency key, and Worker-side credentials',async()=>{
+ const suite={cases:[{id:'AI-01',operation:'system.health',payload:{},expected:{ok:true}}]};
+ let r=await worker.fetch(request('/api/jobs',suite,true,{headers:{'idempotency-key':'job-key-001'}}),env());
+ assert.equal(r.status,503);assert.equal((await r.json()).error,'JOB_STORE_NOT_CONFIGURED');
+ const store=memoryKV();
+ r=await worker.fetch(request('/api/jobs',suite),env({TEST_JOB_STORE:store}));
+ assert.equal(r.status,400);assert.equal((await r.json()).error,'IDEMPOTENCY_KEY_REQUIRED');
+ r=await worker.fetch(request('/api/jobs',{...suite,password:'must-not-persist'},true,
+  {headers:{'idempotency-key':'job-key-002'}}),env({TEST_JOB_STORE:store}));
+ assert.equal(r.status,400);assert.equal((await r.json()).error,'JOB_FIELDS_NOT_ALLOWED');
+ assert.equal(store.data.size,0);
+});
+test('job result endpoint remains authenticated and returns not found safely',async()=>{
+ const store=memoryKV(),jobId='job_'+'a'.repeat(32);
+ let r=await worker.fetch(request('/api/jobs/'+jobId,undefined,false,{method:'GET'}),env({TEST_JOB_STORE:store}));
+ assert.equal(r.status,401);
+ r=await worker.fetch(request('/api/jobs/'+jobId,undefined,true,{method:'GET'}),env({TEST_JOB_STORE:store}));
+ assert.equal(r.status,404);assert.equal((await r.json()).error,'JOB_NOT_FOUND');
+});
+test('versioned health catalog is accepted by the same suite runner',async()=>{
+ const catalog=JSON.parse(await readFile(new URL('./test-suites/health-smoke.v1.json',import.meta.url),'utf8'));
+ const mock=await fakeGAS(()=>envelope(true,{status:'bootstrap'}));
+ try{
+  const r=await worker.fetch(request('/api/run-tests',catalog),env());
+  assert.equal(r.status,200);
+  const report=await r.json();
+  assert.equal(report.suiteId,'health-smoke-v1');
+  assert.equal(report.status,'PASS');
+  assert.equal(report.executed,2);
+ }finally{mock.restore();}
 });
