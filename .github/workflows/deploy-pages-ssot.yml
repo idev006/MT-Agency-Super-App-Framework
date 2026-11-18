@@ -23,6 +23,16 @@ jobs:
           node --check scripts/build-pages.mjs
           node --check scripts/validate-ssot.mjs
           node scripts/validate-ssot.mjs
+      - name: Install and test Vehicle Contact frontend
+        working-directory: apps/vehicle-contact/frontend
+        run: |
+          npm ci
+          npm test
+      - name: Build Vehicle Contact frontend for repository Pages path
+        working-directory: apps/vehicle-contact/frontend
+        env:
+          VITE_BASE_PATH: /MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/
+        run: npm run build
       - name: Build disposable Pages artifact
         run: node scripts/build-pages.mjs _site
       - name: Verify generated artifact against SSOT

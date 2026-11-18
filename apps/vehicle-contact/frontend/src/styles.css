@@ -1,0 +1,247 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: all;
+}
+
+:root {
+  font-family: "Pridi", "Leelawadee UI", Tahoma, serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+html {
+  min-width: 320px;
+  background: var(--color-base-200);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.pridi-extralight { font-family: "Pridi", serif; font-weight: 200; font-style: normal; }
+.pridi-light { font-family: "Pridi", serif; font-weight: 300; font-style: normal; }
+.pridi-regular { font-family: "Pridi", serif; font-weight: 400; font-style: normal; }
+.pridi-medium { font-family: "Pridi", serif; font-weight: 500; font-style: normal; }
+.pridi-semibold { font-family: "Pridi", serif; font-weight: 600; font-style: normal; }
+.pridi-bold { font-family: "Pridi", serif; font-weight: 700; font-style: normal; }
+
+.form-control {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.form-control > .label {
+  min-height: auto;
+  padding: 0;
+}
+
+:focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--color-primary) 65%, white);
+  outline-offset: 3px;
+}
+
+.p6-hero {
+  background-image:
+    linear-gradient(120deg, color-mix(in oklab, var(--color-primary) 8%, transparent), transparent 45%),
+    radial-gradient(circle at 85% 15%, color-mix(in oklab, var(--color-secondary) 13%, transparent), transparent 26%);
+}
+
+.signin-identity {
+  background:
+    radial-gradient(circle at 82% 18%, color-mix(in oklab, var(--color-primary-content) 18%, transparent), transparent 24%),
+    linear-gradient(145deg, var(--color-primary), color-mix(in oklab, var(--color-primary) 70%, var(--color-neutral)));
+}
+
+.signin-identity::after {
+  position: absolute;
+  inset: 12% -12% auto auto;
+  width: 24rem;
+  height: 24rem;
+  border: 1px solid color-mix(in oklab, var(--color-primary-content) 22%, transparent);
+  border-radius: 999px;
+  box-shadow: 0 0 0 4rem color-mix(in oklab, var(--color-primary-content) 4%, transparent), 0 0 0 8rem color-mix(in oklab, var(--color-primary-content) 3%, transparent);
+  content: "";
+}
+
+.route-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.route-mini i {
+  width: 2.5rem;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+.transport-choice {
+  display: flex;
+  min-width: 0;
+  cursor: pointer;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.8rem;
+  padding: 0.75rem;
+  transition: border-color 150ms ease, background-color 150ms ease;
+}
+
+.transport-choice--active {
+  border-color: var(--color-primary);
+  background: color-mix(in oklab, var(--color-primary) 8%, var(--color-base-100));
+}
+
+.transport-choice strong,
+.transport-choice small {
+  display: block;
+}
+
+.page-template__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.page-template__actions {
+  margin-left: auto;
+}
+
+.page-template__footer {
+  border-top: 1px solid var(--color-base-300);
+  padding-top: 1rem;
+}
+
+@media (max-width: 639px) {
+  .page-template__actions {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+.transport-choice strong {
+  font-size: 0.82rem;
+}
+
+.transport-choice small {
+  margin-top: 0.15rem;
+  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+  font-size: 0.65rem;
+}
+
+.route-plate {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(4rem, 0.65fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+  min-height: 7.5rem;
+  padding: 1.25rem;
+  border: 2px solid var(--color-base-content);
+  border-radius: 1rem;
+  background: var(--color-base-100);
+  box-shadow: inset 0 0 0 0.3rem var(--color-base-100), inset 0 0 0 0.4rem color-mix(in oklab, var(--color-base-content) 25%, transparent);
+}
+
+.route-plate strong {
+  display: block;
+  font-family: "Pridi", serif;
+  font-size: clamp(1.15rem, 4vw, 2rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+}
+
+.route-plate__eyebrow {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.route-plate__track {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.route-plate__track::before,
+.route-plate__track::after {
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: none;
+  border-radius: 999px;
+  background: var(--color-base-content);
+  content: "";
+}
+
+.route-plate__track span {
+  height: 0.2rem;
+  flex: 1;
+  border-radius: 999px;
+  background: var(--color-base-content);
+  opacity: 0.25;
+}
+
+.route-plate--online {
+  border-color: var(--color-success);
+}
+
+.route-plate--online .route-plate__track::before,
+.route-plate--online .route-plate__track::after,
+.route-plate--online .route-plate__track span {
+  background: var(--color-success);
+  opacity: 1;
+}
+
+.route-plate--error {
+  border-color: var(--color-error);
+}
+
+.route-plate--error .route-plate__track::before,
+.route-plate--error .route-plate__track::after {
+  background: var(--color-error);
+}
+
+@media (max-width: 420px) {
+  .route-plate {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+
+  .route-plate__track {
+    order: 2;
+  }
+
+  .route-plate .text-right {
+    order: 3;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

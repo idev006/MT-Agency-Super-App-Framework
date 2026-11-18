@@ -1,0 +1,94 @@
+# P6 Vehicle Contact Frontend Architecture
+
+Status: Vue SPA POC implemented; Cloudflare `/api/frontend` source implemented but not deployed.
+
+## Runtime shape
+
+```text
+GitHub Pages / local Vite preview
+└─ Vue SPA
+   ├─ Direct mode ────────────────────────────────> GAS /exec
+   └─ Worker mode ──> Cloudflare /api/frontend ──> GAS /exec
+```
+
+Both modes send the same logical envelope:
+
+```json
+{"apiVersion":"v1","group":"auth","action":"session","payload":{},"requestId":"...","sessionToken":"..."}
+```
+
+GAS remains the source of truth for identity, session status, roles, permissions, business rules and data. Cloudflare is a transport boundary/BFF, not a second business backend.
+
+## Component composition
+
+```text
+App.vue
+└─ RouterView
+   ├─ SignInView
+   │  ├─ ThemePicker
+   │  └─ SignInForm
+   │     └─ TransportSelector
+   └─ AppShell
+      ├─ AppHeader
+      ├─ AppSidebar
+      ├─ Main RouterView
+      │  ├─ DashboardView
+      │  │  └─ PageTemplateComponent
+      │  │     └─ RoleMenuGrid
+      │  └─ GatewayPocView
+      │     └─ PageTemplateComponent
+      │        ├─ default slot: route visualization
+      │        └─ aside slot: TransportSelector
+      ├─ AppFooter
+      └─ ConfirmDialog
+```
+
+`AppShell` owns the persistent application chrome. Child routes replace only the main content through nested `RouterView`. Each routed PageComponent may use `PageTemplateComponent` as its page-level skeleton and fill named slots: `breadcrumbs`, `actions`, `status`, default content, `aside` and `footer`. Page components retain page-specific data/orchestration; the template remains presentation-only and does not call stores or APIs.
+
+## State and SSOT boundaries
+
+| State | Owner | Persistence | Rule |
+|---|---|---|---|
+| Users, roles, permissions, session validity | GAS | Server datastore | Authoritative |
+| Session token | Pinia session store | `sessionStorage` per tab | Revalidated through `auth.session` |
+| Role-driven menu | Pinia computed state | None | Derived from GAS roles and menu catalog |
+| API transport selection | Pinia session store | `localStorage` | Non-sensitive preference |
+| Theme and mobile navigation | Pinia UI store | Theme only in `localStorage` | UI-only global state |
+| Sign-in field visibility/dialog state | Component `ref/reactive` | None | Local presentation state |
+| Remembered username | Browser storage | `localStorage` after opt-in | POC convenience |
+| Remembered password | Browser storage | `localStorage` after explicit opt-in | POC only; forbidden for production design |
+
+Vue route metadata and menu filtering improve UX only. Every protected GAS operation must independently validate the session and role.
+
+## Cloudflare Worker boundary
+
+The POC route is `POST /api/frontend` with `OPTIONS` preflight support.
+
+- GAS URL comes only from Worker variable `P6VC_GAS_EXEC_URL`.
+- Browser cannot select an upstream URL.
+- Initial allowlist: `system.health`, `auth.login`, `auth.session`, `auth.logout`.
+- `FRONTEND_ALLOWED_ORIGINS` controls browser origins.
+- No `BRIDGE_ACCESS_KEY` is shipped to the SPA.
+- Existing test-console/job endpoints remain protected by their Bearer key and keep their separate response-redaction rules.
+
+Origin allowlisting is not user authentication. Before production, add rate limiting, trusted ingress design, operational logs without credentials, incident controls and a formal review before expanding the operation allowlist.
+
+## Routing
+
+| Route | Component | Access |
+|---|---|---|
+| `#/signin` | `SignInView` | Public |
+| `#/app/dashboard` | `DashboardView` inside `AppShell` | Valid GAS session |
+| `#/app/connection` | `GatewayPocView` inside `AppShell` | Valid GAS session |
+
+Hash history is intentional for GitHub Pages because it avoids server rewrite requirements. The global guard restores a session from `sessionStorage` through `auth.session`; invalid sessions return to Sign in.
+
+## Current acceptance status
+
+- Vue Composition API/component build: PASS
+- Pinia global state and role menu unit tests: PASS
+- Vue Router authentication guard browser check: PASS
+- Direct local browser to GAS: FAIL in the observed POC (`NETWORK_ERROR`)
+- Worker gateway unit/contract tests: PASS
+- Live Cloudflare deployment and browser login: NOT RUN
+- GitHub Pages deployment: NOT RUN
