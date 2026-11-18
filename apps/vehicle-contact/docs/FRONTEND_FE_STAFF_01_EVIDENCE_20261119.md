@@ -2,11 +2,11 @@
 
 **Review date:** 2026-11-19 (Asia/Bangkok)
 
-**Implementation commit:** `48bea05dfa5bc92d516b47d0682a8534e282a5ee`
+**Implementation commits:** `48bea05dfa5bc92d516b47d0682a8534e282a5ee`, `821bc17aef9e2fd439d936a6130d1f4518ded570`
 
 **Branch:** `codex/p6vc-staff-vehicle-search-20261119`
 
-**Environment:** Local Vite development server with `VITE_UI_PREVIEW=true`; synthetic identity, vehicle, contact, photo metadata and history only
+**Environment:** Local Vite development server with a synthetic session/API fixture injected before application bootstrap; synthetic identity, vehicle, contact, photo metadata and history only
 
 **Browser:** Microsoft Edge headless via Chrome DevTools Protocol
 
@@ -31,6 +31,9 @@ vehicle-search route
 - photo `storageRef`, raw audit actor data and raw backend errors are not exposed to the page
 - the page implements idle, loading, empty, forbidden, unauthenticated, recoverable error, fatal error and success states
 - search is single-record plate/province lookup; the UI provides no mass-enumeration control
+- valid GAS and Cloudflare endpoints plus the selected transport survive browser refresh
+- the session token and a field-allowlisted session summary remain in `sessionStorage`; refresh revalidates with `auth.session`
+- transient network/endpoint failures preserve the existing session continuity, while definitive session rejection clears token and cached summary
 
 ## 2. Confirmed backend contract
 
@@ -45,7 +48,7 @@ Backend regression confirms session authorization, duplicate-active-vehicle deni
 
 ## 3. Automated evidence
 
-- frontend Vitest: `9` files, `30/30` tests passed
+- frontend Vitest: `10` files, `34/34` tests passed
 - Vite production build passed with the GitHub Pages base path
 - frontend full and production-only `npm audit`: `0` vulnerabilities
 - Cloudflare Worker contract tests: `23/23` passed
@@ -78,6 +81,7 @@ Observed browser results:
 - axe-core reported zero violations in all three cases
 - color-contrast checks left one incomplete rule per case because DaisyUI uses generated backgrounds; screenshots were visually inspected
 - keyboard order was plate input -> province input -> submit button
+- browser refresh preserved `#/app/vehicles/search`, GAS URL, Worker URL, selected Worker transport, session token presence and session-summary presence without rendering the sign-in form
 - the first visual run found insufficient corporate-theme contrast in the breadcrumb and success badge; both defects were corrected with semantic DaisyUI/Tailwind classes before the passing run
 
 ## 5. Compliance result
@@ -90,7 +94,7 @@ Observed browser results:
 | G4 Responsive | PASS | 390px and 1440px evidence shows no horizontal overflow; mobile result uses a single-column flow | Add 360px physical-device review during environment acceptance |
 | G5 Typography/hierarchy | PASS | Existing Pridi tokens, task-first hierarchy and shared operational context strip | Independent design review remains recommended |
 | G6 Accessibility | PASS | axe zero violations; persistent labels; keyboard focus order recorded; semantic form and live status region | Independent assistive-technology review remains recommended |
-| G7 Interaction/state | PASS | Explicit state machine, retry only for read failures, no double submit while loading, request ID in support details | Verify session-expiry redirect against the published GAS contract |
+| G7 Interaction/state | PASS | Explicit state machine, retry only for read failures, no double submit while loading, request ID in support details, refresh persistence and definitive-expiry clearing tests | Verify session-expiry redirect against the published GAS contract |
 | G8 Engineering | PASS | PageTemplate, application port, adapter, composable tests, production build, audits, backend/Worker regression and SSOT validation passed | CI must reproduce checks on PR head |
 | G9 Visual review | PASS | Three screenshots; contrast defects were found, corrected and retested | Independent human reviewer not yet recorded |
 | G10 Release | BLOCKED | Local synthetic acceptance only; public GAS still reports `bootstrap` and lacks the published `auth.session.permissions` contract | Project Owner must authorize GAS push with `PUSH_VEHICLE_GAS`, then publish a Web App deployment and run authenticated acceptance |
