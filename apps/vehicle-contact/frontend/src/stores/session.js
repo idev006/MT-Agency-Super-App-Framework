@@ -142,9 +142,19 @@ export const useSessionStore = defineStore('session', () => {
     }
   }
 
+  async function callProtected(operation, payload = {}, options = {}) {
+    if (!sessionToken.value) {
+      throw new GasApiError('เซสชันหมดอายุ', { code: 'UNAUTHENTICATED' })
+    }
+    return client().call(operation, payload, {
+      ...options,
+      sessionToken: sessionToken.value,
+    })
+  }
+
   return {
     transport, directEndpoint, workerEndpoint, endpoint, endpointValid,
     phase, session, lastResult, error, authenticated, busy, roles, permissions, menuItems,
-    setTransport, updateEndpoint, checkConnection, signIn, restoreSession, signOut,
+    setTransport, updateEndpoint, checkConnection, signIn, restoreSession, signOut, callProtected,
   }
 })
