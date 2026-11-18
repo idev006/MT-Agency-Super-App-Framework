@@ -55,12 +55,26 @@ Machine-readable layout, accessibility and focus evidence: [browser-evidence.jso
 | G7 Interaction/state | PASS | sign-out confirmation focus contract passed; actions remain disabled while busy | Add session-expiry browser acceptance after GAS deployment |
 | G8 Engineering | PASS | frontend 16 tests, production build, backend regression, SSOT/link validation, diff check and dependency audit passed | CI must reproduce repository tests on PR head |
 | G9 Visual review | PASS | screenshots above; mobile header defect and DaisyUI `.form-control` namespace collision were found and corrected during review | Independent human reviewer not yet recorded |
-| G10 Release | NOT RUN | source review only; no deployment from this branch | Required after PR merge and deployment |
+| G10 Release | BLOCKED | Frontend Pages, assets and Worker CORS/health passed; authenticated browser acceptance against the updated GAS contract is not available | Push/version/publish the approved GAS source, then run authenticated acceptance and rollback verification |
 
-## 4. Known release dependency
+## 4. Deployment evidence after merge
+
+- PR [#45](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/45) merged as `1af91ccf1bed053938d0d4a96378a4201da28e45`
+- main-branch backend validation [run 44369818511](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44369818511) passed
+- Pages SSOT build/deploy [run 44369818576](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44369818576) passed
+- repository Pages setting was still `build_type: legacy` with `/docs` as source, so GitHub launched a second automatic Jekyll deployment that overwrote the custom artifact and caused a 404
+- Pages setting was changed to `build_type: workflow`, as defined by the [official GitHub Pages REST API](https://docs.github.com/en/rest/pages/pages); this leaves the SSOT workflow as the sole deployer
+- recovery deployment [run 44370178332](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44370178332) passed
+- [live frontend](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/) returned HTTP 200; its JavaScript and CSS assets both returned HTTP 200
+- Worker health from the GitHub Pages origin returned HTTP 200 with the matching `Access-Control-Allow-Origin`
+- health data reported `bootstrap`, proving the public GAS `/exec` still targets an older deployment; this is not evidence for the new `auth.session.permissions` contract
+
+## 5. Known release dependency
 
 The deployed GAS version must include the updated `auth.session` response with `permissions`, `displayName` and `organizationId`. Until then the frontend fails closed: shared routes remain visible, while permission-specific navigation is withheld rather than inferred from role names.
 
-## 5. Reviewer separation
+The GAS workflow performs `clasp push --force` and version creation only after the exact manual confirmation `PUSH_VEHICLE_GAS`. It overwrites the target Apps Script source and does not publish a Web App deployment automatically. No GAS push or Web App publication was performed as part of FE-SHARED-01.
+
+## 6. Reviewer separation
 
 This is implementation self-review evidence, not an independent organizational accessibility, security, privacy or UX approval. Project Owner and designated human reviewers retain release authority.
