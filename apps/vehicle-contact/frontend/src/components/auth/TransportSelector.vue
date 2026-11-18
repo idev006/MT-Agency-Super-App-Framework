@@ -17,7 +17,7 @@ const { transport, endpoint, endpointValid } = storeToRefs(auth)
         <span><strong>ผ่าน Cloudflare</strong><small>Browser → Worker → GAS</small></span>
       </label>
     </div>
-    <label class="form-control">
+    <label class="field-stack">
       <span class="label-text text-sm font-semibold">{{ transport === 'direct' ? 'GAS Web App URL' : 'Cloudflare Gateway URL' }}</span>
       <input class="input input-bordered w-full font-mono text-xs" type="url" :value="endpoint"
         :placeholder="transport === 'direct' ? 'https://script.google.com/macros/s/.../exec' : 'https://...workers.dev/api/frontend'"

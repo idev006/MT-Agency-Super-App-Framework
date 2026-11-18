@@ -1,12 +1,23 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { GasApiClient, GasApiError, isValidApiEndpoint } from '../infrastructure/api/gas-api-client.js'
-import { menuForRoles } from '../domain/navigation/menu-catalog.js'
+import { menuForPermissions } from '../domain/navigation/menu-catalog.js'
 
 const SESSION_KEY = 'p6vc-session-token'
 const TRANSPORT_KEY = 'p6vc-api-transport'
 const defaultDirectEndpoint = import.meta.env.VITE_GAS_API_URL || ''
 const defaultWorkerEndpoint = import.meta.env.VITE_WORKER_API_URL || ''
+const previewEnabled = import.meta.env.DEV && import.meta.env.VITE_UI_PREVIEW === 'true'
+const previewSession = Object.freeze({
+  userId: 'preview-user', displayName: 'ผู้ใช้งานทดสอบ', organizationId: 'preview-unit',
+  roles: ['SYSTEM_ADMIN', 'STAFF'],
+  permissions: [
+    'session.authenticated', 'users.manage', 'organizations.read', 'organizations.manage',
+    'retention.read', 'retention.delete.approve', 'vehicle.lookup', 'vehicle.contact.read',
+    'vehicle.photos.read', 'vehicle.history.read',
+  ],
+  expiresAt: '2026-11-18T18:30:00.000Z', mustChangePassword: false,
+})
 
 function browserSessionStorage() {
   return globalThis.sessionStorage
@@ -18,8 +29,8 @@ export const useSessionStore = defineStore('session', () => {
   const directEndpoint = ref(defaultDirectEndpoint)
   const workerEndpoint = ref(defaultWorkerEndpoint)
   const phase = ref('idle')
-  const sessionToken = ref(browserSessionStorage()?.getItem(SESSION_KEY) || '')
-  const session = ref(null)
+  const sessionToken = ref(previewEnabled ? 'development-preview-only' : browserSessionStorage()?.getItem(SESSION_KEY) || '')
+  const session = ref(previewEnabled ? previewSession : null)
   const lastResult = ref(null)
   const error = ref(null)
 
@@ -28,7 +39,8 @@ export const useSessionStore = defineStore('session', () => {
   const authenticated = computed(() => Boolean(sessionToken.value))
   const busy = computed(() => ['checking', 'restoring', 'signing-in', 'signing-out'].includes(phase.value))
   const roles = computed(() => Array.isArray(session.value?.roles) ? session.value.roles : [])
-  const menuItems = computed(() => menuForRoles(roles.value))
+  const permissions = computed(() => Array.isArray(session.value?.permissions) ? session.value.permissions : [])
+  const menuItems = computed(() => menuForPermissions(permissions.value))
 
   function client() {
     return new GasApiClient({ endpoint: endpoint.value, transport: transport.value })
@@ -132,7 +144,7 @@ export const useSessionStore = defineStore('session', () => {
 
   return {
     transport, directEndpoint, workerEndpoint, endpoint, endpointValid,
-    phase, session, lastResult, error, authenticated, busy, roles, menuItems,
+    phase, session, lastResult, error, authenticated, busy, roles, permissions, menuItems,
     setTransport, updateEndpoint, checkConnection, signIn, restoreSession, signOut,
   }
 })

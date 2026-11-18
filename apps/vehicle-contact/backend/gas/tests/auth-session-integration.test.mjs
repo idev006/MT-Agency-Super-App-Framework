@@ -89,6 +89,11 @@ test('TC-AUTH-04 initial password-change requirement blocks permissions, allows 
  const status=h.dispatch('auth','session',{},token);
  assert.equal(status.ok,true,JSON.stringify(status));
  assert.equal(status.data.mustChangePassword,true);
+ assert.equal(status.data.displayName,'Staging Admin');
+ assert.equal(status.data.organizationId,null);
+ assert.deepEqual(status.data.roles,['SYSTEM_ADMIN']);
+ assert.ok(status.data.permissions.includes('users.manage'));
+ assert.ok(!status.data.permissions.includes('vehicle.lookup'));
  const change=h.dispatch('auth','changePassword',{oldPassword:OLD_PASSWORD,newPassword:NEW_PASSWORD},token);
  assert.equal(change.ok,true,JSON.stringify(change));
  assert.equal(change.data.reauthenticate,true);

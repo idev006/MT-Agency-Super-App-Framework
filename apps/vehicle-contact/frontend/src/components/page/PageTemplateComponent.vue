@@ -18,26 +18,28 @@ const contentClass = computed(() => slots.aside ? 'grid gap-6 lg:grid-cols-[minm
 </script>
 
 <template>
-  <article class="page-template mx-auto w-full space-y-6 p-4 sm:p-6 lg:p-8" :class="containerClass">
+  <article class="page-template mx-auto w-full space-y-8 p-4 sm:p-6 lg:p-8" :class="containerClass">
     <nav v-if="$slots.breadcrumbs" class="text-sm text-base-content/55" aria-label="เส้นทางหน้าปัจจุบัน">
       <slot name="breadcrumbs" />
     </nav>
 
     <header class="page-template__header">
       <div class="min-w-0 flex-1">
-        <p v-if="eyebrow" class="text-sm font-bold text-primary">{{ eyebrow }}</p>
-        <h1 class="mt-1 text-3xl font-black leading-tight sm:text-4xl">{{ title }}</h1>
-        <p v-if="description" class="mt-3 max-w-3xl leading-7 text-base-content/65">{{ description }}</p>
+        <p v-if="eyebrow" class="text-sm font-medium text-base-content/75">{{ eyebrow }}</p>
+        <h1 class="mt-1 text-[1.75rem] font-semibold leading-9 sm:text-3xl sm:leading-10">{{ title }}</h1>
+        <p v-if="description" class="mt-3 max-w-3xl leading-7 text-base-content/70">{{ description }}</p>
       </div>
       <div v-if="$slots.actions" class="page-template__actions"><slot name="actions" /></div>
     </header>
 
-    <section v-if="$slots.status" class="page-template__status" aria-label="สถานะของหน้า">
-      <slot name="status" />
+    <section v-if="$slots.context || $slots.status" class="page-template__context">
+      <slot name="context"><slot name="status" /></slot>
     </section>
 
+    <section v-if="$slots.toolbar" class="page-template__toolbar" aria-label="เครื่องมือของหน้า"><slot name="toolbar" /></section>
+
     <div class="page-template__content" :class="contentClass">
-      <main class="min-w-0"><slot /></main>
+      <div class="min-w-0"><slot /></div>
       <aside v-if="$slots.aside" class="min-w-0 lg:sticky lg:top-24 lg:self-start"><slot name="aside" /></aside>
     </div>
 
