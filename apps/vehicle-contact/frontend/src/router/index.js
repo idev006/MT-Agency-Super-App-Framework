@@ -5,6 +5,8 @@ import SignInView from '../views/SignInView.vue'
 import AppShell from '../layouts/AppShell.vue'
 import DashboardView from '../views/DashboardView.vue'
 import GatewayPocView from '../views/GatewayPocView.vue'
+import VehicleSearchPage from '../pages/VehicleSearchPage.vue'
+import ForbiddenPage from '../pages/ForbiddenPage.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -15,6 +17,8 @@ export const router = createRouter({
       children: [
         { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: 'ภาพรวม' } },
         { path: 'connection', name: 'connection-test', component: GatewayPocView, meta: { title: 'ทดสอบการเชื่อมต่อ' } },
+        { path: 'vehicles/search', name: 'vehicle-search', component: VehicleSearchPage, meta: { title: 'ค้นหายานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
+        { path: 'forbidden', name: 'forbidden', component: ForbiddenPage, meta: { title: 'ไม่มีสิทธิ์เปิดงาน' } },
       ],
     },
     { path: '/', redirect: { name: 'dashboard' } },
@@ -27,6 +31,8 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
     if (!auth.authenticated) return { name: 'sign-in', query: { redirect: to.fullPath } }
     if (!(await auth.restoreSession())) return { name: 'sign-in', query: { reason: 'session-expired' } }
+    const required = Array.isArray(to.meta.requiredPermissions) ? to.meta.requiredPermissions : []
+    if (required.some((permission) => !auth.permissions.includes(permission))) return { name: 'forbidden' }
   }
   if (to.name === 'sign-in' && auth.authenticated && await auth.restoreSession()) return { name: 'dashboard' }
   return true

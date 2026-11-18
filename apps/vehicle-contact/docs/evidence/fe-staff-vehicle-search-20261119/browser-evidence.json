@@ -1,0 +1,204 @@
+{
+  "generatedAt": "2026-11-18T19:03:02.625Z",
+  "appUrl": "http://127.0.0.1:4173/#/app/vehicles/search",
+  "browser": "Microsoft Edge headless",
+  "cases": {
+    "desktopCorporateIdle": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "theme": "corporate",
+        "title": "ค้นหายานพาหนะ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี สุภาพ (corporate)\" value=\"corporate\">"
+              },
+              {
+                "target": [
+                  ".md\\:mt-8"
+                ],
+                "html": "<button class=\"btn btn-primary min-h-11 md:mt-8\" type=\"submit\"><!--v-if--> ค้นหายานพาหนะ</button>"
+              },
+              {
+                "target": [
+                  ".alert.items-start.shadow-none > div > h2"
+                ],
+                "html": "<h2 class=\"font-medium\">พร้อมค้นหา</h2>"
+              },
+              {
+                "target": [
+                  "section[aria-live=\"polite\"] > .alert.items-start.shadow-none > div > .mt-1"
+                ],
+                "html": "<p class=\"mt-1\">กรอกทะเบียนและรหัสจังหวัดให้ครบ ระบบค้นหาทีละคันเท่านั้น</p>"
+              },
+              {
+                "target": [
+                  ".badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>ค้นหายานพาหนะ</span>"
+              },
+              {
+                "target": [
+                  ".alert-warning > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      },
+      "keyboardOrder": [
+        {
+          "tag": "INPUT",
+          "name": "plate",
+          "type": ""
+        },
+        {
+          "tag": "INPUT",
+          "name": "province",
+          "type": ""
+        },
+        {
+          "tag": "BUTTON",
+          "name": "",
+          "type": "submit"
+        }
+      ]
+    },
+    "desktopDarkSuccess": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "ค้นหายานพาหนะ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".md\\:mt-8"
+                ],
+                "html": "<button class=\"btn btn-primary min-h-11 md:mt-8\" type=\"submit\"><!--v-if--> ค้นหายานพาหนะ</button>"
+              },
+              {
+                "target": [
+                  ".badge-success"
+                ],
+                "html": "<span class=\"badge badge-success\">สถานะใช้งาน</span>"
+              },
+              {
+                "target": [
+                  ".badge-warning"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>ค้นหายานพาหนะ</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mobileCorporateSuccess": {
+      "layout": {
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "documentClientWidth": 390,
+        "documentScrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "theme": "corporate",
+        "title": "ค้นหายานพาหนะ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".md\\:mt-8"
+                ],
+                "html": "<button class=\"btn btn-primary min-h-11 md:mt-8\" type=\"submit\"><!--v-if--> ค้นหายานพาหนะ</button>"
+              },
+              {
+                "target": [
+                  ".badge-success"
+                ],
+                "html": "<span class=\"badge badge-success\">สถานะใช้งาน</span>"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "refreshPersistence": {
+    "route": "#/app/vehicles/search",
+    "signInVisible": false,
+    "transport": "worker",
+    "gasEndpoint": "https://script.google.com/macros/s/persisted-evidence/exec",
+    "workerEndpoint": "https://p6vc-evidence.example.workers.dev/api/frontend",
+    "sessionTokenPresent": true,
+    "sessionSummaryPresent": true
+  }
+}
