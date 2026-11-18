@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T18:55:07.946Z",
+  "generatedAt": "2026-11-18T19:03:02.625Z",
   "appUrl": "http://127.0.0.1:4173/#/app/vehicles/search",
   "browser": "Microsoft Edge headless",
   "cases": {
@@ -191,5 +191,14 @@
         ]
       }
     }
+  },
+  "refreshPersistence": {
+    "route": "#/app/vehicles/search",
+    "signInVisible": false,
+    "transport": "worker",
+    "gasEndpoint": "https://script.google.com/macros/s/persisted-evidence/exec",
+    "workerEndpoint": "https://p6vc-evidence.example.workers.dev/api/frontend",
+    "sessionTokenPresent": true,
+    "sessionSummaryPresent": true
   }
 }

@@ -2,9 +2,13 @@ import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { GasApiClient, GasApiError, isValidApiEndpoint } from '../infrastructure/api/gas-api-client.js'
 import { menuForPermissions } from '../domain/navigation/menu-catalog.js'
+import { clearSessionSummary, loadSessionSummary, saveSessionSummary } from '../application/auth/session-summary-cache.js'
 
 const SESSION_KEY = 'p6vc-session-token'
 const TRANSPORT_KEY = 'p6vc-api-transport'
+const DIRECT_ENDPOINT_KEY = 'p6vc-gas-endpoint'
+const WORKER_ENDPOINT_KEY = 'p6vc-worker-endpoint'
+const SESSION_REJECTION_CODES = new Set(['UNAUTHENTICATED', 'SESSION_EXPIRED', 'SESSION_IDLE_EXPIRED'])
 const defaultDirectEndpoint = import.meta.env.VITE_GAS_API_URL || ''
 const defaultWorkerEndpoint = import.meta.env.VITE_WORKER_API_URL || ''
 const previewEnabled = import.meta.env.DEV && import.meta.env.VITE_UI_PREVIEW === 'true'
@@ -23,14 +27,20 @@ function browserSessionStorage() {
   return globalThis.sessionStorage
 }
 
+function storedEndpoint(key, fallback, transport) {
+  const saved = globalThis.localStorage?.getItem(key)
+  return isValidApiEndpoint(saved, transport) ? saved : fallback
+}
+
 export const useSessionStore = defineStore('session', () => {
   const savedTransport = globalThis.localStorage?.getItem(TRANSPORT_KEY)
   const transport = ref(['direct', 'worker'].includes(savedTransport) ? savedTransport : 'direct')
-  const directEndpoint = ref(defaultDirectEndpoint)
-  const workerEndpoint = ref(defaultWorkerEndpoint)
+  const directEndpoint = ref(storedEndpoint(DIRECT_ENDPOINT_KEY, defaultDirectEndpoint, 'direct'))
+  const workerEndpoint = ref(storedEndpoint(WORKER_ENDPOINT_KEY, defaultWorkerEndpoint, 'worker'))
   const phase = ref('idle')
   const sessionToken = ref(previewEnabled ? 'development-preview-only' : browserSessionStorage()?.getItem(SESSION_KEY) || '')
-  const session = ref(previewEnabled ? previewSession : null)
+  const session = ref(previewEnabled ? previewSession : (sessionToken.value ? loadSessionSummary(browserSessionStorage()) : null))
+  const sessionVerified = ref(previewEnabled)
   const lastResult = ref(null)
   const error = ref(null)
 
@@ -55,8 +65,14 @@ export const useSessionStore = defineStore('session', () => {
   }
 
   function updateEndpoint(value) {
-    if (transport.value === 'worker') workerEndpoint.value = String(value || '').trim()
-    else directEndpoint.value = String(value || '').trim()
+    const candidate = String(value || '').trim()
+    if (transport.value === 'worker') {
+      workerEndpoint.value = candidate
+      if (isValidApiEndpoint(candidate, 'worker')) globalThis.localStorage?.setItem(WORKER_ENDPOINT_KEY, candidate)
+    } else {
+      directEndpoint.value = candidate
+      if (isValidApiEndpoint(candidate, 'direct')) globalThis.localStorage?.setItem(DIRECT_ENDPOINT_KEY, candidate)
+    }
     error.value = null
     lastResult.value = null
   }
@@ -67,10 +83,21 @@ export const useSessionStore = defineStore('session', () => {
       : { code: 'UNEXPECTED_ERROR', message: 'เกิดข้อผิดพลาดที่ไม่คาดคิด', requestId: '' }
   }
 
+  function captureSessionSummary(data, requestId) {
+    const summary = saveSessionSummary(data, browserSessionStorage())
+    if (!summary) {
+      throw new GasApiError('ข้อมูลเซสชันไม่ตรงตามสัญญา', { code: 'INVALID_ENVELOPE', requestId })
+    }
+    session.value = summary
+    sessionVerified.value = true
+  }
+
   function clearSession() {
     sessionToken.value = ''
     session.value = null
+    sessionVerified.value = false
     browserSessionStorage()?.removeItem(SESSION_KEY)
+    clearSessionSummary(browserSessionStorage())
   }
 
   async function checkConnection() {
@@ -99,7 +126,7 @@ export const useSessionStore = defineStore('session', () => {
       sessionToken.value = login.data.sessionToken
       browserSessionStorage()?.setItem(SESSION_KEY, sessionToken.value)
       const current = await api.call('auth.session', {}, { sessionToken: sessionToken.value })
-      session.value = current.data
+      captureSessionSummary(current.data, current.requestId)
       lastResult.value = { kind: 'login', requestId: current.requestId, status: 'authenticated' }
       return true
     } catch (caught) {
@@ -113,16 +140,19 @@ export const useSessionStore = defineStore('session', () => {
 
   async function restoreSession() {
     if (!sessionToken.value) return false
-    if (session.value) return true
+    if (sessionVerified.value) return true
     phase.value = 'restoring'
     try {
       const current = await client().call('auth.session', {}, { sessionToken: sessionToken.value })
-      session.value = current.data
+      captureSessionSummary(current.data, current.requestId)
       return true
     } catch (caught) {
-      clearSession()
       captureError(caught)
-      return false
+      if (caught instanceof GasApiError && SESSION_REJECTION_CODES.has(caught.code)) {
+        clearSession()
+        return false
+      }
+      return true
     } finally {
       phase.value = 'idle'
     }
@@ -154,7 +184,7 @@ export const useSessionStore = defineStore('session', () => {
 
   return {
     transport, directEndpoint, workerEndpoint, endpoint, endpointValid,
-    phase, session, lastResult, error, authenticated, busy, roles, permissions, menuItems,
+    phase, session, sessionVerified, lastResult, error, authenticated, busy, roles, permissions, menuItems,
     setTransport, updateEndpoint, checkConnection, signIn, restoreSession, signOut, callProtected,
   }
 })

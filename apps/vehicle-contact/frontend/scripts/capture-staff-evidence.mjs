@@ -73,17 +73,29 @@ const apiFixture = {
     { photoId: 'photo-rear', slot: 'REAR', storageRef: 'not-for-ui', mimeType: 'image/jpeg' },
   ],
 }
+const sessionFixture = {
+  userId: 'preview-user', displayName: 'ผู้ใช้งานทดสอบ', organizationId: 'preview-unit',
+  roles: ['SYSTEM_ADMIN', 'STAFF'],
+  permissions: ['session.authenticated', 'users.manage', 'organizations.read', 'organizations.manage', 'retention.read', 'retention.delete.approve', 'vehicle.lookup', 'vehicle.contact.read', 'vehicle.photos.read', 'vehicle.history.read'],
+  expiresAt: '2026-11-20T02:30:00.000Z', mustChangePassword: false,
+}
+const gasEvidenceEndpoint = 'https://script.google.com/macros/s/evidence-only/exec'
+const gasPersistedEndpoint = 'https://script.google.com/macros/s/persisted-evidence/exec'
+const workerEvidenceEndpoint = 'https://p6vc-evidence.example.workers.dev/api/frontend'
 
 const installFixture = `
   (() => {
+    sessionStorage.setItem('p6vc-session-token', 'synthetic-evidence-session');
+    sessionStorage.setItem('p6vc-session-summary', ${JSON.stringify(JSON.stringify(sessionFixture))});
     const nativeFetch = globalThis.fetch.bind(globalThis);
     globalThis.fetch = async (input, init = {}) => {
       const url = String(input?.url || input || '');
-      if (!url.startsWith('https://script.google.com/macros/s/evidence-only/exec')) return nativeFetch(input, init);
+      if (![${JSON.stringify(gasEvidenceEndpoint)}, ${JSON.stringify(gasPersistedEndpoint)}, ${JSON.stringify(workerEvidenceEndpoint)}].includes(url)) return nativeFetch(input, init);
       const request = JSON.parse(init.body || '{}');
       const operation = request.group + '.' + request.action;
       let data;
-      if (operation === 'vehicles.lookup') data = ${JSON.stringify(apiFixture)};
+      if (operation === 'auth.session') data = ${JSON.stringify(sessionFixture)};
+      else if (operation === 'vehicles.lookup') data = ${JSON.stringify(apiFixture)};
       else if (operation === 'vehicles.history') data = [{
         audit_id: 'audit-evidence-1', action: 'VEHICLE_UPDATED', redacted_summary: 'VEHICLE_UPDATED',
         created_at: '2026-11-19T02:30:00.000Z'
@@ -165,6 +177,44 @@ async function keyboardOrder() {
   return order
 }
 
+async function verifyRefreshPersistence() {
+  await evaluate(`location.hash = '#/app/connection'`)
+  await waitUntil(`document.querySelector('.route-plate')`)
+  await evaluate(`(() => {
+    const input = document.querySelector('input[type="url"]');
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(gasPersistedEndpoint)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`)
+  await waitUntil(`localStorage.getItem('p6vc-gas-endpoint') === ${JSON.stringify(gasPersistedEndpoint)}`)
+  await evaluate(`(() => {
+    document.querySelector('input[value="worker"]').click();
+  })()`)
+  await waitUntil(`document.querySelector('input[type="url"]')?.placeholder.includes('workers.dev')`)
+  await evaluate(`(() => {
+    const input = document.querySelector('input[type="url"]');
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    setter.call(input, ${JSON.stringify(workerEvidenceEndpoint)});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`)
+  await waitUntil(`localStorage.getItem('p6vc-worker-endpoint') === ${JSON.stringify(workerEvidenceEndpoint)}`)
+  await evaluate(`location.hash = '#/app/vehicles/search'`)
+  await waitUntil(`document.querySelector('.page-template')`)
+  const loaded = client.waitFor('Page.loadEventFired')
+  await evaluate(`location.reload()`)
+  await loaded
+  await waitUntil(`document.querySelector('.page-template')`)
+  return evaluate(`(() => ({
+    route: location.hash,
+    signInVisible: Boolean(document.querySelector('input[autocomplete="username"]')),
+    transport: localStorage.getItem('p6vc-api-transport'),
+    gasEndpoint: localStorage.getItem('p6vc-gas-endpoint'),
+    workerEndpoint: localStorage.getItem('p6vc-worker-endpoint'),
+    sessionTokenPresent: Boolean(sessionStorage.getItem('p6vc-session-token')),
+    sessionSummaryPresent: Boolean(sessionStorage.getItem('p6vc-session-summary'))
+  }))()`)
+}
+
 async function auditPage() {
   await evaluate(axeSource)
   const axe = await evaluate(`axe.run(document, { resultTypes: ['violations', 'incomplete'] }).then((result) => ({
@@ -210,10 +260,19 @@ await submitSearch()
 evidence.cases.mobileCorporateSuccess = await auditPage()
 await screenshot('search-mobile-corporate-success.png', { fullPage: true })
 
+evidence.refreshPersistence = await verifyRefreshPersistence()
+
 await writeFile(resolve(evidenceDir, 'browser-evidence.json'), `${JSON.stringify(evidence, null, 2)}\n`)
 client.socket.close()
 
 const violations = Object.values(evidence.cases).flatMap((entry) => entry.axe.violations)
 const overflow = Object.values(evidence.cases).filter((entry) => entry.layout.documentScrollWidth !== entry.layout.documentClientWidth)
-if (violations.length || overflow.length) process.exitCode = 1
-console.log(JSON.stringify({ cases: Object.keys(evidence.cases), violations: violations.length, overflow: overflow.length }, null, 2))
+const refreshFailed = evidence.refreshPersistence.route !== '#/app/vehicles/search'
+  || evidence.refreshPersistence.signInVisible
+  || evidence.refreshPersistence.transport !== 'worker'
+  || evidence.refreshPersistence.gasEndpoint !== gasPersistedEndpoint
+  || evidence.refreshPersistence.workerEndpoint !== workerEvidenceEndpoint
+  || !evidence.refreshPersistence.sessionTokenPresent
+  || !evidence.refreshPersistence.sessionSummaryPresent
+if (violations.length || overflow.length || refreshFailed) process.exitCode = 1
+console.log(JSON.stringify({ cases: Object.keys(evidence.cases), violations: violations.length, overflow: overflow.length, refreshFailed }, null, 2))
