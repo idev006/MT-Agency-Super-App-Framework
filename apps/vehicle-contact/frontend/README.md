@@ -1,6 +1,18 @@
 # P6 Vehicle Contact Frontend POC
 
-Vue 3 + Vite SPA สำหรับพิสูจน์การเชื่อมต่อจากเบราว์เซอร์ไปยัง GAS Backend API โดยตรง
+Vue 3 + Vite SPA สำหรับพิสูจน์การเชื่อมต่อจากเบราว์เซอร์ไปยัง GAS Backend API ทั้งโหมดทดลองโดยตรงและโหมดหลักผ่าน Cloudflare Worker
+
+## UI/UX governance
+
+ทุกหน้าใหม่และ redesign ต้องปฏิบัติตามเอกสาร SSOT ต่อไปนี้:
+
+- [`../docs/FRONTEND_ENGINEERING_STANDARD.md`](../docs/FRONTEND_ENGINEERING_STANDARD.md)
+- [`../docs/FRONTEND_COMPONENT_ARCHITECTURE_PATTERNS.md`](../docs/FRONTEND_COMPONENT_ARCHITECTURE_PATTERNS.md)
+- [`../docs/FRONTEND_UI_UX_PRINCIPLES.md`](../docs/FRONTEND_UI_UX_PRINCIPLES.md)
+- [`../docs/FRONTEND_DESIGN_SYSTEM_BLUEPRINT.md`](../docs/FRONTEND_DESIGN_SYSTEM_BLUEPRINT.md)
+- [`../docs/FRONTEND_UI_COMPLIANCE_CHECKLIST.md`](../docs/FRONTEND_UI_COMPLIANCE_CHECKLIST.md)
+- [`../docs/FRONTEND_ROLE_DELIVERY_BLUEPRINT.md`](../docs/FRONTEND_ROLE_DELIVERY_BLUEPRINT.md)
+- [`../docs/FRONTEND_REFERENCE_REGISTER.md`](../docs/FRONTEND_REFERENCE_REGISTER.md)
 
 ## ขอบเขต POC
 
