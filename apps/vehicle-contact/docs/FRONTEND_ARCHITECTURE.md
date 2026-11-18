@@ -4,10 +4,13 @@ Status: Vue SPA POC, Cloudflare `/api/frontend` and GitHub Pages deployment impl
 
 UI governance for every subsequent page is defined by:
 
+- [Frontend Engineering Standard](FRONTEND_ENGINEERING_STANDARD.md)
+- [Component Architecture and Design Patterns](FRONTEND_COMPONENT_ARCHITECTURE_PATTERNS.md)
 - [UI/UX Principles](FRONTEND_UI_UX_PRINCIPLES.md)
 - [Design System Blueprint](FRONTEND_DESIGN_SYSTEM_BLUEPRINT.md)
 - [UI Compliance Checklist](FRONTEND_UI_COMPLIANCE_CHECKLIST.md)
 - [Role Delivery Blueprint](FRONTEND_ROLE_DELIVERY_BLUEPRINT.md)
+- [Frontend Reference Register](FRONTEND_REFERENCE_REGISTER.md)
 
 ## Runtime shape
 
