@@ -51,16 +51,22 @@ async function health(env){
  await test(rows,"HEALTH-02.POST",async()=>{expect(await gas(env,"system","health"),true);});
  return summary("health",rows);
 }
-async function auth(env){
+async function auth(env,inputs={}){
+ const manualUser=typeof inputs.username==="string"&&inputs.username.length>0;
+ const manualPassword=typeof inputs.password==="string"&&inputs.password.length>0;
+ if(manualUser!==manualPassword)
+  return summary("auth",[{id:"CONFIG",result:"FAIL",error:"CREDENTIAL_PAIR_REQUIRED"}]);
+ const testUser=manualUser?inputs.username:env.TEST_LOGIN_USERNAME;
+ const testPassword=manualPassword?inputs.password:env.TEST_LOGIN_PASSWORD;
  const rows=[];let token=null;
- if(typeof env.TEST_LOGIN_USERNAME!=="string"||!env.TEST_LOGIN_USERNAME||
- typeof env.TEST_LOGIN_PASSWORD!=="string"||env.TEST_LOGIN_PASSWORD.length<12)
+ if(typeof testUser!=="string"||!testUser||testUser.length>100||
+ typeof testPassword!=="string"||testPassword.length<12||testPassword.length>128)
  return summary("auth",[{id:"CONFIG",result:"FAIL",error:"TEST_CREDENTIALS_MISSING"}]);
  await test(rows,"LOGIN-01.HEALTH",async()=>expect(await gas(env,"system","health",{},null,"GET"),true));
  await test(rows,"LOGIN-02.INVALID_EMPTY_PAYLOAD",async()=>expect(await gas(env,"auth","login",{}),false,"INVALID_REQUEST"));
  await test(rows,"LOGIN-03.UNAUTHENTICATED_SESSION",async()=>expect(await gas(env,"auth","session"),false,"UNAUTHENTICATED"));
  const loginOk=await test(rows,"LOGIN-04.VALID_CREDENTIALS",async()=>{
-  const j=await gas(env,"auth","login",{username:env.TEST_LOGIN_USERNAME,password:env.TEST_LOGIN_PASSWORD});
+  const j=await gas(env,"auth","login",{username:testUser,password:testPassword});
   if(!j.ok)throw Error("LOGIN_DENIED_"+code(j.error?.code));
   if(!/^[0-9a-f]{64}$/i.test(j.data?.sessionToken||""))throw Error("SESSION_TOKEN_INVALID");
   token=j.data.sessionToken;return "login accepted; token hidden";
@@ -123,8 +129,11 @@ async function apiProbe(env,req){
  const started=Date.now();
  try{
   if(authenticated){
-   const username=req.username||env.TEST_LOGIN_USERNAME;
-   const password=req.password||env.TEST_LOGIN_PASSWORD;
+   const providedUser=typeof req.username==="string"&&req.username.length>0;
+   const providedPassword=typeof req.password==="string"&&req.password.length>0;
+   if(providedUser!==providedPassword)throw Error("CREDENTIAL_PAIR_REQUIRED");
+   const username=providedUser?req.username:env.TEST_LOGIN_USERNAME;
+   const password=providedPassword?req.password:env.TEST_LOGIN_PASSWORD;
    if(typeof username!=="string"||!username||username.length>100||
       typeof password!=="string"||password.length<12||password.length>128)
      throw Error("TEST_CREDENTIALS_INVALID");
@@ -199,14 +208,15 @@ const PAGE = [
 '<script nonce="__NONCE__">(function(){',
 'const key=document.getElementById("key"),out=document.getElementById("output"),state=document.getElementById("state"),',
 'copy=document.getElementById("copy"),h=document.getElementById("health"),l=document.getElementById("login");',
-'let last="";async function run(path){if(key.value.trim().length<32){state.textContent="กรุณากรอก Access Key";return;}',
+'let last="";async function run(path,body){if(key.value.trim().length<32){state.textContent="กรุณากรอก Access Key";return;}',
 'copy.disabled=true;h.disabled=true;l.disabled=true;out.textContent="กำลังทดสอบ...";state.textContent="กำลังเรียก API";',
-'try{const r=await fetch(path,{method:"POST",headers:{authorization:"Bearer "+key.value.trim()},signal:AbortSignal.timeout(120000),cache:"no-store"});',
+'try{const headers={authorization:"Bearer "+key.value.trim()};if(body!==undefined)headers["content-type"]="application/json";',
+'const r=await fetch(path,{method:"POST",headers,body:body===undefined?undefined:JSON.stringify(body),signal:AbortSignal.timeout(120000),cache:"no-store"});',
 'const j=await r.json();if(!r.ok){state.textContent="ERROR "+r.status;out.textContent=j.error||"UNKNOWN";return;}',
 'last=JSON.stringify(j,null,2);out.textContent=last;state.textContent=j.result+" "+j.passed+"/"+j.tests.length;copy.disabled=false;',
 '}catch{state.textContent="NETWORK_ERROR";out.textContent="ไม่สามารถรับผล HTTP ได้";}',
 'finally{h.disabled=false;l.disabled=false;}}',
-'h.onclick=()=>run("/api/health");l.onclick=()=>run("/api/auth-suite");',
+'h.onclick=()=>run("/api/health");l.onclick=()=>run("/api/auth-suite",{username:document.getElementById("testuser").value,password:document.getElementById("testpass").value}).finally(()=>{document.getElementById("testpass").value="";});',
 'copy.onclick=async()=>{try{await navigator.clipboard.writeText(last);state.textContent+=" · คัดลอกแล้ว";}catch{state.textContent+=" · กรุณาเลือกคัดลอกข้อความเอง";}};',
 'const probeBtn=document.getElementById("probe");',
 'async function runProbe(){',
@@ -256,6 +266,6 @@ export default {async fetch(request,env){
  if(path==="/api/probe"&&(!READ_ONLY_OPERATIONS.has(args.operation)||!safePayload(args.payload)))
   return reply({error:"OPERATION_OR_PAYLOAD_NOT_ALLOWED"},403);
  try{return reply(path==="/api/health"?await health(env):
-   path==="/api/auth-suite"?await auth(env):await apiProbe(env,args));}
+   path==="/api/auth-suite"?await auth(env,args):await apiProbe(env,args));}
  catch{return reply({error:"TEST_EXECUTION_ERROR"},500);}
 }};
