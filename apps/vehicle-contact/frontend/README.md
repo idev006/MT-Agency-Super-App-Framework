@@ -23,7 +23,7 @@ Vue 3 + Vite SPA สำหรับพิสูจน์การเชื่อ
 - เก็บ session token ใน `sessionStorage` เพื่อรองรับ refresh ภายใน tab และล้างเมื่อ sign out
 - จดจำ username ได้ และมีตัวเลือก POC ให้จดจำ password พร้อมคำเตือนชัดเจน
 - ไม่ใช้ Cloudflare bridge key ใน SPA
-- Dashboard และ sidebar สร้างเมนูจาก role ใน Pinia โดย GAS เป็น SSOT ของสิทธิ์
+- Dashboard และ sidebar สร้างเมนูจาก permission ที่ `auth.session` คืนมา โดย GAS เป็น SSOT ของสิทธิ์
 - แสดง logical error และ request ID สำหรับวิเคราะห์ปัญหา
 
 POC นี้ยังไม่มี vehicle search หรือ QR scanner ใน SPA เมนูเหล่านั้นแสดงเป็นงานลำดับถัดไป
@@ -43,6 +43,10 @@ npm run dev
 ```
 
 เปิด URL ที่ Vite แสดง แล้วกด **ทดสอบการเชื่อมต่อ** ก่อนทดลอง login
+
+### Local visual QA โดยไม่ใช้บัญชีจริง
+
+ตั้ง `VITE_UI_PREVIEW=true` เฉพาะตอนรัน Vite development server เพื่อเปิด shell ด้วยข้อมูลสังเคราะห์สำหรับตรวจ responsive layout และ theme โหมดนี้ทำงานเฉพาะเมื่อ `import.meta.env.DEV` เป็นจริง ไม่บันทึก session token และไม่เรียก backend
 
 ## ตรวจสอบก่อนส่งงาน
 

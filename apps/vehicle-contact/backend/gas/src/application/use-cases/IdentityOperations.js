@@ -41,7 +41,15 @@ export function createIdentityOperations({store,security,sessions}) {
   store.sequence(()=>store.update('vc_sessions',{session_id:actor.sessionId},{status:'REVOKED',revoked_at:security.now()}));
   return {revoked:true};
  }
- function session(p,actor){return {userId:actor.userId,roles:actor.roles,expiresAt:actor.session.expires_at,mustChangePassword:actor.user.password_change_required===true||String(actor.user.password_change_required)==='true'};}
+ function session(p,actor){return {
+  userId:actor.userId,
+  displayName:actor.user.display_name||'',
+  organizationId:actor.user.org_id||null,
+  roles:actor.roles,
+  permissions:actor.permissions,
+  expiresAt:actor.session.expires_at,
+  mustChangePassword:actor.user.password_change_required===true||String(actor.user.password_change_required)==='true'
+ };}
  function linkGoogle(p,actor){
   if(!security.verifyPassword(p.password,actor.user.password_hash))throw new Error('INVALID_CREDENTIALS');
   const claim=security.verifyGoogle(p.idToken);

@@ -10,4 +10,9 @@ describe('native daisyUI component sizing', () => {
     expect(rule[1]).not.toContain('min-height')
     expect(rule[1]).toContain('font: inherit')
   })
+
+  it('does not override DaisyUI component namespace for form layout', () => {
+    expect(css).not.toMatch(/\.form-control\s*\{/)
+    expect(css).toMatch(/\.field-stack\s*\{/)
+  })
 })

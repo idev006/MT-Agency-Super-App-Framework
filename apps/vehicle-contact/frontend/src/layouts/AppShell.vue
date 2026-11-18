@@ -20,17 +20,18 @@ async function signOut() {
 }
 </script>
 <template>
+  <a class="btn btn-primary fixed left-3 top-3 z-50 -translate-y-24 focus:translate-y-0" href="#main-content">ข้ามไปยังเนื้อหาหลัก</a>
   <div class="drawer min-h-dvh lg:drawer-open">
-    <input v-model="ui.navigationOpen" class="drawer-toggle" type="checkbox" aria-label="เปิดเมนูหลัก" />
+    <input v-model="ui.navigationOpen" class="drawer-toggle" type="checkbox" tabindex="-1" aria-hidden="true" />
     <div class="drawer-content flex min-h-dvh min-w-0 flex-col bg-base-200">
       <AppHeader @request-signout="confirmSignOut = true" />
-      <main class="min-w-0 flex-1"><RouterView /></main>
+      <main id="main-content" class="min-w-0 flex-1" tabindex="-1"><RouterView /></main>
       <AppFooter />
     </div>
-    <div class="drawer-side z-30">
-      <label class="drawer-overlay" aria-label="ปิดเมนู" @click="ui.closeNavigation"></label>
+    <div class="drawer-side z-40">
+      <div class="drawer-overlay" aria-hidden="true" @click="ui.closeNavigation"></div>
       <AppSidebar />
     </div>
   </div>
-  <ConfirmDialog :open="confirmSignOut" title="ยืนยันการออกจากระบบ" message="Session ปัจจุบันจะถูกยกเลิกที่ GAS และคุณต้องเข้าสู่ระบบใหม่เพื่อใช้งานต่อ" confirm-label="ออกจากระบบ" :busy="busy" @cancel="confirmSignOut = false" @confirm="signOut" />
+  <ConfirmDialog :open="confirmSignOut" title="ออกจากระบบหรือไม่" message="ระบบจะสิ้นสุดเซสชันนี้ และคุณต้องเข้าสู่ระบบอีกครั้งเมื่อต้องการใช้งานต่อ" confirm-label="ออกจากระบบ" :busy="busy" @cancel="confirmSignOut = false" @confirm="signOut" />
 </template>
