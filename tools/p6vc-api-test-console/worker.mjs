@@ -6,6 +6,7 @@
  */
 const JSON_HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY"};
 const TARGET=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
+const READ_ONLY_OPERATIONS=new Set(["system.health","system.config.get","users.list","organizations.list","campaigns.list","registrations.listPending","vehicles.lookup","vehicles.history","changes.listPending","retention.jobStatus"]);
 const reply=(obj,status=200)=>new Response(JSON.stringify(obj),{status,headers:JSON_HEADERS});
 const code=x=>typeof x==="string"&&/^[A-Z0-9_]{1,80}$/.test(x)?x:"UNKNOWN";
 const summary=(kind,rows)=>({service:"p6vc-api-test-console",kind,generatedAt:new Date().toISOString(),
@@ -18,11 +19,11 @@ async function sameKey(a,b){
  for(let i=0;i<x.length;i++)diff|=x[i]^y[i];
  return diff===0;
 }
-async function gas(env,group,action,payload={},token=null,method="POST"){
+async function gas(env,group,action,payload={},token=null,method="POST",requestId=null){
  const options={method,redirect:"follow",signal:AbortSignal.timeout(40000),headers:{"accept":"application/json"}};
  if(method==="POST"){
   options.headers["content-type"]="text/plain;charset=utf-8";
-  options.body=JSON.stringify({apiVersion:"v1",group,action,payload,...(token?{sessionToken:token}:{})});
+  options.body=JSON.stringify({apiVersion:"v1",group,action,payload,...(token?{sessionToken:token}:{}),...(requestId?{requestId}:{})});
  }
  let r;
  try{r=await fetch(env.P6VC_GAS_EXEC_URL,options);}catch{throw Error("GAS_NETWORK_ERROR");}
@@ -91,6 +92,68 @@ async function auth(env){
  }
  return summary("auth",rows);
 }
+
+function safePayload(p){
+ if(!p||typeof p!=="object"||Array.isArray(p)||JSON.stringify(p).length>4096)return false;
+ let n=0;const forbidden=/password|secret|token|authorization|cookie|credential|api[_-]?key/i;
+ function valid(v,depth=0){
+  if(depth>5||++n>180)return false;
+  if(v!==null&&typeof v==="object"){
+   if(Array.isArray(v))return v.length<=60&&v.every(x=>valid(x,depth+1));
+   const e=Object.entries(v);
+   return e.length<=50&&e.every(([k,x])=>k.length<=80&&!forbidden.test(k)&&
+    !["__proto__","constructor","prototype"].includes(k)&&valid(x,depth+1));
+  }
+  return v===null||typeof v==="boolean"||
+   typeof v==="number"&&Number.isFinite(v)||typeof v==="string"&&v.length<=1024;
+ }
+ return valid(p);
+}
+async function apiProbe(env,req){
+ const operation=typeof req.operation==="string"?req.operation:"";
+ if(!READ_ONLY_OPERATIONS.has(operation))return {error:"OPERATION_NOT_ALLOWLISTED"};
+ if(!safePayload(req.payload))return {error:"INVALID_PAYLOAD"};
+ const method=req.method==="GET"?"GET":"POST";
+ if(method==="GET"&&operation!=="system.health")return {error:"METHOD_NOT_ALLOWED"};
+ const requestId=req.requestId||crypto.randomUUID();
+ if(!/^[a-zA-Z0-9_-]{8,64}$/.test(requestId))return {error:"INVALID_REQUEST_ID"};
+ const [group,...rest]=operation.split("."),action=rest.join(".");
+ let token=null,loginError=null,backend=null,logoutAttempted=false,logoutRevoked=false;
+ const authenticated=req.useTestSession===true&&operation!=="system.health";
+ const started=Date.now();
+ try{
+  if(authenticated){
+   const username=req.username||env.TEST_LOGIN_USERNAME;
+   const password=req.password||env.TEST_LOGIN_PASSWORD;
+   if(typeof username!=="string"||!username||username.length>100||
+      typeof password!=="string"||password.length<12||password.length>128)
+     throw Error("TEST_CREDENTIALS_INVALID");
+   const login=await gas(env,"auth","login",{username,password});
+   if(!login.ok)loginError="LOGIN_DENIED_"+code(login.error?.code);
+   else if(!/^[0-9a-f]{64}$/i.test(login.data?.sessionToken||""))loginError="SESSION_TOKEN_INVALID";
+   else token=login.data.sessionToken;
+  }
+  if(!loginError){
+   const result=await gas(env,group,action,req.payload,token,method,requestId);
+   backend={ok:result.ok,errorCode:result.ok?null:code(result.error?.code),
+    // No raw response, counts, identifiers, usernames, vehicles, phones, or personal data in report.
+    responseType:result.ok?(Array.isArray(result.data)?"array":typeof result.data):null};
+  }
+ }finally{
+  if(token){
+   logoutAttempted=true;
+   try{
+    const result=await gas(env,"auth","logout",{},token);
+    logoutRevoked=result.ok===true&&result.data?.revoked===true;
+   }catch{logoutRevoked=false;}
+  }
+ }
+ return {service:"p6vc-api-test-console",kind:"probe",generatedAt:new Date().toISOString(),
+  operation,method,requestId,authenticated,transport:loginError?"NOT_ATTEMPTED":"PASS",
+  backend,loginError,elapsedMs:Date.now()-started,logoutAttempted,logoutRevoked,
+  rawResponseIncluded:false,credentialsExposed:false,sessionTokensExposed:false};
+}
+
 const PAGE = [
 '<!doctype html><html lang="th"><head><meta charset="utf-8">',
 '<meta name="viewport" content="width=device-width, initial-scale=1">',
@@ -133,12 +196,24 @@ function serve(){
 export default {async fetch(request,env){
  const path=new URL(request.url).pathname;
  if(request.method==="GET"&&(path==="/"||path==="/index.html"))return serve();
- if(request.method!=="POST"||!["/api/health","/api/auth-suite"].includes(path))return reply({error:"NOT_FOUND"},404);
+ if(request.method!=="POST"||!["/api/health","/api/auth-suite","/api/probe"].includes(path))return reply({error:"NOT_FOUND"},404);
  if(!TARGET.test(env.P6VC_GAS_EXEC_URL||"")||!env.BRIDGE_ACCESS_KEY||env.BRIDGE_ACCESS_KEY.length<32)return reply({error:"BRIDGE_NOT_CONFIGURED"},503);
  const header=request.headers.get("authorization")||"";
  const m=/^Bearer (\S+)$/.exec(header);
  if(!m||!(await sameKey(m[1],env.BRIDGE_ACCESS_KEY)))return reply({error:"UNAUTHORIZED"},401);
- if((await request.text()).length)return reply({error:"BODY_NOT_ALLOWED"},400);
- try{return reply(path==="/api/health"?await health(env):await auth(env));}
+ const raw=await request.text();
+ if(raw.length>8192)return reply({error:"REQUEST_TOO_LARGE"},413);
+ let args={};
+ if(raw){
+  if(request.headers.get("content-type")?.split(";")[0]!=="application/json")
+   return reply({error:"JSON_REQUIRED"},415);
+  try{args=JSON.parse(raw);}catch{return reply({error:"INVALID_JSON"},400);}
+  if(!args||typeof args!=="object"||Array.isArray(args))return reply({error:"INVALID_BODY"},400);
+ }
+ if(path==="/api/health"&&raw)return reply({error:"BODY_NOT_ALLOWED"},400);
+ if(path==="/api/probe"&&(!READ_ONLY_OPERATIONS.has(args.operation)||!safePayload(args.payload)))
+  return reply({error:"OPERATION_OR_PAYLOAD_NOT_ALLOWED"},403);
+ try{return reply(path==="/api/health"?await health(env):
+   path==="/api/auth-suite"?await auth(env):await apiProbe(env,args));}
  catch{return reply({error:"TEST_EXECUTION_ERROR"},500);}
 }};
