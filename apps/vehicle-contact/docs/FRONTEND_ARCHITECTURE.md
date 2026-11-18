@@ -1,6 +1,13 @@
 # P6 Vehicle Contact Frontend Architecture
 
-Status: Vue SPA POC implemented; Cloudflare `/api/frontend` source implemented but not deployed.
+Status: Vue SPA POC, Cloudflare `/api/frontend` and GitHub Pages deployment implemented and verified on 2026-11-18.
+
+UI governance for every subsequent page is defined by:
+
+- [UI/UX Principles](FRONTEND_UI_UX_PRINCIPLES.md)
+- [Design System Blueprint](FRONTEND_DESIGN_SYSTEM_BLUEPRINT.md)
+- [UI Compliance Checklist](FRONTEND_UI_COMPLIANCE_CHECKLIST.md)
+- [Role Delivery Blueprint](FRONTEND_ROLE_DELIVERY_BLUEPRINT.md)
 
 ## Runtime shape
 
@@ -88,7 +95,8 @@ Hash history is intentional for GitHub Pages because it avoids server rewrite re
 - Vue Composition API/component build: PASS
 - Pinia global state and role menu unit tests: PASS
 - Vue Router authentication guard browser check: PASS
-- Direct local browser to GAS: FAIL in the observed POC (`NETWORK_ERROR`)
+- Direct local browser to GAS: FAIL; not selected as the deployment architecture
 - Worker gateway unit/contract tests: PASS
-- Live Cloudflare deployment and browser login: NOT RUN
-- GitHub Pages deployment: NOT RUN
+- Live Cloudflare deployment and local browser login: PASS
+- GitHub Pages deployment, assets, Pages-origin CORS and health: PASS
+- Authenticated browser acceptance from the published GitHub Pages origin: NOT RUN
