@@ -2,8 +2,14 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const cdpPort = Number(process.env.P6VC_CDP_PORT || 9223)
-const appUrl = process.env.P6VC_EVIDENCE_URL || 'http://127.0.0.1:4173/#/app/vehicles/search'
-const evidenceDir = resolve('../docs/evidence/fe-staff-vehicle-search-20261119')
+const evidenceSlice = process.env.P6VC_EVIDENCE_SLICE || 'staff'
+const systemAdminEvidence = evidenceSlice === 'system-admin-users'
+const appUrl = process.env.P6VC_EVIDENCE_URL || (systemAdminEvidence
+  ? 'http://127.0.0.1:4173/#/app/admin/users'
+  : 'http://127.0.0.1:4173/#/app/vehicles/search')
+const evidenceDir = resolve(systemAdminEvidence
+  ? '../docs/evidence/fe-system-admin-users-20261119'
+  : '../docs/evidence/fe-staff-vehicle-search-20261119')
 const axeSource = await readFile(resolve('node_modules/axe-core/axe.min.js'), 'utf8')
 
 class CdpClient {
@@ -73,6 +79,11 @@ const apiFixture = {
     { photoId: 'photo-rear', slot: 'REAR', storageRef: 'not-for-ui', mimeType: 'image/jpeg' },
   ],
 }
+const userFixture = [
+  { userId: 'user-admin-evidence', username: 'admin', displayName: 'ผู้ดูแลระบบทดสอบ', organizationId: 'org-command', status: 'ACTIVE' },
+  { userId: 'user-staff-evidence', username: 'staff.demo', displayName: 'เจ้าหน้าที่ทดสอบ', organizationId: 'org-station-01', status: 'ACTIVE' },
+  { userId: 'user-suspended-evidence', username: 'staff.suspended', displayName: 'บัญชีระงับทดสอบ', organizationId: '', status: 'SUSPENDED' },
+]
 const sessionFixture = {
   userId: 'preview-user', displayName: 'ผู้ใช้งานทดสอบ', organizationId: 'preview-unit',
   roles: ['SYSTEM_ADMIN', 'STAFF'],
@@ -96,6 +107,7 @@ const installFixture = `
       let data;
       if (operation === 'auth.session') data = ${JSON.stringify(sessionFixture)};
       else if (operation === 'vehicles.lookup') data = ${JSON.stringify(apiFixture)};
+      else if (operation === 'users.list') data = ${JSON.stringify(userFixture)};
       else if (operation === 'vehicles.history') data = [{
         audit_id: 'audit-evidence-1', action: 'VEHICLE_UPDATED', redacted_summary: 'VEHICLE_UPDATED',
         created_at: '2026-11-19T02:30:00.000Z'
@@ -240,34 +252,54 @@ async function screenshot(fileName, { fullPage = false } = {}) {
 }
 
 await mkdir(evidenceDir, { recursive: true })
-const evidence = { generatedAt: new Date().toISOString(), appUrl, browser: 'Microsoft Edge headless', cases: {} }
+const evidence = { generatedAt: new Date().toISOString(), evidenceSlice, appUrl, browser: 'Microsoft Edge headless', cases: {} }
 
-await setViewport(1440, 900)
-await navigate()
-await setTheme('corporate')
-evidence.cases.desktopCorporateIdle = await auditPage()
-evidence.cases.desktopCorporateIdle.keyboardOrder = await keyboardOrder()
-await screenshot('search-desktop-corporate.png')
+if (systemAdminEvidence) {
+  await setViewport(1440, 900)
+  await navigate()
+  await setTheme('corporate')
+  await waitUntil(`document.querySelector('#user-directory-title')`)
+  evidence.cases.desktopCorporateSuccess = await auditPage()
+  await screenshot('users-desktop-corporate.png')
 
-await setTheme('dark')
-await submitSearch()
-evidence.cases.desktopDarkSuccess = await auditPage()
-await screenshot('search-desktop-dark-success.png')
+  await setTheme('dark')
+  await waitUntil(`document.querySelector('#user-directory-title')`)
+  evidence.cases.desktopDarkSuccess = await auditPage()
+  await screenshot('users-desktop-dark.png')
 
-await setViewport(390, 844)
-await setTheme('corporate')
-await submitSearch()
-evidence.cases.mobileCorporateSuccess = await auditPage()
-await screenshot('search-mobile-corporate-success.png', { fullPage: true })
+  await setViewport(390, 844)
+  await setTheme('corporate')
+  await waitUntil(`document.querySelector('#user-directory-title')`)
+  evidence.cases.mobileCorporateSuccess = await auditPage()
+  await screenshot('users-mobile-corporate.png', { fullPage: true })
+} else {
+  await setViewport(1440, 900)
+  await navigate()
+  await setTheme('corporate')
+  evidence.cases.desktopCorporateIdle = await auditPage()
+  evidence.cases.desktopCorporateIdle.keyboardOrder = await keyboardOrder()
+  await screenshot('search-desktop-corporate.png')
 
-evidence.refreshPersistence = await verifyRefreshPersistence()
+  await setTheme('dark')
+  await submitSearch()
+  evidence.cases.desktopDarkSuccess = await auditPage()
+  await screenshot('search-desktop-dark-success.png')
+
+  await setViewport(390, 844)
+  await setTheme('corporate')
+  await submitSearch()
+  evidence.cases.mobileCorporateSuccess = await auditPage()
+  await screenshot('search-mobile-corporate-success.png', { fullPage: true })
+
+  evidence.refreshPersistence = await verifyRefreshPersistence()
+}
 
 await writeFile(resolve(evidenceDir, 'browser-evidence.json'), `${JSON.stringify(evidence, null, 2)}\n`)
 client.socket.close()
 
 const violations = Object.values(evidence.cases).flatMap((entry) => entry.axe.violations)
 const overflow = Object.values(evidence.cases).filter((entry) => entry.layout.documentScrollWidth !== entry.layout.documentClientWidth)
-const refreshFailed = evidence.refreshPersistence.route !== '#/app/vehicles/search'
+const refreshFailed = systemAdminEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
   || evidence.refreshPersistence.signInVisible
   || evidence.refreshPersistence.transport !== 'worker'
   || evidence.refreshPersistence.gasEndpoint !== gasPersistedEndpoint

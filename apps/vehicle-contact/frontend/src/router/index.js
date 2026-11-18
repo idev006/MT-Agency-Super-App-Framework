@@ -7,6 +7,7 @@ import DashboardView from '../views/DashboardView.vue'
 import GatewayPocView from '../views/GatewayPocView.vue'
 import VehicleSearchPage from '../pages/VehicleSearchPage.vue'
 import ForbiddenPage from '../pages/ForbiddenPage.vue'
+import UserDirectoryPage from '../pages/UserDirectoryPage.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -19,6 +20,7 @@ export const router = createRouter({
         { path: 'connection', name: 'connection-test', component: GatewayPocView, meta: { title: 'ทดสอบการเชื่อมต่อ' } },
         { path: 'vehicles/search', name: 'vehicle-search', component: VehicleSearchPage, meta: { title: 'ค้นหายานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
         { path: 'forbidden', name: 'forbidden', component: ForbiddenPage, meta: { title: 'ไม่มีสิทธิ์เปิดงาน' } },
+        { path: 'admin/users', name: 'user-directory', component: UserDirectoryPage, meta: { title: 'ผู้ใช้และสิทธิ์', requiredPermissions: ['users.manage'] } },
       ],
     },
     { path: '/', redirect: { name: 'dashboard' } },

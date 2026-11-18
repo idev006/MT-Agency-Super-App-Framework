@@ -1,0 +1,209 @@
+{
+  "generatedAt": "2026-11-18T19:13:07.001Z",
+  "evidenceSlice": "system-admin-users",
+  "appUrl": "http://127.0.0.1:4173/#/app/admin/users",
+  "browser": "Microsoft Edge headless",
+  "cases": {
+    "desktopCorporateSuccess": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "theme": "corporate",
+        "title": "ผู้ใช้และสิทธิ์ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี สุภาพ (corporate)\" value=\"corporate\">"
+              },
+              {
+                "target": [
+                  ".badge-neutral"
+                ],
+                "html": "<span class=\"badge badge-neutral\">3 บัญชี</span>"
+              },
+              {
+                "target": [
+                  "tr:nth-child(1) > td:nth-child(4) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "tr:nth-child(2) > td:nth-child(4) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "td:nth-child(4) > .badge-warning.badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระงับการใช้งาน</span>"
+              },
+              {
+                "target": [
+                  ".mb-3.justify-between.px-2 > .badge-warning.badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>ผู้ใช้และสิทธิ์</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "desktopDarkSuccess": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "theme": "dark",
+        "title": "ผู้ใช้และสิทธิ์ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".badge-neutral"
+                ],
+                "html": "<span class=\"badge badge-neutral\">3 บัญชี</span>"
+              },
+              {
+                "target": [
+                  "tr:nth-child(1) > td:nth-child(4) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "tr:nth-child(2) > td:nth-child(4) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "td:nth-child(4) > .badge-warning.badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระงับการใช้งาน</span>"
+              },
+              {
+                "target": [
+                  ".mb-3.justify-between.px-2 > .badge-warning.badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>ผู้ใช้และสิทธิ์</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mobileCorporateSuccess": {
+      "layout": {
+        "viewportWidth": 390,
+        "viewportHeight": 844,
+        "documentClientWidth": 390,
+        "documentScrollWidth": 390,
+        "bodyScrollWidth": 390,
+        "theme": "corporate",
+        "title": "ผู้ใช้และสิทธิ์ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".badge-neutral"
+                ],
+                "html": "<span class=\"badge badge-neutral\">3 บัญชี</span>"
+              },
+              {
+                "target": [
+                  "li:nth-child(1) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "li:nth-child(2) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "li:nth-child(3) > .badge-warning.badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระงับการใช้งาน</span>"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
