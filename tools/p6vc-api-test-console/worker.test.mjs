@@ -114,3 +114,39 @@ test('health 2/2 remains supported',async()=>{
   assert.equal(j.failed,0);
  }finally{fake.restore();}
 });
+
+test('auth suite accepts temporary form credentials, never echoes them, revokes session',async()=>{
+ let revoked=false;
+ const manualUser='temporary-operator',manualPass='only-for-mock-test-123456789';
+ const fake=await fakeGAS(body=>{
+  if(body.group==='system'&&body.action==='health')return envelope(true,{status:'bootstrap'});
+  if(body.group==='auth'&&body.action==='login'){
+   if(!body.payload.username)return envelope(false,null,{code:'INVALID_REQUEST'});
+   assert.equal(body.payload.username,manualUser);
+   assert.equal(body.payload.password,manualPass);
+   return envelope(true,{sessionToken:TOKEN});
+  }
+  if(body.group==='auth'&&body.action==='session'){
+   if(!body.sessionToken||revoked)return envelope(false,null,{code:'UNAUTHENTICATED'});
+   return envelope(true,{roles:['SYSTEM_ADMIN'],mustChangePassword:true});
+  }
+  if(body.group==='auth'&&body.action==='logout'){revoked=true;return envelope(true,{revoked:true});}
+  throw Error('Unexpected logical operation');
+ });
+ try{
+  const r=await worker.fetch(request('/api/auth-suite',{username:manualUser,password:manualPass}),env());
+  const j=await r.json();
+  assert.equal(r.status,200);
+  assert.equal(j.result,'PASS');
+  assert.equal(j.passed,8);
+  assert.equal(j.failed,0);
+  assert.equal(revoked,true);
+  for(const value of [manualUser,manualPass,TOKEN])assert.ok(!JSON.stringify(j).includes(value));
+ }finally{fake.restore();}
+});
+test('partial form credential does not silently combine with Worker secret',async()=>{
+ const r=await worker.fetch(request('/api/auth-suite',{username:'only-user'}),env());
+ const j=await r.json();
+ assert.equal(j.result,'FAIL');
+ assert.equal(j.tests[0].error,'CREDENTIAL_PAIR_REQUIRED');
+});
