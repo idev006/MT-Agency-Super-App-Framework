@@ -1,0 +1,345 @@
+{
+  "desktop": {
+    "title": "ภาพรวม — P6 Vehicle Contact",
+    "theme": "corporate",
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "scrollHeight": 1126,
+    "clientHeight": 1000,
+    "headerText": "ระบบประสานข้อมูลยานพาหนะ\nภาพรวม\nเลือกชุดสี\nสว่าง (light)\nมืด (dark)\nคัพเค้ก (cupcake)\nผึ้ง (bumblebee)\nมรกต (emerald)\nสุภาพ (corporate)\nซินธ์เวฟ (synthwave)\nย้อนยุค (retro)\nไซเบอร์พังก์ (cyberpunk)\nวาเลนไทน์ (valentine)\nฮาโลวีน (halloween)\nสวน (garden)\nป่า (forest)\nน้ำทะเล (aqua)\nโลไฟ (lofi)\nพาสเทล (pastel)\nแฟนตาซี (fantasy)\nโครงร่าง (wireframe)\nดำ (black)\nหรู (luxury)\nแดรกคูลา (dracula)\nงานพิมพ์ (cmyk)\nใบไม้ร่วง (autumn)\nธุรกิจ (business)\nแอซิด (acid)\nเลมอนเนด (lemonade)\nกลางคืน (night)\nกาแฟ (coffee)\nฤดูหนาว (winter)\nสลัว (dim)\nนอร์ด (nord)\nอาทิตย์ตก (sunset)\nคาราเมลลาเต้ (caramellatte)\nห้วงลึก (abyss)\nไหม (silk)\nผู้ใช้งานทดสอบ\nรหัสผู้ใช้ preview-user\nออกจากระบบ",
+    "card": {
+      "background": "oklch(1 0 0)",
+      "color": "oklch(0.22389 0.031 278.072)",
+      "bodyColor": "oklab(0.22389 0.00435294 -0.0306929 / 0.65)",
+      "base100": "oklch(100% 0 0)"
+    },
+    "controls": [
+      {
+        "text": "เมนู",
+        "display": "none",
+        "color": "oklch(0.22389 0.031 278.072)",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      {
+        "text": "ออกจากระบบ",
+        "display": "flex",
+        "color": "oklch(0.22389 0.031 278.072)",
+        "rect": {
+          "x": 1300.765625,
+          "y": 14,
+          "width": 115.234375,
+          "height": 44,
+          "top": 14,
+          "right": 1416,
+          "bottom": 58,
+          "left": 1300.765625
+        }
+      },
+      {
+        "text": "บัญชี",
+        "display": "inline-flex",
+        "color": "oklch(0.22389 0.031 278.072)",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      {
+        "text": "ออกจากระบบ",
+        "display": "inline-flex",
+        "color": "oklch(0.22389 0.031 278.072)",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      }
+    ]
+  },
+  "mobile": {
+    "title": "ภาพรวม — P6 Vehicle Contact",
+    "theme": "corporate",
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "scrollHeight": 1594,
+    "clientHeight": 844,
+    "headerText": "เมนู\nภาพรวม\nบัญชี",
+    "card": {
+      "background": "oklch(1 0 0)",
+      "color": "oklch(0.22389 0.031 278.072)",
+      "bodyColor": "oklab(0.22389 0.00435294 -0.0306929 / 0.65)",
+      "base100": "oklch(100% 0 0)"
+    },
+    "controls": [
+      {
+        "text": "เมนู",
+        "display": "flex",
+        "color": "oklch(0.22389 0.031 278.072)",
+        "rect": {
+          "x": 16,
+          "y": 14,
+          "width": 56.734375,
+          "height": 44,
+          "top": 14,
+          "right": 72.734375,
+          "bottom": 58,
+          "left": 16
+        }
+      },
+      {
+        "text": "ออกจากระบบ",
+        "display": "none",
+        "color": "oklch(0.22389 0.031 278.072)",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      {
+        "text": "บัญชี",
+        "display": "inline-flex",
+        "color": "oklch(0.22389 0.031 278.072)",
+        "rect": {
+          "x": 308.328125,
+          "y": 14,
+          "width": 65.671875,
+          "height": 44,
+          "top": 14,
+          "right": 374,
+          "bottom": 58,
+          "left": 308.328125
+        }
+      },
+      {
+        "text": "",
+        "display": "inline-flex",
+        "color": "oklch(0.22389 0.031 278.072)",
+        "rect": {
+          "x": 167.95001220703125,
+          "y": 134.6999969482422,
+          "width": 188.0999755859375,
+          "height": 41.80000305175781,
+          "top": 134.6999969482422,
+          "right": 356.04998779296875,
+          "bottom": 176.5,
+          "left": 167.95001220703125
+        }
+      }
+    ]
+  },
+  "dark": {
+    "title": "ภาพรวม — P6 Vehicle Contact",
+    "theme": "dark",
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "scrollHeight": 1126,
+    "clientHeight": 1000,
+    "headerText": "ระบบประสานข้อมูลยานพาหนะ\nภาพรวม\nเลือกชุดสี\nสว่าง (light)\nมืด (dark)\nคัพเค้ก (cupcake)\nผึ้ง (bumblebee)\nมรกต (emerald)\nสุภาพ (corporate)\nซินธ์เวฟ (synthwave)\nย้อนยุค (retro)\nไซเบอร์พังก์ (cyberpunk)\nวาเลนไทน์ (valentine)\nฮาโลวีน (halloween)\nสวน (garden)\nป่า (forest)\nน้ำทะเล (aqua)\nโลไฟ (lofi)\nพาสเทล (pastel)\nแฟนตาซี (fantasy)\nโครงร่าง (wireframe)\nดำ (black)\nหรู (luxury)\nแดรกคูลา (dracula)\nงานพิมพ์ (cmyk)\nใบไม้ร่วง (autumn)\nธุรกิจ (business)\nแอซิด (acid)\nเลมอนเนด (lemonade)\nกลางคืน (night)\nกาแฟ (coffee)\nฤดูหนาว (winter)\nสลัว (dim)\nนอร์ด (nord)\nอาทิตย์ตก (sunset)\nคาราเมลลาเต้ (caramellatte)\nห้วงลึก (abyss)\nไหม (silk)\nผู้ใช้งานทดสอบ\nรหัสผู้ใช้ preview-user\nออกจากระบบ",
+    "card": {
+      "background": "oklch(0.2533 0.016 252.42)",
+      "color": "oklch(0.97807 0.029 256.847)",
+      "bodyColor": "oklab(0.97807 -0.00659901 -0.0282392 / 0.65)",
+      "base100": "oklch(25.33% 0.016 252.42)"
+    },
+    "controls": [
+      {
+        "text": "เมนู",
+        "display": "none",
+        "color": "oklch(0.97807 0.029 256.847)",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      {
+        "text": "ออกจากระบบ",
+        "display": "flex",
+        "color": "oklch(0.97807 0.029 256.847)",
+        "rect": {
+          "x": 1300.765625,
+          "y": 14,
+          "width": 115.234375,
+          "height": 44,
+          "top": 14,
+          "right": 1416,
+          "bottom": 58,
+          "left": 1300.765625
+        }
+      },
+      {
+        "text": "บัญชี",
+        "display": "inline-flex",
+        "color": "oklch(0.97807 0.029 256.847)",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      {
+        "text": "ออกจากระบบ",
+        "display": "inline-flex",
+        "color": "oklch(0.97807 0.029 256.847)",
+        "rect": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0,
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      }
+    ]
+  },
+  "accessibility": {
+    "corporate": {
+      "theme": "corporate",
+      "violations": [],
+      "passes": 41,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            {
+              "target": [
+                ".lg\\:grid > select"
+              ],
+              "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี สุภาพ (corporate)\" value=\"corporate\">",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "target": [
+                ".badge-warning"
+              ],
+              "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background image"
+            },
+            {
+              "target": [
+                ".menu-active > span"
+              ],
+              "html": "<span>ภาพรวม</span>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background image"
+            },
+            {
+              "target": [
+                ".alert > div > strong"
+              ],
+              "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background image"
+            },
+            {
+              "target": [
+                ".alert > div > .leading-6.mt-1"
+              ],
+              "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background image"
+            }
+          ]
+        }
+      ]
+    },
+    "dark": {
+      "theme": "dark",
+      "violations": [],
+      "passes": 41,
+      "incomplete": [
+        {
+          "id": "color-contrast",
+          "impact": "serious",
+          "nodes": [
+            {
+              "target": [
+                ".lg\\:grid > select"
+              ],
+              "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background gradient"
+            },
+            {
+              "target": [
+                ".badge-warning"
+              ],
+              "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background image"
+            },
+            {
+              "target": [
+                ".menu-active > span"
+              ],
+              "html": "<span>ภาพรวม</span>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background image"
+            },
+            {
+              "target": [
+                ".alert > div > strong"
+              ],
+              "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background image"
+            },
+            {
+              "target": [
+                ".alert > div > .leading-6.mt-1"
+              ],
+              "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>",
+              "failureSummary": "Fix any of the following:\n  Element's background color could not be determined due to a background image"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "interaction": {
+    "signOutDialog": {
+      "opened": {
+        "open": true,
+        "activeText": "ยกเลิก",
+        "activeTag": "BUTTON"
+      },
+      "closed": {
+        "open": false,
+        "activeText": "ออกจากระบบ",
+        "activeTag": "BUTTON"
+      }
+    }
+  }
+}
