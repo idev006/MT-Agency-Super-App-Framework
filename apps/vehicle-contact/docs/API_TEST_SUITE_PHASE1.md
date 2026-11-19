@@ -28,7 +28,7 @@ npm run check
 
 `npm run check` builds the 14 source-mirrored GAS `.gs` files and runs existing contract coverage plus the seven new Node.js test cases. GitHub Actions validates this with every relevant source change.
 
-For external live bootstrap GET/POST safety probes, run [manual live API workflow](../../../.github/workflows/test-vehicle-gas-api.yml) separately. Never send real plates, contacts or photos in public smoke payloads.
+For external live bootstrap GET/POST safety probes, run the `safe-public-smoke` mode in the [consolidated manual live acceptance workflow](../../../.github/workflows/p6vc-live-acceptance.yml). Never send real plates, contacts or photos in public smoke payloads.
 
 ## Next executable, gated tasks
 1. **Schema runtime:** Authorized user sets `VEHICLE_SHEET_ID` and invokes `verifyVehicleSchemaFromEditor()` and `inspectVehicleSchemaDriftFromEditor()` inside target GAS Script Editor. Save only redacted output in GitHub. These editor functions are not public API routes.

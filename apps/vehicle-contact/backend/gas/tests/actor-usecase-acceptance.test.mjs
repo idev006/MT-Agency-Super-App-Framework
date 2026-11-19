@@ -13,9 +13,10 @@ test('ACTOR-01 SYSTEM_ADMIN: org, settings, campaign, user management and RBAC e
  assertOk(assert,u('sys','organizations.disable',{organizationId:child}),'disable org');
  const created=assertOk(assert,u('sys','users.create',{username:'test-extra',displayName:'Synthetic User',temporaryPassword:SAMPLE_PASSWORD}),'create user');
  assert.equal(h.store.one('vc_users',{user_id:created.userId}).password_change_required,true);
- assert.ok(assertOk(assert,u('sys','users.list',{}),'list users').some(x=>x.userId===created.userId));
+ assert.deepEqual(assertOk(assert,u('sys','users.list',{}),'list users').find(x=>x.userId===created.userId).roles,['STAFF']);
  assertOk(assert,u('sys','users.update',{userId:created.userId,displayName:'Updated Synthetic'}),'update user');
  assertOk(assert,u('sys','users.assignRoles',{userId:created.userId,roles:['OWNER']}),'assign owner');
+ assert.deepEqual(assertOk(assert,u('sys','users.list',{}),'list assigned roles').find(x=>x.userId===created.userId).roles,['OWNER']);
  assertOk(assert,u('sys','users.resetPassword',{userId:created.userId,temporaryPassword:SAMPLE_PASSWORD+'A'}),'reset password');
  assertOk(assert,u('sys','users.suspend',{userId:created.userId}),'suspend user');
  assertError(assert,u('reg','users.list',{}),'FORBIDDEN','reg cannot list users');

@@ -1,0 +1,75 @@
+name: Validate P6 Vehicle Contact
+
+on:
+  pull_request:
+    paths:
+      - 'apps/vehicle-contact/**'
+      - 'tools/p6vc-api-test-console/**'
+      - 'scripts/**'
+      - 'blueprint/**'
+      - 'portal/**'
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-p6vc-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: SSOT, frontend, Worker and GAS contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/vehicle-contact/frontend/package-lock.json
+      - name: Validate repository and use-case SSOT
+        run: |
+          node --check scripts/build-pages.mjs
+          node --check scripts/validate-ssot.mjs
+          node --check scripts/validate-usecase-ssot.mjs
+          node scripts/validate-ssot.mjs
+          node scripts/validate-usecase-ssot.mjs
+      - name: Test and build frontend for GitHub Pages
+        working-directory: apps/vehicle-contact/frontend
+        env:
+          VITE_BASE_PATH: /MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/
+        run: |
+          npm ci
+          npm test
+          npm run build
+      - name: Test Cloudflare gateway contract and security boundaries
+        run: |
+          node --check tools/p6vc-api-test-console/worker.mjs
+          node --check tools/p6vc-api-test-console/worker.test.mjs
+          node --test tools/p6vc-api-test-console/worker.test.mjs
+      - name: Build and test GAS backend artifact
+        working-directory: apps/vehicle-contact/backend/gas
+        run: |
+          npm install --no-audit --no-fund
+          npm run check
+      - name: Verify generated GAS artifact
+        working-directory: apps/vehicle-contact/backend/gas
+        run: |
+          test -s dist/appsscript.json
+          expected_gs=$(( $(find src -type f -name '*.js' | wc -l) + 1 ))
+          actual_gs=$(find dist -maxdepth 1 -type f -name '*.gs' | wc -l)
+          test "$actual_gs" -eq "$expected_gs"
+          test "$(find dist -maxdepth 1 -type f | wc -l)" -eq "$((expected_gs + 1))"
+          test -s 'dist/ENTRYPOINTS$WebApp.gs'
+          test -s 'dist/API$routes$Router.gs'
+          test -s 'dist/INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs'
+          find dist -maxdepth 1 -type f -name '*.gs' -print0 | while IFS= read -r -d '' file; do
+            test -s "$file"
+            test "$(wc -l < "$file")" -le 800
+          done
+

@@ -60,7 +60,7 @@ test('frontend gateway preflight allows configured development origin',async()=>
 test('frontend gateway rejects unknown origin and operations outside the POC allowlist',async()=>{
  let r=await worker.fetch(frontendRequest({},'https://evil.invalid','OPTIONS'),env());
  assert.equal(r.status,403);
- r=await worker.fetch(frontendRequest({apiVersion:'v1',group:'users',action:'list',payload:{},requestId:'frontend-test-01'}),env());
+ r=await worker.fetch(frontendRequest({apiVersion:'v1',group:'photos',action:'upload',payload:{},requestId:'frontend-test-01'}),env());
  assert.equal(r.status,403);
  assert.equal((await r.json()).error,'OPERATION_NOT_ALLOWED');
 });
@@ -95,6 +95,21 @@ test('frontend gateway allows login session logout only with strict payloads',as
   r=await worker.fetch(frontendRequest({...base,action:'logout',sessionToken:TOKEN}),env());
   assert.equal((await r.json()).data.revoked,true);
   assert.deepEqual(fake.calls.map(x=>x.group+'.'+x.action),['auth.login','auth.session','auth.logout']);
+ }finally{fake.restore();}
+});
+test('frontend gateway forwards explicitly allowlisted admin operations with a server session',async()=>{
+ const fake=await fakeGAS(body=>envelope(true,{operation:body.group+'.'+body.action}));
+ try{
+  const base={apiVersion:'v1',payload:{},requestId:'frontend-admin-01',sessionToken:TOKEN};
+  let r=await worker.fetch(frontendRequest({...base,group:'users',action:'list',payload:{limit:50}}),env());
+  assert.equal(r.status,200);assert.equal((await r.json()).ok,true);
+  r=await worker.fetch(frontendRequest({...base,group:'system',action:'config.update',payload:{values:{idle_timeout_minutes:30}}}),env());
+  assert.equal(r.status,200);assert.equal((await r.json()).ok,true);
+  assert.deepEqual(fake.calls.map(x=>x.group+'.'+x.action),['users.list','system.config.update']);
+  r=await worker.fetch(frontendRequest({...base,group:'users',action:'suspend',sessionToken:undefined,payload:{userId:'u-1'}}),env());
+  assert.equal((await r.json()).error,'INVALID_SESSION_PAYLOAD');
+  r=await worker.fetch(frontendRequest({...base,group:'users',action:'suspend',payload:{userId:'u-1',role:'SYSTEM_ADMIN'}}),env());
+  assert.equal((await r.json()).error,'INVALID_OPERATION_PAYLOAD');
  }finally{fake.restore();}
 });
 test('access key is mandatory even for health and probes',async()=>{
