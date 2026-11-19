@@ -4,7 +4,7 @@
 
 **Branch:** `codex/p6vc-registration-review-20261120`
 
-**Release candidates:** Frontend `0.3.1`; Backend API `0.4.0` (`apiVersion: v1`)
+**Deployed versions:** Frontend `0.3.1`; Backend API `0.4.0` (`apiVersion: v1`); Cloudflare Worker version `9e549997-e7df-4455-adf9-94c2334e4afa`
 
 ## Root cause corrected
 
@@ -57,5 +57,16 @@ Machine-readable results: [browser-evidence.json](evidence/fe-registration-revie
 
 ## Release boundary
 
-No GAS source change is required for this slice; Backend API `0.4.0` already implements and authorizes all three operations. GitHub Pages and the Cloudflare Worker must be deployed from the merged source before the live menu and Worker-mediated review flow can be accepted. Production security, privacy and real-person data approval remain separate gates.
+No GAS source change was required for this slice; Backend API `0.4.0` already implements and authorizes all three operations.
+
+## Development deployment evidence
+
+- PR [#57](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/57) merged as `bfc70e50018b7adec22da7958abf0af3c7137181` after the full validation workflow passed.
+- GitHub Pages [run 44581076819](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44581076819) passed. The deployed asset reported Frontend `0.3.1` and contained the `registration-review`, `registrations.detail` and `registrations.review` contracts.
+- The first Worker upload did not retain Dashboard text variables and returned `GATEWAY_NOT_CONFIGURED`. It was not accepted as the final deployment. The Worker was immediately redeployed with the approved public endpoint/origin configuration; no password, session token or bridge key was placed in source or command output.
+- Final Worker version: `9e549997-e7df-4455-adf9-94c2334e4afa`.
+- Live Worker `system.health` returned `status=ready`, `apiVersion=v1`, `backendVersion=0.4.0`.
+- Synthetic invalid-session probes for both `registrations.detail` and `registrations.review` reached GAS and returned `UNAUTHENTICATED`. This proves the deployed Worker allowlist accepts the operations while GAS remains the authorization authority; it is not authenticated business acceptance.
+
+Development deployment is PASS. Authenticated browser acceptance with the approved development account remains REVIEW, and production security, privacy, real-person data and operational UAT approvals remain separate BLOCKED gates.
 
