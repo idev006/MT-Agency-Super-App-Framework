@@ -18,9 +18,9 @@ const plannedItems = computed(() => props.items.filter((item) => !item.route))
     <h3 id="planned-work-title" class="text-lg font-medium">กำลังพัฒนา</h3>
     <p class="mb-3 mt-1 text-sm text-base-content/70">รายการเหล่านี้ตรงกับสิทธิ์ของคุณ แต่ยังไม่เปิดใช้งาน</p>
     <ul class="list rounded-box border border-base-300 bg-base-100">
-      <li v-for="item in plannedItems" :key="item.id" class="list-row items-center">
+      <li v-for="item in plannedItems" :key="item.id" class="list-row grid-cols-1 items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
         <div class="min-w-0 flex-1"><strong class="font-medium">{{ item.label }}</strong><p class="mt-1 text-sm leading-6 text-base-content/60">{{ item.description }}</p></div>
-        <span class="badge badge-ghost">ยังไม่เปิดใช้</span>
+        <span class="badge badge-ghost whitespace-nowrap sm:justify-self-end">ยังไม่เปิดใช้</span>
       </li>
     </ul>
   </section>
