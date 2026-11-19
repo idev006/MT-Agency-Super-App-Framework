@@ -82,7 +82,7 @@ const login=async(user,password)=>ok(await request('auth.login',{username:user,p
 
 async function run(){
  await test('HEALTH','system.health',async()=>{
-  const data=ok(await request('system.health'));assert.equal(data.status,'bootstrap');
+  const data=ok(await request('system.health'));assert.equal(data.status,'ready');assert.equal(data.apiVersion,'v1');
  });
  await test('AUTH.INVALID_LOGIN','auth.login',async()=>denied(await request('auth.login',{}),'INVALID_REQUEST'));
  adminToken=await login(username,testPassword);

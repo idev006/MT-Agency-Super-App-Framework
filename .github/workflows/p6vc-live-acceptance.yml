@@ -11,13 +11,14 @@ on:
           - safe-public-smoke
           - single-admin-login
           - synthetic-business-e2e
+          - bootstrap-system-admin-records
       target_url:
         description: 'Approved GAS /exec URL'
         required: true
         type: string
         default: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
       confirmation:
-        description: 'Privileged modes require TEST_LOGIN_ON_APPROVED_SHEET or RUN_SYNTHETIC_E2E'
+        description: 'Privileged modes require TEST_LOGIN_ON_APPROVED_SHEET, RUN_SYNTHETIC_E2E or CREATE_SYNTHETIC_ADMIN_RECORDS'
         required: false
         type: string
 
@@ -54,6 +55,9 @@ jobs:
           if [ "$P6VC_MODE" = 'synthetic-business-e2e' ] && [ "$P6VC_CONFIRMATION" != 'RUN_SYNTHETIC_E2E' ]; then
             echo 'DENIED: exact synthetic E2E confirmation required'; exit 1
           fi
+          if [ "$P6VC_MODE" = 'bootstrap-system-admin-records' ] && [ "$P6VC_CONFIRMATION" != 'CREATE_SYNTHETIC_ADMIN_RECORDS' ]; then
+            echo 'DENIED: exact synthetic record confirmation required'; exit 1
+          fi
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -77,6 +81,16 @@ jobs:
       - name: Guarded synthetic-only business E2E
         if: inputs.mode == 'synthetic-business-e2e'
         run: node apps/vehicle-contact/backend/gas/scripts/verify-live-gateway.mjs
+      - name: Create idempotent synthetic administration records
+        if: inputs.mode == 'bootstrap-system-admin-records'
+        env:
+          P6VC_HTTP_LOGIN_USERNAME: admin
+          P6VC_HTTP_LOGIN_PASSWORD: ${{ secrets.P6VC_HTTP_LOGIN_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -n "$P6VC_HTTP_LOGIN_PASSWORD" ] || { echo 'BLOCKED: P6VC_HTTP_LOGIN_PASSWORD is missing'; exit 1; }
+          node apps/vehicle-contact/backend/gas/scripts/bootstrap-system-admin-records.mjs
       - name: Save sanitized synthetic E2E evidence
         if: always() && inputs.mode == 'synthetic-business-e2e'
         uses: actions/upload-artifact@v4

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import AppHeader from '../components/layout/AppHeader.vue'
@@ -13,6 +13,7 @@ const auth = useSessionStore()
 const ui = useUiStore()
 const { busy } = storeToRefs(auth)
 const confirmSignOut = ref(false)
+onMounted(() => auth.loadReleaseInfo())
 async function signOut() {
   await auth.signOut()
   confirmSignOut.value = false

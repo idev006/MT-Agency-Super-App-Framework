@@ -63,9 +63,9 @@ const authenticated=(op,token,payload={})=>request(...op.split('.'),payload,{tok
 const responseCode=r=>r.body.error?.code||null;
 const check=async()=> {
  const a=await test('LIVE-01.GET_HEALTH',async()=>{
-  const r=await health();const data=expect(r,true);assert.equal(data?.status,'bootstrap');
+  const r=await health();const data=expect(r,true);assert.equal(data?.status,'ready');assert.equal(data?.apiVersion,'v1');
  },{critical:true});
- await test('LIVE-02.POST_HEALTH',async()=>{const r=await request('system','health');assert.equal(expect(r,true).status,'bootstrap')});
+ await test('LIVE-02.POST_HEALTH',async()=>{const r=await request('system','health');assert.equal(expect(r,true).status,'ready')});
  await test('LIVE-03.BAD_VERSION',async()=>{expect(await request('system','health',{}, {version:'v9'}),false,'BAD_REQUEST')});
  await test('LIVE-04.BAD_PAYLOAD',async()=>{
   const r=await request('system','health',[]);expect(r,false,'BAD_REQUEST');

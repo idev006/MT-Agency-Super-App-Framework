@@ -1,0 +1,970 @@
+{
+  "generatedAt": "2026-11-19T11:35:00.087Z",
+  "evidenceSlice": "system-admin-complete",
+  "appUrl": "http://127.0.0.1:4173/#/app/dashboard",
+  "browser": "Microsoft Edge headless",
+  "cases": {
+    "account-securityDesktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "บัญชีและความปลอดภัย — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".card.card-border:nth-child(1) > .card-body.gap-4 > .card-actions.justify-end > .btn-primary[type=\"submit\"]"
+                ],
+                "html": "<button class=\"btn btn-primary\" type=\"submit\"><!--v-if-->เปลี่ยนรหัสผ่าน</button>"
+              },
+              {
+                "target": [
+                  ".card-body.gap-4 > .alert.alert-warning.text-sm"
+                ],
+                "html": "<div class=\"alert alert-warning text-sm\">ใช้เฉพาะสภาพแวดล้อมทดสอบจนกว่าจะเชื่อม Google Identity widget และ client ID ที่ได้รับอนุมัติ</div>"
+              },
+              {
+                "target": [
+                  ".card.card-border:nth-child(2) > .card-body.gap-4 > .card-actions.justify-end > .btn-primary[type=\"submit\"]"
+                ],
+                "html": "<button class=\"btn btn-primary\" type=\"submit\"><!--v-if-->เชื่อมโยง Google</button>"
+              },
+              {
+                "target": [
+                  ".badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>บัญชีและความปลอดภัย</span>"
+              },
+              {
+                "target": [
+                  ".items-start > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "account-securityMobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "บัญชีและความปลอดภัย — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".card.card-border:nth-child(1) > .card-body.gap-4 > .card-actions.justify-end > .btn-primary[type=\"submit\"]"
+                ],
+                "html": "<button class=\"btn btn-primary\" type=\"submit\"><!--v-if-->เปลี่ยนรหัสผ่าน</button>"
+              },
+              {
+                "target": [
+                  ".card-body.gap-4 > .alert.alert-warning.text-sm"
+                ],
+                "html": "<div class=\"alert alert-warning text-sm\">ใช้เฉพาะสภาพแวดล้อมทดสอบจนกว่าจะเชื่อม Google Identity widget และ client ID ที่ได้รับอนุมัติ</div>"
+              },
+              {
+                "target": [
+                  ".card.card-border:nth-child(2) > .card-body.gap-4 > .card-actions.justify-end > .btn-primary[type=\"submit\"]"
+                ],
+                "html": "<button class=\"btn btn-primary\" type=\"submit\"><!--v-if-->เชื่อมโยง Google</button>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "usersDesktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "ผู้ใช้และสิทธิ์ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select[aria-label=\"ชุดสี มืด (dark)\"]"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".badge-primary"
+                ],
+                "html": "<span class=\"badge badge-primary\">จัดการบัญชี</span>"
+              },
+              {
+                "target": [
+                  ".badge-neutral"
+                ],
+                "html": "<span class=\"badge badge-neutral\">3 บัญชี</span>"
+              },
+              {
+                "target": [
+                  "tr:nth-child(1) > td:nth-child(4) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "tr:nth-child(2) > td:nth-child(4) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "td:nth-child(4) > .badge-warning.badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระงับการใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "button[type=\"submit\"]"
+                ],
+                "html": "<button class=\"btn btn-primary\" type=\"submit\">สร้างบัญชี</button>"
+              },
+              {
+                "target": [
+                  ".field-stack > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\">"
+              },
+              {
+                "target": [
+                  ".mb-3.justify-between.px-2 > .badge-warning.badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>ผู้ใช้และสิทธิ์</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          },
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > .text-xl"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">ออกจากระบบหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "usersMobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "ผู้ใช้และสิทธิ์ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".badge-primary"
+                ],
+                "html": "<span class=\"badge badge-primary\">จัดการบัญชี</span>"
+              },
+              {
+                "target": [
+                  ".badge-neutral"
+                ],
+                "html": "<span class=\"badge badge-neutral\">3 บัญชี</span>"
+              },
+              {
+                "target": [
+                  "li:nth-child(1) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "li:nth-child(2) > .badge-success.badge"
+                ],
+                "html": "<span class=\"badge badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "li:nth-child(3) > .badge-warning.badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระงับการใช้งาน</span>"
+              },
+              {
+                "target": [
+                  "button[type=\"submit\"]"
+                ],
+                "html": "<button class=\"btn btn-primary\" type=\"submit\">สร้างบัญชี</button>"
+              },
+              {
+                "target": [
+                  ".field-stack > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\">"
+              }
+            ]
+          },
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > .text-xl"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">ออกจากระบบหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "organizationsDesktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "หน่วยงาน — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select[aria-label=\"ชุดสี มืด (dark)\"]"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".field-stack:nth-child(3) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\"><option value=\"POLICE\">หน่วยงานตำรวจ</option><option value=\"EXTERNAL\">หน่วยงานภายนอก</option></select>"
+              },
+              {
+                "target": [
+                  ".field-stack:nth-child(4) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\"><option value=\"\">ไม่มีหน่วยงานแม่</option><option value=\"org-command\">กองบัญชาการทดสอบ</option></select>"
+              },
+              {
+                "target": [
+                  ".badge-sm"
+                ],
+                "html": "<span class=\"badge badge-sm mt-2 badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  ".btn-sm[type=\"button\"]:nth-child(1)"
+                ],
+                "html": "<button class=\"btn btn-sm\" type=\"button\">แก้ไข</button>"
+              },
+              {
+                "target": [
+                  ".btn-sm.btn-error[type=\"button\"]"
+                ],
+                "html": "<button class=\"btn btn-sm btn-error\" type=\"button\">ปิดใช้งาน</button>"
+              },
+              {
+                "target": [
+                  ".badge-warning"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>หน่วยงาน</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          },
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > h2"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">ปิดใช้งานหน่วยงานหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "organizationsMobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "หน่วยงาน — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".field-stack:nth-child(3) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\"><option value=\"POLICE\">หน่วยงานตำรวจ</option><option value=\"EXTERNAL\">หน่วยงานภายนอก</option></select>"
+              },
+              {
+                "target": [
+                  ".field-stack:nth-child(4) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\"><option value=\"\">ไม่มีหน่วยงานแม่</option><option value=\"org-command\">กองบัญชาการทดสอบ</option></select>"
+              },
+              {
+                "target": [
+                  ".badge-sm"
+                ],
+                "html": "<span class=\"badge badge-sm mt-2 badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  ".btn-sm[type=\"button\"]:nth-child(1)"
+                ],
+                "html": "<button class=\"btn btn-sm\" type=\"button\">แก้ไข</button>"
+              },
+              {
+                "target": [
+                  ".btn-sm.btn-error[type=\"button\"]"
+                ],
+                "html": "<button class=\"btn btn-sm btn-error\" type=\"button\">ปิดใช้งาน</button>"
+              }
+            ]
+          },
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > h2"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">ปิดใช้งานหน่วยงานหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "campaignsDesktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "แคมเปญลงทะเบียน — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".badge-sm"
+                ],
+                "html": "<span class=\"badge badge-sm mt-2 badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  ".btn-sm"
+                ],
+                "html": "<button class=\"btn btn-sm btn-error sm:justify-self-end\" type=\"button\">เพิกถอน</button>"
+              },
+              {
+                "target": [
+                  ".badge-warning"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>แคมเปญลงทะเบียน</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          },
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > h2"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">เพิกถอนแคมเปญหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "campaignsMobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "แคมเปญลงทะเบียน — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".badge-sm"
+                ],
+                "html": "<span class=\"badge badge-sm mt-2 badge-success\">ใช้งาน</span>"
+              },
+              {
+                "target": [
+                  ".btn-sm"
+                ],
+                "html": "<button class=\"btn btn-sm btn-error sm:justify-self-end\" type=\"button\">เพิกถอน</button>"
+              }
+            ]
+          },
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > h2"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">เพิกถอนแคมเปญหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "qrDesktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "theme": "dark",
+        "title": "จัดการ QR — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>จัดการ QR</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          },
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > h2"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">undefinedหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "qrMobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "จัดการ QR — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > h2"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">undefinedหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "settingsDesktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "ตั้งค่าระบบ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  "button[type=\"submit\"]"
+                ],
+                "html": "<button class=\"btn btn-primary\" type=\"submit\"><!--v-if-->บันทึกการตั้งค่า</button>"
+              },
+              {
+                "target": [
+                  ".badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>ตั้งค่าระบบ</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".alert > div > .leading-6.mt-1"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "settingsMobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "ตั้งค่าระบบ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "button[type=\"submit\"]"
+                ],
+                "html": "<button class=\"btn btn-primary\" type=\"submit\"><!--v-if-->บันทึกการตั้งค่า</button>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "retentionDesktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "theme": "dark",
+        "title": "การเก็บรักษาข้อมูล — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".btn-warning"
+                ],
+                "html": "<button class=\"btn btn-warning btn-sm\" type=\"button\">อนุมัติการลบ</button>"
+              },
+              {
+                "target": [
+                  ".badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>การเก็บรักษาข้อมูล</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          },
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > h2"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">อนุมัติงานลบหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "retentionMobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "การเก็บรักษาข้อมูล — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".btn-warning"
+                ],
+                "html": "<button class=\"btn btn-warning btn-sm\" type=\"button\">อนุมัติการลบ</button>"
+              }
+            ]
+          },
+          {
+            "id": "duplicate-id-aria",
+            "impact": "critical",
+            "nodes": [
+              {
+                "target": [
+                  "dialog:nth-child(3) > .modal-box.max-w-md > h2"
+                ],
+                "html": "<h2 id=\"confirm-dialog-title\" class=\"text-xl font-semibold\">อนุมัติงานลบหรือไม่</h2>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "auditDesktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1440,
+        "documentScrollWidth": 1440,
+        "bodyScrollWidth": 1440,
+        "theme": "dark",
+        "title": "ตรวจสอบ Audit — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".self-end"
+                ],
+                "html": "<button class=\"btn btn-primary self-end\">ค้นหา</button>"
+              },
+              {
+                "target": [
+                  ".badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>ตรวจสอบ Audit</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "auditMobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "ตรวจสอบ Audit — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".self-end"
+                ],
+                "html": "<button class=\"btn btn-primary self-end\">ค้นหา</button>"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

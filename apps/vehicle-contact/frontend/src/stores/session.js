@@ -16,8 +16,9 @@ const previewSession = Object.freeze({
   userId: 'preview-user', displayName: 'ผู้ใช้งานทดสอบ', organizationId: 'preview-unit',
   roles: ['SYSTEM_ADMIN', 'STAFF'],
   permissions: [
-    'session.authenticated', 'users.manage', 'organizations.read', 'organizations.manage',
-    'retention.read', 'retention.delete.approve', 'vehicle.lookup', 'vehicle.contact.read',
+    'session.authenticated', 'system.settings.read', 'system.settings.manage', 'users.manage',
+    'organizations.read', 'organizations.manage', 'campaigns.manage', 'qr.manage',
+    'retention.read', 'retention.delete.approve', 'audit.read', 'vehicle.lookup', 'vehicle.contact.read',
     'vehicle.photos.read', 'vehicle.history.read',
   ],
   expiresAt: '2026-11-18T18:30:00.000Z', mustChangePassword: false,
@@ -43,6 +44,7 @@ export const useSessionStore = defineStore('session', () => {
   const sessionVerified = ref(previewEnabled)
   const lastResult = ref(null)
   const error = ref(null)
+  const backendRelease = ref(null)
 
   const endpoint = computed(() => transport.value === 'worker' ? workerEndpoint.value : directEndpoint.value)
   const endpointValid = computed(() => isValidApiEndpoint(endpoint.value, transport.value))
@@ -50,7 +52,20 @@ export const useSessionStore = defineStore('session', () => {
   const busy = computed(() => ['checking', 'restoring', 'signing-in', 'signing-out'].includes(phase.value))
   const roles = computed(() => Array.isArray(session.value?.roles) ? session.value.roles : [])
   const permissions = computed(() => Array.isArray(session.value?.permissions) ? session.value.permissions : [])
-  const menuItems = computed(() => menuForPermissions(permissions.value))
+  const menuItems = computed(() => {
+    const items = menuForPermissions(permissions.value)
+    return session.value?.mustChangePassword ? items.filter((item) => item.id === 'account-security') : items
+  })
+
+  function captureBackendRelease(data) {
+    if (!data || typeof data !== 'object') return
+    backendRelease.value = Object.freeze({
+      status: typeof data.status === 'string' ? data.status : 'unknown',
+      apiVersion: typeof data.apiVersion === 'string' ? data.apiVersion : 'unknown',
+      backendVersion: typeof data.backendVersion === 'string' ? data.backendVersion : 'unknown',
+      releaseChannel: typeof data.releaseChannel === 'string' ? data.releaseChannel : 'unknown',
+    })
+  }
 
   function client() {
     return new GasApiClient({ endpoint: endpoint.value, transport: transport.value })
@@ -106,6 +121,7 @@ export const useSessionStore = defineStore('session', () => {
     lastResult.value = null
     try {
       const result = await client().call('system.health')
+      captureBackendRelease(result.data)
       lastResult.value = { kind: 'health', requestId: result.requestId, status: result.data?.status || 'ready' }
       return true
     } catch (caught) {
@@ -113,6 +129,16 @@ export const useSessionStore = defineStore('session', () => {
       return false
     } finally {
       phase.value = 'idle'
+    }
+  }
+
+  async function loadReleaseInfo() {
+    try {
+      const result = await client().call('system.health')
+      captureBackendRelease(result.data)
+      return true
+    } catch {
+      return false
     }
   }
 
@@ -184,7 +210,7 @@ export const useSessionStore = defineStore('session', () => {
 
   return {
     transport, directEndpoint, workerEndpoint, endpoint, endpointValid,
-    phase, session, sessionVerified, lastResult, error, authenticated, busy, roles, permissions, menuItems,
-    setTransport, updateEndpoint, checkConnection, signIn, restoreSession, signOut, callProtected,
+    phase, session, sessionVerified, lastResult, error, backendRelease, authenticated, busy, roles, permissions, menuItems,
+    setTransport, updateEndpoint, checkConnection, loadReleaseInfo, signIn, restoreSession, signOut, callProtected,
   }
 })

@@ -61,7 +61,7 @@ test('G2 AuthN/AuthZ: only health allowed, forged identity, scopes and admin rol
   }
   const health=call('system','health');
   assert.equal(health.ok,true);
-  assert.equal(health.data.status,'bootstrap');
+  assert.equal(health.data.status,'ready');
 });
 
 test('G2 AuthN/AuthZ: invalid versions/payloads and prototype-like groups are rejected',()=>{

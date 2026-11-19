@@ -70,7 +70,7 @@ export function runStagingAuthAcceptance(options) {
   if(!res.ok||res.mismatches.length)throw Error('SCHEMA_MISMATCH');
  });
  h.test('GAS-AUTH-02.HEALTH',()=>{
-  if(h.ok(h.request('system.health'),'health').status!=='bootstrap')throw Error('INVALID_HEALTH');
+  if(h.ok(h.request('system.health'),'health').status!=='ready')throw Error('INVALID_HEALTH');
  });
  for(const name of ROLES)h.test('GAS-AUTH-LOGIN.'+name,()=>{
   sessions[name]=h.login(name);

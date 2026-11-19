@@ -125,7 +125,7 @@ async function health(env){
  const rows=[];
  await test(rows,"HEALTH-01.GET",async()=>{
   const j=await gas(env,"system","health",{},null,"GET");expect(j,true);
-  if(j.data?.status!=="bootstrap")throw Error("HEALTH_STATUS_UNEXPECTED");
+  if(!["bootstrap","ready"].includes(j.data?.status))throw Error("HEALTH_STATUS_UNEXPECTED");
  });
  await test(rows,"HEALTH-02.POST",async()=>{expect(await gas(env,"system","health"),true);});
  return summary("health",rows);

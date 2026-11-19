@@ -21,7 +21,7 @@ const { menuItems } = storeToRefs(auth)
     </div>
     <nav class="menu w-full gap-1 p-0 text-base" aria-label="เมนูหลัก">
       <template v-for="item in menuItems" :key="item.id">
-        <RouterLink v-if="item.route" class="min-h-11" :to="{ name: item.route }" :aria-current="route.name === item.route ? 'page' : undefined" :class="{ 'menu-active': route.name === item.route }" @click="ui.closeNavigation">
+        <RouterLink v-if="item.route" class="flex min-h-11 items-center" :to="{ name: item.route }" :aria-current="route.name === item.route ? 'page' : undefined" :class="{ 'menu-active': route.name === item.route }" @click="ui.closeNavigation">
           <span>{{ item.label }}</span>
         </RouterLink>
       </template>

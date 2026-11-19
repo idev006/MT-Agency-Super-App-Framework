@@ -11,13 +11,13 @@ const appUrl = process.env.P6VC_EVIDENCE_URL || (systemAdminNavigationEvidence |
   : systemAdminEvidence
   ? 'http://127.0.0.1:4173/#/app/admin/users'
   : 'http://127.0.0.1:4173/#/app/vehicles/search')
-const evidenceDir = resolve(systemAdminNavigationEvidence
+const evidenceDir = resolve(process.env.P6VC_EVIDENCE_DIR || (systemAdminNavigationEvidence
   ? '../docs/evidence/fe-system-admin-navigation-20261119'
   : systemAdminCompleteEvidence
   ? '../docs/evidence/fe-system-admin-complete-20261119'
   : systemAdminEvidence
   ? '../docs/evidence/fe-system-admin-users-20261119'
-  : '../docs/evidence/fe-staff-vehicle-search-20261119')
+  : '../docs/evidence/fe-staff-vehicle-search-20261119'))
 const axeSource = await readFile(resolve('node_modules/axe-core/axe.min.js'), 'utf8')
 
 class CdpClient {
