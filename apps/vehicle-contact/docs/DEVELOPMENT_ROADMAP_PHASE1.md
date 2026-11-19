@@ -1,9 +1,9 @@
 # P6 Vehicle Contact — Phase 1 Development Roadmap & Work Breakdown
 
 **Document ID:** P6VC-PLAN-001  
-**Version:** 1.0.0 | **Baseline date:** 2026-11-17  
+**Version:** 1.1.0 | **Baseline date:** 2026-11-17 | **Last reconciled:** 2026-11-20
 **Plan status:** ACTIVE PLANNING / NOT A COMMITTED RELEASE DATE  
-**Agile work tracking:** [Issue-backed Kanban with live lane filters](AGILE_KANBAN.md) — 31 GitHub Issues VC-W01–VC-W31 tracked as of 2026-11-17; label/status links are live; milestone table below remains a baseline snapshot  
+**Agile work tracking:** [Issue-backed Kanban with live lane filters](AGILE_KANBAN.md) — 31 GitHub Issues VC-W01–VC-W31 plus two P6VC engineering gates tracked as of 2026-11-20; live labels supersede historical milestone snapshots
 **Scope:** Phase 1 only; visitor/pass exchange **OFF**  
 **SA baseline:** [P6VC-SA-001](SYSTEM_ANALYST_BASELINE_PHASE1.md)  
 **Technical foundations:** [Phase-1 Sheets Architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md), [GAS Data Model](GAS_DATA_MODEL.md), [GAS API Contract](GAS_API_SPEC.md), [GAS Test Evidence](GAS_TEST_EVIDENCE.md) and [Decision Log](DECISION_LOG.md)
@@ -14,18 +14,29 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 
 **Architecture frozen for Phase 1:** Vue 3 frontend using central Web App Blueprint; app-owned GAS API Groups and ES module source build; one private Google Spreadsheet where each tab is a logical table; Username/Password now; MT-I-AM deferred and isolated behind a replaceable auth port. Do not force generic shared code between apps.
 
-## 2. Evidence-based starting position (do not inflate progress)
+## 2. Evidence-based current position (do not inflate progress)
 
-| Capability | Observed status as of baseline | Evidence / qualification |
+| Capability | Reconciled status 2026-11-20 | Evidence / qualification |
 |---|---|---|
 | Project docs / SA | Existing PRD, SA v2, traceability; new SA baseline | Documents are drafts with approvals open |
 | Google Sheets phase-1 datastore | **CREATED STRUCTURE** (6 tabs and header rows) | Source decision and previous connector verification; business schema still provisional |
 | GAS source and code pattern | **CODE PRESENT** | `apps/vehicle-contact/backend/gas/`, ES Modules + namespace bundle |
-| GAS build/contract CI | **PASS, limited** | [GitHub Actions run 44022203757](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44022203757); not a live GAS deployment/security test |
+| GAS build/contract CI | **PASS** | PR #55 checks and manual deployment [run 44573790557](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44573790557) built/tested commit `3cfcf0e` before push |
 | Scanner POC | **POC EXISTS** | Android/iOS camera access user-reported; actual decode/switch matrix not fully evidenced |
-| AuthN/AuthZ/secure GAS ingress | **BLOCKED / NOT IMPLEMENTED** | Identity/session provider and direct-URL bypass defense outstanding |
-| Vehicle/contact/QR CRUD, real UI, live GAS | **NOT IMPLEMENTED / NOT VERIFIED** | Only `system.health` safe bootstrap is routed |
+| AuthN/AuthZ/RBAC | **IMPLEMENTED / RELEASE REVIEW BLOCKED** | Username/password sessions, server permissions, revocation and 5 roles × 44 protected-operation tests exist; named security/policy approval and non-bypassable ingress proof remain open |
+| STAFF read-only vehicle search | **PASS — SOURCE/INTEGRATION** | PR #47 and FE-STAFF-01 evidence; live operational UAT remains open |
+| SYSTEM_ADMIN administration | **PASS — SOURCE/INTEGRATION** | PRs #48–#54 cover users, organizations, campaigns, QR, settings, retention, audit, pagination and responsive inputs |
+| GAS development deployment | **PASS — DEVELOPMENT** | Source Version 20 from `3cfcf0e`; owner-reported Web App publication; public health on 2026-11-20 reported ready / API v1 / backend 0.4.0 |
 | PDPA approvals and field/UAT | **OPEN** | Operational/legal decisions pending |
+
+## 2H. Frontend and development deployment reconciliation (2026-11-20)
+
+- PRs [#44](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/44)–[#55](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/55) are merged through `main` commit `3cfcf0e46a904c1e936a071b48837cde4dfa17e5`.
+- Shared shell, STAFF search and SYSTEM_ADMIN administration have unit/contract/build evidence plus responsive corporate/dark and axe browser evidence under `docs/FRONTEND_*_EVIDENCE_20261119.md`.
+- Manual GAS run 44573790557 pushed the tested artifact and created source Version 20. Web App publication was a separate owner action and is recorded as owner-reported, while the public health response was independently rechecked read-only.
+- Live acceptance run 44574709121 verified the selected development administrator has exactly `SYSTEM_ADMIN` + `REGISTRATION_ADMIN`. Frontend navigation remains permission-driven and GAS remains authorization authority.
+- `VC-W15` and `VC-W16` meet their scoped acceptance and move to DONE-EVIDENCED. `VC-W17` moves to IN-PROGRESS because STAFF search is delivered but scanner/remaining actor workflows are incomplete.
+- Production authorization, real-person data, security/PDPA approval, field UAT and controlled release remain BLOCKED. Development deployment evidence does not satisfy those gates.
 
 ## 2C. GitHub Actions → GAS manual source deploy (2026-11-17)
 - New [manual gated deployment workflow](../../../.github/workflows/deploy-vehicle-gas.yml) targeting the owner-provided Apps Script ID; source build/tests required, manual `PUSH_VEHICLE_GAS` confirmation on main, `clasp push --force` and immutable source version creation.
