@@ -4,10 +4,15 @@ import { resolve } from 'node:path'
 const cdpPort = Number(process.env.P6VC_CDP_PORT || 9223)
 const evidenceSlice = process.env.P6VC_EVIDENCE_SLICE || 'staff'
 const systemAdminEvidence = evidenceSlice === 'system-admin-users'
-const appUrl = process.env.P6VC_EVIDENCE_URL || (systemAdminEvidence
+const systemAdminNavigationEvidence = evidenceSlice === 'system-admin-navigation'
+const appUrl = process.env.P6VC_EVIDENCE_URL || (systemAdminNavigationEvidence
+  ? 'http://127.0.0.1:4173/#/app/dashboard'
+  : systemAdminEvidence
   ? 'http://127.0.0.1:4173/#/app/admin/users'
   : 'http://127.0.0.1:4173/#/app/vehicles/search')
-const evidenceDir = resolve(systemAdminEvidence
+const evidenceDir = resolve(systemAdminNavigationEvidence
+  ? '../docs/evidence/fe-system-admin-navigation-20261119'
+  : systemAdminEvidence
   ? '../docs/evidence/fe-system-admin-users-20261119'
   : '../docs/evidence/fe-staff-vehicle-search-20261119')
 const axeSource = await readFile(resolve('node_modules/axe-core/axe.min.js'), 'utf8')
@@ -84,12 +89,22 @@ const userFixture = [
   { userId: 'user-staff-evidence', username: 'staff.demo', displayName: 'เจ้าหน้าที่ทดสอบ', organizationId: 'org-station-01', status: 'ACTIVE' },
   { userId: 'user-suspended-evidence', username: 'staff.suspended', displayName: 'บัญชีระงับทดสอบ', organizationId: '', status: 'SUSPENDED' },
 ]
-const sessionFixture = {
+const adminSessionFixture = {
   userId: 'preview-user', displayName: 'ผู้ใช้งานทดสอบ', organizationId: 'preview-unit',
-  roles: ['SYSTEM_ADMIN', 'STAFF'],
-  permissions: ['session.authenticated', 'users.manage', 'organizations.read', 'organizations.manage', 'retention.read', 'retention.delete.approve', 'vehicle.lookup', 'vehicle.contact.read', 'vehicle.photos.read', 'vehicle.history.read'],
+  roles: ['SYSTEM_ADMIN'],
+  permissions: [
+    'session.authenticated', 'system.settings.read', 'system.settings.manage', 'users.manage',
+    'organizations.read', 'organizations.manage', 'campaigns.manage', 'qr.manage',
+    'retention.read', 'retention.delete.approve', 'audit.read',
+  ],
   expiresAt: '2026-11-20T02:30:00.000Z', mustChangePassword: false,
 }
+const staffSessionFixture = {
+  ...adminSessionFixture,
+  roles: ['STAFF'],
+  permissions: ['session.authenticated', 'organizations.read', 'vehicle.lookup', 'vehicle.contact.read', 'vehicle.photos.read', 'vehicle.history.read'],
+}
+const sessionFixture = systemAdminEvidence || systemAdminNavigationEvidence ? adminSessionFixture : staffSessionFixture
 const gasEvidenceEndpoint = 'https://script.google.com/macros/s/evidence-only/exec'
 const gasPersistedEndpoint = 'https://script.google.com/macros/s/persisted-evidence/exec'
 const workerEvidenceEndpoint = 'https://p6vc-evidence.example.workers.dev/api/frontend'
@@ -254,7 +269,32 @@ async function screenshot(fileName, { fullPage = false } = {}) {
 await mkdir(evidenceDir, { recursive: true })
 const evidence = { generatedAt: new Date().toISOString(), evidenceSlice, appUrl, browser: 'Microsoft Edge headless', cases: {} }
 
-if (systemAdminEvidence) {
+if (systemAdminNavigationEvidence) {
+  await setViewport(1920, 1080)
+  await navigate()
+  await setTheme('corporate')
+  await waitUntil(`document.querySelector('#planned-work-title')`)
+  evidence.navigationCoverage = await evaluate(`(() => ({
+    ready: [...document.querySelectorAll('a.p6-task-card h3')].map((item) => item.textContent.trim()),
+    planned: [...document.querySelectorAll('#planned-work-title + p + ul strong')].map((item) => item.textContent.trim()),
+    plannedLinkCount: document.querySelectorAll('#planned-work-title + p + ul a').length,
+    pageText: document.querySelector('main')?.textContent || ''
+  }))()`)
+  evidence.cases.desktopWideCorporate = await auditPage()
+  await screenshot('navigation-desktop-wide-corporate.png', { fullPage: true })
+
+  await setViewport(1440, 900)
+  await setTheme('dark')
+  await waitUntil(`document.querySelector('#planned-work-title')`)
+  evidence.cases.desktopDark = await auditPage()
+  await screenshot('navigation-desktop-dark.png', { fullPage: true })
+
+  await setViewport(360, 800)
+  await setTheme('corporate')
+  await waitUntil(`document.querySelector('#planned-work-title')`)
+  evidence.cases.mobileCorporate = await auditPage()
+  await screenshot('navigation-mobile-corporate.png', { fullPage: true })
+} else if (systemAdminEvidence) {
   await setViewport(1440, 900)
   await navigate()
   await setTheme('corporate')
@@ -299,12 +339,20 @@ client.socket.close()
 
 const violations = Object.values(evidence.cases).flatMap((entry) => entry.axe.violations)
 const overflow = Object.values(evidence.cases).filter((entry) => entry.layout.documentScrollWidth !== entry.layout.documentClientWidth)
-const refreshFailed = systemAdminEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
+const expectedAdminReady = ['ภาพรวม', 'ตรวจสอบการเชื่อมต่อ', 'ผู้ใช้และสิทธิ์']
+const expectedAdminPlanned = ['บัญชีและความปลอดภัย', 'หน่วยงาน', 'แคมเปญลงทะเบียน', 'จัดการ QR', 'ตั้งค่าระบบ', 'การเก็บรักษาข้อมูล', 'ตรวจสอบ Audit']
+const navigationFailed = systemAdminNavigationEvidence && (
+  JSON.stringify(evidence.navigationCoverage.ready) !== JSON.stringify(expectedAdminReady)
+  || JSON.stringify(evidence.navigationCoverage.planned) !== JSON.stringify(expectedAdminPlanned)
+  || evidence.navigationCoverage.plannedLinkCount !== 0
+  || ['ค้นหายานพาหนะ', 'ตรวจสอบการลงทะเบียน', 'ยานพาหนะของฉัน'].some((label) => evidence.navigationCoverage.pageText.includes(label))
+)
+const refreshFailed = systemAdminEvidence || systemAdminNavigationEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
   || evidence.refreshPersistence.signInVisible
   || evidence.refreshPersistence.transport !== 'worker'
   || evidence.refreshPersistence.gasEndpoint !== gasPersistedEndpoint
   || evidence.refreshPersistence.workerEndpoint !== workerEvidenceEndpoint
   || !evidence.refreshPersistence.sessionTokenPresent
   || !evidence.refreshPersistence.sessionSummaryPresent
-if (violations.length || overflow.length || refreshFailed) process.exitCode = 1
-console.log(JSON.stringify({ cases: Object.keys(evidence.cases), violations: violations.length, overflow: overflow.length, refreshFailed }, null, 2))
+if (violations.length || overflow.length || refreshFailed || navigationFailed) process.exitCode = 1
+console.log(JSON.stringify({ cases: Object.keys(evidence.cases), violations: violations.length, overflow: overflow.length, refreshFailed, navigationFailed }, null, 2))

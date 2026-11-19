@@ -1,0 +1,148 @@
+{
+  "generatedAt": "2026-11-19T00:47:02.651Z",
+  "evidenceSlice": "system-admin-navigation",
+  "appUrl": "http://127.0.0.1:4173/#/app/dashboard",
+  "browser": "Microsoft Edge headless",
+  "cases": {
+    "desktopWideCorporate": {
+      "layout": {
+        "viewportWidth": 1920,
+        "viewportHeight": 1080,
+        "documentClientWidth": 1905,
+        "documentScrollWidth": 1905,
+        "bodyScrollWidth": 1905,
+        "theme": "corporate",
+        "title": "ภาพรวม — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี สุภาพ (corporate)\" value=\"corporate\">"
+              },
+              {
+                "target": [
+                  ".badge-warning"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".menu-active > span"
+                ],
+                "html": "<span>ภาพรวม</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".alert > div > .leading-6.mt-1"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "desktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "ภาพรวม — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".badge-warning"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".menu-active > span"
+                ],
+                "html": "<span>ภาพรวม</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".alert > div > .leading-6.mt-1"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "ภาพรวม — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    }
+  },
+  "navigationCoverage": {
+    "ready": [
+      "ภาพรวม",
+      "ตรวจสอบการเชื่อมต่อ",
+      "ผู้ใช้และสิทธิ์"
+    ],
+    "planned": [
+      "บัญชีและความปลอดภัย",
+      "หน่วยงาน",
+      "แคมเปญลงทะเบียน",
+      "จัดการ QR",
+      "ตั้งค่าระบบ",
+      "การเก็บรักษาข้อมูล",
+      "ตรวจสอบ Audit"
+    ],
+    "plannedLinkCount": 0,
+    "pageText": "ภาพรวมการทำงานสวัสดี ผู้ใช้งานทดสอบเลือกงานที่ต้องการดำเนินการ ระบบจะแสดงเฉพาะรายการที่สอดคล้องกับสิทธิ์ของเซสชันนี้ผู้ดูแลระบบหน้าที่ปัจจุบันผู้ดูแลระบบรหัสบทบาท SYSTEM_ADMINเส้นทางเชื่อมต่อผ่าน Cloudflareพร้อมใช้งานเซสชันสิ้นสุด20 พ.ย. 09:30เวลาไทย (Asia/Bangkok)งานของคุณเริ่มจากงานที่พร้อมใช้งาน หรือตรวจสอบรายการที่กำลังพัฒนาสำหรับสิทธิ์ของคุณภาพรวมพร้อมใช้งานที่คุณได้รับสิทธิ์และสถานะการใช้งานเปิดงานตรวจสอบการเชื่อมต่อพร้อมใช้ตรวจสอบเส้นทางเชื่อมต่อระบบส่วนกลางเปิดงานผู้ใช้และสิทธิ์พร้อมใช้ตรวจสอบผู้ใช้ สถานะ บทบาท และสิทธิ์เปิดงานกำลังพัฒนารายการเหล่านี้ตรงกับสิทธิ์ของคุณ แต่ยังไม่เปิดใช้งานบัญชีและความปลอดภัยเปลี่ยนรหัสผ่านและจัดการการเชื่อมโยงบัญชียังไม่เปิดใช้หน่วยงานจัดการโครงสร้างหน่วยงานตำรวจและหน่วยงานภายนอกยังไม่เปิดใช้แคมเปญลงทะเบียนสร้าง ตรวจสอบ และเพิกถอนแคมเปญลงทะเบียนยังไม่เปิดใช้จัดการ QRออก เพิกถอน และเปลี่ยน QR ภายใต้สิทธิ์ที่กำหนดยังไม่เปิดใช้ตั้งค่าระบบตรวจสอบและปรับนโยบายการทำงานของระบบยังไม่เปิดใช้การเก็บรักษาข้อมูลตรวจสอบหรือดำเนินงานตามนโยบายข้อมูลยังไม่เปิดใช้ตรวจสอบ Auditตรวจสอบและส่งออกหลักฐานกิจกรรมที่ได้รับอนุญาตยังไม่เปิดใช้ระบบส่วนกลางจะตรวจสอบสิทธิ์อีกครั้งก่อนเปิดเผยข้อมูลหรือบันทึกการเปลี่ยนแปลง"
+  }
+}
