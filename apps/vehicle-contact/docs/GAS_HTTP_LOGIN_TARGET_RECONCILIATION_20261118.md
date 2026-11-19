@@ -25,7 +25,7 @@ The feature flag appeared enabled from live HTTP validation routing, but the act
 
 ## Secure next-step test implementation
 
-Added **manual-only**, **account-specific** test source [`login-http-acceptance.mjs`](../backend/gas/scripts/login-http-acceptance.mjs) and workflow [`test-vehicle-login-http.yml`](../../../.github/workflows/test-vehicle-login-http.yml) with the owner-confirmed GAS /exec target URL and `admin` **hard-coded**; this privileged test does not allow caller-controlled target URL or username.
+Added **manual-only**, **account-specific** test source [`login-http-acceptance.mjs`](../backend/gas/scripts/login-http-acceptance.mjs), now invoked by the `single-admin-login` mode in [`p6vc-live-acceptance.yml`](../../../.github/workflows/p6vc-live-acceptance.yml), with `admin` fixed by the workflow; the privileged mode remains owner-only and main-only.
 
 1. Authorized owner adds existing **correct admin password** to repository Actions Secret `P6VC_HTTP_LOGIN_PASSWORD`; do not send the password, Script Property pepper, session tokens or password hash in chat or GitHub source.
 2. Owner (`idev006`) manually dispatches the workflow from the `main` branch with the sole input confirmation `TEST_LOGIN_ON_APPROVED_SHEET`. The workflow explicitly FAILS if the actor, ref or confirmation differs. The target /exec and username `admin` are pinned in YAML to prevent accidental credential exfiltration to an alternate GAS Web App. Successful login creates **session/security-event writes** to the selected project datastore; Logout revokes the created session.

@@ -71,7 +71,7 @@ Expected sanitized result (illustrative, not a claimed actual run):
 
 1. Set GitHub Actions repository secret `P6VC_HTTP_LOGIN_PASSWORD` to the **new** temporary password. Never paste it into an Issue, PR, chat, CI log or source file.
 2. Check that the published /exec is the expected reviewed version and protected API test is authorized. Account-lockout policy may reject further attempts for 15 minutes after prior failed logins.
-3. Owner manually runs [single-account HTTP login acceptance workflow](../../../.github/workflows/test-vehicle-login-http.yml), with confirmation `TEST_LOGIN_ON_APPROVED_SHEET`. The runner verifies login, session, `SYSTEM_ADMIN` role, forced password change flag, logout and revoked-session denial. Do **not** rerun repeatedly if login fails.
+3. Owner manually runs the `single-admin-login` mode in the [consolidated HTTP acceptance workflow](../../../.github/workflows/p6vc-live-acceptance.yml), with confirmation `TEST_LOGIN_ON_APPROVED_SHEET`. The runner verifies login, session, `SYSTEM_ADMIN` role, forced password change flag, logout and revoked-session denial. Do **not** rerun repeatedly if login fails.
 4. After verified success, remove the GitHub Actions password secret if it is no longer needed. Do not mark broader business API/PDPA gates as PASS from login alone.
 5. Once secure first-login UX is available, complete the mandatory password change. The temporary password should not become the long-term administrative credential.
 

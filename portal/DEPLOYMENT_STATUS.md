@@ -11,7 +11,7 @@
 - Validation: `node scripts/validate-ssot.mjs` and `node scripts/validate-ssot.mjs --built _site`.
 - Committed `docs/qr-scanner-poc/` source was removed; legacy route is generated only in `_site/`.
 - Deployment workflow: `.github/workflows/deploy-pages-ssot.yml`.
-- PR-only validation workflow: `.github/workflows/validate-ssot.yml`.
+- Consolidated PR validation workflow: `.github/workflows/validate-p6vc.yml`.
 
 ## Latest confirmed successful workflow
 - https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44015493123 — **SUCCESS** (both build and deploy), commit `c46779905718aaf64d286add00d81f1b2c581629`; includes strict broken-link validator and QC report. No real-device or security sign-off implied.

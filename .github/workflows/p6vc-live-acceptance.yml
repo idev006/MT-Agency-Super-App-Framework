@@ -1,0 +1,95 @@
+name: P6VC Live Acceptance (manual only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Choose one explicit live-test scope'
+        required: true
+        type: choice
+        options:
+          - safe-public-smoke
+          - single-admin-login
+          - synthetic-business-e2e
+      target_url:
+        description: 'Approved GAS /exec URL'
+        required: true
+        type: string
+        default: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
+      confirmation:
+        description: 'Privileged modes require TEST_LOGIN_ON_APPROVED_SHEET or RUN_SYNTHETIC_E2E'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: p6vc-live-acceptance
+  cancel-in-progress: false
+
+jobs:
+  acceptance:
+    name: ${{ inputs.mode }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      P6VC_GAS_EXEC_URL: ${{ inputs.target_url }}
+    steps:
+      - name: Authorize target, branch and privileged mode
+        env:
+          P6VC_MODE: ${{ inputs.mode }}
+          P6VC_CONFIRMATION: ${{ inputs.confirmation }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$P6VC_GAS_EXEC_URL" =~ ^https://script.google.com/macros/s/[A-Za-z0-9_-]+/exec$ ]] || { echo 'DENIED: invalid GAS target'; exit 1; }
+          if [ "$P6VC_MODE" != 'safe-public-smoke' ]; then
+            [ "$GITHUB_ACTOR" = 'idev006' ] || { echo 'DENIED: privileged live tests are owner-only'; exit 1; }
+            [ "$GITHUB_REF" = 'refs/heads/main' ] || { echo 'DENIED: privileged live tests are main-only'; exit 1; }
+          fi
+          if [ "$P6VC_MODE" = 'single-admin-login' ] && [ "$P6VC_CONFIRMATION" != 'TEST_LOGIN_ON_APPROVED_SHEET' ]; then
+            echo 'DENIED: exact login-test confirmation required'; exit 1
+          fi
+          if [ "$P6VC_MODE" = 'synthetic-business-e2e' ] && [ "$P6VC_CONFIRMATION" != 'RUN_SYNTHETIC_E2E' ]; then
+            echo 'DENIED: exact synthetic E2E confirmation required'; exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Safe public health and deny smoke
+        if: inputs.mode == 'safe-public-smoke'
+        run: node apps/vehicle-contact/backend/gas/scripts/smoke-api.mjs
+      - name: Approved single-admin login/session/logout acceptance
+        if: inputs.mode == 'single-admin-login'
+        env:
+          P6VC_GAS_EXEC_URL: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
+          P6VC_HTTP_LOGIN_USERNAME: admin
+          P6VC_HTTP_LOGIN_PASSWORD: ${{ secrets.P6VC_HTTP_LOGIN_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -n "$P6VC_HTTP_LOGIN_PASSWORD" ] || { echo 'BLOCKED: P6VC_HTTP_LOGIN_PASSWORD is missing'; exit 1; }
+          node apps/vehicle-contact/backend/gas/scripts/login-http-acceptance.mjs
+      - name: Guarded synthetic-only business E2E
+        if: inputs.mode == 'synthetic-business-e2e'
+        run: node apps/vehicle-contact/backend/gas/scripts/verify-live-gateway.mjs
+      - name: Save sanitized synthetic E2E evidence
+        if: always() && inputs.mode == 'synthetic-business-e2e'
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6vc-live-http-acceptance-evidence
+          path: test-results/p6vc-live-http-acceptance.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Record selected scope
+        if: always()
+        run: |
+          echo "### P6VC Live Acceptance" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Mode: \`${{ inputs.mode }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Source commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+          echo '- Secrets, session tokens and response data are not included in this summary.' >> "$GITHUB_STEP_SUMMARY"
+

@@ -6,7 +6,7 @@
 **Endpoint:** [Existing GAS /exec](https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec)  
 **GitHub Actions:** [Test run 44036525176](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44036525176), job `133880617061`, result **success**.  
 **Source script:** [scripts/smoke-api.mjs](../backend/gas/scripts/smoke-api.mjs)  
-**Workflow:** [.github/workflows/test-vehicle-gas-api.yml](../../../.github/workflows/test-vehicle-gas-api.yml) — after first-run verification, restored to **manual-only**, no new automatic live calls on commits.
+**Workflow:** `safe-public-smoke` mode in [.github/workflows/p6vc-live-acceptance.yml](../../../.github/workflows/p6vc-live-acceptance.yml) — manual-only; no automatic live calls on commits.
 
 ## Test method
 - External GitHub Actions-hosted Node.js 22 runner sent actual GET and POST HTTPS requests to the supplied /exec URL, followed ContentService redirects, parsed JSON and checked logical status envelope and error codes.
