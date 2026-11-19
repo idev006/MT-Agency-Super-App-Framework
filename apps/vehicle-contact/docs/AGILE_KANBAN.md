@@ -1,21 +1,21 @@
 # P6 Vehicle Contact — Agile Kanban Operations & Live Issue Board
 
 **Document ID:** P6VC-KANBAN-001  
-**Created:** 2026-11-17 | **Status:** OPERATIONAL ISSUE-BASED KANBAN; **NOT** a native GitHub Projects v2 board  
+**Created:** 2026-11-17 | **Last reconciled:** 2026-11-20 (Asia/Bangkok) | **Status:** OPERATIONAL ISSUE-BASED KANBAN; **NOT** a verified native GitHub Projects v2 board
 **Canonical planning document:** [Development Roadmap](DEVELOPMENT_ROADMAP_PHASE1.md)  
-**Work-tracking source:** [GitHub Issues](https://github.com/idev006/MT-Agency-Super-App-Framework/issues) with stable issue IDs `VC-W01`–`VC-W29`. Actual issue state and `status:*` label supersede this document's initial snapshot.
+**Work-tracking source:** [GitHub Issues](https://github.com/idev006/MT-Agency-Super-App-Framework/issues) with stable issue IDs `VC-W01`–`VC-W31` plus P6VC engineering gates #38–#39. Actual issue state and `status:*` label supersede this document's historical snapshots.
 
 ## 1. Live Kanban lanes
 
 These links query **live GitHub Issues** by label. To inspect all app tickets, search for `VC-W` in the repository. No owners, estimates or approved delivery dates were invented.
 
-| Lane | Live GitHub filter | Initial count (2026-11-17) | Rule |
+| Lane | Live GitHub filter | Reconciled count (2026-11-20) | Rule |
 |---|---|---:|---|
-| BACKLOG / TODO | [status:todo](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Atodo%22) | 6 | Requirements and dependencies understood, no active worker assigned |
-| IN PROGRESS | [status:in-progress](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ain-progress%22) | 0 | Work actually started, assignee, evidence/branch and next step recorded |
-| REVIEW / TEST | [status:review](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Areview%22) | 1 | Deliverable ready for technical/business review or tests, not yet accepted |
+| BACKLOG / TODO | [status:todo](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Atodo%22) | 5 | Requirements and dependencies understood, no active worker assigned |
+| IN PROGRESS | [status:in-progress](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ain-progress%22) | 1 | Work actually started, evidence/branch and next step recorded |
+| REVIEW / TEST | [status:review](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Areview%22) | 3 | Deliverable ready for technical/business review or tests, not yet accepted |
 | BLOCKED | [status:blocked](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ablocked%22) | 16 | Missing approval, security/architecture proof, access or hard dependency |
-| DONE — EVIDENCED | [status:done-evidenced](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Adone-evidenced%22) | 4 | Closed with evidence; scope-limited completion only |
+| DONE — EVIDENCED | [status:done-evidenced](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Adone-evidenced%22) | 7 | Closed with evidence; scope-limited completion only |
 | ON HOLD / FUTURE | [status:on-hold](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Aon-hold%22) | 1 | Future phase; not executable or accessible in Phase 1 |
 
 **GitHub Issues filter note:** GitHub's default issue list shows only open issues. Click **closed** or use [all evidence-completed tickets including closed](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+is%3Aclosed+label%3A%22status%3Adone-evidenced%22) to see DONE. The status labels are literal GitHub issue labels, not native Projects fields.
@@ -32,7 +32,24 @@ These links query **live GitHub Issues** by label. To inspect all app tickets, s
 | BLOCKED | [VC-W02–06](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ablocked%22), [VC-W10–14](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ablocked%22), [VC-W16–17](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ablocked%22), [VC-W19–21](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ablocked%22), [VC-W27](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/27) |
 | ON-HOLD | [VC-W22](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/22) visitor/pass future-only |
 
-The crosswalk is a snapshot. Use the **live links above** for current status; never interpret the snapshot as automatic synchronization.
+The crosswalk above is the 2026-11-17 historical snapshot. Use the **live links above** and the reconciliation below for current status; never interpret either table as automatic synchronization.
+
+### Reconciliation — 2026-11-20
+
+| Result | Work / evidence |
+|---|---|
+| DONE-EVIDENCED | `VC-W15` Vue shared shell and `VC-W16` login/session adapter: PRs [#45](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/45)–[#47](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/47), responsive/accessibility evidence and live session acceptance. Existing completed items remain `VC-W01`, `VC-W23`–`VC-W25`, `VC-W30`. |
+| IN-PROGRESS | `VC-W17`: STAFF vehicle search is delivered and wired; scanner and the remaining actor/operator flows are not complete. |
+| REVIEW | `VC-W07`, `VC-W29`, `VC-W31`: data-dictionary approval, deployment governance reconciliation and the remaining secured/physical-device acceptance are still open. |
+| BLOCKED / guarded | `VC-W04` and `VC-W06` have implemented authentication/RBAC with automated and live development evidence, but remain blocked from DONE pending named security/policy approval. `VC-W11`–`VC-W14` contain substantial backend implementation but retain their security/privacy/release dependencies. |
+
+Delivery evidence since the initial snapshot:
+
+- PRs [#44](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/44)–[#55](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/55) merged through `main` commit `3cfcf0e46a904c1e936a071b48837cde4dfa17e5`.
+- STAFF read-only vehicle search and the SYSTEM_ADMIN administration pages have frontend unit/contract, build, responsive, corporate/dark and axe evidence in the linked frontend evidence documents.
+- Manual GAS [run 44573790557](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44573790557) pushed tested source from `3cfcf0e` and created Apps Script source Version 20. The owner separately reported publishing that version to the Web App.
+- Public read-only health verification on 2026-11-20 returned `status=ready`, `apiVersion=v1`, `backendVersion=0.4.0`, `releaseChannel=development`.
+- Privileged development acceptance [run 44574709121](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44574709121) verified the selected administrator's full human access profile. It is not a production security/PDPA approval.
 
 ## 3. Agile operating policy (proposed cadence, not a scheduled event)
 
@@ -75,11 +92,11 @@ Every issue MUST include: specific user/business need; links to authoritative re
 
 Track weekly: total work items by live lane, throughput (# evidenced closed this week), cycle time (first in-progress to accepted), age of blocked items, WIP count, PR review lead time, CI pass/fail, defect reopen rate and critical security gate status. Compute from real issue history; do not fabricate baselines or completion percentages.
 
-**Initial snapshot (2026-11-17 before deployment tracking):** 28 issues. **Current tracking extension:** [VC-W29](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/29) added as **BLOCKED**, awaiting OAuth secret and target GAS backup/first push. Total 29 issues (4 DONE-EVIDENCED, 17 BLOCKED, 6 TODO, 1 REVIEW, 1 ON-HOLD). Follow live filters for current counts. **0 real backend deployments/production approvals confirmed.**
+**Historical snapshot (2026-11-17):** 29 initial work items plus later `VC-W30`–`VC-W31`. **Reconciled 2026-11-20 scope:** 31 `VC-W` items plus two P6VC engineering-gate issues (#38–#39). Live labels after reconciliation: 7 DONE-EVIDENCED, 1 IN-PROGRESS, 3 REVIEW, 16 BLOCKED, 5 TODO and 1 ON-HOLD. A development Web App is live at Backend API `0.4.0`; production/security/PDPA approval remains unconfirmed and must not be inferred.
 
 ## 8. Native GitHub Projects board status
 
-A native GitHub Projects v2 board was **not created**: the connected GitHub tool supports repository Issues and labels but does not expose GitHub Projects creation. The live issue-label views above constitute a functioning **issue-backed Kanban tracker**, not a visual draggable GitHub Projects board. A repository owner can later create a Project, add all `VC-W` Issues, set the Status single-select field and create a Board view using equivalent lanes. Do not assert the native Project exists until separately verified.
+A native GitHub Projects v2 board remains **NOT VERIFIED**. The authenticated CLI token used for the 2026-11-20 reconciliation lacks `read:project`, so it cannot independently inspect or synchronize a Projects board. The live issue-label views above are the current **issue-backed Kanban authority**. If a native Project is later enabled, it must mirror these labels and must not become a competing status SSOT.
 
 ## 9. Canonical references
 - [Phase 1 Roadmap](DEVELOPMENT_ROADMAP_PHASE1.md)

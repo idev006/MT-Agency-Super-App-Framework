@@ -1,8 +1,8 @@
 # P6 Vehicle Contact — Project Handover / Chat Continuation
 
 **Document ID:** P6VC-HANDOVER-001  
-**Prepared:** 2026-11-17 (Asia/Bangkok)  
-**GitHub baseline:** `main` @ `0eb2621597d5b2cdc8c545eae8fe9fe965c166b3`  
+**Prepared:** 2026-11-17; **last reconciled:** 2026-11-20 (Asia/Bangkok)
+**GitHub baseline:** `main` @ `3cfcf0e46a904c1e936a071b48837cde4dfa17e5`
 **Purpose:** Restore project continuity when the original ChatGPT conversation cannot be opened. This is a **handover/index and evidence snapshot**, **not a replacement** for individual canonical design, requirements, decisions, live Issues or code. Refresh current commit/Issues/CI before making further changes.
 
 ## 1. Project identity, purpose and active phase
@@ -41,7 +41,20 @@ Rules: code in GitHub is canonical; deployed GAS .gs files and `_site/` are gene
 
 **Schema rule:** `schema/database.schema.json` is authoritative; modifications observed in Sheets are proposals for review, never automatic upstream GitHub updates or silent migrations.
 
-## 4. Confirmed progress and evidence scope (as documented 2026-11-17)
+## 4. Confirmed progress and evidence scope
+
+### Current delivery snapshot — 2026-11-20
+
+| Area | Gate | Current evidence / boundary |
+|---|---|---|
+| Shared frontend shell | PASS | PRs #44–#46; Vue 3, Pinia, Router, responsive AppShell/PageTemplate/OperationalContextStrip, corporate/dark and axe evidence |
+| STAFF vehicle search | PASS — source/integration | PR #47; permission-driven navigation, fail-closed adapter, refresh persistence and read-only search state coverage. Operational human UAT remains open. |
+| SYSTEM_ADMIN use cases | PASS — source/integration | PRs #48–#54; user, organization, campaign, QR, settings, retention, audit, pagination and responsive date/time input coverage |
+| Selected admin full human profile | PASS — development | PR #55 and live acceptance run 44574709121; exact server roles `SYSTEM_ADMIN` + `REGISTRATION_ADMIN`. This does not create an unrestricted super-role. |
+| GAS source/development Web App | PASS — development | Run 44573790557 created source Version 20 from `3cfcf0e`; owner reported Web App publication. Public health recheck returned ready / API v1 / backend 0.4.0. |
+| Production/security/PDPA release | BLOCKED | Named approvals, direct-ingress security proof, real-data authorization, UAT and release sign-off remain open. |
+
+### Historical evidence snapshot — 2026-11-17
 
 | Area | Result | Evidence | What it does NOT prove |
 | --- | --- | --- | --- |
@@ -55,7 +68,7 @@ Rules: code in GitHub is canonical; deployed GAS .gs files and `_site/` are gene
 | QR camera prototype | Standalone HTML/JS v7 source; camera access Android/iOS user-reported | `poc/qr-scanner/index.html`, `docs/POC_QR_SCANNER.md` | Independently evidenced decoding/front-rear/device matrix |
 | CI/Pages | Earlier GitHub Actions billing lock was later reported resolved; Pages documentation indicates subsequent passing runs | `docs/DOCUMENT_CONSISTENCY_QC_2026-11-17.md`, `portal/DEPLOYMENT_STATUS.md` | New commit deployments or production readiness |
 
-**Critical distinction:** Apps Script `clasp push` + `clasp create-version` are source/version operations, **not** a versioned Web App deployment. A successful public health endpoint proves routing for the tested deployment, not active production authorization. The 17-module build is a **newer CI artifact** than the last verified Version 5 source push.
+**Critical distinction:** Apps Script `clasp push` + `clasp create-version` are source/version operations, **not** a versioned Web App deployment. Version 20 source push and the owner-reported Web App publication are now recorded separately. A successful public health endpoint proves routing and reported release metadata, not production authorization or protected-operation acceptance.
 
 ## 5. Operational APIs and security gates
 
@@ -97,6 +110,6 @@ When continuing work, report a table or concise structured summary with: `Work I
 
 ## 8. Ready-to-paste first message in a new chat
 
-> รับช่วงโครงการ **P6 Vehicle Contact** จาก GitHub SSOT `idev006/MT-Agency-Super-App-Framework` โดยเริ่มจาก `apps/vehicle-contact/docs/PROJECT_HANDOVER.md` แล้วตรวจ `main`, GitHub Issues, Roadmap, GAS source, workflows และหลักฐานล่าสุดจริงก่อนสรุป ไม่ออกแบบโครงการใหม่ ไม่สร้างเอกสารซ้ำ และไม่เปลี่ยนกติกากลางหรือข้อกำหนดธุรกิจโดยพลการ รายงาน DONE-EVIDENCED / IN-PROGRESS / BLOCKED / TODO, ตรวจผล Live API 7/7, synthetic tests 10/10, Version 5 (14 โมดูล) และ newer 17-module build แยกกันให้ชัด พร้อมเสนอและดำเนินงานต่อที่ไม่ติด Security/PDPA gate โดยใช้หลักฐาน Commit, CI และ Acceptance Criteria ทุกครั้ง
+> รับช่วงโครงการ **P6 Vehicle Contact** จาก GitHub SSOT `idev006/MT-Agency-Super-App-Framework` โดยเริ่มจาก `apps/vehicle-contact/docs/PROJECT_HANDOVER.md` แล้วตรวจ `main`, GitHub Issues, Roadmap, GAS source, workflows และหลักฐานล่าสุดจริงก่อนสรุป ไม่สร้างแผนแข่งขันกับ SSOT และไม่เปลี่ยนข้อกำหนดธุรกิจโดยพลการ รายงาน DONE-EVIDENCED / IN-PROGRESS / REVIEW / BLOCKED / TODO แยก source, deployment, live acceptance และ production approval ให้ชัด ปัจจุบัน baseline ที่ reconcile แล้วคือ `3cfcf0e`, GAS source Version 20, public Backend API `0.4.0`, STAFF search และ SYSTEM_ADMIN frontend slices; security/PDPA/UAT/release approval ยังเป็น gate แยกต่างหาก
 
 **Historical-chat note:** The earlier conversation was reportedly titled `MT-พัฒนาระบบตรวจสอบสิทธิ์จอด`; the exact chat/message ID and original chat's complete history were not independently recovered. This handover is grounded in versioned GitHub evidence, not a verbatim transcript of that chat.
