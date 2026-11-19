@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import { userDirectoryRepositoryKey } from '../application/users/user-directory-port.js'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
+import PaginationControl from '../components/common/PaginationControl.vue'
 import UserDirectoryList from '../features/user-directory/components/UserDirectoryList.vue'
 import UserAdministrationPanel from '../features/user-administration/components/UserAdministrationPanel.vue'
 import { useUserAdministration } from '../features/user-administration/useUserAdministration.js'
@@ -42,7 +43,10 @@ async function runConfirmed(action) {
       <div v-else-if="directory.phase.value === 'forbidden'" class="alert alert-warning items-start shadow-none"><div><h2 class="font-medium">ไม่สามารถอ่านรายชื่อได้</h2><p class="mt-1">เซสชันนี้ไม่มีสิทธิ์จัดการผู้ใช้ ไม่มีข้อมูลบัญชีถูกเปิดเผย</p></div></div>
       <div v-else-if="directory.phase.value === 'unauthenticated'" class="alert alert-warning items-start shadow-none"><div><h2 class="font-medium">เซสชันสิ้นสุดแล้ว</h2><p class="mt-1">เข้าสู่ระบบใหม่ก่อนอ่านรายชื่อ</p><RouterLink class="btn btn-sm mt-3" :to="{ name: 'sign-in' }">เข้าสู่ระบบ</RouterLink></div></div>
       <div v-else-if="directory.phase.value === 'recoverable-error' || directory.phase.value === 'error'" class="alert alert-error items-start shadow-none"><div class="w-full"><h2 class="font-medium">โหลดรายชื่อไม่สำเร็จ</h2><p class="mt-1">{{ errorCopy }}</p><button v-if="directory.phase.value === 'recoverable-error'" class="btn btn-sm mt-3" type="button" @click="directory.load">ลองอีกครั้ง</button><details v-if="directory.failure.value?.requestId" class="collapse collapse-arrow mt-3 bg-base-100 text-base-content"><summary class="collapse-title font-medium">รายละเอียดสำหรับเจ้าหน้าที่สนับสนุน</summary><div class="collapse-content break-all font-mono text-sm">{{ directory.failure.value.requestId }}</div></details></div></div>
-      <UserDirectoryList v-else-if="directory.phase.value === 'success'" :users="directory.result.value.users" />
+      <template v-else-if="directory.phase.value === 'success'">
+        <UserDirectoryList :users="directory.result.value.users" />
+        <PaginationControl class="mt-4" :page="directory.page.value" :page-size="directory.pageSize.value" :total-items="directory.result.value.pagination.total" :disabled="directory.phase.value === 'loading'" label="แบ่งหน้ารายชื่อผู้ใช้" @update:page="directory.changePage" @update:page-size="directory.changePageSize" />
+      </template>
     </section>
 
     <section v-if="directory.phase.value === 'success' || directory.phase.value === 'empty'" class="mt-6" aria-labelledby="user-administration-title">

@@ -9,6 +9,8 @@ export function useUserDirectory({ repository, permissions }) {
   const phase = ref('idle')
   const result = ref(null)
   const failure = ref(null)
+  const page = ref(1)
+  const pageSize = ref(10)
   const permissionList = computed(() => Array.isArray(unref(permissions)) ? unref(permissions) : [])
   const canReadUsers = computed(() => permissionList.value.includes('users.manage'))
 
@@ -22,7 +24,11 @@ export function useUserDirectory({ repository, permissions }) {
     }
     phase.value = 'loading'
     try {
-      result.value = await source.list({ limit: 50 })
+      result.value = await source.list({ page: page.value, pageSize: pageSize.value })
+      if (result.value.pagination.totalPages > 0 && page.value > result.value.pagination.totalPages) {
+        page.value = result.value.pagination.totalPages
+        return load()
+      }
       phase.value = result.value.users.length ? 'success' : 'empty'
       return true
     } catch (error) {
@@ -35,5 +41,8 @@ export function useUserDirectory({ repository, permissions }) {
     }
   }
 
-  return { phase, result, failure, canReadUsers, load }
+  async function changePage(value) { page.value = value; return load() }
+  async function changePageSize(value) { pageSize.value = value; page.value = 1; return load() }
+
+  return { phase, result, failure, page, pageSize, canReadUsers, load, changePage, changePageSize }
 }

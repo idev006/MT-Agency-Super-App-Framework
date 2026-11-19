@@ -1,3 +1,5 @@
+import { callPaginatedOperation, mapPaginatedData } from '../api/pagination-contract.js'
+
 export class CampaignContractError extends Error {
   constructor() {
     super('Campaign response does not match the contract')
@@ -35,11 +37,10 @@ function mapCampaign(value) {
 export function createGasCampaignAdministrationRepository({ callOperation }) {
   if (typeof callOperation !== 'function') throw new TypeError('callOperation is required')
   return Object.freeze({
-    async list({ limit = 50, signal } = {}) {
-      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) throw new RangeError('limit must be between 1 and 100')
-      const response = await callOperation('campaigns.list', { limit }, { signal })
-      if (!Array.isArray(response.data)) throw new CampaignContractError()
-      return { campaigns: response.data.map(mapCampaign), requestId: response.requestId }
+    async list({ page = 1, pageSize = 10, signal } = {}) {
+      const response = await callPaginatedOperation({ callOperation, operation: 'campaigns.list', page, pageSize, options: { signal } })
+      const result = mapPaginatedData(response.data, mapCampaign)
+      return { campaigns: result.items, pagination: result.pagination, requestId: response.requestId }
     },
     async create({ startsAt, endsAt, maxSubmissions, signal }) {
       const response = await callOperation('campaigns.create', { startsAt, endsAt, maxSubmissions }, { signal })

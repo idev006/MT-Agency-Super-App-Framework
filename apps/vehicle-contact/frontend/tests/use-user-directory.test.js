@@ -3,10 +3,10 @@ import { useUserDirectory } from '../src/features/user-directory/useUserDirector
 
 describe('useUserDirectory state machine', () => {
   it('loads authorized users and reaches success', async () => {
-    const list = vi.fn().mockResolvedValue({ users: [{ userId: 'u-1' }], requestId: 'id', limit: 50 })
+    const list = vi.fn().mockResolvedValue({ users: [{ userId: 'u-1' }], pagination: { total: 1, page: 1, pageSize: 10, totalPages: 1 }, requestId: 'id' })
     const directory = useUserDirectory({ repository: { list }, permissions: ['users.manage'] })
     await expect(directory.load()).resolves.toBe(true)
-    expect(list).toHaveBeenCalledWith({ limit: 50 })
+    expect(list).toHaveBeenCalledWith({ page: 1, pageSize: 10 })
     expect(directory.phase.value).toBe('success')
   })
 
@@ -19,7 +19,7 @@ describe('useUserDirectory state machine', () => {
   })
 
   it('maps an empty authoritative response to empty', async () => {
-    const directory = useUserDirectory({ repository: { list: vi.fn().mockResolvedValue({ users: [], requestId: 'empty', limit: 50 }) }, permissions: ['users.manage'] })
+    const directory = useUserDirectory({ repository: { list: vi.fn().mockResolvedValue({ users: [], pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 }, requestId: 'empty' }) }, permissions: ['users.manage'] })
     await directory.load()
     expect(directory.phase.value).toBe('empty')
   })

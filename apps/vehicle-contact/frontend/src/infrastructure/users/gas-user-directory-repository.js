@@ -1,3 +1,5 @@
+import { callPaginatedOperation, mapPaginatedData } from '../api/pagination-contract.js'
+
 export class UserDirectoryContractError extends Error {
   constructor(message = 'User directory response does not match the contract') {
     super(message)
@@ -43,14 +45,13 @@ function mutationResult(response, expected = {}) {
 export function createGasUserDirectoryRepository({ callOperation }) {
   if (typeof callOperation !== 'function') throw new TypeError('callOperation is required')
   return Object.freeze({
-    async list({ limit = 50, signal } = {}) {
-      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100) throw new RangeError('limit must be between 1 and 100')
-      const response = await callOperation('users.list', { limit }, { signal })
-      if (!Array.isArray(response.data)) throw new UserDirectoryContractError()
+    async list({ page = 1, pageSize = 10, signal } = {}) {
+      const response = await callPaginatedOperation({ callOperation, operation: 'users.list', page, pageSize, options: { signal } })
+      const result = mapPaginatedData(response.data, mapUser)
       return {
-        users: response.data.map(mapUser),
+        users: result.items,
+        pagination: result.pagination,
         requestId: response.requestId,
-        limit,
       }
     },
     async create(payload, { signal } = {}) {

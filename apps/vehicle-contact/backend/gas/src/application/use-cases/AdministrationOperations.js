@@ -1,3 +1,4 @@
+import {paginate} from '../pagination/Pagination.js';
 export function createAdministrationOperations({store,security}) {
  const required=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const audit=(actor,action,id)=>store.insert('vc_change_audit',{
@@ -24,9 +25,7 @@ export function createAdministrationOperations({store,security}) {
   return getSettings();
  }
  function listOrgs(p){
-  const limit=p.limit===undefined?100:p.limit;
-  if(!Number.isSafeInteger(limit)||limit<1||limit>500)throw new Error('INVALID_LIMIT');
-  return store.list('vc_organizations',{},limit);
+  return paginate(store.list('vc_organizations'),p,{defaultLimit:100,maxLegacyLimit:500});
  }
  function createOrg(p,a){
   const id=security.secretToken(),type=required(p.type,'ORG_TYPE');
@@ -77,10 +76,11 @@ export function createAdministrationOperations({store,security}) {
   return {campaignId:id,campaignToken:token};
  }
  function listCampaigns(p){
-  return store.list('vc_campaigns',{},Math.min(Math.max(Number(p.limit)||50,1),100)).map(x=>({
+  const items=store.list('vc_campaigns').map(x=>({
    campaignId:x.campaign_id,startsAt:x.starts_at,endsAt:x.ends_at,maxSubmissions:Number(x.max_submissions),
    submittedCount:Number(x.submitted_count),status:x.status
   }));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function validateCampaign(p){
   const row=getCampaign(p.campaignToken);

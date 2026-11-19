@@ -1,3 +1,5 @@
+import { callPaginatedOperation, mapPaginatedData } from '../api/pagination-contract.js'
+
 export class OrganizationContractError extends Error {
   constructor() {
     super('Organization response does not match the contract')
@@ -28,11 +30,10 @@ function mapOrganization(value) {
 export function createGasOrganizationAdministrationRepository({ callOperation }) {
   if (typeof callOperation !== 'function') throw new TypeError('callOperation is required')
   return Object.freeze({
-    async list({ limit = 100, signal } = {}) {
-      if (!Number.isSafeInteger(limit) || limit < 1 || limit > 500) throw new RangeError('limit must be between 1 and 500')
-      const response = await callOperation('organizations.list', { limit }, { signal })
-      if (!Array.isArray(response.data)) throw new OrganizationContractError()
-      return { organizations: response.data.map(mapOrganization), requestId: response.requestId }
+    async list({ page = 1, pageSize = 10, signal } = {}) {
+      const response = await callPaginatedOperation({ callOperation, operation: 'organizations.list', page, pageSize, options: { signal } })
+      const result = mapPaginatedData(response.data, mapOrganization)
+      return { organizations: result.items, pagination: result.pagination, requestId: response.requestId }
     },
     async create({ name, type, parentId = '', signal }) {
       const payload = { name, type, ...(parentId ? { parentId } : {}) }

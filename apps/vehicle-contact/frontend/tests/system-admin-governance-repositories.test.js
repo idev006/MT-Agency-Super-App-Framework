@@ -18,7 +18,7 @@ describe('SYSTEM_ADMIN governance repositories', () => {
 
   it('lists, approves and inspects retention without exposing execute', async () => {
     const callOperation = vi.fn()
-      .mockResolvedValueOnce({ data: [{ jobId: 'j-1', vehicleId: 'v-1', dueAt: '2026-11-20', status: 'DUE' }], requestId: 'r1' })
+      .mockResolvedValueOnce({ data: { items: [{ jobId: 'j-1', vehicleId: 'v-1', dueAt: '2026-11-20', status: 'DUE' }], total: 1, page: 1, pageSize: 10, totalPages: 1 }, requestId: 'r1' })
       .mockResolvedValueOnce({ data: { jobId: 'j-1', approved: true }, requestId: 'r2' })
       .mockResolvedValueOnce({ data: { jobId: 'j-1', vehicleId: 'v-1', status: 'APPROVED', attempts: 0, lastError: '' }, requestId: 'r3' })
     const repository = createGasRetentionRepository({ callOperation })
@@ -31,10 +31,10 @@ describe('SYSTEM_ADMIN governance repositories', () => {
   it('queries and exports normalized audit rows', async () => {
     const row = { type: 'change', eventId: 'e-1', actorId: 'u-1', entityId: 'v-1', action: 'UPDATED', at: '2026-11-19' }
     const callOperation = vi.fn()
-      .mockResolvedValueOnce({ data: [row], requestId: 'r1' })
+      .mockResolvedValueOnce({ data: { items: [row], total: 1, page: 1, pageSize: 10, totalPages: 1 }, requestId: 'r1' })
       .mockResolvedValueOnce({ data: { format: 'JSON', rows: [row] }, requestId: 'r2' })
     const repository = createGasAuditRepository({ callOperation })
-    expect((await repository.query({ limit: 50 })).rows[0]).toEqual(row)
+    expect((await repository.query({ page: 1, pageSize: 10 })).rows[0]).toEqual(row)
     expect((await repository.exportJson({ limit: 50 })).rows[0]).toEqual(row)
     expect(callOperation.mock.calls.map((call) => call[0])).toEqual(['audit.query', 'audit.export'])
   })

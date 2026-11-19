@@ -3,6 +3,7 @@ import { inject, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { organizationAdministrationRepositoryKey } from '../application/organizations/organization-administration-port.js'
 import ConfirmDialog from '../components/common/ConfirmDialog.vue'
+import PaginationControl from '../components/common/PaginationControl.vue'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import OrganizationAdministrationPanel from '../features/organizations/components/OrganizationAdministrationPanel.vue'
@@ -30,6 +31,7 @@ onMounted(() => administration.load())
       <div v-else-if="administration.actionPhase.value === 'error'" class="alert alert-error mb-4"><span>บันทึกไม่สำเร็จ ไม่มีการสั่งซ้ำอัตโนมัติ</span></div>
       <div v-else-if="administration.actionPhase.value === 'success'" class="alert alert-success mb-4"><span>บันทึกข้อมูลหน่วยงานแล้ว</span></div>
       <OrganizationAdministrationPanel :organizations="administration.organizations.value" :can-manage="administration.canManage.value" :busy="administration.actionPhase.value === 'submitting'" @create="administration.create" @update="administration.update" @disable="disableTarget = $event" />
+      <PaginationControl v-if="administration.pagination.value.total" class="mt-4" :page="administration.page.value" :page-size="administration.pageSize.value" :total-items="administration.pagination.value.total" :disabled="administration.phase.value === 'loading'" label="แบ่งหน้ารายการหน่วยงาน" @update:page="administration.changePage" @update:page-size="administration.changePageSize" />
     </template>
     <template #footer><p class="text-sm text-base-content/70">การปิดใช้งานไม่ลบประวัติเดิม และ GAS จะตรวจสิทธิ์ซ้ำทุกคำขอ</p></template>
   </PageTemplateComponent>

@@ -1,4 +1,5 @@
 import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition} from '../../domain/policies/VehicleLifecycle.js';
+import {paginate} from '../pagination/Pagination.js';
 export function createVehicleOperations({store,security,campaigns}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -95,10 +96,9 @@ export function createVehicleOperations({store,security,campaigns}) {
   });
  }
  function registrationPending(p){
-  const limit=p.limit===undefined?50:p.limit;
-  if(!Number.isSafeInteger(limit)||limit<1||limit>100)throw new Error('INVALID_LIMIT');
-  return store.list('vc_registration_requests',{status:'PENDING_APPROVAL'},limit)
+  const items=store.list('vc_registration_requests',{status:'PENDING_APPROVAL'})
    .map(r=>({requestId:r.request_id,vehicleId:r.vehicle_id,submittedAt:r.submitted_at,status:r.status}));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function registrationDetail(p){
   const r=store.one('vc_registration_requests',{request_id:need(p.requestId,'REQUEST_ID')});
@@ -223,8 +223,9 @@ export function createVehicleOperations({store,security,campaigns}) {
   return {requestId:reqId,status:'PENDING'};
  }
  function changePending(p){
-  return store.list('vc_change_requests',{status:'PENDING'},Math.min(Number(p.limit)||50,100))
+  const items=store.list('vc_change_requests',{status:'PENDING'})
    .map(r=>({requestId:r.change_id,vehicleId:r.vehicle_id,submittedAt:r.submitted_at}));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function changeReview(p,a){
   const requestId=need(p.requestId,'REQUEST_ID');

@@ -8,6 +8,7 @@ const failureOf = (error) => ({ code: typeof error?.code === 'string' ? error.co
 export function useOrganizationAdministration({ repository, permissions }) {
   const source = assertOrganizationAdministrationRepository(repository)
   const phase = ref('idle'), organizations = ref([]), failure = ref(null)
+  const page = ref(1), pageSize = ref(10), pagination = ref({ total: 0, page: 1, pageSize: 10, totalPages: 0 })
   const actionPhase = ref('idle'), actionFailure = ref(null), lastAction = ref(null)
   const permissionList = computed(() => Array.isArray(unref(permissions)) ? unref(permissions) : [])
   const canRead = computed(() => permissionList.value.some((item) => ['organizations.read', 'organizations.manage'].includes(item)))
@@ -18,8 +19,10 @@ export function useOrganizationAdministration({ repository, permissions }) {
     if (!canRead.value) { phase.value = 'forbidden'; return false }
     phase.value = 'loading'
     try {
-      const result = await source.list({ limit: 100 })
+      const result = await source.list({ page: page.value, pageSize: pageSize.value })
+      if (result.pagination.totalPages > 0 && page.value > result.pagination.totalPages) { page.value = result.pagination.totalPages; return load() }
       organizations.value = result.organizations
+      pagination.value = result.pagination
       phase.value = organizations.value.length ? 'success' : 'empty'
       return true
     } catch (error) {
@@ -47,7 +50,9 @@ export function useOrganizationAdministration({ repository, permissions }) {
   }
 
   return {
-    phase, organizations, failure, actionPhase, actionFailure, lastAction, canRead, canManage, load,
+    phase, organizations, failure, page, pageSize, pagination, actionPhase, actionFailure, lastAction, canRead, canManage, load,
+    changePage: (value) => { page.value = value; return load() },
+    changePageSize: (value) => { pageSize.value = value; page.value = 1; return load() },
     create: (input) => write('create', () => source.create(input)),
     update: (input) => write('update', () => source.update(input)),
     disable: (organizationId) => write('disable', () => source.disable({ organizationId })),

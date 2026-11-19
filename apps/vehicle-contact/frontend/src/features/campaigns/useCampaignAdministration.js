@@ -8,6 +8,7 @@ const failureOf = (error) => ({ code: typeof error?.code === 'string' ? error.co
 export function useCampaignAdministration({ repository, permissions }) {
   const source = assertCampaignAdministrationRepository(repository)
   const phase = ref('idle'), campaigns = ref([]), failure = ref(null)
+  const page = ref(1), pageSize = ref(10), pagination = ref({ total: 0, page: 1, pageSize: 10, totalPages: 0 })
   const actionPhase = ref('idle'), actionFailure = ref(null), oneTimeToken = ref(null)
   const permissionList = computed(() => Array.isArray(unref(permissions)) ? unref(permissions) : [])
   const canManage = computed(() => permissionList.value.includes('campaigns.manage'))
@@ -17,8 +18,10 @@ export function useCampaignAdministration({ repository, permissions }) {
     if (!canManage.value) { phase.value = 'forbidden'; return false }
     phase.value = 'loading'
     try {
-      const result = await source.list({ limit: 50 })
+      const result = await source.list({ page: page.value, pageSize: pageSize.value })
+      if (result.pagination.totalPages > 0 && page.value > result.pagination.totalPages) { page.value = result.pagination.totalPages; return load() }
       campaigns.value = result.campaigns
+      pagination.value = result.pagination
       phase.value = campaigns.value.length ? 'success' : 'empty'
       return true
     } catch (error) {
@@ -61,5 +64,8 @@ export function useCampaignAdministration({ repository, permissions }) {
     }
   }
 
-  return { phase, campaigns, failure, actionPhase, actionFailure, oneTimeToken, canManage, load, create, revoke, clearOneTimeToken: () => { oneTimeToken.value = null } }
+  return { phase, campaigns, failure, page, pageSize, pagination, actionPhase, actionFailure, oneTimeToken, canManage, load,
+    changePage: (value) => { page.value = value; return load() },
+    changePageSize: (value) => { pageSize.value = value; page.value = 1; return load() },
+    create, revoke, clearOneTimeToken: () => { oneTimeToken.value = null } }
 }

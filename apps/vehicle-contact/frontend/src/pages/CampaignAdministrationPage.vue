@@ -3,6 +3,7 @@ import { inject, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { campaignAdministrationRepositoryKey } from '../application/campaigns/campaign-administration-port.js'
 import ConfirmDialog from '../components/common/ConfirmDialog.vue'
+import PaginationControl from '../components/common/PaginationControl.vue'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import CampaignAdministrationPanel from '../features/campaigns/components/CampaignAdministrationPanel.vue'
@@ -29,6 +30,7 @@ onMounted(() => administration.load())
       <div v-if="administration.actionPhase.value === 'uncertain'" class="alert alert-warning mb-4"><span>ไม่สามารถยืนยันผลคำสั่งได้ กรุณาโหลดรายการใหม่ก่อนทำซ้ำ</span></div>
       <div v-else-if="administration.actionPhase.value === 'error'" class="alert alert-error mb-4"><span>ดำเนินการแคมเปญไม่สำเร็จ</span></div>
       <CampaignAdministrationPanel :campaigns="administration.campaigns.value" :one-time-token="administration.oneTimeToken.value" :busy="administration.actionPhase.value === 'submitting'" @create="administration.create" @revoke="revokeTarget = $event" @dismiss-token="administration.clearOneTimeToken" />
+      <PaginationControl v-if="administration.pagination.value.total" class="mt-4" :page="administration.page.value" :page-size="administration.pageSize.value" :total-items="administration.pagination.value.total" :disabled="administration.phase.value === 'loading'" label="แบ่งหน้ารายการแคมเปญ" @update:page="administration.changePage" @update:page-size="administration.changePageSize" />
     </template>
     <template #footer><p class="text-sm text-base-content/70">โทเคนดิบจะแสดงเฉพาะหลังสร้างสำเร็จและไม่ถูกเก็บใน browser storage</p></template>
   </PageTemplateComponent>

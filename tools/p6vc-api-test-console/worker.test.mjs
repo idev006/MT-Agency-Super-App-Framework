@@ -101,11 +101,12 @@ test('frontend gateway forwards explicitly allowlisted admin operations with a s
  const fake=await fakeGAS(body=>envelope(true,{operation:body.group+'.'+body.action}));
  try{
   const base={apiVersion:'v1',payload:{},requestId:'frontend-admin-01',sessionToken:TOKEN};
-  let r=await worker.fetch(frontendRequest({...base,group:'users',action:'list',payload:{limit:50}}),env());
+  let r=await worker.fetch(frontendRequest({...base,group:'users',action:'list',payload:{page:2,pageSize:25}}),env());
   assert.equal(r.status,200);assert.equal((await r.json()).ok,true);
   r=await worker.fetch(frontendRequest({...base,group:'system',action:'config.update',payload:{values:{idle_timeout_minutes:30}}}),env());
   assert.equal(r.status,200);assert.equal((await r.json()).ok,true);
   assert.deepEqual(fake.calls.map(x=>x.group+'.'+x.action),['users.list','system.config.update']);
+  assert.deepEqual(fake.calls[0].payload,{page:2,pageSize:25});
   r=await worker.fetch(frontendRequest({...base,group:'users',action:'suspend',sessionToken:undefined,payload:{userId:'u-1'}}),env());
   assert.equal((await r.json()).error,'INVALID_SESSION_PAYLOAD');
   r=await worker.fetch(frontendRequest({...base,group:'users',action:'suspend',payload:{userId:'u-1',role:'SYSTEM_ADMIN'}}),env());

@@ -5,7 +5,7 @@ import { useSystemSettings } from '../src/features/settings/useSystemSettings.js
 
 describe('SYSTEM_ADMIN governance state machines', () => {
   it('loads and mutates organizations only with manage permission', async () => {
-    const repository = { list: vi.fn().mockResolvedValue({ organizations: [], requestId: 'l' }), create: vi.fn().mockResolvedValue({ requestId: 'c' }), update: vi.fn(), disable: vi.fn() }
+    const repository = { list: vi.fn().mockResolvedValue({ organizations: [], pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 }, requestId: 'l' }), create: vi.fn().mockResolvedValue({ requestId: 'c' }), update: vi.fn(), disable: vi.fn() }
     const state = useOrganizationAdministration({ repository, permissions: ['organizations.manage'] })
     await state.load(); expect(state.phase.value).toBe('empty')
     await state.create({ name: 'A', type: 'POLICE' }); expect(state.actionPhase.value).toBe('success')
@@ -20,7 +20,7 @@ describe('SYSTEM_ADMIN governance state machines', () => {
   })
 
   it('holds a campaign token in memory until explicitly dismissed', async () => {
-    const repository = { list: vi.fn().mockResolvedValue({ campaigns: [], requestId: 'l' }), create: vi.fn().mockResolvedValue({ campaignId: 'c', campaignToken: 'secret-once', requestId: 'c' }), revoke: vi.fn() }
+    const repository = { list: vi.fn().mockResolvedValue({ campaigns: [], pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 }, requestId: 'l' }), create: vi.fn().mockResolvedValue({ campaignId: 'c', campaignToken: 'secret-once', requestId: 'c' }), revoke: vi.fn() }
     const state = useCampaignAdministration({ repository, permissions: ['campaigns.manage'] })
     await state.create({ startsAt: 'a', endsAt: 'b', maxSubmissions: 1 })
     expect(state.oneTimeToken.value).toEqual({ campaignId: 'c', token: 'secret-once' })
