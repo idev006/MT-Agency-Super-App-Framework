@@ -18,7 +18,8 @@ describe('permission-driven menu SSOT', () => {
     expect(ids).not.toContain('vehicle-search')
     expect(ids).not.toContain('registration-review')
     expect(ids).not.toContain('my-vehicles')
-    expect(items.filter((item) => item.route).map((item) => item.id)).toEqual(['dashboard', 'connection', 'user-admin'])
+    expect(items.filter((item) => item.route).map((item) => item.id)).toEqual(ids)
+    expect(items.filter((item) => !item.route)).toEqual([])
   })
 
   it('unions permission overrides without relying on a role name', () => {

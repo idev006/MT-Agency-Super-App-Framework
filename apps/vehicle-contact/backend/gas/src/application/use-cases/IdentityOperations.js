@@ -73,7 +73,10 @@ export function createIdentityOperations({store,security,sessions}) {
  function listUsers(p){
   const limit=p.limit===undefined?50:Number(p.limit);
   if(!Number.isSafeInteger(limit)||limit<1||limit>100)throw new Error('INVALID_LIMIT');
-  return store.list('vc_users',{},limit).map(u=>({userId:u.user_id,username:u.username_normalized,displayName:u.display_name,organizationId:u.org_id,status:u.status}));
+  return store.list('vc_users',{},limit).map(u=>({
+   userId:u.user_id,username:u.username_normalized,displayName:u.display_name,organizationId:u.org_id,status:u.status,
+   roles:store.list('vc_user_roles',{user_id:u.user_id}).filter(r=>r.status==='ACTIVE').map(r=>String(r.role_id))
+  }));
  }
  function updateUser(p,actor){
   const id=required(p.userId,'USER_ID');

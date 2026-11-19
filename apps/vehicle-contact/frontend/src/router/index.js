@@ -8,6 +8,13 @@ import GatewayPocView from '../views/GatewayPocView.vue'
 import VehicleSearchPage from '../pages/VehicleSearchPage.vue'
 import ForbiddenPage from '../pages/ForbiddenPage.vue'
 import UserDirectoryPage from '../pages/UserDirectoryPage.vue'
+import AccountSecurityPage from '../pages/AccountSecurityPage.vue'
+import OrganizationAdministrationPage from '../pages/OrganizationAdministrationPage.vue'
+import CampaignAdministrationPage from '../pages/CampaignAdministrationPage.vue'
+import QrGovernancePage from '../pages/QrGovernancePage.vue'
+import SystemSettingsPage from '../pages/SystemSettingsPage.vue'
+import RetentionApprovalPage from '../pages/RetentionApprovalPage.vue'
+import AuditReviewPage from '../pages/AuditReviewPage.vue'
 
 export const router = createRouter({
   history: createWebHashHistory(),
@@ -21,6 +28,13 @@ export const router = createRouter({
         { path: 'vehicles/search', name: 'vehicle-search', component: VehicleSearchPage, meta: { title: 'ค้นหายานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
         { path: 'forbidden', name: 'forbidden', component: ForbiddenPage, meta: { title: 'ไม่มีสิทธิ์เปิดงาน' } },
         { path: 'admin/users', name: 'user-directory', component: UserDirectoryPage, meta: { title: 'ผู้ใช้และสิทธิ์', requiredPermissions: ['users.manage'] } },
+        { path: 'account/security', name: 'account-security', component: AccountSecurityPage, meta: { title: 'บัญชีและความปลอดภัย', requiredPermissions: ['session.authenticated'] } },
+        { path: 'admin/organizations', name: 'organization-administration', component: OrganizationAdministrationPage, meta: { title: 'หน่วยงาน', requiredPermissions: ['organizations.read'] } },
+        { path: 'admin/campaigns', name: 'campaign-administration', component: CampaignAdministrationPage, meta: { title: 'แคมเปญลงทะเบียน', requiredPermissions: ['campaigns.manage'] } },
+        { path: 'admin/qr', name: 'qr-governance', component: QrGovernancePage, meta: { title: 'จัดการ QR', requiredPermissions: ['qr.manage'] } },
+        { path: 'admin/settings', name: 'system-settings', component: SystemSettingsPage, meta: { title: 'ตั้งค่าระบบ', requiredPermissions: ['system.settings.read'] } },
+        { path: 'admin/retention', name: 'retention-approval', component: RetentionApprovalPage, meta: { title: 'การเก็บรักษาข้อมูล', requiredPermissions: ['retention.read'] } },
+        { path: 'admin/audit', name: 'audit-review', component: AuditReviewPage, meta: { title: 'ตรวจสอบ Audit', requiredPermissions: ['audit.read'] } },
       ],
     },
     { path: '/', redirect: { name: 'dashboard' } },

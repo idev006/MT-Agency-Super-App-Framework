@@ -19,9 +19,12 @@ describe('SYSTEM_ADMIN user directory page contract', () => {
     expect(page).not.toContain('fetch(')
   })
 
-  it('renders required asynchronous states and accurately labels the slice read-only', () => {
+  it('renders required asynchronous states and full administration controls', () => {
     for (const phase of ['loading', 'empty', 'forbidden', 'recoverable-error', 'error', 'success']) expect(page).toContain(`'${phase}'`)
-    expect(page).toContain('อ่านอย่างเดียว')
-    expect(page).toContain('ยังไม่แก้ไข')
+    expect(page).toContain('จัดการบัญชี')
+    expect(page).toContain('<UserAdministrationPanel')
+    expect(page).toContain('administration.suspendUser')
+    expect(page).toContain('administration.resetPassword')
+    expect(page).toContain('administration.assignRoles')
   })
 })

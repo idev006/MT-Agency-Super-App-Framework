@@ -1,0 +1,41 @@
+import { computed, ref, unref } from 'vue'
+import { assertSystemSettingsRepository } from '../../application/settings/system-settings-port.js'
+
+const AUTH_FAILURES = new Set(['UNAUTHENTICATED', 'SESSION_EXPIRED', 'SESSION_IDLE_EXPIRED'])
+const UNCERTAIN_FAILURES = new Set(['TIMEOUT', 'NETWORK_ERROR', 'HTTP_502', 'HTTP_503', 'HTTP_504'])
+const failureOf = (error) => ({ code: typeof error?.code === 'string' ? error.code : 'UNEXPECTED_ERROR', requestId: typeof error?.requestId === 'string' ? error.requestId : '' })
+
+export function useSystemSettings({ repository, permissions }) {
+  const source = assertSystemSettingsRepository(repository)
+  const phase = ref('idle'), settings = ref(null), failure = ref(null)
+  const savePhase = ref('idle'), saveFailure = ref(null)
+  const permissionList = computed(() => Array.isArray(unref(permissions)) ? unref(permissions) : [])
+  const canRead = computed(() => permissionList.value.includes('system.settings.read'))
+  const canManage = computed(() => permissionList.value.includes('system.settings.manage'))
+
+  async function load() {
+    failure.value = null
+    if (!canRead.value) { phase.value = 'forbidden'; return false }
+    phase.value = 'loading'
+    try { settings.value = (await source.get()).settings; phase.value = 'success'; return true }
+    catch (error) {
+      failure.value = failureOf(error)
+      phase.value = failure.value.code === 'FORBIDDEN' ? 'forbidden' : AUTH_FAILURES.has(failure.value.code) ? 'unauthenticated' : 'error'
+      return false
+    }
+  }
+
+  async function save(values) {
+    saveFailure.value = null
+    if (!canManage.value) { savePhase.value = 'forbidden'; return false }
+    savePhase.value = 'submitting'
+    try { settings.value = (await source.update(values)).settings; savePhase.value = 'success'; return true }
+    catch (error) {
+      saveFailure.value = failureOf(error)
+      savePhase.value = UNCERTAIN_FAILURES.has(saveFailure.value.code) ? 'uncertain' : AUTH_FAILURES.has(saveFailure.value.code) ? 'unauthenticated' : saveFailure.value.code === 'FORBIDDEN' ? 'forbidden' : 'error'
+      return false
+    }
+  }
+
+  return { phase, settings, failure, savePhase, saveFailure, canRead, canManage, load, save }
+}

@@ -19,7 +19,7 @@ const contentClass = computed(() => slots.aside ? 'grid gap-6 lg:grid-cols-[minm
 
 <template>
   <article class="page-template mx-auto w-full space-y-8 p-4 sm:p-6 lg:p-8" :class="containerClass">
-    <nav v-if="$slots.breadcrumbs" class="text-sm text-base-content/55" aria-label="เส้นทางหน้าปัจจุบัน">
+    <nav v-if="$slots.breadcrumbs" class="text-sm text-base-content/75" aria-label="เส้นทางหน้าปัจจุบัน">
       <slot name="breadcrumbs" />
     </nav>
 

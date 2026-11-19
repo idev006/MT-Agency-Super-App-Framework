@@ -314,7 +314,7 @@
     {
       "id": "VC-RETENTION-001",
       "operation": "retention.listDue",
-      "requiredPermission": "retention.delete.approve",
+      "requiredPermission": "retention.read",
       "identitySource": "SERVER_VERIFIED_SESSION",
       "enabled": false
     },

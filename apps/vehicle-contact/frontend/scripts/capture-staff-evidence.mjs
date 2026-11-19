@@ -5,13 +5,16 @@ const cdpPort = Number(process.env.P6VC_CDP_PORT || 9223)
 const evidenceSlice = process.env.P6VC_EVIDENCE_SLICE || 'staff'
 const systemAdminEvidence = evidenceSlice === 'system-admin-users'
 const systemAdminNavigationEvidence = evidenceSlice === 'system-admin-navigation'
-const appUrl = process.env.P6VC_EVIDENCE_URL || (systemAdminNavigationEvidence
+const systemAdminCompleteEvidence = evidenceSlice === 'system-admin-complete'
+const appUrl = process.env.P6VC_EVIDENCE_URL || (systemAdminNavigationEvidence || systemAdminCompleteEvidence
   ? 'http://127.0.0.1:4173/#/app/dashboard'
   : systemAdminEvidence
   ? 'http://127.0.0.1:4173/#/app/admin/users'
   : 'http://127.0.0.1:4173/#/app/vehicles/search')
 const evidenceDir = resolve(systemAdminNavigationEvidence
   ? '../docs/evidence/fe-system-admin-navigation-20261119'
+  : systemAdminCompleteEvidence
+  ? '../docs/evidence/fe-system-admin-complete-20261119'
   : systemAdminEvidence
   ? '../docs/evidence/fe-system-admin-users-20261119'
   : '../docs/evidence/fe-staff-vehicle-search-20261119')
@@ -104,7 +107,7 @@ const staffSessionFixture = {
   roles: ['STAFF'],
   permissions: ['session.authenticated', 'organizations.read', 'vehicle.lookup', 'vehicle.contact.read', 'vehicle.photos.read', 'vehicle.history.read'],
 }
-const sessionFixture = systemAdminEvidence || systemAdminNavigationEvidence ? adminSessionFixture : staffSessionFixture
+const sessionFixture = systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence ? adminSessionFixture : staffSessionFixture
 const gasEvidenceEndpoint = 'https://script.google.com/macros/s/evidence-only/exec'
 const gasPersistedEndpoint = 'https://script.google.com/macros/s/persisted-evidence/exec'
 const workerEvidenceEndpoint = 'https://p6vc-evidence.example.workers.dev/api/frontend'
@@ -123,6 +126,11 @@ const installFixture = `
       if (operation === 'auth.session') data = ${JSON.stringify(sessionFixture)};
       else if (operation === 'vehicles.lookup') data = ${JSON.stringify(apiFixture)};
       else if (operation === 'users.list') data = ${JSON.stringify(userFixture)};
+      else if (operation === 'organizations.list') data = [{ organization_id: 'org-command', name: 'กองบัญชาการทดสอบ', org_type: 'POLICE', parent_id: '', status: 'ACTIVE' }];
+      else if (operation === 'campaigns.list') data = [{ campaignId: 'campaign-1', startsAt: '2026-11-19T00:00:00.000Z', endsAt: '2026-12-19T00:00:00.000Z', maxSubmissions: 100, submittedCount: 3, status: 'ACTIVE' }];
+      else if (operation === 'system.config.get') data = { idle_timeout_minutes: '30', retention_days: '365' };
+      else if (operation === 'retention.listDue') data = [{ jobId: 'retention-1', vehicleId: 'vehicle-1', dueAt: '2026-11-20T00:00:00.000Z', status: 'DUE' }];
+      else if (operation === 'audit.query') data = [{ type: 'change', eventId: 'audit-1', actorId: 'admin-1', entityId: 'vehicle-1', action: 'UPDATED', at: '2026-11-19T00:00:00.000Z' }];
       else if (operation === 'vehicles.history') data = [{
         audit_id: 'audit-evidence-1', action: 'VEHICLE_UPDATED', redacted_summary: 'VEHICLE_UPDATED',
         created_at: '2026-11-19T02:30:00.000Z'
@@ -269,7 +277,21 @@ async function screenshot(fileName, { fullPage = false } = {}) {
 await mkdir(evidenceDir, { recursive: true })
 const evidence = { generatedAt: new Date().toISOString(), evidenceSlice, appUrl, browser: 'Microsoft Edge headless', cases: {} }
 
-if (systemAdminNavigationEvidence) {
+if (systemAdminCompleteEvidence) {
+  const routes = [
+    ['account-security', '#/app/account/security'], ['users', '#/app/admin/users'],
+    ['organizations', '#/app/admin/organizations'], ['campaigns', '#/app/admin/campaigns'],
+    ['qr', '#/app/admin/qr'], ['settings', '#/app/admin/settings'],
+    ['retention', '#/app/admin/retention'], ['audit', '#/app/admin/audit'],
+  ]
+  for (const [name, hash] of routes) {
+    await setViewport(1440, 900); await navigate(`http://127.0.0.1:4173/${hash}`); await setTheme('dark')
+    await new Promise((resolveDelay) => setTimeout(resolveDelay, 200))
+    evidence.cases[`${name}DesktopDark`] = await auditPage(); await screenshot(`${name}-desktop-dark.png`, { fullPage: true })
+    await setViewport(360, 800); await setTheme('corporate'); await new Promise((resolveDelay) => setTimeout(resolveDelay, 200))
+    evidence.cases[`${name}MobileCorporate`] = await auditPage(); await screenshot(`${name}-mobile-corporate.png`, { fullPage: true })
+  }
+} else if (systemAdminNavigationEvidence) {
   await setViewport(1920, 1080)
   await navigate()
   await setTheme('corporate')
@@ -347,7 +369,7 @@ const navigationFailed = systemAdminNavigationEvidence && (
   || evidence.navigationCoverage.plannedLinkCount !== 0
   || ['ค้นหายานพาหนะ', 'ตรวจสอบการลงทะเบียน', 'ยานพาหนะของฉัน'].some((label) => evidence.navigationCoverage.pageText.includes(label))
 )
-const refreshFailed = systemAdminEvidence || systemAdminNavigationEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
+const refreshFailed = systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
   || evidence.refreshPersistence.signInVisible
   || evidence.refreshPersistence.transport !== 'worker'
   || evidence.refreshPersistence.gasEndpoint !== gasPersistedEndpoint

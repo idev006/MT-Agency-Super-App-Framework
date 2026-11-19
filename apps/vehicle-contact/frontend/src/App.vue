@@ -1,10 +1,24 @@
 <script setup>
 import { provide } from 'vue'
 import { RouterView } from 'vue-router'
+import { accountSecurityRepositoryKey } from './application/auth/account-security-port.js'
+import { auditRepositoryKey } from './application/audit/audit-port.js'
+import { campaignAdministrationRepositoryKey } from './application/campaigns/campaign-administration-port.js'
+import { organizationAdministrationRepositoryKey } from './application/organizations/organization-administration-port.js'
+import { qrGovernanceRepositoryKey } from './application/qr/qr-governance-port.js'
+import { retentionRepositoryKey } from './application/retention/retention-port.js'
+import { systemSettingsRepositoryKey } from './application/settings/system-settings-port.js'
 import { vehicleSearchRepositoryKey } from './application/vehicles/vehicle-search-port.js'
 import { userDirectoryRepositoryKey } from './application/users/user-directory-port.js'
 import { createGasVehicleSearchRepository } from './infrastructure/vehicles/gas-vehicle-search-repository.js'
 import { createGasUserDirectoryRepository } from './infrastructure/users/gas-user-directory-repository.js'
+import { createGasAccountSecurityRepository } from './infrastructure/auth/gas-account-security-repository.js'
+import { createGasAuditRepository } from './infrastructure/audit/gas-audit-repository.js'
+import { createGasCampaignAdministrationRepository } from './infrastructure/campaigns/gas-campaign-administration-repository.js'
+import { createGasOrganizationAdministrationRepository } from './infrastructure/organizations/gas-organization-administration-repository.js'
+import { createGasQrGovernanceRepository } from './infrastructure/qr/gas-qr-governance-repository.js'
+import { createGasRetentionRepository } from './infrastructure/retention/gas-retention-repository.js'
+import { createGasSystemSettingsRepository } from './infrastructure/settings/gas-system-settings-repository.js'
 import { useSessionStore } from './stores/session.js'
 import { useUiStore } from './stores/ui.js'
 useUiStore()
@@ -15,5 +29,12 @@ provide(vehicleSearchRepositoryKey, createGasVehicleSearchRepository({
 provide(userDirectoryRepositoryKey, createGasUserDirectoryRepository({
   callOperation: session.callProtected,
 }))
+provide(accountSecurityRepositoryKey, createGasAccountSecurityRepository({ callOperation: session.callProtected }))
+provide(organizationAdministrationRepositoryKey, createGasOrganizationAdministrationRepository({ callOperation: session.callProtected }))
+provide(campaignAdministrationRepositoryKey, createGasCampaignAdministrationRepository({ callOperation: session.callProtected }))
+provide(systemSettingsRepositoryKey, createGasSystemSettingsRepository({ callOperation: session.callProtected }))
+provide(qrGovernanceRepositoryKey, createGasQrGovernanceRepository({ callOperation: session.callProtected }))
+provide(retentionRepositoryKey, createGasRetentionRepository({ callOperation: session.callProtected }))
+provide(auditRepositoryKey, createGasAuditRepository({ callOperation: session.callProtected }))
 </script>
 <template><RouterView /></template>

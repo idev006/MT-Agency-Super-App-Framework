@@ -7,7 +7,27 @@
 const JSON_HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY"};
 const TARGET=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
 const READ_ONLY_OPERATIONS=new Set(["system.health","system.config.get","users.list","organizations.list","campaigns.list","registrations.listPending","vehicles.lookup","vehicles.history","changes.listPending","retention.jobStatus"]);
-const FRONTEND_OPERATIONS=new Set(["system.health","auth.login","auth.session","auth.logout"]);
+const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
+ "system.health":[[],[]],
+ "auth.login":[["username","password"],[]],
+ "auth.session":[[],[]],"auth.logout":[[],[]],
+ "auth.changePassword":[["oldPassword","newPassword"],[]],
+ "auth.linkGoogle":[["password","idToken"],[]],
+ "users.create":[["username","displayName","temporaryPassword"],["organizationId"]],
+ "users.list":[[],["limit"]],"users.update":[["userId"],["displayName","organizationId"]],
+ "users.suspend":[["userId"],[]],"users.resetPassword":[["userId","temporaryPassword"],[]],
+ "users.assignRoles":[["userId","roles"],[]],
+ "organizations.list":[[],["limit"]],"organizations.create":[["name","type"],["parentId"]],
+ "organizations.update":[["organizationId"],["name","parentId"]],"organizations.disable":[["organizationId"],[]],
+ "campaigns.create":[["startsAt","endsAt","maxSubmissions"],[]],"campaigns.list":[[],["limit"]],
+ "campaigns.revoke":[["campaignId"],[]],
+ "qr.issue":[["vehicleId"],[]],"qr.revoke":[["vehicleId"],[]],"qr.replace":[["vehicleId"],[]],
+ "system.config.get":[[],[]],"system.config.update":[["values"],[]],
+ "retention.listDue":[[],["limit"]],"retention.approve":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
+ "audit.query":[[],["vehicleId","limit"]],"audit.export":[[],["vehicleId","limit"]]
+});
+const FRONTEND_OPERATIONS=new Set(Object.keys(FRONTEND_PAYLOAD_FIELDS));
+const FRONTEND_PUBLIC_OPERATIONS=new Set(["system.health","auth.login"]);
 const JOB_ID=/^job_[0-9a-f]{32}$/;
 const IDEMPOTENCY_KEY=/^[A-Za-z0-9._:-]{8,128}$/;
 const JOB_TTL_SECONDS=7*24*60*60;
@@ -55,16 +75,28 @@ function validFrontendEnvelope(input){
  if(input.apiVersion!=="v1"||typeof input.group!=="string"||typeof input.action!=="string")return "INVALID_ENVELOPE";
  const operation=input.group+"."+input.action;
  if(!FRONTEND_OPERATIONS.has(operation))return "OPERATION_NOT_ALLOWED";
- if(!input.payload||typeof input.payload!=="object"||Array.isArray(input.payload)||JSON.stringify(input.payload).length>1024)
+ if(!input.payload||typeof input.payload!=="object"||Array.isArray(input.payload)||JSON.stringify(input.payload).length>16384)
   return "INVALID_PAYLOAD";
  if(typeof input.requestId!=="string"||!/^[A-Za-z0-9_-]{8,80}$/.test(input.requestId))return "INVALID_REQUEST_ID";
  const keys=Object.keys(input.payload);
- if(operation==="auth.login"){
-  if(keys.some(key=>!["username","password"].includes(key))||typeof input.payload.username!=="string"||
-   input.payload.username.length<1||input.payload.username.length>100||typeof input.payload.password!=="string"||
-   input.payload.password.length<1||input.payload.password.length>128||input.sessionToken!==undefined)return "INVALID_LOGIN_PAYLOAD";
- }else if(keys.length||operation==="system.health"&&input.sessionToken!==undefined||
-  operation.startsWith("auth.")&&!/^[0-9a-f]{64}$/i.test(input.sessionToken||""))return "INVALID_SESSION_PAYLOAD";
+ const [required,optional]=FRONTEND_PAYLOAD_FIELDS[operation],allowed=new Set([...required,...optional]);
+ if(required.some(key=>!Object.hasOwn(input.payload,key))||keys.some(key=>!allowed.has(key)))return "INVALID_OPERATION_PAYLOAD";
+ const safeValue=(value,depth=0)=>{
+  if(depth>3)return false;
+  if(value===null||typeof value==="boolean")return true;
+  if(typeof value==="number")return Number.isFinite(value);
+  if(typeof value==="string")return value.length<=4096;
+  if(Array.isArray(value))return value.length<=10&&value.every(item=>safeValue(item,depth+1));
+  if(typeof value==="object")return Object.entries(value).length<=10&&Object.entries(value).every(([key,item])=>
+   /^[A-Za-z0-9_]{1,80}$/.test(key)&&!["__proto__","constructor","prototype"].includes(key)&&safeValue(item,depth+1));
+  return false;
+ };
+ if(!keys.every(key=>safeValue(input.payload[key])))return "INVALID_OPERATION_PAYLOAD";
+ if(operation==="auth.login"&&(typeof input.payload.username!=="string"||input.payload.username.length<1||input.payload.username.length>100||
+   typeof input.payload.password!=="string"||input.payload.password.length<1||input.payload.password.length>128))return "INVALID_LOGIN_PAYLOAD";
+ if(FRONTEND_PUBLIC_OPERATIONS.has(operation)){
+  if(input.sessionToken!==undefined)return "INVALID_PUBLIC_PAYLOAD";
+ }else if(!/^[0-9a-f]{64}$/i.test(input.sessionToken||""))return "INVALID_SESSION_PAYLOAD";
  return null;
 }
 async function frontendGateway(request,env,origin){
