@@ -21,6 +21,14 @@ on:
         description: 'Privileged modes require TEST_LOGIN_ON_APPROVED_SHEET, RUN_SYNTHETIC_E2E or CREATE_SYNTHETIC_ADMIN_RECORDS'
         required: false
         type: string
+      expected_password_state:
+        description: 'Expected admin password lifecycle for single-admin-login'
+        required: true
+        type: choice
+        default: changed
+        options:
+          - changed
+          - initial
 
 permissions:
   contents: read
@@ -73,6 +81,7 @@ jobs:
           P6VC_GAS_EXEC_URL: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
           P6VC_HTTP_LOGIN_USERNAME: admin
           P6VC_HTTP_LOGIN_PASSWORD: ${{ secrets.P6VC_HTTP_LOGIN_PASSWORD }}
+          P6VC_EXPECT_PASSWORD_STATE: ${{ inputs.expected_password_state }}
         shell: bash
         run: |
           set -euo pipefail
