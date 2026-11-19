@@ -6,6 +6,7 @@ import AppShell from '../layouts/AppShell.vue'
 import DashboardView from '../views/DashboardView.vue'
 import GatewayPocView from '../views/GatewayPocView.vue'
 import VehicleSearchPage from '../pages/VehicleSearchPage.vue'
+import RegistrationReviewPage from '../pages/RegistrationReviewPage.vue'
 import ForbiddenPage from '../pages/ForbiddenPage.vue'
 import UserDirectoryPage from '../pages/UserDirectoryPage.vue'
 import AccountSecurityPage from '../pages/AccountSecurityPage.vue'
@@ -26,6 +27,7 @@ export const router = createRouter({
         { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: 'ภาพรวม' } },
         { path: 'connection', name: 'connection-test', component: GatewayPocView, meta: { title: 'ทดสอบการเชื่อมต่อ' } },
         { path: 'vehicles/search', name: 'vehicle-search', component: VehicleSearchPage, meta: { title: 'ค้นหายานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
+        { path: 'registrations/review', name: 'registration-review', component: RegistrationReviewPage, meta: { title: 'ตรวจสอบการลงทะเบียน', requiredPermissions: ['vehicle.registration.approve'] } },
         { path: 'forbidden', name: 'forbidden', component: ForbiddenPage, meta: { title: 'ไม่มีสิทธิ์เปิดงาน' } },
         { path: 'admin/users', name: 'user-directory', component: UserDirectoryPage, meta: { title: 'ผู้ใช้และสิทธิ์', requiredPermissions: ['users.manage'] } },
         { path: 'account/security', name: 'account-security', component: AccountSecurityPage, meta: { title: 'บัญชีและความปลอดภัย', requiredPermissions: ['session.authenticated'] } },

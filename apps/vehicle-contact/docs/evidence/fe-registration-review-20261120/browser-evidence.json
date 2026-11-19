@@ -1,0 +1,132 @@
+{
+  "generatedAt": "2026-11-19T17:40:51.852Z",
+  "evidenceSlice": "registration-review",
+  "appUrl": "http://127.0.0.1:4174/#/app/registrations/review",
+  "browser": "Microsoft Edge headless",
+  "cases": {
+    "desktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "ตรวจสอบการลงทะเบียน — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > .select-bordered[aria-label=\"ชุดสี มืด (dark)\"]"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".list-row > .btn-sm"
+                ],
+                "html": "<button class=\"btn btn-sm\" type=\"button\">ตรวจรายละเอียด</button>"
+              },
+              {
+                "target": [
+                  ".select-sm"
+                ],
+                "html": "<select class=\"select select-bordered select-sm min-h-11 min-w-20\" aria-label=\"จำนวนรายการต่อหน้า\" value=\"10\">"
+              },
+              {
+                "target": [
+                  "select[aria-label=\"เลือกหน้าปัจจุบัน\"]"
+                ],
+                "html": "<select class=\"select join-item min-h-11 min-w-0 text-center\" aria-label=\"เลือกหน้าปัจจุบัน\" value=\"1\"><option value=\"1\">หน้า 1 / 1</option></select>"
+              },
+              {
+                "target": [
+                  ".flex-col-reverse > button:nth-child(1)"
+                ],
+                "html": "<button class=\"btn\" type=\"button\">ปฏิเสธคำขอ</button>"
+              },
+              {
+                "target": [
+                  ".badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>ตรวจสอบการลงทะเบียน</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "ตรวจสอบการลงทะเบียน — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".list-row > .btn-sm"
+                ],
+                "html": "<button class=\"btn btn-sm\" type=\"button\">ตรวจรายละเอียด</button>"
+              },
+              {
+                "target": [
+                  ".select-sm"
+                ],
+                "html": "<select class=\"select select-bordered select-sm min-h-11 min-w-20\" aria-label=\"จำนวนรายการต่อหน้า\" value=\"10\">"
+              },
+              {
+                "target": [
+                  "select[aria-label=\"เลือกหน้าปัจจุบัน\"]"
+                ],
+                "html": "<select class=\"select join-item min-h-11 min-w-0 text-center\" aria-label=\"เลือกหน้าปัจจุบัน\" value=\"1\"><option value=\"1\">หน้า 1 / 1</option></select>"
+              },
+              {
+                "target": [
+                  ".flex-col-reverse > button:nth-child(1)"
+                ],
+                "html": "<button class=\"btn\" type=\"button\">ปฏิเสธคำขอ</button>"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

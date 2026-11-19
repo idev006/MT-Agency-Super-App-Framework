@@ -113,6 +113,29 @@ test('frontend gateway forwards explicitly allowlisted admin operations with a s
   assert.equal((await r.json()).error,'INVALID_OPERATION_PAYLOAD');
  }finally{fake.restore();}
 });
+
+test('frontend gateway allows registration review only through exact DTOs',async()=>{
+ const fake=await fakeGAS(body=>envelope(true,{operation:body.group+'.'+body.action}));
+ try{
+  for(const [operation,payload] of [
+   ['registrations.listPending',{page:1,pageSize:10}],
+   ['registrations.detail',{requestId:'request-1'}],
+   ['registrations.review',{requestId:'request-1',decision:'APPROVE',platePhotoVerified:true}],
+  ]){
+   const [group,action]=operation.split('.');
+   const response=await worker.fetch(frontendRequest({apiVersion:'v1',group,action,payload,requestId:'request_123',sessionToken:TOKEN}),env());
+   assert.equal(response.status,200);
+  }
+  assert.deepEqual(fake.calls.map(({group,action,payload})=>({operation:group+'.'+action,payload})),[
+   {operation:'registrations.listPending',payload:{page:1,pageSize:10}},
+   {operation:'registrations.detail',payload:{requestId:'request-1'}},
+   {operation:'registrations.review',payload:{requestId:'request-1',decision:'APPROVE',platePhotoVerified:true}},
+  ]);
+  const denied=await worker.fetch(frontendRequest({apiVersion:'v1',group:'registrations',action:'review',payload:{requestId:'request-1',decision:'APPROVE',platePhotoVerified:true,roles:['SYSTEM_ADMIN']},requestId:'request_123',sessionToken:TOKEN}),env());
+  assert.equal(denied.status,403);
+  assert.equal((await denied.json()).error,'INVALID_OPERATION_PAYLOAD');
+ }finally{fake.restore();}
+});
 test('access key is mandatory even for health and probes',async()=>{
  for(const path of ['/api/health','/api/probe']){
   const r=await worker.fetch(request(path,{operation:'system.health',payload:{}},false),env());

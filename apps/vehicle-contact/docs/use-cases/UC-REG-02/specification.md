@@ -29,7 +29,7 @@ Insufficient approval permission, unreadable plate, duplicate active vehicle, al
 - Test case IDs: `ACTOR-03`, `EDGE-02`, `GAS-FLOW.APPROVE`.
 - Executable evidence references: `backend/gas/tests/actor-usecase-acceptance.test.mjs`.
 - Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **NOT_WIRED**; design must align Vue 3, Pinia, Router and API adapter per Master Web Blueprint.
+- FE status: **WIRED_IN_SOURCE / LIVE_ACCEPTANCE_PENDING**; route, queue, detail, pagination, explicit approve/reject confirmation and Cloudflare DTO allowlist are recorded in [FE-REGISTRATION-ADMIN-01 evidence](../../FRONTEND_FE_REGISTRATION_ADMIN_01_EVIDENCE_20261120.md).
 
 ## 7. Development notes / explicit gaps
 The backend checks platePhotoVerified boolean supplied by admin session; actual human visual verification is outside code and requires UAT. Current approve path performs multiple Sheets writes without full durable compensation.

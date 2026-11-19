@@ -6,7 +6,10 @@ const evidenceSlice = process.env.P6VC_EVIDENCE_SLICE || 'staff'
 const systemAdminEvidence = evidenceSlice === 'system-admin-users'
 const systemAdminNavigationEvidence = evidenceSlice === 'system-admin-navigation'
 const systemAdminCompleteEvidence = evidenceSlice === 'system-admin-complete'
-const appUrl = process.env.P6VC_EVIDENCE_URL || (systemAdminNavigationEvidence || systemAdminCompleteEvidence
+const registrationReviewEvidence = evidenceSlice === 'registration-review'
+const appUrl = process.env.P6VC_EVIDENCE_URL || (registrationReviewEvidence
+  ? 'http://127.0.0.1:4173/#/app/registrations/review'
+  : systemAdminNavigationEvidence || systemAdminCompleteEvidence
   ? 'http://127.0.0.1:4173/#/app/dashboard'
   : systemAdminEvidence
   ? 'http://127.0.0.1:4173/#/app/admin/users'
@@ -17,6 +20,8 @@ const evidenceDir = resolve(process.env.P6VC_EVIDENCE_DIR || (systemAdminNavigat
   ? '../docs/evidence/fe-system-admin-complete-20261119'
   : systemAdminEvidence
   ? '../docs/evidence/fe-system-admin-users-20261119'
+  : registrationReviewEvidence
+  ? '../docs/evidence/fe-registration-review-20261120'
   : '../docs/evidence/fe-staff-vehicle-search-20261119'))
 const axeSource = await readFile(resolve('node_modules/axe-core/axe.min.js'), 'utf8')
 
@@ -107,7 +112,15 @@ const staffSessionFixture = {
   roles: ['STAFF'],
   permissions: ['session.authenticated', 'organizations.read', 'vehicle.lookup', 'vehicle.contact.read', 'vehicle.photos.read', 'vehicle.history.read'],
 }
-const sessionFixture = systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence ? adminSessionFixture : staffSessionFixture
+const registrationSessionFixture = {
+  ...adminSessionFixture,
+  roles: ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'],
+  permissions: [...new Set([...adminSessionFixture.permissions,
+    'vehicle.registration.approve', 'vehicle.lookup', 'vehicle.contact.read', 'vehicle.photos.read',
+    'vehicle.update', 'vehicle.history.read', 'vehicle.change.approve'])],
+}
+const sessionFixture = registrationReviewEvidence ? registrationSessionFixture
+  : systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence ? adminSessionFixture : staffSessionFixture
 const gasEvidenceEndpoint = 'https://script.google.com/macros/s/evidence-only/exec'
 const gasPersistedEndpoint = 'https://script.google.com/macros/s/persisted-evidence/exec'
 const workerEvidenceEndpoint = 'https://p6vc-evidence.example.workers.dev/api/frontend'
@@ -116,6 +129,8 @@ const installFixture = `
   (() => {
     sessionStorage.setItem('p6vc-session-token', 'synthetic-evidence-session');
     sessionStorage.setItem('p6vc-session-summary', ${JSON.stringify(JSON.stringify(sessionFixture))});
+    localStorage.setItem('p6vc-api-transport', 'direct');
+    localStorage.setItem('p6vc-gas-endpoint', ${JSON.stringify(gasEvidenceEndpoint)});
     const nativeFetch = globalThis.fetch.bind(globalThis);
     globalThis.fetch = async (input, init = {}) => {
       const url = String(input?.url || input || '');
@@ -131,12 +146,14 @@ const installFixture = `
       else if (operation === 'system.config.get') data = { idle_timeout_minutes: '30', retention_days: '365' };
       else if (operation === 'retention.listDue') data = [{ jobId: 'retention-1', vehicleId: 'vehicle-1', dueAt: '2026-11-20T00:00:00.000Z', status: 'DUE' }];
       else if (operation === 'audit.query') data = [{ type: 'change', eventId: 'audit-1', actorId: 'admin-1', entityId: 'vehicle-1', action: 'UPDATED', at: '2026-11-19T00:00:00.000Z' }];
+      else if (operation === 'registrations.listPending') data = [{ requestId: 'registration-evidence-1', vehicleId: 'vehicle-evidence-2', submittedAt: '2026-11-20T01:15:00.000Z', status: 'PENDING_APPROVAL' }];
+      else if (operation === 'registrations.detail') data = { requestId: 'registration-evidence-1', status: 'PENDING_APPROVAL', submittedAt: '2026-11-20T01:15:00.000Z', application: { plate_normalized: 'กข 1234', province_code: '65', plate_type: 'PRIVATE', vehicle_type: 'CAR', make: 'Toyota', model: 'Corolla Cross', color: 'ขาว', organization_id: 'org-command', relationship: 'ผู้ดูแลรถ', contactName: 'ผู้ทดสอบ', contactPhone: '+66810000001', photos: [{ photoId: 'photo-plate', slot: 'PLATE', mimeType: 'image/jpeg' }, { photoId: 'photo-front', slot: 'FRONT', mimeType: 'image/jpeg' }, { photoId: 'photo-rear', slot: 'REAR', mimeType: 'image/jpeg' }, { photoId: 'photo-left', slot: 'LEFT', mimeType: 'image/jpeg' }, { photoId: 'photo-right', slot: 'RIGHT', mimeType: 'image/jpeg' }] } };
       else if (operation === 'vehicles.history') data = [{
         audit_id: 'audit-evidence-1', action: 'VEHICLE_UPDATED', redacted_summary: 'VEHICLE_UPDATED',
         created_at: '2026-11-19T02:30:00.000Z'
       }];
       else data = {};
-      if (['users.list', 'organizations.list', 'campaigns.list', 'retention.listDue', 'audit.query'].includes(operation) && request.payload?.page) {
+      if (['users.list', 'organizations.list', 'campaigns.list', 'retention.listDue', 'audit.query', 'registrations.listPending'].includes(operation) && request.payload?.page) {
         const items = data;
         data = { items, total: items.length, page: request.payload.page, pageSize: request.payload.pageSize, totalPages: Math.ceil(items.length / request.payload.pageSize) };
       }
@@ -281,7 +298,18 @@ async function screenshot(fileName, { fullPage = false } = {}) {
 await mkdir(evidenceDir, { recursive: true })
 const evidence = { generatedAt: new Date().toISOString(), evidenceSlice, appUrl, browser: 'Microsoft Edge headless', cases: {} }
 
-if (systemAdminCompleteEvidence) {
+if (registrationReviewEvidence) {
+  await setViewport(1440, 900); await navigate(); await setTheme('dark')
+  await waitUntil(`document.querySelector('#registration-queue-title')`)
+  await evaluate(`document.querySelector('#registration-queue-title')?.parentElement?.querySelector('button')?.click()`)
+  await waitUntil(`document.body.innerText.includes('ปิดรายละเอียด')`)
+  evidence.cases.desktopDark = await auditPage(); await screenshot('registration-review-desktop-dark.png', { fullPage: true })
+  await setViewport(360, 800); await setTheme('corporate')
+  await waitUntil(`document.querySelector('#registration-queue-title')`)
+  await evaluate(`document.querySelector('#registration-queue-title')?.parentElement?.querySelector('button')?.click()`)
+  await waitUntil(`document.body.innerText.includes('ปิดรายละเอียด')`)
+  evidence.cases.mobileCorporate = await auditPage(); await screenshot('registration-review-mobile-corporate.png', { fullPage: true })
+} else if (systemAdminCompleteEvidence) {
   const routes = [
     ['account-security', '#/app/account/security'], ['users', '#/app/admin/users'],
     ['organizations', '#/app/admin/organizations'], ['campaigns', '#/app/admin/campaigns'],
@@ -373,7 +401,7 @@ const navigationFailed = systemAdminNavigationEvidence && (
   || evidence.navigationCoverage.plannedLinkCount !== 0
   || ['ค้นหายานพาหนะ', 'ตรวจสอบการลงทะเบียน', 'ยานพาหนะของฉัน'].some((label) => evidence.navigationCoverage.pageText.includes(label))
 )
-const refreshFailed = systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
+const refreshFailed = systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence || registrationReviewEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
   || evidence.refreshPersistence.signInVisible
   || evidence.refreshPersistence.transport !== 'worker'
   || evidence.refreshPersistence.gasEndpoint !== gasPersistedEndpoint
