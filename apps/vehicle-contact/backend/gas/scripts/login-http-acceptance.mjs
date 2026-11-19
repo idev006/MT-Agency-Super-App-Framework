@@ -25,7 +25,7 @@ async function check(id,fn){const start=Date.now();try{const detail=await fn();d
 function denied(j,code){assert.equal(j.ok,false,'UNEXPECTED_SUCCESS');assert.equal(j.error?.code,code,'UNEXPECTED_ERROR_CODE')}
 let token=null,loggedIn=false;
 try{
- await check('LOGIN-01.HEALTH',async()=>{const j=await api('system','health');assert.equal(j.ok,true);assert.equal(j.data?.status,'bootstrap');});
+ await check('LOGIN-01.HEALTH',async()=>{const j=await api('system','health');assert.equal(j.ok,true);assert.equal(j.data?.status,'ready');assert.equal(j.data?.apiVersion,'v1');assert.match(j.data?.backendVersion,/^\d+\.\d+\.\d+$/);});
  await check('LOGIN-02.INVALID_EMPTY_PAYLOAD',async()=>denied(await api('auth','login',{}),'INVALID_REQUEST'));
  await check('LOGIN-03.UNAUTHENTICATED_SESSION',async()=>denied(await api('auth','session'), 'UNAUTHENTICATED'));
  const ok=await check('LOGIN-04.VALID_CREDENTIALS',async()=>{

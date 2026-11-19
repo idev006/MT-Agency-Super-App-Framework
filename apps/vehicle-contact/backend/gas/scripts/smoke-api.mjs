@@ -22,17 +22,17 @@ async function request(name,{method='GET',body}={}){
 }
 
 const checks=[
- ['LIVE-01 GET_HEALTH',{},true,null,'bootstrap'],
- ['LIVE-02 POST_HEALTH',{method:'POST',body:msg('system','health')},true,null,'bootstrap'],
+ ['LIVE-01 GET_HEALTH',{},true,null,'ready'],
+ ['LIVE-02 POST_HEALTH',{method:'POST',body:msg('system','health')},true,null,'ready'],
  ['LIVE-03 POST_BAD_VERSION',{method:'POST',body:msg('system','health',{}, {apiVersion:'v9'})},false,'BAD_REQUEST'],
  ['LIVE-04 POST_BAD_PAYLOAD',{method:'POST',body:msg('system','health',[])},false,'BAD_REQUEST'],
  ['LIVE-05 POST_UNKNOWN_ROUTE',{method:'POST',body:msg('unknown','read')},false,'NOT_FOUND'],
  ['LIVE-06 POST_PROTO_GROUP',{method:'POST',body:msg('__proto__','constructor')},false,'BAD_REQUEST'],
- ['LIVE-07 POST_LOOKUP_DENIED',{method:'POST',body:msg('vehicles','lookup',{role:'admin'})},false,'SERVICE_UNAVAILABLE'],
- ['LIVE-08 POST_CONTACT_DENIED',{method:'POST',body:msg('contacts','read',{role:'admin'})},false,'SERVICE_UNAVAILABLE'],
- ['LIVE-09 POST_QR_DENIED',{method:'POST',body:msg('qr','resolve',{})},false,'SERVICE_UNAVAILABLE'],
- ['LIVE-10 POST_LOGIN_DISABLED',{method:'POST',body:msg('auth','login',{})},false,'SERVICE_UNAVAILABLE'],
- ['LIVE-11 POST_HEALTH_CORRELATION',{method:'POST',body:msg('system','health',{}, {requestId:'safeTestCorrelation01'})},true,null,'bootstrap','safeTestCorrelation01']
+ ['LIVE-07 POST_LOOKUP_DENIED',{method:'POST',body:msg('vehicles','lookup',{plate:'TEST0000',province:'TEST'})},false,'UNAUTHENTICATED'],
+ ['LIVE-08 POST_CONTACT_DENIED',{method:'POST',body:msg('contacts','read',{vehicleId:'synthetic-vehicle'})},false,'UNAUTHENTICATED'],
+ ['LIVE-09 POST_QR_DENIED',{method:'POST',body:msg('qr','resolve',{token:'0'.repeat(64)})},false,'UNAUTHENTICATED'],
+ ['LIVE-10 POST_LOGIN_INVALID',{method:'POST',body:msg('auth','login',{})},false,'INVALID_REQUEST'],
+ ['LIVE-11 POST_HEALTH_CORRELATION',{method:'POST',body:msg('system','health',{}, {requestId:'safeTestCorrelation01'})},true,null,'ready','safeTestCorrelation01']
 ];
 let pass=0,failed=0;
 for(const [name,options,expectedOk,expectedCode,expectedStatus,expectedId=null]of checks){

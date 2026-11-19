@@ -47,10 +47,15 @@ router.beforeEach(async (to) => {
   if (to.meta.requiresAuth) {
     if (!auth.authenticated) return { name: 'sign-in', query: { redirect: to.fullPath } }
     if (!(await auth.restoreSession())) return { name: 'sign-in', query: { reason: 'session-expired' } }
+    if (auth.session?.mustChangePassword && to.name !== 'account-security') {
+      return { name: 'account-security', query: { reason: 'password-change-required' } }
+    }
     const required = Array.isArray(to.meta.requiredPermissions) ? to.meta.requiredPermissions : []
     if (required.some((permission) => !auth.permissions.includes(permission))) return { name: 'forbidden' }
   }
-  if (to.name === 'sign-in' && auth.authenticated && await auth.restoreSession()) return { name: 'dashboard' }
+  if (to.name === 'sign-in' && auth.authenticated && await auth.restoreSession()) {
+    return { name: auth.session?.mustChangePassword ? 'account-security' : 'dashboard' }
+  }
   return true
 })
 

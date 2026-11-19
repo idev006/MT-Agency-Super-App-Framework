@@ -40,6 +40,7 @@ async function linkGoogle() {
     <template #breadcrumbs><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">บัญชีและความปลอดภัย</span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
 
+    <div v-if="session?.mustChangePassword" class="alert alert-warning mb-5 items-start" role="alert"><div><strong>ต้องเปลี่ยนรหัสผ่านก่อนเริ่มงาน</strong><p class="mt-1">บัญชีนี้ยังใช้รหัสผ่านเริ่มต้น ระบบส่วนกลางจึงระงับการอ่านและแก้ไขข้อมูลทั้งหมดจนกว่าจะเปลี่ยนรหัสผ่านสำเร็จ</p></div></div>
     <div v-if="security.failure.value" class="alert alert-error mb-5 items-start" role="alert"><div><strong>ดำเนินการไม่สำเร็จ</strong><p class="mt-1">{{ security.failure.value.code === 'INVALID_CREDENTIALS' ? 'รหัสผ่านปัจจุบันไม่ถูกต้อง' : 'ระบบปฏิเสธคำขอ กรุณาตรวจสอบข้อมูลแล้วลองใหม่' }}</p><small v-if="security.failure.value.requestId" class="font-mono">{{ security.failure.value.requestId }}</small></div></div>
     <div v-if="security.success.value" class="alert alert-success mb-5" role="status">{{ security.success.value }}</div>
 

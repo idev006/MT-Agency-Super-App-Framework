@@ -14,7 +14,11 @@ assert.equal(call('vehicles','lookup').ok,false);
 assert.equal(call('system','health','v2').ok,false);
 assert.equal(call('__proto__','foo').ok,false);
 assert.equal(router.dispatch({apiVersion:'v1',group:'system',action:'health',payload:'bad'},'POST').ok,false);
-assert.equal(router.dispatch({apiVersion:'v1',group:'system',action:'health',payload:{role:'admin'}},'POST').data.status,'bootstrap');
+const health=router.dispatch({apiVersion:'v1',group:'system',action:'health',payload:{role:'admin'}},'POST').data;
+assert.equal(health.status,'ready');
+assert.equal(health.apiVersion,'v1');
+assert.match(health.backendVersion,/^\d+\.\d+\.\d+$/);
+assert.equal(health.releaseChannel,'development');
 const tabs=Object.fromEntries(Object.entries(VEHICLE_SCHEMA_V1).map(([n,h])=>[n,[...h]]));
 function fakeSheet(name) {return{
   getName(){return name;},
@@ -80,7 +84,7 @@ for(const order of [gasFiles,[...gasFiles].reverse()]){
  const context=loadGAS(order);
  for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor','bootstrapVehicleAdminFromEditor','benchmarkVehiclePasswordHashFromEditor','inspectVehicleAdminResetFromEditor','resetVehicleAdminPasswordFromEditor','runVehicleStagingAuthTestsFromEditor','runVehicleStagingLifecycleTestsFromEditor'])
    assert.equal(typeof context[name],'function');
- assert.equal(JSON.parse(context.doGet({}).value).data.status,'bootstrap');
+ assert.equal(JSON.parse(context.doGet({}).value).data.status,'ready');
  assert.equal(JSON.parse(context.doPost({postData:{contents:'not JSON'}}).value).ok,false);
  const denied=JSON.parse(context.doPost({postData:{contents:JSON.stringify({apiVersion:'v1',group:'vehicles',action:'lookup',payload:{role:'admin'}})}}).value);
  assert.equal(denied.ok,false);

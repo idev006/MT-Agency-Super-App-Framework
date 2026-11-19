@@ -17,4 +17,10 @@ describe('account security page contract', () => {
     expect(page).toContain("reason: 'password-changed'")
     expect(page).toContain('autocomplete="new-password"')
   })
+
+  it('explains why initial-password sessions cannot load protected records', () => {
+    expect(page).toContain('session?.mustChangePassword')
+    expect(page).toContain('ต้องเปลี่ยนรหัสผ่านก่อนเริ่มงาน')
+    expect(page).toContain('ระงับการอ่านและแก้ไขข้อมูลทั้งหมด')
+  })
 })
