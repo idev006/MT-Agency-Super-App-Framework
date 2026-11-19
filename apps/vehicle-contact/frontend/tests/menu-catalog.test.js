@@ -27,6 +27,16 @@ describe('permission-driven menu SSOT', () => {
     expect(ids).toEqual(['dashboard', 'connection', 'vehicle-search', 'my-vehicles'])
   })
 
+  it('gives the combined system and registration administrator a routed review menu', () => {
+    const permissions = [...new Set([...ROLE_PERMISSIONS.SYSTEM_ADMIN, ...ROLE_PERMISSIONS.REGISTRATION_ADMIN])]
+    const items = menuForPermissions(permissions)
+    expect(items.find((item) => item.id === 'registration-review')).toMatchObject({
+      route: 'registration-review', permissionsAny: ['vehicle.registration.approve'],
+    })
+    expect(items.find((item) => item.id === 'vehicle-search')?.route).toBe('vehicle-search')
+    expect(items.filter((item) => !item.route)).toEqual([])
+  })
+
   it.each([
     ['system.settings.read', 'system-settings'],
     ['organizations.read', 'organizations'],

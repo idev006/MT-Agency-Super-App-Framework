@@ -5,6 +5,7 @@ const icons = Object.freeze({
   dashboard: ['M3 3h7v7H3z', 'M14 3h7v7h-7z', 'M3 14h7v7H3z', 'M14 14h7v7h-7z'],
   connection: ['M8 12h8', 'M12 8v8', 'M5.5 5.5a9 9 0 0 0 0 13', 'M18.5 5.5a9 9 0 0 1 0 13'],
   account: ['M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M4 21a8 8 0 0 1 16 0'],
+  registration: ['M9 11l2 2 4-4', 'M6 3h12v18H6z', 'M9 3V1h6v2'],
   users: ['M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2', 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z', 'M22 21v-2a4 4 0 0 0-3-3.87'],
   organizations: ['M3 21h18', 'M5 21V8l7-5 7 5v13', 'M9 21v-6h6v6'],
   campaigns: ['M3 11v2', 'M6 9v6l11 4V5L6 9Z', 'M10 16v4'],
@@ -19,7 +20,7 @@ const icons = Object.freeze({
 })
 
 const props = defineProps({
-  name: { type: String, required: true, validator: (value) => ['dashboard', 'connection', 'account', 'users', 'organizations', 'campaigns', 'qr', 'settings', 'retention', 'audit', 'previous', 'next', 'add', 'edit'].includes(value) },
+  name: { type: String, required: true, validator: (value) => ['dashboard', 'connection', 'account', 'registration', 'users', 'organizations', 'campaigns', 'qr', 'settings', 'retention', 'audit', 'previous', 'next', 'add', 'edit'].includes(value) },
   label: { type: String, default: '' },
   sizeClass: { type: String, default: 'size-5' },
 })
