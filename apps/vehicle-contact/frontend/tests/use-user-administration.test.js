@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { useUserAdministration } from '../src/features/user-administration/useUserAdministration.js'
+import { FULL_HUMAN_ADMIN_ROLES, useUserAdministration } from '../src/features/user-administration/useUserAdministration.js'
 
 function repository(overrides = {}) {
   return {
@@ -10,6 +10,10 @@ function repository(overrides = {}) {
 }
 
 describe('useUserAdministration', () => {
+  it('defines full human administration as system plus registration administration only', () => {
+    expect(FULL_HUMAN_ADMIN_ROLES).toEqual(['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'])
+    expect(FULL_HUMAN_ADMIN_ROLES).not.toContain('RETENTION_WORKER')
+  })
   it('executes mutations and reloads the authoritative directory', async () => {
     const source = repository()
     const reload = vi.fn().mockResolvedValue(true)

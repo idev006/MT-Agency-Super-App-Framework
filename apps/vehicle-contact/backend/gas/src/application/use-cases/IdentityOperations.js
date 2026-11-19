@@ -3,7 +3,7 @@ import {paginate} from '../pagination/Pagination.js';
 export function createIdentityOperations({store,security,sessions}) {
  const required=(value,name,max=256)=>{if(typeof value!=='string'||!value.trim()||value.length>max)throw new Error('INVALID_'+name);return value.trim();};
  const text=v=>required(v,'TEXT').replace(/[\r\n]/g,' ');
- const changed=(event,actor,target)=>store.insert('vc_change_audit',{audit_id:security.secretToken(),actor_id:actor||'SYSTEM',entity_type:'account',entity_id:target,action:event,redacted_summary:event,correlation_id:security.secretToken().slice(0,16),created_at:security.now()});
+ const changed=(event,actor,target,summary=event)=>store.insert('vc_change_audit',{audit_id:security.secretToken(),actor_id:actor||'SYSTEM',entity_type:'account',entity_id:target,action:event,redacted_summary:summary,correlation_id:security.secretToken().slice(0,16),created_at:security.now()});
  function issueLogin(user){if(!user||user.status!=='ACTIVE')throw new Error('INVALID_CREDENTIALS');return sessions.issue(user);}
  function attempts(username) {
   const digest=security.sha256('username:'+username),since=Date.parse(security.now())-15*60000;
@@ -102,12 +102,15 @@ export function createIdentityOperations({store,security,sessions}) {
   if(!store.one('vc_users',{user_id:id}))throw new Error('NOT_FOUND');
   if(!Array.isArray(p.roles)||!p.roles.length||p.roles.some(r=>!Object.prototype.hasOwnProperty.call(ROLE_PERMISSIONS,r)))
    throw new Error('INVALID_ROLES');
-  const roles=[...new Set(p.roles)];
+  const roles=[...new Set(p.roles)],current=store.list('vc_user_roles',{user_id:id})
+   .filter(r=>r.status==='ACTIVE').map(r=>String(r.role_id));
+  if(roles.includes('RETENTION_WORKER')&&roles.length>1)throw new Error('INVALID_ROLES');
   if(id===actor.userId&&!roles.includes('SYSTEM_ADMIN'))throw new Error('SELF_DEMOTION_DENIED');
+  if(id===actor.userId&&roles.some(role=>!current.includes(role)))throw new Error('SELF_ROLE_EXPANSION_DENIED');
   store.withLock(()=>{
    for(const row of store.list('vc_user_roles',{user_id:id}))store.remove('vc_user_roles',{assignment_id:row.assignment_id});
    for(const r of roles)store.insert('vc_user_roles',{assignment_id:security.secretToken(),user_id:id,role_id:r,status:'ACTIVE'});
-   changed('ROLES_CHANGED',actor.userId,id);
+   changed('ROLES_CHANGED',actor.userId,id,'roles:'+current.slice().sort().join(',')+'->'+roles.slice().sort().join(','));
   });
   sessions.revokeUser(id);return {userId:id,roles};
  }

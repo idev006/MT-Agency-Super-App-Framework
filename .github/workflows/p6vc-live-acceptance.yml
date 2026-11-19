@@ -12,13 +12,14 @@ on:
           - single-admin-login
           - synthetic-business-e2e
           - bootstrap-system-admin-records
+          - grant-admin-full-human-access
       target_url:
         description: 'Approved GAS /exec URL'
         required: true
         type: string
         default: 'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec'
       confirmation:
-        description: 'Privileged modes require TEST_LOGIN_ON_APPROVED_SHEET, RUN_SYNTHETIC_E2E or CREATE_SYNTHETIC_ADMIN_RECORDS'
+        description: 'Privileged modes require their exact confirmation phrase'
         required: false
         type: string
       expected_password_state:
@@ -66,6 +67,9 @@ jobs:
           if [ "$P6VC_MODE" = 'bootstrap-system-admin-records' ] && [ "$P6VC_CONFIRMATION" != 'CREATE_SYNTHETIC_ADMIN_RECORDS' ]; then
             echo 'DENIED: exact synthetic record confirmation required'; exit 1
           fi
+          if [ "$P6VC_MODE" = 'grant-admin-full-human-access' ] && [ "$P6VC_CONFIRMATION" != 'GRANT_ADMIN_SYSTEM_AND_REGISTRATION' ]; then
+            echo 'DENIED: exact admin access confirmation required'; exit 1
+          fi
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -100,6 +104,16 @@ jobs:
           set -euo pipefail
           [ -n "$P6VC_HTTP_LOGIN_PASSWORD" ] || { echo 'BLOCKED: P6VC_HTTP_LOGIN_PASSWORD is missing'; exit 1; }
           node apps/vehicle-contact/backend/gas/scripts/bootstrap-system-admin-records.mjs
+      - name: Grant selected admin the full human access profile
+        if: inputs.mode == 'grant-admin-full-human-access'
+        env:
+          P6VC_HTTP_LOGIN_USERNAME: admin
+          P6VC_HTTP_LOGIN_PASSWORD: ${{ secrets.P6VC_HTTP_LOGIN_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [ -n "$P6VC_HTTP_LOGIN_PASSWORD" ] || { echo 'BLOCKED: P6VC_HTTP_LOGIN_PASSWORD is missing'; exit 1; }
+          node apps/vehicle-contact/backend/gas/scripts/grant-admin-full-access.mjs
       - name: Save sanitized synthetic E2E evidence
         if: always() && inputs.mode == 'synthetic-business-e2e'
         uses: actions/upload-artifact@v4

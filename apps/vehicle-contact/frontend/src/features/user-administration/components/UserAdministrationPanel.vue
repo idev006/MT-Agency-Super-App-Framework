@@ -1,7 +1,8 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import ConfirmDialog from '../../../components/common/ConfirmDialog.vue'
-import { USER_ROLES } from '../useUserAdministration.js'
+import { roleLabels } from '../../../domain/identity/role-presentation.js'
+import { FULL_HUMAN_ADMIN_ROLES, USER_ROLES } from '../useUserAdministration.js'
 
 const props = defineProps({ users: { type: Array, required: true }, currentUserId: { type: String, default: '' }, busy: { type: Boolean, default: false } })
 const emit = defineEmits(['create', 'update', 'confirmed'])
@@ -13,6 +14,7 @@ const selectedRoles = ref(['STAFF'])
 const pending = ref(null)
 const selected = computed(() => props.users.find((item) => item.userId === selectedUserId.value) || null)
 const selectedSelf = computed(() => selectedUserId.value === props.currentUserId)
+const selectedRoleLabels = computed(() => selectedRoles.value.map((role) => roleLabels[role] || role).join(', '))
 
 watch(selected, (user) => {
   editForm.displayName = user?.displayName || ''
@@ -33,6 +35,12 @@ function submitUpdate() {
   if (editForm.organizationId.trim()) payload.organizationId = editForm.organizationId.trim()
   emit('update', payload)
 }
+function applyFullAccessProfile() { selectedRoles.value = [...FULL_HUMAN_ADMIN_ROLES] }
+function roleDisabled(role) {
+  if (selectedSelf.value) return true
+  if (role === 'RETENTION_WORKER') return selectedRoles.value.some((item) => item !== 'RETENTION_WORKER')
+  return selectedRoles.value.includes('RETENTION_WORKER')
+}
 function requestAction(kind) {
   if (!selected.value) return
   pending.value = { kind, userId: selected.value.userId, label: selected.value.displayName || selected.value.username }
@@ -49,7 +57,7 @@ const confirmCopy = computed(() => pending.value?.kind === 'suspend'
   ? { title: 'ระงับบัญชีหรือไม่', message: `บัญชี ${pending.value.label} จะเข้าสู่ระบบไม่ได้และทุกเซสชันจะถูกเพิกถอน`, label: 'ระงับบัญชี' }
   : pending.value?.kind === 'resetPassword'
     ? { title: 'รีเซ็ตรหัสผ่านหรือไม่', message: `ทุกเซสชันของ ${pending.value.label} จะถูกเพิกถอน และผู้ใช้ต้องเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบ`, label: 'รีเซ็ตรหัสผ่าน' }
-    : { title: 'เปลี่ยนบทบาทหรือไม่', message: `บทบาทเดิมของ ${pending.value?.label || ''} จะถูกแทนที่ทั้งหมด และทุกเซสชันจะถูกเพิกถอน`, label: 'เปลี่ยนบทบาท' })
+    : { title: 'เปลี่ยนบทบาทหรือไม่', message: `บทบาทเดิมของ ${pending.value?.label || ''} จะถูกแทนที่ด้วย ${selectedRoleLabels.value} และทุกเซสชันจะถูกเพิกถอน`, label: 'เปลี่ยนบทบาท' })
 </script>
 
 <template>
@@ -70,12 +78,13 @@ const confirmCopy = computed(() => pending.value?.kind === 'suspend'
         <label class="field-stack"><span class="label-text font-medium">รหัสหน่วยงาน</span><input v-model="editForm.organizationId" class="input input-bordered w-full" /></label>
         <button class="btn" type="button" :disabled="busy || (!editForm.displayName.trim() && !editForm.organizationId.trim())" @click="submitUpdate">บันทึกข้อมูลบัญชี</button>
         <div class="divider">บทบาทและความปลอดภัย</div>
-        <fieldset><legend class="mb-2 font-medium">บทบาทใหม่ (แทนที่รายการเดิมทั้งหมด)</legend><div class="grid gap-2 sm:grid-cols-2"><label v-for="role in USER_ROLES" :key="role" class="flex min-h-11 items-center gap-2"><input v-model="selectedRoles" class="checkbox" type="checkbox" :value="role" :disabled="selectedSelf && role === 'SYSTEM_ADMIN'" /><span>{{ role }}</span></label></div></fieldset>
-        <button class="btn" type="button" :disabled="busy || !selectedRoles.length" @click="requestAction('assignRoles')">เปลี่ยนบทบาท</button>
+        <fieldset><legend class="mb-2 font-medium">บทบาทใหม่ (แทนที่รายการเดิมทั้งหมด)</legend><div class="grid gap-2 sm:grid-cols-2"><label v-for="role in USER_ROLES" :key="role" class="flex min-h-11 items-center gap-2"><input v-model="selectedRoles" class="checkbox" type="checkbox" :value="role" :disabled="roleDisabled(role)" /><span>{{ roleLabels[role] || role }}</span></label></div></fieldset>
+        <div class="rounded-box border border-base-300 p-4"><strong class="font-medium">โปรไฟล์ผู้ดูแลระบบสิทธิ์เต็ม</strong><p class="mt-1 text-sm text-base-content/65">รวมงานบริหารระบบและงานตรวจสอบการลงทะเบียน ไม่รวมผู้ปฏิบัติงานลบข้อมูล</p><button class="btn btn-sm mt-3" type="button" :disabled="busy || selectedSelf" @click="applyFullAccessProfile">เลือกโปรไฟล์นี้</button></div>
+        <button class="btn" type="button" :disabled="busy || selectedSelf || !selectedRoles.length" @click="requestAction('assignRoles')">เปลี่ยนบทบาท</button>
         <label class="field-stack"><span class="label-text font-medium">รหัสผ่านชั่วคราวใหม่</span><input v-model="temporaryPassword" class="input input-bordered w-full" type="password" minlength="12" maxlength="128" autocomplete="new-password" /></label>
         <button class="btn" type="button" :disabled="busy || temporaryPassword.length < 12" @click="requestAction('resetPassword')">รีเซ็ตรหัสผ่าน</button>
         <button class="btn btn-error" type="button" :disabled="busy || selectedSelf" @click="requestAction('suspend')">ระงับบัญชี</button>
-        <p v-if="selectedSelf" class="text-sm text-warning">ระบบไม่อนุญาตให้ระงับหรือลบบทบาท SYSTEM_ADMIN ของบัญชีตนเอง</p>
+        <p v-if="selectedSelf" class="text-sm text-warning">ระบบไม่อนุญาตให้เปลี่ยนบทบาทหรือระงับบัญชีของตนเอง ให้ผู้ดูแลระบบอีกบัญชีดำเนินการแทน</p>
       </template>
     </div></section>
   </div>

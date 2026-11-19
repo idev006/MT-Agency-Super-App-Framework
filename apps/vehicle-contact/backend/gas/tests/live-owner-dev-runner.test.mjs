@@ -47,6 +47,6 @@ test('single-admin acceptance declares the expected password lifecycle without e
  for(const marker of ['expected_password_state:','- changed','- initial','P6VC_EXPECT_PASSWORD_STATE:'])
   assert.ok(liveWorkflow.includes(marker),marker);
  const passwordBindings=liveWorkflow.split(/\r?\n/).filter(line=>line.includes('P6VC_HTTP_LOGIN_PASSWORD:'));
- assert.equal(passwordBindings.length,2);
+ assert.ok(passwordBindings.length>=2);
  assert.ok(passwordBindings.every(line=>line.includes('${{ secrets.P6VC_HTTP_LOGIN_PASSWORD }}')));
 });
