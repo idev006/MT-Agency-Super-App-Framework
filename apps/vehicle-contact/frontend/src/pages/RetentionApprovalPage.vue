@@ -3,9 +3,11 @@ import { computed, inject, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { retentionRepositoryKey } from '../application/retention/retention-port.js'
 import ConfirmDialog from '../components/common/ConfirmDialog.vue'
+import PaginationControl from '../components/common/PaginationControl.vue'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import { useRetentionApproval } from '../features/retention/useRetentionApproval.js'
+import { formatBangkokDateTime } from '../domain/time/bangkok-date-time.js'
 import { useSessionStore } from '../stores/session.js'
 const auth = useSessionStore(); const { roles, permissions, session, transport } = storeToRefs(auth)
 const work = useRetentionApproval({ repository: inject(retentionRepositoryKey) }); const pendingJob = ref(''); const inspectId = ref('')
@@ -20,7 +22,7 @@ async function approve() { const id = pendingJob.value; pendingJob.value = ''; a
   <div v-if="work.inspected.value" class="alert alert-info mb-5"><span>สถานะ {{ work.inspected.value.jobId }}: <strong>{{ work.inspected.value.status }}</strong></span></div>
   <div v-if="work.phase.value === 'loading'" class="loading loading-spinner" role="status"><span class="sr-only">กำลังโหลด</span></div>
   <div v-else-if="!work.jobs.value.length" class="alert alert-info">ไม่มีงานที่ถึงกำหนดอนุมัติ</div>
-  <ul v-else class="list rounded-box border border-base-300 bg-base-100"><li v-for="job in work.jobs.value" :key="job.jobId" class="list-row grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"><div><strong>{{ job.jobId }}</strong><p class="text-sm text-base-content/65">ยานพาหนะ {{ job.vehicleId }} · กำหนด {{ job.dueAt || '-' }} · {{ job.status }}</p></div><button v-if="canApprove" class="btn btn-warning btn-sm" type="button" @click="pendingJob = job.jobId">อนุมัติการลบ</button></li></ul>
+  <template v-else><ul class="list rounded-box border border-base-300 bg-base-100"><li v-for="job in work.jobs.value" :key="job.jobId" class="list-row grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto]"><div><strong>{{ job.jobId }}</strong><p class="text-sm text-base-content/65">ยานพาหนะ {{ job.vehicleId }} · กำหนด {{ formatBangkokDateTime(job.dueAt, '-') }} · {{ job.status }}</p></div><button v-if="canApprove" class="btn btn-warning btn-sm" type="button" @click="pendingJob = job.jobId">อนุมัติการลบ</button></li></ul><PaginationControl class="mt-4" :page="work.page.value" :page-size="work.pageSize.value" :total-items="work.pagination.value.total" :disabled="work.phase.value === 'loading'" label="แบ่งหน้ารายการงานเก็บรักษาข้อมูล" @update:page="work.changePage" @update:page-size="work.changePageSize" /></template>
   <div v-if="work.phase.value === 'uncertain'" class="alert alert-warning mt-5">ไม่ทราบผลแน่ชัด กรุณาตรวจสถานะ Job ก่อนอนุมัติซ้ำ</div><div v-else-if="work.phase.value === 'error'" class="alert alert-error mt-5">ดำเนินการไม่สำเร็จ ({{ work.failure.value?.code }})</div>
   <template #footer><p class="text-sm text-base-content/70">SYSTEM_ADMIN อนุมัติได้ แต่ไม่มีสิทธิ์ execute การลบ</p></template>
 </PageTemplateComponent><ConfirmDialog :open="Boolean(pendingJob)" title="อนุมัติงานลบหรือไม่" message="หลังอนุมัติ RETENTION_WORKER อาจดำเนินการลบตามขอบเขตของงานนี้" confirm-label="อนุมัติการลบ" :busy="work.phase.value === 'submitting'" @cancel="pendingJob = ''" @confirm="approve" /></template>

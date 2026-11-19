@@ -1,0 +1,32 @@
+{
+  "documentId": "P6VC-LIST-PAGINATION-001",
+  "version": "1.0.0",
+  "apiVersion": "v1",
+  "operations": [
+    "users.list",
+    "organizations.list",
+    "campaigns.list",
+    "registrations.listPending",
+    "changes.listPending",
+    "retention.listDue",
+    "audit.query"
+  ],
+  "request": {
+    "required": ["page", "pageSize"],
+    "pageMinimum": 1,
+    "allowedPageSizes": [1, 5, 10, 15, 25, 50, 100],
+    "legacyLimit": "temporarily accepted only when page and pageSize are both absent"
+  },
+  "response": {
+    "required": ["items", "total", "page", "pageSize", "totalPages"],
+    "items": "array",
+    "total": "non-negative integer",
+    "page": "positive integer",
+    "pageSize": "one of allowedPageSizes",
+    "totalPages": "ceil(total / pageSize); zero when total is zero"
+  },
+  "failure": {
+    "invalidPagination": "INVALID_PAGINATION",
+    "policy": "fail closed; never clamp unsupported page sizes"
+  }
+}

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { useSessionStore } from '../../stores/session.js'
 import { useUiStore } from '../../stores/ui.js'
 import ThemePicker from '../common/ThemePicker.vue'
+import AppIcon from '../common/AppIcon.vue'
 const auth = useSessionStore()
 const ui = useUiStore()
 const route = useRoute()
@@ -22,6 +23,7 @@ const { menuItems } = storeToRefs(auth)
     <nav class="menu w-full gap-1 p-0 text-base" aria-label="เมนูหลัก">
       <template v-for="item in menuItems" :key="item.id">
         <RouterLink v-if="item.route" class="flex min-h-11 items-center" :to="{ name: item.route }" :aria-current="route.name === item.route ? 'page' : undefined" :class="{ 'menu-active': route.name === item.route }" @click="ui.closeNavigation">
+          <AppIcon v-if="item.icon" :name="item.icon" size-class="size-4" />
           <span>{{ item.label }}</span>
         </RouterLink>
       </template>

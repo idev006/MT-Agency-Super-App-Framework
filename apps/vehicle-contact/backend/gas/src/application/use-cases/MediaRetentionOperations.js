@@ -1,3 +1,4 @@
+import {paginate} from '../pagination/Pagination.js';
 export function createMediaRetentionOperations({store,security,drivePhotos,campaigns,allowDestructiveRetention=false}) {
  const need=(v,name)=>{if(typeof v!=='string'||!v.trim()||v.length>256)throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -60,11 +61,10 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   return {vehicleId,slot,replaced:true};
  }
  function dueJobs(p){
-  const cutoff=Date.parse(now()),limit=p.limit===undefined?50:p.limit;
-  if(!Number.isSafeInteger(limit)||limit<1||limit>100)throw new Error('INVALID_LIMIT');
-  return store.list('vc_retention_jobs').filter(j=>
+  const cutoff=Date.parse(now()),items=store.list('vc_retention_jobs').filter(j=>
    j.status==='WAITING_RETENTION'&&Date.parse(j.due_at)<=cutoff&&j.legal_hold!==true&&String(j.legal_hold)!=='true')
-   .slice(0,limit).map(j=>({jobId:j.job_id,vehicleId:j.vehicle_id,dueAt:j.due_at,status:j.status}));
+   .map(j=>({jobId:j.job_id,vehicleId:j.vehicle_id,dueAt:j.due_at,status:j.status}));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function approveDeletion(p,actor){
   const jobId=need(p.jobId,'JOB_ID');
@@ -112,18 +112,17 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   }
  }
  function queryAudit(p) {
-  const limit=p.limit===undefined?50:p.limit;
-  if(!Number.isSafeInteger(limit)||limit<1||limit>100)throw new Error('INVALID_LIMIT');
   const lookup=store.list('vc_lookup_audit',p.vehicleId?{vehicle_id:need(p.vehicleId,'VEHICLE_ID')}:{})
    .map(x=>({type:'LOOKUP',eventId:x.audit_id,actorId:x.actor_id,vehicleId:x.vehicle_id,action:x.lookup_source,at:x.created_at}));
   const changes=store.list('vc_change_audit',p.vehicleId?{entity_id:need(p.vehicleId,'VEHICLE_ID')}:{})
    .map(x=>({type:'CHANGE',eventId:x.audit_id,actorId:x.actor_id,entityId:x.entity_id,action:x.action,at:x.created_at}));
-  return [...lookup,...changes].sort((a,b)=>String(b.at).localeCompare(String(a.at))).slice(0,limit);
+  const items=[...lookup,...changes].sort((a,b)=>String(b.at).localeCompare(String(a.at)));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  return Object.freeze({
   'photos.upload':uploadPhoto,'photos.list':photosList,'photos.replace':replacePhoto,
   'retention.listDue':dueJobs,'retention.approve':approveDeletion,
   'retention.execute':executeDeletion,'retention.jobStatus':status,
-  'audit.query':queryAudit,'audit.export':p=>({format:'JSON',rows:queryAudit({...p,limit:100})})
+  'audit.query':queryAudit,'audit.export':p=>({format:'JSON',rows:queryAudit({...(p.vehicleId?{vehicleId:p.vehicleId}:{}),limit:100})})
  });
 }

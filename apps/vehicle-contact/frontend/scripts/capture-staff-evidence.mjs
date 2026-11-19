@@ -136,6 +136,10 @@ const installFixture = `
         created_at: '2026-11-19T02:30:00.000Z'
       }];
       else data = {};
+      if (['users.list', 'organizations.list', 'campaigns.list', 'retention.listDue', 'audit.query'].includes(operation) && request.payload?.page) {
+        const items = data;
+        data = { items, total: items.length, page: request.payload.page, pageSize: request.payload.pageSize, totalPages: Math.ceil(items.length / request.payload.pageSize) };
+      }
       return new Response(JSON.stringify({ ok: true, requestId: 'evidence-' + request.action, data, error: null }), {
         status: 200, headers: { 'content-type': 'application/json' }
       });

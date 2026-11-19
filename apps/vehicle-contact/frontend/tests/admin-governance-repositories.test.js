@@ -5,7 +5,7 @@ import { createGasSystemSettingsRepository, SystemSettingsContractError } from '
 
 describe('SYSTEM_ADMIN governance repository contracts', () => {
   it('maps organization rows and strips storage fields', async () => {
-    const callOperation = vi.fn().mockResolvedValue({ data: [{ organization_id: 'org-1', name: 'กองบังคับการ', org_type: 'POLICE', parent_id: '', status: 'ACTIVE', internal: 'drop' }], requestId: 'orgs' })
+    const callOperation = vi.fn().mockResolvedValue({ data: { items: [{ organization_id: 'org-1', name: 'กองบังคับการ', org_type: 'POLICE', parent_id: '', status: 'ACTIVE', internal: 'drop' }], total: 1, page: 1, pageSize: 10, totalPages: 1 }, requestId: 'orgs' })
     const result = await createGasOrganizationAdministrationRepository({ callOperation }).list()
     expect(result.organizations).toEqual([{ organizationId: 'org-1', name: 'กองบังคับการ', type: 'POLICE', parentId: '', status: 'ACTIVE' }])
     expect(JSON.stringify(result)).not.toContain('internal')
@@ -29,7 +29,7 @@ describe('SYSTEM_ADMIN governance repository contracts', () => {
 
   it('maps campaigns and keeps the creation token only in the returned result', async () => {
     const callOperation = vi.fn()
-      .mockResolvedValueOnce({ data: [{ campaignId: 'c-1', startsAt: '2026-11-19T00:00:00.000Z', endsAt: '2026-11-20T00:00:00.000Z', maxSubmissions: 10, submittedCount: 1, status: 'ACTIVE' }], requestId: 'list' })
+      .mockResolvedValueOnce({ data: { items: [{ campaignId: 'c-1', startsAt: '2026-11-19T00:00:00.000Z', endsAt: '2026-11-20T00:00:00.000Z', maxSubmissions: 10, submittedCount: 1, status: 'ACTIVE' }], total: 1, page: 1, pageSize: 10, totalPages: 1 }, requestId: 'list' })
       .mockResolvedValueOnce({ data: { campaignId: 'c-2', campaignToken: 'a'.repeat(64) }, requestId: 'create' })
     const repository = createGasCampaignAdministrationRepository({ callOperation })
     expect((await repository.list()).campaigns[0].submittedCount).toBe(1)
@@ -52,8 +52,9 @@ describe('SYSTEM_ADMIN governance repository contracts', () => {
   })
 
   it('fails closed for malformed successful responses', async () => {
-    await expect(createGasOrganizationAdministrationRepository({ callOperation: vi.fn().mockResolvedValue({ data: [{}] }) }).list()).rejects.toBeInstanceOf(OrganizationContractError)
-    await expect(createGasCampaignAdministrationRepository({ callOperation: vi.fn().mockResolvedValue({ data: [{}] }) }).list()).rejects.toBeInstanceOf(CampaignContractError)
+    const malformedPage = { items: [{}], total: 1, page: 1, pageSize: 10, totalPages: 1 }
+    await expect(createGasOrganizationAdministrationRepository({ callOperation: vi.fn().mockResolvedValue({ data: malformedPage }) }).list()).rejects.toBeInstanceOf(OrganizationContractError)
+    await expect(createGasCampaignAdministrationRepository({ callOperation: vi.fn().mockResolvedValue({ data: malformedPage }) }).list()).rejects.toBeInstanceOf(CampaignContractError)
     await expect(createGasSystemSettingsRepository({ callOperation: vi.fn().mockResolvedValue({ data: { idle_timeout_minutes: 0, retention_days: 30 } }) }).get()).rejects.toBeInstanceOf(SystemSettingsContractError)
   })
 })

@@ -14,17 +14,17 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "auth.changePassword":[["oldPassword","newPassword"],[]],
  "auth.linkGoogle":[["password","idToken"],[]],
  "users.create":[["username","displayName","temporaryPassword"],["organizationId"]],
- "users.list":[[],["limit"]],"users.update":[["userId"],["displayName","organizationId"]],
+ "users.list":[[],["limit","page","pageSize"]],"users.update":[["userId"],["displayName","organizationId"]],
  "users.suspend":[["userId"],[]],"users.resetPassword":[["userId","temporaryPassword"],[]],
  "users.assignRoles":[["userId","roles"],[]],
- "organizations.list":[[],["limit"]],"organizations.create":[["name","type"],["parentId"]],
+ "organizations.list":[[],["limit","page","pageSize"]],"organizations.create":[["name","type"],["parentId"]],
  "organizations.update":[["organizationId"],["name","parentId"]],"organizations.disable":[["organizationId"],[]],
- "campaigns.create":[["startsAt","endsAt","maxSubmissions"],[]],"campaigns.list":[[],["limit"]],
+ "campaigns.create":[["startsAt","endsAt","maxSubmissions"],[]],"campaigns.list":[[],["limit","page","pageSize"]],
  "campaigns.revoke":[["campaignId"],[]],
  "qr.issue":[["vehicleId"],[]],"qr.revoke":[["vehicleId"],[]],"qr.replace":[["vehicleId"],[]],
  "system.config.get":[[],[]],"system.config.update":[["values"],[]],
- "retention.listDue":[[],["limit"]],"retention.approve":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
- "audit.query":[[],["vehicleId","limit"]],"audit.export":[[],["vehicleId","limit"]]
+ "retention.listDue":[[],["limit","page","pageSize"]],"retention.approve":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
+ "audit.query":[[],["vehicleId","limit","page","pageSize"]],"audit.export":[[],["vehicleId","limit"]]
 });
 const FRONTEND_OPERATIONS=new Set(Object.keys(FRONTEND_PAYLOAD_FIELDS));
 const FRONTEND_PUBLIC_OPERATIONS=new Set(["system.health","auth.login"]);

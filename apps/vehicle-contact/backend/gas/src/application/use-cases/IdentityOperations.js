@@ -1,4 +1,5 @@
 import {ROLE_PERMISSIONS} from '../security/SessionService.js';
+import {paginate} from '../pagination/Pagination.js';
 export function createIdentityOperations({store,security,sessions}) {
  const required=(value,name,max=256)=>{if(typeof value!=='string'||!value.trim()||value.length>max)throw new Error('INVALID_'+name);return value.trim();};
  const text=v=>required(v,'TEXT').replace(/[\r\n]/g,' ');
@@ -71,12 +72,11 @@ export function createIdentityOperations({store,security,sessions}) {
   return {userId:id};
  }
  function listUsers(p){
-  const limit=p.limit===undefined?50:Number(p.limit);
-  if(!Number.isSafeInteger(limit)||limit<1||limit>100)throw new Error('INVALID_LIMIT');
-  return store.list('vc_users',{},limit).map(u=>({
+  const items=store.list('vc_users').map(u=>({
    userId:u.user_id,username:u.username_normalized,displayName:u.display_name,organizationId:u.org_id,status:u.status,
    roles:store.list('vc_user_roles',{user_id:u.user_id}).filter(r=>r.status==='ACTIVE').map(r=>String(r.role_id))
   }));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function updateUser(p,actor){
   const id=required(p.userId,'USER_ID');
