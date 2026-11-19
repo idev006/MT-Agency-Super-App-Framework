@@ -20,13 +20,15 @@ const { menuItems } = storeToRefs(auth)
       <span class="text-sm font-medium text-base-content/60">เมนูหลัก</span>
       <span class="badge badge-warning">ระบบทดสอบ</span>
     </div>
-    <nav class="menu w-full gap-1 p-0 text-base" aria-label="เมนูหลัก">
-      <template v-for="item in menuItems" :key="item.id">
-        <RouterLink v-if="item.route" class="flex min-h-11 items-center" :to="{ name: item.route }" :aria-current="route.name === item.route ? 'page' : undefined" :class="{ 'menu-active': route.name === item.route }" @click="ui.closeNavigation">
-          <AppIcon v-if="item.icon" :name="item.icon" size-class="size-4" />
-          <span>{{ item.label }}</span>
-        </RouterLink>
-      </template>
+    <nav class="w-full" aria-label="เมนูหลัก">
+      <ul class="menu w-full gap-1 p-0 text-base">
+        <li v-for="item in menuItems" :key="item.id">
+          <RouterLink v-if="item.route" class="min-h-11 gap-3 px-3 py-2" :to="{ name: item.route }" :aria-current="route.name === item.route ? 'page' : undefined" :class="{ 'menu-active': route.name === item.route }" @click="ui.closeNavigation">
+            <AppIcon v-if="item.icon" :name="item.icon" size-class="size-4 shrink-0" />
+            <span>{{ item.label }}</span>
+          </RouterLink>
+        </li>
+      </ul>
     </nav>
     <div class="mt-auto space-y-3 pt-6">
       <ThemePicker class="lg:hidden" />
