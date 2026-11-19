@@ -23,6 +23,11 @@ test('ACTOR-01 SYSTEM_ADMIN: org, settings, campaign, user management and RBAC e
  assertError(assert,u('staff','system.config.update',{values:{idle_timeout_minutes:20}}),'FORBIDDEN','staff cannot change settings');
  assertError(assert,u('sys','users.suspend',{userId:'u-sys'}),'SELF_SUSPEND_DENIED','cannot suspend own');
  assertError(assert,u('sys','users.assignRoles',{userId:'u-sys',roles:['STAFF']}),'SELF_DEMOTION_DENIED','cannot demote self');
+ assertError(assert,u('sys','users.assignRoles',{userId:'u-sys',roles:['SYSTEM_ADMIN','REGISTRATION_ADMIN']}),'SELF_ROLE_EXPANSION_DENIED','cannot expand own roles');
+ assertError(assert,u('sys','users.assignRoles',{userId:created.userId,roles:['SYSTEM_ADMIN','RETENTION_WORKER']}),'INVALID_ROLES','worker role remains isolated');
+ assertOk(assert,u('sys','users.assignRoles',{userId:created.userId,roles:['SYSTEM_ADMIN','REGISTRATION_ADMIN']}),'assign full human access profile');
+ assert.deepEqual(assertOk(assert,u('sys','users.list',{}),'list full access profile').find(x=>x.userId===created.userId).roles,['SYSTEM_ADMIN','REGISTRATION_ADMIN']);
+ assert.match(h.read('vc_change_audit').at(-1).redacted_summary,/roles:.*->REGISTRATION_ADMIN,SYSTEM_ADMIN/);
 });
 test('ACTOR-02 CAMPAIGN: anonymous validate, revoke, quotas, invalid token and role deny',()=>{
  const h=createAcceptanceHarness(),c=h.createCampaign();

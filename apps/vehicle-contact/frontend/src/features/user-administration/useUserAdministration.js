@@ -2,6 +2,7 @@ import { ref } from 'vue'
 import { assertUserAdministrationRepository } from '../../application/users/user-directory-port.js'
 
 export const USER_ROLES = Object.freeze(['STAFF', 'REGISTRATION_ADMIN', 'OWNER', 'SYSTEM_ADMIN', 'RETENTION_WORKER'])
+export const FULL_HUMAN_ADMIN_ROLES = Object.freeze(['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'])
 
 export function useUserAdministration({ repository, reload }) {
   const source = assertUserAdministrationRepository(repository)
