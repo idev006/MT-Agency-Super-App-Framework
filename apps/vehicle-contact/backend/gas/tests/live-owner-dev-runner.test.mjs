@@ -4,6 +4,8 @@ import fs from 'node:fs';
 
 const inventory=JSON.parse(fs.readFileSync(new URL('../../../contracts/api-inventory.v1.json',import.meta.url),'utf8'));
 const source=fs.readFileSync(new URL('../scripts/run-live-owner-dev-regression.mjs',import.meta.url),'utf8');
+const loginSource=fs.readFileSync(new URL('../scripts/login-http-acceptance.mjs',import.meta.url),'utf8');
+const liveWorkflow=fs.readFileSync(new URL('../../../../../.github/workflows/p6vc-live-acceptance.yml',import.meta.url),'utf8');
 
 test('owner development runner statically covers every API inventory operation',()=>{
  const operations=inventory.operations.map(x=>x.group+'.'+x.action);
@@ -37,4 +39,14 @@ test('owner development runner contains no credential or session literal',()=>{
  assert.ok(!source.includes('VEHICLE_BOOTSTRAP_TEMP_PASSWORD'));
  assert.ok(!source.includes('BRIDGE_ACCESS_KEY'));
  assert.ok(!/sessionToken\s*:\s*['"][A-Fa-f0-9]{32,}/.test(source));
+});
+
+test('single-admin acceptance declares the expected password lifecycle without exposing credentials',()=>{
+ for(const marker of ['P6VC_EXPECT_PASSWORD_STATE',"['changed','initial']",'PASSWORD_CHANGE_STATE_MISMATCH','ACTIVE_PERMISSIONS_MISSING'])
+  assert.ok(loginSource.includes(marker),marker);
+ for(const marker of ['expected_password_state:','- changed','- initial','P6VC_EXPECT_PASSWORD_STATE:'])
+  assert.ok(liveWorkflow.includes(marker),marker);
+ const passwordBindings=liveWorkflow.split(/\r?\n/).filter(line=>line.includes('P6VC_HTTP_LOGIN_PASSWORD:'));
+ assert.equal(passwordBindings.length,2);
+ assert.ok(passwordBindings.every(line=>line.includes('${{ secrets.P6VC_HTTP_LOGIN_PASSWORD }}')));
 });

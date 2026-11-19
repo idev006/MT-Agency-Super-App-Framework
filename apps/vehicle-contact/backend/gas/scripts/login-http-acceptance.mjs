@@ -6,8 +6,10 @@ import assert from 'node:assert/strict';
 const url=process.env.P6VC_GAS_EXEC_URL;
 const username=process.env.P6VC_HTTP_LOGIN_USERNAME;
 const password=process.env.P6VC_HTTP_LOGIN_PASSWORD;
+const expectedPasswordState=process.env.P6VC_EXPECT_PASSWORD_STATE;
 if(!url||!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url))throw Error('INVALID_TARGET_URL');
 if(!username||username.length>100||!password||password.length<12)throw Error('MISSING_APPROVED_LOGIN_SECRET_OR_USERNAME');
+if(!['changed','initial'].includes(expectedPasswordState))throw Error('INVALID_EXPECTED_PASSWORD_STATE');
 const results=[];
 function done(id,start,passed,details=''){
  const row={id,status:passed?'PASS':'FAIL',durationMs:Date.now()-start,details};results.push(row);
@@ -41,8 +43,10 @@ try{
   });
   await check('LOGIN-06.PASSWORD_CHANGE_POLICY',async()=>{
    const j=await api('auth','session',{},token);assert.equal(j.ok,true);
-   assert.equal(j.data?.mustChangePassword,true,'PASSWORD_CHANGE_FLAG_CHANGED');
-   return 'mustChangePassword=true';
+   const expectedMustChange=expectedPasswordState==='initial';
+   assert.equal(j.data?.mustChangePassword,expectedMustChange,'PASSWORD_CHANGE_STATE_MISMATCH');
+   if(!expectedMustChange)assert.ok(Array.isArray(j.data?.permissions)&&j.data.permissions.length>0,'ACTIVE_PERMISSIONS_MISSING');
+   return `passwordState=${expectedPasswordState}; permissions=${expectedMustChange?'withheld':'active'}`;
   });
  }
 }finally{
