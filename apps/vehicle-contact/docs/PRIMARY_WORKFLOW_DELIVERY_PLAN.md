@@ -87,7 +87,7 @@ The journey is DONE-EVIDENCED only when all applicable statements are true:
 
 | Gate | Development requirement | Current status |
 |---|---|---|
-| Contract | inventory, DTO, permission and canonical errors agree across three layers | **PASS IN SOURCE CANDIDATE** — strict authenticated QR/plate DTOs and Vue resolver tests pass; deployed acceptance pending |
+| Contract | inventory, DTO, permission and canonical errors agree across three layers | **PASS — DEPLOYED BOUNDARY** — strict authenticated QR/plate DTOs and Vue resolver are deployed; authenticated positive-match UAT remains open |
 | Source tests | Frontend, Worker and GAS regression pass | **PASS for delivered slices** — exact future slice must rerun |
 | Deployed integration | health plus controlled synthetic business journey through Worker | **PARTIAL PASS** — health/invalid campaign proven; mutating browser journey pending |
 | Recovery | idempotency and abrupt partial-write reconciliation | **BLOCKED** — PREPARED journal and multi-write recovery remain open |
