@@ -55,3 +55,16 @@ Machine-readable browser results: [browser-evidence.json](evidence/fe-registrati
 
 No GAS source change is required. GitHub Pages and Cloudflare Worker must be deployed after merge before this menu works live through the selected Worker transport. Development deployment is not production approval; real-person data, campaign issuance, media access policy, privacy and operational UAT remain separate gates.
 
+## Live deployment evidence
+
+Verified on 2026-11-20 (Asia/Bangkok) after PR #59 merged at `a773ce539724f9d8cb93d8c5e2c27f9cb97269d8`:
+
+- GitHub Pages workflow `44656520542` completed successfully from the merge commit
+- live frontend HTML and JavaScript returned HTTP 200
+- the deployed JavaScript contains Frontend `0.4.0`, route `registrations/new` and menu label **รับลงทะเบียนยานพาหนะ**
+- Cloudflare Worker version `c9f82155-da58-4350-bbc7-6ba94d5181a6` is deployed with the frontend origin and GAS endpoint routing variables
+- live `system.health` through Frontend gateway -> Worker -> GAS returned `ok: true`, `apiVersion: v1`, Backend `0.4.0` and status `ready`
+- live `campaigns.validate` with a deliberately invalid synthetic token reached GAS and returned canonical `CAMPAIGN_INVALID`; this proves the deployed public-operation allowlist without creating or changing records
+
+The five-photo upload and registration write remain pending controlled operational UAT with a valid development campaign token. They were not invoked by the deployment probe because those operations mutate data.
+
