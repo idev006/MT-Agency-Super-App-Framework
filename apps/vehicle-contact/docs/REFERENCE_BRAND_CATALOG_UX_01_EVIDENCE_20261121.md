@@ -22,7 +22,8 @@
 | Mobile/desktop, corporate/dark | PASS — 3 browser cases; 0 axe violations; 0 horizontal overflow |
 | Full Backend regression | PASS — `npm test`, including compiled GAS VM acceptance |
 | GitHub CI | PASS — PR #75 run 44831446300 |
-| GAS source push / Web App publication / seed apply | NOT RUN |
+| GAS source push | PASS — run 44831990140; 54 files; source Version 25 |
+| Web App publication / seed apply | NOT RUN |
 
 Browser evidence is stored in `docs/evidence/fe-brand-catalog-20261121/`. Axe color-contrast checks reported as incomplete still require manual review and are not represented as automated violations.
 

@@ -3,9 +3,9 @@
 **Date:** 2026-11-21 (Asia/Bangkok)  
 **Scope:** source implementation only  
 **Backend source candidate:** `0.7.0`; API remains `v1`
-**GAS source:** Version 24 from `main` commit `e9afc6bdb977cbc62e267498551a06fae6d6690a` contains the earlier 105-row Backend `0.6.0` snapshot; the 645-row `0.7.0` candidate is not pushed
+**GAS source:** Version 25 from `main` commit `7ba9133589a9a94ac25dbaa19e62900992a562be` contains the 645-row Backend `0.7.0` candidate
 
-**Live Web App:** still reports Backend `0.5.0` until Version 24 is separately published and verified
+**Live Web App:** still reports Backend `0.5.0` until Version 25 is separately published and verified
 
 ## Delivered
 
@@ -26,7 +26,7 @@
 | GAS build | PASS | 53 `.gs` modules + manifest; each generated module below 800 lines |
 | Full backend regression | PASS | Backend `0.7.0` `npm test`, including API inventory, RBAC 5 roles × 45 protected operations, staging fixtures and compiled VM acceptance |
 | Repository/use-case SSOT | PASS | 0 errors / 0 link warnings; 20 diagrams and 51/51 operations |
-| GAS source push | NOT RUN | Version 24 is historical; current `0.7.0` requires a new exact owner confirmation |
+| GAS source push | PASS | Manual run [44831990140](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44831990140): tests/build PASS, 53 generated modules + manifest, 54 files pushed, source Version 25 created |
 | Web App publication | NOT RUN | Separate from source push/version creation |
 | Live seed preview/apply | NOT RUN | Requires deployed source, sanitized preview and exact checksum-bound approval |
 | `ENFORCED` mode | BLOCKED | Requires seeded catalog plus live Frontend -> Worker -> GAS acceptance and separate approval |
@@ -43,5 +43,5 @@ The seed is append-only into an empty table. Before writing, the installer creat
 
 ## Source-push boundary
 
-The earlier manual workflow used the exact Project Owner confirmation `PUSH_VEHICLE_GAS`. It replaced the target Apps Script project source with the tested 105-row Backend `0.6.0` artifact and created immutable source Version 24. It did not publish a new Web App deployment, run either seed entrypoint, set a checksum approval property or create any catalog row. The 645-row `0.7.0` candidate requires a new tested push before preview.
+The manual workflow used the exact Project Owner confirmation `PUSH_VEHICLE_GAS`. It replaced the target Apps Script project source with the tested 645-row Backend `0.7.0` artifact and created immutable source Version 25. It did not publish a new Web App deployment, run either seed entrypoint, set a checksum approval property or create any catalog row.
 
