@@ -1,11 +1,11 @@
 # P6 Vehicle Contact — Reference Catalog Seed v1 Evidence
 
 **Date:** 2026-11-21 (Asia/Bangkok)  
-**Scope:** source implementation only  
+**Scope:** source implementation and Web App publication; seed rows not yet applied  
 **Backend source candidate:** `0.7.0`; API remains `v1`
 **GAS source:** Version 25 from `main` commit `7ba9133589a9a94ac25dbaa19e62900992a562be` contains the 645-row Backend `0.7.0` candidate
 
-**Live Web App:** still reports Backend `0.5.0` until Version 25 is separately published and verified
+**Live Web App:** Version 26 published by the Project Owner on 2026-11-21 05:55; credential-free `system.health` verified the same day via direct GAS POST and Worker -> GAS, both returning `backendVersion:0.7.0`, `apiVersion:v1`, `status:ready`
 
 ## Delivered
 
@@ -27,7 +27,7 @@
 | Full backend regression | PASS | Backend `0.7.0` `npm test`, including API inventory, RBAC 5 roles × 45 protected operations, staging fixtures and compiled VM acceptance |
 | Repository/use-case SSOT | PASS | 0 errors / 0 link warnings; 20 diagrams and 51/51 operations |
 | GAS source push | PASS | Manual run [44831990140](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44831990140): tests/build PASS, 53 generated modules + manifest, 54 files pushed, source Version 25 created |
-| Web App publication | NOT RUN | Separate from source push/version creation |
+| Web App publication | PASS | Project Owner published Version 26 on 2026-11-21 05:55; direct GAS and Worker health probes both report Backend `0.7.0` (no credentials used) |
 | Live seed preview/apply | NOT RUN | Requires deployed source, sanitized preview and exact checksum-bound approval |
 | `ENFORCED` mode | BLOCKED | Requires seeded catalog plus live Frontend -> Worker -> GAS acceptance and separate approval |
 
