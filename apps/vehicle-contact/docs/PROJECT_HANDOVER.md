@@ -2,7 +2,7 @@
 
 **Document ID:** P6VC-HANDOVER-001  
 **Prepared:** 2026-11-17; **last reconciled:** 2026-11-20 (Asia/Bangkok)
-**GitHub baseline:** `main` @ `7449309a96bb5717f04a922f11f6e699343aee99`
+**Implementation/runtime evidence baseline before the docs-only PM reconciliation:** `main` @ `7449309a96bb5717f04a922f11f6e699343aee99`
 **Purpose:** Restore project continuity when the original ChatGPT conversation cannot be opened. This is a **handover/index and evidence snapshot**, **not a replacement** for individual canonical design, requirements, decisions, live Issues or code. Refresh current commit/Issues/CI before making further changes.
 
 > Start with [Current Delivery Status / Resume Here](CURRENT_DELIVERY_STATUS.md). It is the compact continuation SSOT for current versions, active work, blockers and exact next actions. The remaining handover preserves historical context.
