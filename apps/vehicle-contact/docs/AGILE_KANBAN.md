@@ -57,6 +57,7 @@ Delivery evidence since the initial snapshot:
 - The Project Owner's sanitized 2026-11-20 20:44 schema dry-run returned exactly one additive `CREATE_TABLE vc_reference_values` step with no blockers and no write (`applied:false`, `DRY_RUN`). The preview gate passes; guarded apply and catalog-data approval remain separate gates.
 - The explicitly gated 20:59 DEV apply then returned `APPLIED` with backup created; the 21:00 post-apply dry-run returned no steps and no blockers. `VC-W27` moved from BLOCKED to REVIEW. Catalog content approval remains open under `VC-W07`.
 - Reference Seed v1 source was merged in PR [#72](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/72). Manual workflow [44826384253](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44826384253) pushed the tested Backend `0.6.0` artifact and created GAS source Version 24; Web App publication, live preview and checksum-bound seed apply remain separate gates.
+- Brand/default refinement was merged in PR [#75](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/75). Manual workflow [44831990140](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44831990140) pushed Backend `0.7.0` with the 645-row manifest and created GAS source Version 25; Web App publication, live preview and checksum-bound seed apply remain separate gates.
 
 ### Primary journey execution order
 
