@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import { createGasRegistrationIntakeRepository, RegistrationIntakeContractError } from '../src/infrastructure/registrations/gas-registration-intake-repository.js'
 import { REGISTRATION_PHOTO_SLOTS, useRegistrationIntake } from '../src/features/registrations/useRegistrationIntake.js'
+import { CUSTOM_COLOR_CHOICE, reconcileColorValue, resolveColorValue } from '../src/features/registrations/color-field.js'
 
 const page = readFileSync(new URL('../src/pages/RegistrationIntakePage.vue', import.meta.url), 'utf8')
 const router = readFileSync(new URL('../src/router/index.js', import.meta.url), 'utf8')
@@ -32,6 +33,18 @@ describe('registration intake repository contract', () => {
 })
 
 describe('registration intake state and page contracts', () => {
+  it('keeps vehicle model free text and resolves preset or custom colors', () => {
+    const colors = [{ code: 'WHITE', label: 'ขาว' }]
+    expect(reconcileColorValue('WHITE', colors)).toEqual({ choice: 'WHITE', customValue: '' })
+    expect(reconcileColorValue('ฟ้าอมเทา', colors)).toEqual({ choice: CUSTOM_COLOR_CHOICE, customValue: 'ฟ้าอมเทา' })
+    expect(resolveColorValue('WHITE')).toBe('WHITE')
+    expect(resolveColorValue(CUSTOM_COLOR_CHOICE, ' ฟ้าอมเทา ')).toBe('ฟ้าอมเทา')
+    expect(page).toContain('กรอกรุ่นตามสมุดคู่มือจดทะเบียน')
+    expect(page).toContain('สีอื่น — ระบุเอง')
+    expect(page).toContain('aria-label="ระบุสีรถ"')
+    expect(page).not.toContain(':options="models"')
+  })
+
   it('does not upload or submit without the registration permission', async () => {
     const repository = { validateCampaign: vi.fn(), uploadPhoto: vi.fn(), submit: vi.fn() }
     const work = useRegistrationIntake({ repository, permissions: [] })

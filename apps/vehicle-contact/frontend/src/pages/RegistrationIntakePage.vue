@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog.vue'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import SearchableReferenceCombobox from '../features/reference-data/components/SearchableReferenceCombobox.vue'
+import { CUSTOM_COLOR_CHOICE, reconcileColorValue, resolveColorValue } from '../features/registrations/color-field.js'
 import { REGISTRATION_PHOTO_SLOTS, useRegistrationIntake } from '../features/registrations/useRegistrationIntake.js'
 import { useRegistrationReferenceStore } from '../stores/registration-reference.js'
 import { useSessionStore } from '../stores/session.js'
@@ -17,12 +18,13 @@ const { phase: referencePhase, failure: referenceFailure, lists, organizations, 
 const work = useRegistrationIntake({ repository: inject(registrationIntakeRepositoryKey), permissions })
 const campaignToken = ref('')
 const confirmationOpen = ref(false)
+const colorChoice = ref('')
+const customColor = ref('')
 const files = reactive({})
 const fields = reactive({ plate: '', province: '', plateType: '', vehicleType: '', brand: '', model: '', color: '', organizationId: '', relationship: '', contactName: '', contactPhone: '' })
 const allPhotosReady = computed(() => REGISTRATION_PHOTO_SLOTS.every((slot) => files[slot.id] instanceof File))
 const busy = computed(() => ['validating', 'uploading', 'submitting'].includes(work.phase.value))
 const canonicalMode = computed(() => ['ADVISORY', 'ENFORCED'].includes(referenceMode.value))
-const models = computed(() => lists.value.models.filter(({ parentCode }) => parentCode === fields.brand))
 
 function selectFile(slot, event) { files[slot] = event.target.files?.[0] || null }
 async function confirmSubmit() {
@@ -32,14 +34,20 @@ async function confirmSubmit() {
 }
 function reconcileSelections() {
   const allowed = (key, value) => !value || lists.value[key].some(({ code }) => code === value)
-  for (const [field, key] of [['province', 'provinces'], ['plateType', 'plateTypes'], ['vehicleType', 'vehicleTypes'], ['relationship', 'relationships'], ['brand', 'brands'], ['color', 'colors']]) {
+  for (const [field, key] of [['province', 'provinces'], ['plateType', 'plateTypes'], ['vehicleType', 'vehicleTypes'], ['relationship', 'relationships'], ['brand', 'brands']]) {
     if (!allowed(key, fields[field])) fields[field] = ''
   }
-  if (fields.model && !models.value.some(({ code }) => code === fields.model)) fields.model = ''
+  const color = reconcileColorValue(fields.color, lists.value.colors)
+  colorChoice.value = color.choice
+  customColor.value = color.customValue
   if (fields.organizationId && !organizations.value.some(({ code }) => code === fields.organizationId)) fields.organizationId = ''
 }
 async function reloadReferences() { try { await referenceData.reload(); reconcileSelections() } catch {} }
-watch(() => fields.brand, (value, previous) => { if (previous && value !== previous) fields.model = '' })
+watch(colorChoice, (value) => {
+  if (value !== CUSTOM_COLOR_CHOICE) customColor.value = ''
+  fields.color = resolveColorValue(value, customColor.value)
+})
+watch(customColor, (value) => { if (colorChoice.value === CUSTOM_COLOR_CHOICE) fields.color = resolveColorValue(colorChoice.value, value) })
 watch(referenceVersion, reconcileSelections)
 </script>
 
@@ -73,8 +81,8 @@ watch(referenceVersion, reconcileSelections)
           <label class="field-stack"><span class="label-text font-semibold">ประเภทป้าย</span><select v-if="canonicalMode" v-model="fields.plateType" class="select select-bordered w-full" required><option disabled value="">เลือกประเภทป้าย</option><option v-for="item in lists.plateTypes" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.plateType" class="input input-bordered w-full" required maxlength="100" /></label>
           <label class="field-stack"><span class="label-text font-semibold">ประเภทยานพาหนะ</span><select v-if="canonicalMode" v-model="fields.vehicleType" class="select select-bordered w-full" required><option disabled value="">เลือกประเภทยานพาหนะ</option><option v-for="item in lists.vehicleTypes" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.vehicleType" class="input input-bordered w-full" required maxlength="100" /></label>
           <label class="field-stack"><span class="label-text font-semibold">ยี่ห้อ</span><SearchableReferenceCombobox v-if="canonicalMode && lists.brands.length" v-model="fields.brand" label="ยี่ห้อ" :options="lists.brands" required /><input v-else v-model.trim="fields.brand" class="input input-bordered w-full" required maxlength="100" /><span v-if="canonicalMode && !lists.brands.length" class="label-text-alt">ยังไม่มีรายการยี่ห้อ จึงใช้ข้อความตามข้อมูลเดิม</span></label>
-          <label class="field-stack"><span class="label-text font-semibold">รุ่น</span><SearchableReferenceCombobox v-if="canonicalMode && lists.models.length && (!fields.brand || models.length)" v-model="fields.model" label="รุ่น" :options="models" :disabled="!fields.brand" required /><input v-else v-model.trim="fields.model" class="input input-bordered w-full" required maxlength="100" /><span v-if="canonicalMode && lists.models.length && !fields.brand" class="label-text-alt">เลือกยี่ห้อก่อนเพื่อแสดงรุ่นที่เกี่ยวข้อง</span><span v-else-if="canonicalMode && !models.length" class="label-text-alt">ยังไม่มีรุ่นสำหรับยี่ห้อนี้ จึงใช้ข้อความตามข้อมูลเดิม</span></label>
-          <label class="field-stack"><span class="label-text font-semibold">สี</span><select v-if="canonicalMode && lists.colors.length" v-model="fields.color" class="select select-bordered w-full" required><option disabled value="">เลือกสี</option><option v-for="item in lists.colors" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.color" class="input input-bordered w-full" required maxlength="100" /><span v-if="canonicalMode && !lists.colors.length" class="label-text-alt">ยังไม่มีรายการสี จึงใช้ข้อความตามข้อมูลเดิม</span></label>
+          <label class="field-stack"><span class="label-text font-semibold">รุ่น</span><input v-model.trim="fields.model" class="input input-bordered w-full" required maxlength="100" placeholder="กรอกรุ่นตามสมุดคู่มือจดทะเบียน" /><span class="label-text-alt">กรอกชื่อรุ่นเองเพื่อรองรับรถทุกรุ่น</span></label>
+          <label class="field-stack"><span class="label-text font-semibold">สี</span><select v-if="canonicalMode && lists.colors.length" v-model="colorChoice" class="select select-bordered w-full" required aria-describedby="vehicle-color-help"><option disabled value="">เลือกสี</option><option v-for="item in lists.colors" :key="item.code" :value="item.code">{{ item.label }}</option><option :value="CUSTOM_COLOR_CHOICE">สีอื่น — ระบุเอง</option></select><input v-if="canonicalMode && lists.colors.length && colorChoice === CUSTOM_COLOR_CHOICE" v-model.trim="customColor" class="input input-bordered w-full" required maxlength="100" aria-label="ระบุสีรถ" placeholder="ระบุสีตามสมุดคู่มือจดทะเบียน" /><input v-else-if="!canonicalMode || !lists.colors.length" v-model.trim="fields.color" class="input input-bordered w-full" required maxlength="100" /><span id="vehicle-color-help" class="label-text-alt">เลือกสีตั้งต้น หรือเลือกสีอื่นเพื่อกรอกเอง</span></label>
           <label class="field-stack"><span class="label-text font-semibold">หน่วยงาน</span><SearchableReferenceCombobox v-if="canonicalMode" v-model="fields.organizationId" label="หน่วยงาน" :options="organizations" required /><input v-else v-model.trim="fields.organizationId" class="input input-bordered w-full" required maxlength="100" /></label>
         </div>
       </fieldset>

@@ -41,18 +41,18 @@ function fixture(rows=[HEADERS]){
 }
 
 test('approved manifest contains exactly the reviewed deterministic catalogs',()=>{
- assert.equal(REFERENCE_SEED_V1.rows.length,105);
+ assert.equal(REFERENCE_SEED_V1.rows.length,121);
  const count=catalog=>REFERENCE_SEED_V1.rows.filter(row=>row.catalog===catalog).length;
- assert.deepEqual({province:count('PROVINCE'),vehicle:count('VEHICLE_TYPE'),plate:count('PLATE_TYPE'),relationship:count('RELATIONSHIP')},
-  {province:77,vehicle:17,plate:5,relationship:6});
- assert.equal(new Set(REFERENCE_SEED_V1.rows.map(row=>row.reference_id)).size,105);
+ assert.deepEqual({province:count('PROVINCE'),vehicle:count('VEHICLE_TYPE'),plate:count('PLATE_TYPE'),relationship:count('RELATIONSHIP'),color:count('COLOR')},
+  {province:77,vehicle:17,plate:5,relationship:6,color:16});
+ assert.equal(new Set(REFERENCE_SEED_V1.rows.map(row=>row.reference_id)).size,121);
  assert.equal(REFERENCE_SEED_V1.rows.find(row=>row.code==='10').label_th,'กรุงเทพมหานคร');
  assert.equal(REFERENCE_SEED_V1.rows.find(row=>row.code==='RY17').label_th,'รถจักรยานยนต์สาธารณะ');
 });
 
 test('preview is deterministic and never writes or backs up',()=>{
  const f=fixture(),result=f.installer.preview();
- assert.equal(result.status,'READY');assert.equal(result.rowCount,105);assert.equal(result.addCount,105);
+ assert.equal(result.status,'READY');assert.equal(result.rowCount,121);assert.equal(result.addCount,121);
  assert.match(result.checksum,/^[a-f0-9]{64}$/);assert.equal(result.dataModified,false);
  assert.equal(f.sheet.getLastRow(),1);assert.equal(f.backups.length,0);
  assert.equal(f.installer.preview().checksum,result.checksum);
@@ -70,7 +70,7 @@ test('approved apply backs up, journals, verifies, consumes approval and is idem
  f.values.set('VEHICLE_REFERENCE_SEED_APPROVED_SHA256',preview.checksum);
  const applied=f.installer.apply();
  assert.equal(applied.status,'APPLIED');assert.equal(applied.dataModified,true);assert.equal(applied.backupCreated,true);
- assert.equal(f.sheet.getLastRow(),106);assert.equal(f.backups.length,1);
+ assert.equal(f.sheet.getLastRow(),122);assert.equal(f.backups.length,1);
  assert.equal(f.values.has('VEHICLE_REFERENCE_SEED_APPROVED_SHA256'),false);
  const journal=JSON.parse(f.values.get('VEHICLE_REFERENCE_SEED_JOURNAL'));
  assert.equal(journal.status,'APPLIED');assert.equal(journal.checksum,preview.checksum);assert.equal(journal.backupRef,'backup-1');
