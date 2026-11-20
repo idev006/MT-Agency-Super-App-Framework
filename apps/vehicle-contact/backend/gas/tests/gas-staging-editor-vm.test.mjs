@@ -103,8 +103,11 @@ function makeFakeGAS() {
   };}
  };
  const logs=[];
+ const propertyValues=new Map([['VEHICLE_SHEET_ID',SANDBOX_ID]]);
+ const scriptProperties={getProperty:key=>propertyValues.get(key)||null,setProperty:(key,value)=>propertyValues.set(key,value),deleteProperty:key=>propertyValues.delete(key)};
  const globals={
   SpreadsheetApp:spreadsheetApp,LockService:lockService,Utilities:utilities,DriveApp:driveApp,
+  PropertiesService:{getScriptProperties:()=>scriptProperties},
   UrlFetchApp:{fetch(){throw Error('GOOGLE_OIDC_NETWORK_BLOCKED_IN_SYNTHETIC_TEST');}},
   Logger:{log:value=>logs.push(String(value))},console,
   ContentService:{MimeType:{JSON:'JSON'},createTextOutput:x=>({value:x,setMimeType(){return this;}})}
@@ -112,8 +115,18 @@ function makeFakeGAS() {
  const context=vm.createContext(globals);
  const modules=readdirSync(join(root,'dist')).filter(x=>x.endsWith('.gs')).sort();
  for(const file of modules)new vm.Script(readFileSync(join(root,'dist',file),'utf8'),{filename:file}).runInContext(context);
- return {context,data,metrics,logs,modules};
+ return {context,data,metrics,logs,modules,propertyValues};
 }
+
+test('GAS-VM-00 compiled reference seed preview is read-only and checksum-bound',()=>{
+ const {context,data,metrics,logs}=makeFakeGAS();
+ const before=JSON.stringify(data.get('vc_reference_values'));
+ assert.equal(typeof context.previewVehicleReferenceSeedFromEditor,'function');
+ const result=context.previewVehicleReferenceSeedFromEditor();
+ assert.equal(result.status,'READY');assert.equal(result.rowCount,105);assert.equal(result.addCount,105);
+ assert.match(result.checksum,/^[a-f0-9]{64}$/);assert.equal(result.dataModified,false);
+ assert.equal(JSON.stringify(data.get('vc_reference_values')),before);assert.equal(metrics.writes,0);assert.ok(logs.length>0);
+});
 
 test('GAS-VM-01 compiled Editor authentication + lookup probes execute with canonical fake Sheets and real PBKDF2',()=>{
  const {context,metrics,logs,modules}=makeFakeGAS();

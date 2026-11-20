@@ -60,6 +60,21 @@ export function applyVehicleSchemaFromEditor() {
  return result;
 }
 
+// Trusted Editor-only catalog seed. Preview never writes; apply consumes an exact checksum approval.
+export function previewVehicleReferenceSeedFromEditor() {
+ const result=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp,
+   lockService:LockService,driveApp:DriveApp,utilities:Utilities}).previewReferenceSeed();
+ Logger.log(JSON.stringify(result));
+ return result;
+}
+export function applyVehicleReferenceSeedFromEditor() {
+ const result=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp,
+   lockService:LockService,driveApp:DriveApp,utilities:Utilities}).applyReferenceSeed();
+ Logger.log(JSON.stringify({status:result.status,seedVersion:result.seedVersion,rowCount:result.rowCount,
+   checksum:result.checksum,backupCreated:result.backupCreated===true,mode:result.mode}));
+ return result;
+}
+
 // Run only after additive migration, in a synthetic staging spreadsheet. Never over HTTP.
 export function bootstrapVehicleAdminFromEditor() {
  const result=bootstrapStagingAdmin({spreadsheetApp:SpreadsheetApp,lockService:LockService,

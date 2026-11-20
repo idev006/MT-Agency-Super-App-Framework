@@ -1,11 +1,13 @@
 # P6 Vehicle Contact — Reference Catalog Seed Proposal
 
-**Status:** REVIEW REQUIRED — NON-EXECUTABLE  
+**Status:** APPROVED FOR IMPLEMENTATION — NOT APPROVED FOR GAS PUSH OR SEED APPLY
 **Prepared:** 2026-11-20 (Asia/Bangkok)  
 **Target schema:** `p6-vehicle-contact/phase1` version `0.3.0-draft`  
 **Target table:** `vc_reference_values`
 
 This document proposes the first bounded catalog. It is not approval to create rows, deploy GAS or enable `ENFORCED`. The successful additive schema migration created an empty table; empty or incomplete content intentionally remains `LEGACY`.
+
+**Approval record:** Project Owner supplied the exact phrase `APPROVE_REFERENCE_SEED_V1` on 2026-11-20. This authorizes the manifest, preview/apply source and tests only.
 
 ## 1. Catalog boundaries
 
@@ -80,13 +82,13 @@ Later SYSTEM_ADMIN CRUD, if required, must be a separate permission-protected AP
 
 The Data Owner / Project Owner must explicitly decide:
 
-- [ ] Use government two-digit province codes and the 77 Thai province names.
-- [ ] Use all 17 DLT vehicle-registration categories (`RY01`–`RY17`) rather than a simplified car/motorcycle taxonomy.
-- [ ] Approve or amend the five proposed plate types.
-- [ ] Approve or amend the six proposed relationships.
-- [ ] Defer brand/model/color to advisory text inputs for seed v1.
-- [ ] Keep seed v1 in `ADVISORY`; do not enable `ENFORCED` yet.
-- [ ] Authorize implementation of checksum-bound editor-only preview/apply automation. This does not authorize GAS push or seed apply.
+- [x] Use government two-digit province codes and the 77 Thai province names.
+- [x] Use all 17 DLT vehicle-registration categories (`RY01`–`RY17`) rather than a simplified car/motorcycle taxonomy.
+- [x] Approve the five proposed plate types.
+- [x] Approve the six proposed relationships.
+- [x] Defer brand/model/color to advisory text inputs for seed v1.
+- [x] Keep seed v1 in `ADVISORY`; do not enable `ENFORCED` yet.
+- [x] Authorize implementation of checksum-bound editor-only preview/apply automation. This does not authorize GAS push or seed apply.
 
 After these decisions, implementation may add a machine-readable manifest, unit/contract tests and the two editor entrypoints. Any GAS source push still requires the exact confirmation `PUSH_VEHICLE_GAS`; seed apply requires its own checksum-bound approval after preview.
 

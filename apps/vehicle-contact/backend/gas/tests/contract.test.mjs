@@ -82,7 +82,7 @@ function loadGAS(order) {
 // GAS file ordering is implementation detail, not an architectural dependency.
 for(const order of [gasFiles,[...gasFiles].reverse()]){
  const context=loadGAS(order);
- for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor','bootstrapVehicleAdminFromEditor','benchmarkVehiclePasswordHashFromEditor','inspectVehicleAdminResetFromEditor','resetVehicleAdminPasswordFromEditor','runVehicleStagingAuthTestsFromEditor','runVehicleStagingLifecycleTestsFromEditor'])
+ for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor','previewVehicleReferenceSeedFromEditor','applyVehicleReferenceSeedFromEditor','bootstrapVehicleAdminFromEditor','benchmarkVehiclePasswordHashFromEditor','inspectVehicleAdminResetFromEditor','resetVehicleAdminPasswordFromEditor','runVehicleStagingAuthTestsFromEditor','runVehicleStagingLifecycleTestsFromEditor'])
    assert.equal(typeof context[name],'function');
  assert.equal(JSON.parse(context.doGet({}).value).data.status,'ready');
  assert.equal(JSON.parse(context.doPost({postData:{contents:'not JSON'}}).value).ok,false);
