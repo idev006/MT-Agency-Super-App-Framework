@@ -28,7 +28,7 @@ Malformed, unknown, revoked or cancelled QR fails without releasing private data
 - Test case IDs: `ACTOR-03`, `EDGE-06`, `GAS-AUTH-QR.RESOLVE`.
 - Executable evidence references: `backend/gas/tests/actor-usecase-acceptance.test.mjs`.
 - Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **MANUAL_RESOLVE_WIRED_IN_SOURCE / CAMERA_AND_LIVE_ACCEPTANCE_PENDING**; the authenticated route, strict Worker DTO, fail-closed result mapping and responsive evidence are recorded in [FE-QR-RESOLVE-01](../../FRONTEND_FE_QR_RESOLVE_01_EVIDENCE_20261120.md).
+- FE status: **MANUAL_RESOLVE_DEPLOYED / AUTHENTICATED_MATCH_AND_CAMERA_ACCEPTANCE_PENDING**; the authenticated route, strict Worker DTO, fail-closed live boundary check and responsive evidence are recorded in [FE-QR-RESOLVE-01](../../FRONTEND_FE_QR_RESOLVE_01_EVIDENCE_20261120.md).
 
 ## 7. Development notes / explicit gaps
 QR token must contain no PII. Camera permission, real mobile scanning and QR deep-link route are future frontend/device acceptance.

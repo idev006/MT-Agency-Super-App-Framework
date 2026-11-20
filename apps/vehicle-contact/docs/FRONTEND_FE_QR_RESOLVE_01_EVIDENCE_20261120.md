@@ -47,3 +47,15 @@ Machine-readable browser results: [browser-evidence.json](evidence/fe-qr-resolve
 ## Release boundary
 
 This evidence proves source/build/browser behavior with synthetic data. GitHub Pages and Cloudflare Worker must be deployed after merge before the route works live through the selected Worker transport. No GAS source change is required for this slice. Camera decoding, physical Android/iOS acceptance, safe registration-photo preview, approval recovery and a controlled mutating primary-journey UAT remain separate gates.
+
+## Live deployment evidence
+
+Verified on 2026-11-20 (Asia/Bangkok) after PR #62 merged at `c4d1ea252768987436957ba4357f8afcd63b8f64`:
+
+- GitHub Pages workflow `44659033213` completed successfully from the merge commit
+- live frontend HTML and JavaScript returned HTTP 200; the deployed bundle contains Frontend `0.5.0`, route `vehicles/qr` and menu label **ตรวจสอบ QR ยานพาหนะ**
+- Cloudflare Worker version `70ddcb7c-cbb5-4502-848c-370351a9b915` is deployed with the approved frontend origin and GAS endpoint routing variables
+- live `system.health` through Frontend gateway -> Worker -> GAS returned `ok: true`, API `v1`, Backend `0.4.0` and status `ready`
+- a live `qr.resolve` request without a session was rejected at the Worker boundary with HTTP 403 and canonical `INVALID_SESSION_PAYLOAD`
+
+No password, session token or raw QR token was used or recorded by the deployment probes. An authenticated QR match remains part of controlled synthetic primary-journey UAT.
