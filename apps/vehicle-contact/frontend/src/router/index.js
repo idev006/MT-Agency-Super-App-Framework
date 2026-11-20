@@ -6,6 +6,7 @@ import AppShell from '../layouts/AppShell.vue'
 import DashboardView from '../views/DashboardView.vue'
 import GatewayPocView from '../views/GatewayPocView.vue'
 import VehicleSearchPage from '../pages/VehicleSearchPage.vue'
+import QrResolvePage from '../pages/QrResolvePage.vue'
 import RegistrationReviewPage from '../pages/RegistrationReviewPage.vue'
 import RegistrationIntakePage from '../pages/RegistrationIntakePage.vue'
 import ForbiddenPage from '../pages/ForbiddenPage.vue'
@@ -28,6 +29,7 @@ export const router = createRouter({
         { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: 'ภาพรวม' } },
         { path: 'connection', name: 'connection-test', component: GatewayPocView, meta: { title: 'ทดสอบการเชื่อมต่อ' } },
         { path: 'vehicles/search', name: 'vehicle-search', component: VehicleSearchPage, meta: { title: 'ค้นหายานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
+        { path: 'vehicles/qr', name: 'qr-resolve', component: QrResolvePage, meta: { title: 'ตรวจสอบ QR ยานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
         { path: 'registrations/new', name: 'registration-intake', component: RegistrationIntakePage, meta: { title: 'รับลงทะเบียนยานพาหนะ', requiredPermissions: ['vehicle.registration.approve'] } },
         { path: 'registrations/review', name: 'registration-review', component: RegistrationReviewPage, meta: { title: 'ตรวจสอบการลงทะเบียน', requiredPermissions: ['vehicle.registration.approve'] } },
         { path: 'forbidden', name: 'forbidden', component: ForbiddenPage, meta: { title: 'ไม่มีสิทธิ์เปิดงาน' } },

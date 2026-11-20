@@ -3,6 +3,7 @@
 **Document ID:** P6VC-KANBAN-001  
 **Created:** 2026-11-17 | **Last reconciled:** 2026-11-20 (Asia/Bangkok) | **Status:** OPERATIONAL ISSUE-BASED KANBAN; **NOT** a verified native GitHub Projects v2 board
 **Canonical planning document:** [Development Roadmap](DEVELOPMENT_ROADMAP_PHASE1.md)  
+**Primary journey epic:** [Registration-to-verification workflow](PRIMARY_WORKFLOW_DELIVERY_PLAN.md)
 **Work-tracking source:** [GitHub Issues](https://github.com/idev006/MT-Agency-Super-App-Framework/issues) with stable issue IDs `VC-W01`–`VC-W31` plus P6VC engineering gates #38–#39. Actual issue state and `status:*` label supersede this document's historical snapshots.
 
 ## 1. Live Kanban lanes
@@ -39,7 +40,7 @@ The crosswalk above is the 2026-11-17 historical snapshot. Use the **live links 
 | Result | Work / evidence |
 |---|---|
 | DONE-EVIDENCED | `VC-W15` Vue shared shell and `VC-W16` login/session adapter: PRs [#45](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/45)–[#47](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/47), responsive/accessibility evidence and live session acceptance. Existing completed items remain `VC-W01`, `VC-W23`–`VC-W25`, `VC-W30`. |
-| IN-PROGRESS | `VC-W17`: STAFF vehicle search is delivered and wired; scanner and the remaining actor/operator flows are not complete. |
+| IN-PROGRESS | `VC-W17`: intake, registration review and STAFF plate search are delivered and wired; QR scanner/resolve, unified detail and full deployed synthetic journey are not complete. |
 | REVIEW | `VC-W07`, `VC-W29`, `VC-W31`: data-dictionary approval, deployment governance reconciliation and the remaining secured/physical-device acceptance are still open. |
 | BLOCKED / guarded | `VC-W04` and `VC-W06` have implemented authentication/RBAC with automated and live development evidence, but remain blocked from DONE pending named security/policy approval. `VC-W11`–`VC-W14` contain substantial backend implementation but retain their security/privacy/release dependencies. |
 
@@ -50,6 +51,11 @@ Delivery evidence since the initial snapshot:
 - Manual GAS [run 44573790557](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44573790557) pushed tested source from `3cfcf0e` and created Apps Script source Version 20. The owner separately reported publishing that version to the Web App.
 - Public read-only health verification on 2026-11-20 returned `status=ready`, `apiVersion=v1`, `backendVersion=0.4.0`, `releaseChannel=development`.
 - Privileged development acceptance [run 44574709121](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44574709121) verified the selected administrator's full human access profile. It is not a production security/PDPA approval.
+- PRs [#57](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/57)–[#60](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/60) delivered registration review, assisted intake and deployment evidence. The remaining delivery order is governed by the primary journey plan rather than by completing isolated actor menus.
+
+### Primary journey execution order
+
+Use the [Primary Workflow Delivery Plan](PRIMARY_WORKFLOW_DELIVERY_PLAN.md) as the Epic-level sequence. Strict `qr.resolve` Worker contract and the manual Vue resolver are current release candidates; continue with camera decoding/cleanup → controlled synthetic deployed journey → browser/device/recovery evidence. Existing `VC-W` issues remain the trackable capabilities and blockers under that journey; this document does not fabricate a native Projects parent/child relationship.
 
 ## 3. Agile operating policy (proposed cadence, not a scheduled event)
 
@@ -74,7 +80,7 @@ Delivery evidence since the initial snapshot:
 
 **Immediate critical path:** [VC-W02](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/2) project owners → [VC-W04](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/4) auth provider → [VC-W05](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/5) non-bypassable GAS ingress → [VC-W06](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/6) RBAC → protected Backend groups. These are **blocked pending people/decisions**.
 
-**Engineering work that can proceed with synthetic data in parallel:** [VC-W08](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/8) fake Sheets tests, [VC-W15](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/15) Vue mock shell, [VC-W18](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/18) QR scanner PoC integration. **VC-W10** Google Drive photo adapter depends on effective Drive sharing permissions and approved image-access model.
+**Engineering work that can proceed with synthetic data in parallel:** [VC-W08](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/8) fake Sheets tests and [VC-W18](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/18) QR scanner integration under the [Primary Workflow Delivery Plan](PRIMARY_WORKFLOW_DELIVERY_PLAN.md). The Vue shell/login and intake/review/search source slices already exist; controlled deployed E2E remains separate. **VC-W10** Google Drive photo adapter depends on effective Drive sharing permissions and approved image-access model.
 
 ## 5. Definition of Ready (DoR)
 
@@ -104,6 +110,7 @@ A native GitHub Projects v2 board remains **NOT VERIFIED**. The authenticated CL
 - [Schema Sync](SCHEMA_SYNC_IMPLEMENTATION.md)
 - [Vehicle Photo Media Storage](VEHICLE_MEDIA_STORAGE_DESIGN.md)
 - [GAS Test Evidence](GAS_TEST_EVIDENCE.md)
+- [Primary Workflow Delivery Plan](PRIMARY_WORKFLOW_DELIVERY_PLAN.md)
 
 
 ## 10. Evidence reconciliation — 2026-11-17 (post-handover)

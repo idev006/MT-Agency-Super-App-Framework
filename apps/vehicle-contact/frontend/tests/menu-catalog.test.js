@@ -5,7 +5,7 @@ import { menuForPermissions } from '../src/domain/navigation/menu-catalog.js'
 describe('permission-driven menu SSOT', () => {
   it('shows shared and vehicle lookup menus without admin-only items', () => {
     const ids = menuForPermissions(['session.authenticated', 'vehicle.lookup']).map((item) => item.id)
-    expect(ids).toEqual(['dashboard', 'connection', 'account-security', 'vehicle-search'])
+    expect(ids).toEqual(['dashboard', 'connection', 'account-security', 'vehicle-search', 'qr-resolve'])
   })
 
   it('covers the GAS SYSTEM_ADMIN baseline without implicit operational access', () => {
@@ -16,6 +16,7 @@ describe('permission-driven menu SSOT', () => {
       'campaigns', 'qr-governance', 'system-settings', 'retention', 'audit',
     ])
     expect(ids).not.toContain('vehicle-search')
+    expect(ids).not.toContain('qr-resolve')
     expect(ids).not.toContain('registration-review')
     expect(ids).not.toContain('my-vehicles')
     expect(items.filter((item) => item.route).map((item) => item.id)).toEqual(ids)
@@ -24,7 +25,7 @@ describe('permission-driven menu SSOT', () => {
 
   it('unions permission overrides without relying on a role name', () => {
     const ids = menuForPermissions(['vehicle.change.submit', 'vehicle.lookup']).map((item) => item.id)
-    expect(ids).toEqual(['dashboard', 'connection', 'vehicle-search', 'my-vehicles'])
+    expect(ids).toEqual(['dashboard', 'connection', 'vehicle-search', 'qr-resolve', 'my-vehicles'])
   })
 
   it('gives the combined system and registration administrator a routed review menu', () => {
@@ -34,6 +35,7 @@ describe('permission-driven menu SSOT', () => {
       route: 'registration-review', permissionsAny: ['vehicle.registration.approve'],
     })
     expect(items.find((item) => item.id === 'vehicle-search')?.route).toBe('vehicle-search')
+    expect(items.find((item) => item.id === 'qr-resolve')?.route).toBe('qr-resolve')
     expect(items.filter((item) => !item.route)).toEqual([])
   })
 

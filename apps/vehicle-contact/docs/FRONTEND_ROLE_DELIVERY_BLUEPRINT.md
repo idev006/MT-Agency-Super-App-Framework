@@ -2,9 +2,9 @@
 
 **Document ID:** P6VC-FE-ROLE-001
 
-**Status:** DELIVERY BASELINE
+**Status:** DELIVERY BASELINE — ACTOR COVERAGE UNDER PRIMARY JOURNEY
 
-**Version:** 1.0 — 2026-11-18
+**Version:** 1.1 — 2026-11-20
 
 **Authority source:** GAS `SessionService.ROLE_PERMISSIONS` and approved use cases
 
@@ -13,6 +13,8 @@
 ระบบเป็น SPA เดียว ไม่สร้าง frontend แยกห้าชุดตาม role แต่พัฒนาเป็น vertical slices ที่ใช้ shared shell, shared feature components และ server-authoritative permission contract เดียวกัน
 
 ผู้ใช้หนึ่งคนอาจมีหลาย role ดังนั้น frontend ต้องประกอบ capability จาก `roles` และ `permissions` ที่ GAS คืนมา ห้ามใช้ `if role === ...` เป็น authorization rule แม้ใช้เพื่อเลือกข้อความหรือ dashboard emphasis ได้
+
+ลำดับ role ในเอกสารนี้ใช้ตรวจความครอบคลุมของ actor เท่านั้น ลำดับการ implement ปัจจุบันยึด [Primary Workflow Delivery Plan](PRIMARY_WORKFLOW_DELIVERY_PLAN.md): รับลงทะเบียน → ตรวจสอบ → สร้าง vehicle/contact/QR → สแกน QR หรือค้นเลขทะเบียน → แสดงข้อมูลตามสิทธิ์ ส่วน use cases ของแต่ละ role เป็นองค์ประกอบและ governance ของ journey นี้
 
 ## 2. Confirmed role baseline
 
@@ -58,7 +60,7 @@
 
 ## 4. Recommended delivery sequence
 
-ลำดับนี้ลดความเสี่ยงโดยเริ่มจาก read-only operational slice ก่อนงานอนุมัติและงานทำลายข้อมูล:
+ลำดับด้านล่างเป็น actor coverage baseline เดิม ไม่ใช่ลำดับ sprint ปัจจุบัน การจัด sprint และ Definition of Done ให้ใช้ primary journey เป็น authority เพื่อหลีกเลี่ยงการมีหน้าจอครบแต่ไม่สามารถทำงานตั้งแต่ต้นจนจบ:
 
 ### Slice 1 — STAFF
 
@@ -204,4 +206,4 @@ Reviewer and approver:
 
 ## 9. Next executable slice
 
-เริ่มจาก **FE-SHARED-01 Shell redesign** เพื่อแก้ layout/visual hierarchy ปัจจุบันให้ผ่าน blueprint ก่อน จากนั้นทำ **STAFF read-only vehicle lookup** เป็น role slice แรก การเริ่มหน้าของ role อื่นก่อน shell ผ่าน compliance จะทำให้เกิด design drift และงานย้อนแก้
+FE-SHARED-01, session, STAFF lookup, registration review และ assisted intake มี source/development evidence แล้ว ขณะนี้ strict Worker contract และ manual Vue resolver สำหรับ `qr.resolve` เป็น release candidate พร้อมหลักฐาน responsive งานถัดไปตาม primary journey คือ camera decoder/track cleanup และ controlled synthetic browser-to-Worker-to-GAS acceptance. Physical-device, security/privacy และ production approval ยังคงเป็น gate แยกต่างหาก

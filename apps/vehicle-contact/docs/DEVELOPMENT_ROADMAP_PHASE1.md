@@ -1,16 +1,17 @@
 # P6 Vehicle Contact — Phase 1 Development Roadmap & Work Breakdown
 
 **Document ID:** P6VC-PLAN-001  
-**Version:** 1.1.0 | **Baseline date:** 2026-11-17 | **Last reconciled:** 2026-11-20
+**Version:** 1.2.0 | **Baseline date:** 2026-11-17 | **Last reconciled:** 2026-11-20
 **Plan status:** ACTIVE PLANNING / NOT A COMMITTED RELEASE DATE  
 **Agile work tracking:** [Issue-backed Kanban with live lane filters](AGILE_KANBAN.md) — 31 GitHub Issues VC-W01–VC-W31 plus two P6VC engineering gates tracked as of 2026-11-20; live labels supersede historical milestone snapshots
 **Scope:** Phase 1 only; visitor/pass exchange **OFF**  
 **SA baseline:** [P6VC-SA-001](SYSTEM_ANALYST_BASELINE_PHASE1.md)  
 **Technical foundations:** [Phase-1 Sheets Architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md), [GAS Data Model](GAS_DATA_MODEL.md), [GAS API Contract](GAS_API_SPEC.md), [GAS Test Evidence](GAS_TEST_EVIDENCE.md) and [Decision Log](DECISION_LOG.md)
+**Primary delivery axis:** [Registration-to-verification workflow](PRIMARY_WORKFLOW_DELIVERY_PLAN.md)
 
 ## 1. Delivery strategy
 
-Deliver **security first**, then a vertical slice using **synthetic data**: authorized login → scan/search → vehicle details → safe contact action. In parallel, finalize schema, contact stewardship, SOP and PDPA. Each work item needs owner, evidence, dependencies, acceptance test and commit/CI link. **No real contact data and no production GAS exposure** before security/privacy/release gates.
+Deliver **security first**, then complete the primary workflow using **synthetic data**: campaign → intake with five photos → review → vehicle/contact/QR creation → QR scan or plate search → permitted details/history. Actor and administration use cases are supporting capabilities under this journey, not competing delivery tracks. In parallel, finalize schema, contact stewardship, SOP and PDPA. Each work item needs owner, evidence, dependencies, acceptance test and commit/CI link. **No real contact data and no production GAS exposure** before security/privacy/release gates.
 
 **Architecture frozen for Phase 1:** Vue 3 frontend using central Web App Blueprint; app-owned GAS API Groups and ES module source build; one private Google Spreadsheet where each tab is a logical table; Username/Password now; MT-I-AM deferred and isolated behind a replaceable auth port. Do not force generic shared code between apps.
 
@@ -25,13 +26,15 @@ Deliver **security first**, then a vertical slice using **synthetic data**: auth
 | Scanner POC | **POC EXISTS** | Android/iOS camera access user-reported; actual decode/switch matrix not fully evidenced |
 | AuthN/AuthZ/RBAC | **IMPLEMENTED / RELEASE REVIEW BLOCKED** | Username/password sessions, server permissions, revocation and 5 roles × 44 protected-operation tests exist; named security/policy approval and non-bypassable ingress proof remain open |
 | STAFF read-only vehicle search | **PASS — SOURCE/INTEGRATION** | PR #47 and FE-STAFF-01 evidence; live operational UAT remains open |
+| Registration intake and review | **PASS — SOURCE/DEVELOPMENT DEPLOYMENT** | PRs #57–#60; Frontend 0.4.0 intake/review evidence; controlled mutating browser E2E remains open |
+| Primary registration-to-verification journey | **IN-PROGRESS** | Intake/review/search slices exist; QR Worker/browser/device path and full deployed synthetic journey remain open |
 | SYSTEM_ADMIN administration | **PASS — SOURCE/INTEGRATION** | PRs #48–#54 cover users, organizations, campaigns, QR, settings, retention, audit, pagination and responsive inputs |
 | GAS development deployment | **PASS — DEVELOPMENT** | Source Version 20 from `3cfcf0e`; owner-reported Web App publication; public health on 2026-11-20 reported ready / API v1 / backend 0.4.0 |
 | PDPA approvals and field/UAT | **OPEN** | Operational/legal decisions pending |
 
 ## 2H. Frontend and development deployment reconciliation (2026-11-20)
 
-- PRs [#44](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/44)–[#55](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/55) are merged through `main` commit `3cfcf0e46a904c1e936a071b48837cde4dfa17e5`.
+- PRs [#44](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/44)–[#60](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/60) are merged; registration intake/review and their deployment evidence are included through `main` commit `4affa12ebde9dfbec998a0bbcd39c038746f23ac`.
 - Shared shell, STAFF search and SYSTEM_ADMIN administration have unit/contract/build evidence plus responsive corporate/dark and axe browser evidence under `docs/FRONTEND_*_EVIDENCE_20261119.md`.
 - Manual GAS run 44573790557 pushed the tested artifact and created source Version 20. Web App publication was a separate owner action and is recorded as owner-reported, while the public health response was independently rechecked read-only.
 - Live acceptance run 44574709121 verified the selected development administrator has exactly `SYSTEM_ADMIN` + `REGISTRATION_ADMIN`. Frontend navigation remains permission-driven and GAS remains authorization authority.
