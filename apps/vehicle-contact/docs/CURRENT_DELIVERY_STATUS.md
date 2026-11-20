@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
 **Last verified:** 2026-11-21 (Asia/Bangkok)
-**Implementation/runtime evidence baseline:** `main` @ `30ada8735734530202559e6891efdc22969be444`
+**Implementation/runtime evidence baseline:** `main` @ `2b32c18` (PR #76)
 
 **Purpose:** compact continuation SSOT. Read this page first, then open only the linked evidence or active Issue needed for the next change.
 
@@ -9,13 +9,13 @@
 
 | Component | Verified development version | Evidence / endpoint |
 |---|---|---|
-| Frontend | `0.6.1` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44829619296](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44829619296) |
+| Frontend | `0.7.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44832506283](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44832506283) |
 | Cloudflare Worker | `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; health and fail-closed probes recorded in [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md) |
-| GAS Backend API | Live API `v1`, Backend `0.5.0`; source Version `25` contains Backend `0.7.0` | Brand-catalog source push run [44831990140](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44831990140) passed from `7ba9133`; Version 25 is not yet published to the Web App |
+| GAS Backend API | Live API `v1`, Backend `0.7.0` via Web App **Version 26** (published 2026-11-21 05:55 by Project Owner) | Source Version 25 push run [44831990140](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44831990140) from `7ba9133`; credential-free `system.health` verified 2026-11-21 via direct GAS POST and Worker -> GAS, both returning `backendVersion:0.7.0`, `status:ready` |
 
 These are development facts, not production security, PDPA, UAT or release approval.
 
-Apps Script source Version 25 now contains Backend `0.7.0` and the 645-row manifest, including 524 DLT-observed brands. Frontend `0.7.0` is live with custom brand/color entry and an always-free-text model. Version 25 is not yet published to the Web App and no seed row has been applied. Live Backend remains `0.5.0`.
+Web App Version 26 is live with Backend `0.7.0` and the 645-row manifest, including 524 DLT-observed brands. Frontend `0.7.0` is live with custom brand/color entry and an always-free-text model. No seed row has been applied; `vc_reference_values` is empty and the API/UI intentionally remain in `LEGACY` mode.
 
 ## Current delivery state
 
@@ -42,10 +42,9 @@ Apps Script source Version 25 now contains Backend `0.7.0` and the 645-row manif
 
 ## Exact next actions
 
-1. Publish Apps Script source Version 25 to the development Web App deployment and verify health reports Backend `0.7.0`.
-2. Run editor-only `previewVehicleReferenceSeedFromEditor()` and share only the sanitized status/count/checksum result. Checksum-bound seed apply remains separately gated; the empty `vc_reference_values` table remains `LEGACY`.
-3. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
-4. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
+1. Run editor-only `previewVehicleReferenceSeedFromEditor()` and share only the sanitized status/count/checksum result (expect `READY`, `rowCount:645`). Checksum-bound seed apply remains separately gated; the empty `vc_reference_values` table remains `LEGACY`.
+2. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
+3. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
 
 Catalog review and QR engineering may proceed independently; real catalog enforcement must wait for approved values and seed evidence.
 
