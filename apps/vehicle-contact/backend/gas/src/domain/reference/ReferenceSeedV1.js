@@ -32,6 +32,11 @@ const RELATIONSHIPS=Object.freeze([
  ['AUTHORIZED_USER','ผู้ได้รับอนุญาตให้ใช้รถ'],['DRIVER','ผู้ขับขี่'],
  ['ORGANIZATION_REP','ผู้แทนหน่วยงาน'],['OTHER_REVIEW','อื่น ๆ — ต้องตรวจสอบ']
 ]);
+const COLORS=Object.freeze([
+ ['WHITE','ขาว'],['BLACK','ดำ'],['GRAY','เทา'],['SILVER','เงิน'],['RED','แดง'],['BLUE','น้ำเงิน'],
+ ['GREEN','เขียว'],['YELLOW','เหลือง'],['BROWN','น้ำตาล'],['BEIGE','เบจ'],['ORANGE','ส้ม'],['GOLD','ทอง'],
+ ['BRONZE','บรอนซ์'],['PURPLE','ม่วง'],['PINK','ชมพู'],['MULTICOLOR','หลายสี']
+]);
 const UPDATED_AT='2026-11-20T00:00:00.000Z';
 const build=(catalog,items,offset=0)=>items.map(([code,label],index)=>Object.freeze({
  reference_id:'REF-'+catalog+'-'+code,catalog,code,label_th:label,parent_code:'',
@@ -39,7 +44,7 @@ const build=(catalog,items,offset=0)=>items.map(([code,label],index)=>Object.fre
 }));
 const rows=Object.freeze([
  ...build('PROVINCE',PROVINCES),...build('VEHICLE_TYPE',VEHICLE_TYPES),
- ...build('PLATE_TYPE',PLATE_TYPES),...build('RELATIONSHIP',RELATIONSHIPS)
+ ...build('PLATE_TYPE',PLATE_TYPES),...build('RELATIONSHIP',RELATIONSHIPS),...build('COLOR',COLORS)
 ]);
 export const REFERENCE_SEED_V1=Object.freeze({
  seedVersion:'P6VC_REFERENCE_SEED_V1',schemaVersion:'0.3.0-draft',mode:'ADVISORY',rows

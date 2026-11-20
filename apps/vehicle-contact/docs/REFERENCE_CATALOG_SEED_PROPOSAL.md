@@ -9,6 +9,8 @@ This document proposes the first bounded catalog. It is not approval to create r
 
 **Approval record:** Project Owner supplied the exact phrase `APPROVE_REFERENCE_SEED_V1` on 2026-11-20. This authorizes the manifest, preview/apply source and tests only.
 
+**Product refinement:** On 2026-11-21 the Project Owner directed that color have defaults plus a user-entered fallback, while vehicle model remains user-entered. This approves 16 initial colors and keeps `MODEL` empty/advisory.
+
 ## 1. Catalog boundaries
 
 | Catalog | Proposed source / owner | Proposed first version | Decision state |
@@ -17,8 +19,8 @@ This document proposes the first bounded catalog. It is not approval to create r
 | `VEHICLE_TYPE` | Department of Land Transport registration categories `รย.1`–`รย.17` | 17 active rows, codes `RY01`–`RY17` | READY FOR DATA OWNER REVIEW |
 | `PLATE_TYPE` | P6 product taxonomy; must not duplicate vehicle-registration type | 5 candidate rows | BUSINESS DECISION REQUIRED |
 | `RELATIONSHIP` | P6 contact/responsibility policy | 6 candidate rows | BUSINESS DECISION REQUIRED |
-| `BRAND` / `MODEL` | No complete authoritative bounded source selected | 0 rows | DEFER; frontend keeps text input |
-| `COLOR` | Registration-book color vocabulary requires DLT/Data Owner confirmation | 0 rows | DEFER; frontend keeps text input |
+| `BRAND` / `MODEL` | No complete authoritative bounded source selected | 0 rows | DEFER; model is always user-entered |
+| `COLOR` | P6 initial color vocabulary with explicit custom entry | 16 active rows | APPROVED — ADVISORY |
 | Organizations | Existing active `vc_organizations` records | no duplicated rows | EXISTING AUTHORITY |
 
 Official references:
@@ -62,15 +64,16 @@ These sources establish candidate vocabulary. The Data Owner still approves the 
 | Vehicle registration type | 17 |
 | Plate type | 5 |
 | Relationship | 6 |
-| **Total proposed initial rows** | **105** |
+| Color | 16 |
+| **Total proposed initial rows** | **121** |
 
-Brand, model and color remain empty and advisory. The current frontend already falls back to bounded text fields when those lists are empty.
+Brand and model remain empty/advisory. Model is always a bounded free-text field. Color presents the 16 defaults and a visible “สีอื่น — ระบุเอง” path; the custom value remains advisory and is never silently converted to a code.
 
 ## 4. Automation contract after approval
 
 Initial seed automation should be GAS Editor-only, not a public HTTP write:
 
-1. `previewVehicleReferenceSeedFromEditor()` validates all 105 rows, stable IDs/codes, duplicate constraints, formula safety, parents, current Sheet differences and a deterministic SHA-256 checksum. It performs no writes.
+1. `previewVehicleReferenceSeedFromEditor()` validates all 121 rows, stable IDs/codes, duplicate constraints, formula safety, parents, current Sheet differences and a deterministic SHA-256 checksum. It performs no writes.
 2. The Project Owner reviews the sanitized counts/diff/checksum and sets a one-time Script Property equal to that exact checksum.
 3. `applyVehicleReferenceSeedFromEditor()` acquires a lock, creates a Drive backup, journals PREPARED/APPLYING/APPLIED, inserts only the approved manifest and verifies the resulting catalog/version.
 4. The approval property is immediately removed. Failure enters `RECOVERY_REQUIRED`; never rerun blindly.
@@ -86,7 +89,8 @@ The Data Owner / Project Owner must explicitly decide:
 - [x] Use all 17 DLT vehicle-registration categories (`RY01`–`RY17`) rather than a simplified car/motorcycle taxonomy.
 - [x] Approve the five proposed plate types.
 - [x] Approve the six proposed relationships.
-- [x] Defer brand/model/color to advisory text inputs for seed v1.
+- [x] Defer brand/model; keep model as user-entered text.
+- [x] Seed 16 advisory colors and allow an explicit custom color value.
 - [x] Keep seed v1 in `ADVISORY`; do not enable `ENFORCED` yet.
 - [x] Authorize implementation of checksum-bound editor-only preview/apply automation. This does not authorize GAS push or seed apply.
 

@@ -347,6 +347,20 @@ if (qrResolveEvidence) {
   await setViewport(360, 800); await setTheme('corporate')
   await waitUntil(`document.querySelector('input[type="file"]')`)
   evidence.cases.mobileCorporate = await auditPage(); await screenshot('registration-intake-mobile-corporate.png', { fullPage: true })
+  await evaluate(`(() => {
+    const select = [...document.querySelectorAll('select')].find((item) => [...item.options].some((option) => option.textContent.includes('สีอื่น')));
+    const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set;
+    setter.call(select, '__CUSTOM_COLOR__');
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  })()`)
+  await waitUntil(`document.querySelector('input[aria-label="ระบุสีรถ"]')`)
+  await evaluate(`(() => {
+    const input = document.querySelector('input[aria-label="ระบุสีรถ"]');
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    setter.call(input, 'ฟ้าอมเทา');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`)
+  evidence.cases.mobileCustomColor = await auditPage(); await screenshot('registration-intake-mobile-custom-color.png', { fullPage: true })
 } else if (registrationReviewEvidence) {
   await setViewport(1440, 900); await navigate(); await setTheme('dark')
   await waitUntil(`document.querySelector('#registration-queue-title')`)

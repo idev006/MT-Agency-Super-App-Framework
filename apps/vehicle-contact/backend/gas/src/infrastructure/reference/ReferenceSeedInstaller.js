@@ -15,7 +15,7 @@ export function createReferenceSeedInstaller({spreadsheetApp,spreadsheetId,lockS
  const checksum=hex(utilities.computeDigest(utilities.DigestAlgorithm.SHA_256,canonical,utilities.Charset.UTF_8));
  function validateManifest(){
   const ids=new Set(),codes=new Set(),counts={};
-  if(REFERENCE_SEED_V1.rows.length!==105||!/^[a-f0-9]{64}$/.test(checksum))invalid('REFERENCE_SEED_MANIFEST_INVALID');
+  if(REFERENCE_SEED_V1.rows.length!==121||!/^[a-f0-9]{64}$/.test(checksum))invalid('REFERENCE_SEED_MANIFEST_INVALID');
   for(const row of REFERENCE_SEED_V1.rows){
    const key=row.catalog+'|'+row.code;
    if(!text(row.reference_id,100)||!text(row.catalog,32)||!text(row.code,64)||!text(row.label_th,120)
@@ -26,7 +26,7 @@ export function createReferenceSeedInstaller({spreadsheetApp,spreadsheetId,lockS
    ids.add(row.reference_id);codes.add(key);counts[row.catalog]=(counts[row.catalog]||0)+1;
   }
   if(counts.PROVINCE!==77||counts.VEHICLE_TYPE!==17||counts.PLATE_TYPE!==5||counts.RELATIONSHIP!==6
-   ||Object.keys(counts).length!==4)invalid('REFERENCE_SEED_MANIFEST_INVALID');
+   ||counts.COLOR!==16||Object.keys(counts).length!==5)invalid('REFERENCE_SEED_MANIFEST_INVALID');
  }
  function rowValues(row){return HEADERS.map(header=>row[header]);}
  function inspect(book){

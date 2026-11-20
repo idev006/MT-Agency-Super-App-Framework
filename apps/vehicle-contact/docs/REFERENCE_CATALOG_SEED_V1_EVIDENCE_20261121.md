@@ -2,15 +2,15 @@
 
 **Date:** 2026-11-21 (Asia/Bangkok)  
 **Scope:** source implementation only  
-**Backend source candidate:** `0.6.0`; API remains `v1`  
-**GAS source:** Version 24 from `main` commit `e9afc6bdb977cbc62e267498551a06fae6d6690a`
+**Backend source candidate:** `0.6.1`; API remains `v1`
+**GAS source:** Version 24 from `main` commit `e9afc6bdb977cbc62e267498551a06fae6d6690a` contains the earlier 105-row Backend `0.6.0` snapshot; the 121-row `0.6.1` candidate is not pushed
 
 **Live Web App:** still reports Backend `0.5.0` until Version 24 is separately published and verified
 
 ## Delivered
 
-- Deterministic `P6VC_REFERENCE_SEED_V1` manifest: 77 provinces, 17 DLT registration types, five approved plate types and six approved relationships; 105 active rows total.
-- Brand, model and color remain empty/advisory so the frontend keeps its existing text fallback.
+- Deterministic `P6VC_REFERENCE_SEED_V1` manifest: 77 provinces, 17 DLT registration types, five approved plate types, six approved relationships and 16 advisory colors; 121 active rows total.
+- Brand and model remain empty/advisory. Model is always user-entered; color offers approved defaults plus a custom value.
 - `previewVehicleReferenceSeedFromEditor()` validates the manifest and target headers, reports READY/ALREADY_APPLIED/BLOCKED and returns a deterministic SHA-256 checksum without writing.
 - `applyVehicleReferenceSeedFromEditor()` accepts only a Script Property whose value equals that checksum, locks the spreadsheet, creates a Drive backup, journals state, writes only an empty table, verifies all rows and consumes the one-time approval.
 - Any partial/foreign content blocks instead of merging or overwriting. A write failure journals `RECOVERY_REQUIRED` and requires manual recovery.
@@ -20,7 +20,7 @@
 
 | Gate | Result | Evidence |
 |---|---|---|
-| Approved manifest shape/counts | PASS | 105 unique rows: 77 + 17 + 5 + 6 |
+| Approved manifest shape/counts | PASS | 121 unique rows: 77 + 17 + 5 + 6 + 16 |
 | Focused seed unit tests | PASS | 6/6: deterministic preview, exact checksum, backup/journal/apply, idempotency, conflict and recovery |
 | Compiled GAS preview | PASS | Layer-mirrored `.gs` entrypoint executes against canonical fake Sheets with zero writes |
 | GAS build | PASS | 53 `.gs` modules + manifest; each generated module below 800 lines |
@@ -43,5 +43,5 @@ The seed is append-only into an empty table. Before writing, the installer creat
 
 ## Source-push boundary
 
-The manual workflow used the exact Project Owner confirmation `PUSH_VEHICLE_GAS`. It replaced the target Apps Script project source with the tested artifact and created immutable source Version 24. It did not publish a new Web App deployment, run either seed entrypoint, set a checksum approval property or create any catalog row.
+The manual workflow used the exact Project Owner confirmation `PUSH_VEHICLE_GAS`. It replaced the target Apps Script project source with the tested 105-row Backend `0.6.0` artifact and created immutable source Version 24. It did not publish a new Web App deployment, run either seed entrypoint, set a checksum approval property or create any catalog row. The later 121-row `0.6.1` refinement requires a new tested push before preview.
 

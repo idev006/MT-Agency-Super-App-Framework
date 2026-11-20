@@ -15,7 +15,7 @@
 
 These are development facts, not production security, PDPA, UAT or release approval.
 
-Backend `0.6.0` is pushed as Apps Script source Version 24 with the approved seed-v1 manifest and editor-only automation. It is not yet published; live Backend remains `0.5.0`.
+Backend `0.6.0` is pushed as Apps Script source Version 24 with the earlier 105-row manifest. The current Backend `0.6.1` / Frontend `0.6.1` candidates add 16 default colors, custom color entry and an always-free-text model; they are not pushed/deployed. Live Backend remains `0.5.0`.
 
 ## Current delivery state
 
@@ -42,8 +42,8 @@ Backend `0.6.0` is pushed as Apps Script source Version 24 with the approved see
 
 ## Exact next actions
 
-1. Project Owner publishes Apps Script source Version 24 as a new Web App version, then verifies public health reports Backend `0.6.0`.
-2. Run editor-only `previewVehicleReferenceSeedFromEditor()` and share only the sanitized status/count/checksum result. Checksum-bound seed apply remains separately gated; the empty `vc_reference_values` table remains `LEGACY`.
+1. Review and merge the Backend/Frontend `0.6.1` color/model refinement, then perform a new explicitly confirmed GAS source push. Do not seed from Version 24 because its checksum represents the superseded 105-row manifest.
+2. Publish the resulting Web App version, verify health, then run editor-only `previewVehicleReferenceSeedFromEditor()` and share only the sanitized status/count/checksum result. Checksum-bound seed apply remains separately gated; the empty `vc_reference_values` table remains `LEGACY`.
 3. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
 4. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
 
