@@ -15,6 +15,8 @@
 
 These are development facts, not production security, PDPA, UAT or release approval.
 
+Backend `0.6.0` is a source candidate containing the approved seed-v1 manifest and editor-only automation. It is not pushed or published; live Backend remains `0.5.0`.
+
 ## Current delivery state
 
 ### DONE-EVIDENCED
@@ -41,7 +43,7 @@ These are development facts, not production security, PDPA, UAT or release appro
 
 ## Exact next actions
 
-1. Data Owner reviews [Reference Catalog Seed Proposal](REFERENCE_CATALOG_SEED_PROPOSAL.md) and approves catalog values and seed version before any rows are created or `ENFORCED` mode is considered. An empty `vc_reference_values` table remains `LEGACY` and does not validate unapproved values.
+1. Review [Reference Catalog Seed v1 implementation evidence](REFERENCE_CATALOG_SEED_V1_EVIDENCE_20261121.md). GAS push and checksum-bound seed apply remain separately gated; an empty `vc_reference_values` table remains `LEGACY`.
 2. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
 3. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
 

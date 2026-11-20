@@ -9,6 +9,7 @@ import { createSheetsSchemaRepository } from "../infrastructure/persistence/shee
 import { verifySchemaUseCase } from "../application/use-cases/VerifySchema.js";
 import { DATABASE_SCHEMA } from "../domain/ports/SchemaRepository.js";
 import { proposeSchemaChanges } from "../application/schema-sync/ProposeMigration.js";
+import {createReferenceSeedInstaller} from '../infrastructure/reference/ReferenceSeedInstaller.js';
 export function createApplication(deps={}) {
   const services=()=>({
     propertiesService:deps.propertiesService||(typeof PropertiesService!=='undefined'?PropertiesService:null),
@@ -43,6 +44,16 @@ export function createApplication(deps={}) {
     migrateSchema(options){
       const id=deps.propertiesService.getScriptProperties().getProperty("VEHICLE_SHEET_ID");
       return createAdditiveMigration({spreadsheetApp:deps.spreadsheetApp,spreadsheetId:id,lockService:deps.lockService,driveApp:deps.driveApp,propertiesService:deps.propertiesService}).run(options);
+    },
+    previewReferenceSeed(){
+      const s=services(),id=s.propertiesService.getScriptProperties().getProperty('VEHICLE_SHEET_ID');
+      return createReferenceSeedInstaller({spreadsheetApp:s.spreadsheetApp,spreadsheetId:id,lockService:s.lockService,
+        driveApp:s.driveApp,propertiesService:s.propertiesService,utilities:s.utilities}).preview();
+    },
+    applyReferenceSeed(){
+      const s=services(),id=s.propertiesService.getScriptProperties().getProperty('VEHICLE_SHEET_ID');
+      return createReferenceSeedInstaller({spreadsheetApp:s.spreadsheetApp,spreadsheetId:id,lockService:s.lockService,
+        driveApp:s.driveApp,propertiesService:s.propertiesService,utilities:s.utilities}).apply();
     },
     verifySchema(){return verifySchemaUseCase(schemaRepository());},
     inspectSchemaDrift(){
