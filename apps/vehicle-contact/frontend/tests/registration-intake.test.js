@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { describe, expect, it, vi } from 'vitest'
 import { createGasRegistrationIntakeRepository, RegistrationIntakeContractError } from '../src/infrastructure/registrations/gas-registration-intake-repository.js'
 import { REGISTRATION_PHOTO_SLOTS, useRegistrationIntake } from '../src/features/registrations/useRegistrationIntake.js'
+import { CUSTOM_BRAND_CHOICE, reconcileBrandValue, resolveBrandValue } from '../src/features/registrations/brand-field.js'
 import { CUSTOM_COLOR_CHOICE, reconcileColorValue, resolveColorValue } from '../src/features/registrations/color-field.js'
 
 const page = readFileSync(new URL('../src/pages/RegistrationIntakePage.vue', import.meta.url), 'utf8')
@@ -33,13 +34,20 @@ describe('registration intake repository contract', () => {
 })
 
 describe('registration intake state and page contracts', () => {
-  it('keeps vehicle model free text and resolves preset or custom colors', () => {
+  it('keeps vehicle model free text and resolves preset or custom brands and colors', () => {
+    const brands = [{ code: 'TOYOTA', label: 'TOYOTA' }]
     const colors = [{ code: 'WHITE', label: 'ขาว' }]
+    expect(reconcileBrandValue('TOYOTA', brands)).toEqual({ choice: 'TOYOTA', customValue: '' })
+    expect(reconcileBrandValue('ยี่ห้อท้องถิ่น', brands)).toEqual({ choice: CUSTOM_BRAND_CHOICE, customValue: 'ยี่ห้อท้องถิ่น' })
+    expect(resolveBrandValue('TOYOTA')).toBe('TOYOTA')
+    expect(resolveBrandValue(CUSTOM_BRAND_CHOICE, ' ยี่ห้อท้องถิ่น ')).toBe('ยี่ห้อท้องถิ่น')
     expect(reconcileColorValue('WHITE', colors)).toEqual({ choice: 'WHITE', customValue: '' })
     expect(reconcileColorValue('ฟ้าอมเทา', colors)).toEqual({ choice: CUSTOM_COLOR_CHOICE, customValue: 'ฟ้าอมเทา' })
     expect(resolveColorValue('WHITE')).toBe('WHITE')
     expect(resolveColorValue(CUSTOM_COLOR_CHOICE, ' ฟ้าอมเทา ')).toBe('ฟ้าอมเทา')
     expect(page).toContain('กรอกรุ่นตามสมุดคู่มือจดทะเบียน')
+    expect(page).toContain('ไม่พบยี่ห้อ? ระบุเอง')
+    expect(page).toContain('aria-label="ระบุยี่ห้อยานพาหนะ"')
     expect(page).toContain('สีอื่น — ระบุเอง')
     expect(page).toContain('aria-label="ระบุสีรถ"')
     expect(page).not.toContain(':options="models"')
