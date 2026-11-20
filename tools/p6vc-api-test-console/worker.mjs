@@ -20,7 +20,10 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "organizations.list":[[],["limit","page","pageSize"]],"organizations.create":[["name","type"],["parentId"]],
  "organizations.update":[["organizationId"],["name","parentId"]],"organizations.disable":[["organizationId"],[]],
  "campaigns.create":[["startsAt","endsAt","maxSubmissions"],[]],"campaigns.list":[[],["limit","page","pageSize"]],
+ "campaigns.validate":[["campaignToken"],[]],
  "campaigns.revoke":[["campaignId"],[]],
+ "photos.upload":[["campaignToken","slot","base64Image","mimeType"],[]],
+ "registrations.submit":[["campaignToken","plate","province","plateType","vehicleType","brand","model","color","organizationId","relationship","contactName","contactPhone","photos","idempotencyKey"],[]],
  "registrations.listPending":[[],["limit","page","pageSize"]],
  "registrations.detail":[["requestId"],[]],
  "registrations.review":[["requestId","decision"],["platePhotoVerified"]],
@@ -30,7 +33,7 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "audit.query":[[],["vehicleId","limit","page","pageSize"]],"audit.export":[[],["vehicleId","limit"]]
 });
 const FRONTEND_OPERATIONS=new Set(Object.keys(FRONTEND_PAYLOAD_FIELDS));
-const FRONTEND_PUBLIC_OPERATIONS=new Set(["system.health","auth.login"]);
+const FRONTEND_PUBLIC_OPERATIONS=new Set(["system.health","auth.login","campaigns.validate","photos.upload","registrations.submit"]);
 const JOB_ID=/^job_[0-9a-f]{32}$/;
 const IDEMPOTENCY_KEY=/^[A-Za-z0-9._:-]{8,128}$/;
 const JOB_TTL_SECONDS=7*24*60*60;
@@ -78,12 +81,23 @@ function validFrontendEnvelope(input){
  if(input.apiVersion!=="v1"||typeof input.group!=="string"||typeof input.action!=="string")return "INVALID_ENVELOPE";
  const operation=input.group+"."+input.action;
  if(!FRONTEND_OPERATIONS.has(operation))return "OPERATION_NOT_ALLOWED";
- if(!input.payload||typeof input.payload!=="object"||Array.isArray(input.payload)||JSON.stringify(input.payload).length>16384)
+ const payloadSize=JSON.stringify(input.payload||{}).length;
+ if(!input.payload||typeof input.payload!=="object"||Array.isArray(input.payload)
+  ||(operation==="photos.upload"?payloadSize>7_500_000:payloadSize>32768))
   return "INVALID_PAYLOAD";
  if(typeof input.requestId!=="string"||!/^[A-Za-z0-9_-]{8,80}$/.test(input.requestId))return "INVALID_REQUEST_ID";
  const keys=Object.keys(input.payload);
  const [required,optional]=FRONTEND_PAYLOAD_FIELDS[operation],allowed=new Set([...required,...optional]);
  if(required.some(key=>!Object.hasOwn(input.payload,key))||keys.some(key=>!allowed.has(key)))return "INVALID_OPERATION_PAYLOAD";
+ if(operation==="photos.upload"){
+  const p=input.payload;
+  if(!/^[0-9a-f]{64}$/i.test(p.campaignToken||"")||!["FRONT","REAR","LEFT","RIGHT","FRONT_ANGLE"].includes(p.slot)
+   ||typeof p.base64Image!=="string"||p.base64Image.length<4||p.base64Image.length>7_000_000
+   ||!/^[A-Za-z0-9+/]+={0,2}$/.test(p.base64Image)||!["image/jpeg","image/png","image/webp"].includes(p.mimeType))
+   return "INVALID_OPERATION_PAYLOAD";
+  if(input.sessionToken!==undefined)return "INVALID_PUBLIC_PAYLOAD";
+  return null;
+ }
  const safeValue=(value,depth=0)=>{
   if(depth>3)return false;
   if(value===null||typeof value==="boolean")return true;
@@ -97,6 +111,14 @@ function validFrontendEnvelope(input){
  if(!keys.every(key=>safeValue(input.payload[key])))return "INVALID_OPERATION_PAYLOAD";
  if(operation==="auth.login"&&(typeof input.payload.username!=="string"||input.payload.username.length<1||input.payload.username.length>100||
    typeof input.payload.password!=="string"||input.payload.password.length<1||input.payload.password.length>128))return "INVALID_LOGIN_PAYLOAD";
+ if(operation==="campaigns.validate"&&!/^[0-9a-f]{64}$/i.test(input.payload.campaignToken||""))return "INVALID_OPERATION_PAYLOAD";
+ if(operation==="registrations.submit"){
+  const p=input.payload;
+  if(!/^[0-9a-f]{64}$/i.test(p.campaignToken||"")||!Array.isArray(p.photos)||p.photos.length!==5
+   ||p.photos.some(photo=>!photo||typeof photo!=="object"||Object.keys(photo).some(key=>!["slot","photoId"].includes(key))
+    ||!["FRONT","REAR","LEFT","RIGHT","FRONT_ANGLE"].includes(photo.slot)||typeof photo.photoId!=="string"||!photo.photoId))
+   return "INVALID_OPERATION_PAYLOAD";
+ }
  if(FRONTEND_PUBLIC_OPERATIONS.has(operation)){
   if(input.sessionToken!==undefined)return "INVALID_PUBLIC_PAYLOAD";
  }else if(!/^[0-9a-f]{64}$/i.test(input.sessionToken||""))return "INVALID_SESSION_PAYLOAD";
@@ -104,10 +126,12 @@ function validFrontendEnvelope(input){
 }
 async function frontendGateway(request,env,origin){
  const raw=await request.text();
- if(raw.length>4096)return frontendReply(origin,{error:"REQUEST_TOO_LARGE"},413);
+ if(raw.length>8*1024*1024)return frontendReply(origin,{error:"REQUEST_TOO_LARGE"},413);
  if(request.headers.get("content-type")?.split(";")[0]!=="application/json")
   return frontendReply(origin,{error:"JSON_REQUIRED"},415);
  let input;try{input=JSON.parse(raw);}catch{return frontendReply(origin,{error:"INVALID_JSON"},400);}
+ if(!(input?.group==="photos"&&input?.action==="upload")&&raw.length>32768)
+  return frontendReply(origin,{error:"REQUEST_TOO_LARGE"},413);
  const invalid=validFrontendEnvelope(input);
  if(invalid)return frontendReply(origin,{error:invalid},403);
  try{

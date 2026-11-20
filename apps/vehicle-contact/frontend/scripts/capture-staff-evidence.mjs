@@ -7,7 +7,10 @@ const systemAdminEvidence = evidenceSlice === 'system-admin-users'
 const systemAdminNavigationEvidence = evidenceSlice === 'system-admin-navigation'
 const systemAdminCompleteEvidence = evidenceSlice === 'system-admin-complete'
 const registrationReviewEvidence = evidenceSlice === 'registration-review'
-const appUrl = process.env.P6VC_EVIDENCE_URL || (registrationReviewEvidence
+const registrationIntakeEvidence = evidenceSlice === 'registration-intake'
+const appUrl = process.env.P6VC_EVIDENCE_URL || (registrationIntakeEvidence
+  ? 'http://127.0.0.1:4173/#/app/registrations/new'
+  : registrationReviewEvidence
   ? 'http://127.0.0.1:4173/#/app/registrations/review'
   : systemAdminNavigationEvidence || systemAdminCompleteEvidence
   ? 'http://127.0.0.1:4173/#/app/dashboard'
@@ -22,6 +25,8 @@ const evidenceDir = resolve(process.env.P6VC_EVIDENCE_DIR || (systemAdminNavigat
   ? '../docs/evidence/fe-system-admin-users-20261119'
   : registrationReviewEvidence
   ? '../docs/evidence/fe-registration-review-20261120'
+  : registrationIntakeEvidence
+  ? '../docs/evidence/fe-registration-intake-20261120'
   : '../docs/evidence/fe-staff-vehicle-search-20261119'))
 const axeSource = await readFile(resolve('node_modules/axe-core/axe.min.js'), 'utf8')
 
@@ -119,7 +124,7 @@ const registrationSessionFixture = {
     'vehicle.registration.approve', 'vehicle.lookup', 'vehicle.contact.read', 'vehicle.photos.read',
     'vehicle.update', 'vehicle.history.read', 'vehicle.change.approve'])],
 }
-const sessionFixture = registrationReviewEvidence ? registrationSessionFixture
+const sessionFixture = registrationReviewEvidence || registrationIntakeEvidence ? registrationSessionFixture
   : systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence ? adminSessionFixture : staffSessionFixture
 const gasEvidenceEndpoint = 'https://script.google.com/macros/s/evidence-only/exec'
 const gasPersistedEndpoint = 'https://script.google.com/macros/s/persisted-evidence/exec'
@@ -298,7 +303,14 @@ async function screenshot(fileName, { fullPage = false } = {}) {
 await mkdir(evidenceDir, { recursive: true })
 const evidence = { generatedAt: new Date().toISOString(), evidenceSlice, appUrl, browser: 'Microsoft Edge headless', cases: {} }
 
-if (registrationReviewEvidence) {
+if (registrationIntakeEvidence) {
+  await setViewport(1440, 900); await navigate(); await setTheme('dark')
+  await waitUntil(`document.querySelector('input[type="file"]')`)
+  evidence.cases.desktopDark = await auditPage(); await screenshot('registration-intake-desktop-dark.png', { fullPage: true })
+  await setViewport(360, 800); await setTheme('corporate')
+  await waitUntil(`document.querySelector('input[type="file"]')`)
+  evidence.cases.mobileCorporate = await auditPage(); await screenshot('registration-intake-mobile-corporate.png', { fullPage: true })
+} else if (registrationReviewEvidence) {
   await setViewport(1440, 900); await navigate(); await setTheme('dark')
   await waitUntil(`document.querySelector('#registration-queue-title')`)
   await evaluate(`document.querySelector('#registration-queue-title')?.parentElement?.querySelector('button')?.click()`)
@@ -401,7 +413,7 @@ const navigationFailed = systemAdminNavigationEvidence && (
   || evidence.navigationCoverage.plannedLinkCount !== 0
   || ['ค้นหายานพาหนะ', 'ตรวจสอบการลงทะเบียน', 'ยานพาหนะของฉัน'].some((label) => evidence.navigationCoverage.pageText.includes(label))
 )
-const refreshFailed = systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence || registrationReviewEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
+const refreshFailed = systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence || registrationReviewEvidence || registrationIntakeEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
   || evidence.refreshPersistence.signInVisible
   || evidence.refreshPersistence.transport !== 'worker'
   || evidence.refreshPersistence.gasEndpoint !== gasPersistedEndpoint

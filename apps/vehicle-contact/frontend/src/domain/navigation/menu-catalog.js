@@ -3,6 +3,7 @@ export const menuCatalog = Object.freeze([
   { id: 'connection', icon: 'connection', label: 'ตรวจสอบการเชื่อมต่อ', description: 'ตรวจสอบเส้นทางเชื่อมต่อระบบส่วนกลาง', route: 'connection-test', shared: true },
   { id: 'account-security', icon: 'account', label: 'บัญชีและความปลอดภัย', description: 'เปลี่ยนรหัสผ่านและจัดการการเชื่อมโยงบัญชี', route: 'account-security', permissionsAny: ['session.authenticated'] },
   { id: 'vehicle-search', label: 'ค้นหายานพาหนะ', description: 'ค้นหาทะเบียนและข้อมูลผู้ประสานงาน', route: 'vehicle-search', permissionsAny: ['vehicle.lookup'] },
+  { id: 'registration-intake', icon: 'add', label: 'รับลงทะเบียนยานพาหนะ', description: 'บันทึกคำขอใหม่พร้อมข้อมูลและภาพหลักฐาน 5 ตำแหน่ง', route: 'registration-intake', permissionsAny: ['vehicle.registration.approve'] },
   { id: 'registration-review', icon: 'registration', label: 'ตรวจสอบการลงทะเบียน', description: 'พิจารณารายการที่รอตรวจสอบ', route: 'registration-review', permissionsAny: ['vehicle.registration.approve'] },
   { id: 'my-vehicles', label: 'ยานพาหนะของฉัน', description: 'ดูข้อมูลและส่งคำขอเปลี่ยนแปลง', permissionsAny: ['vehicle.change.submit'] },
   { id: 'user-admin', icon: 'users', label: 'ผู้ใช้และสิทธิ์', description: 'ตรวจสอบผู้ใช้ สถานะ บทบาท และสิทธิ์', route: 'user-directory', permissionsAny: ['users.manage'] },

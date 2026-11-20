@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-11-19T18:03:23.899Z",
+  "evidenceSlice": "registration-intake",
+  "appUrl": "http://127.0.0.1:4175/#/app/registrations/new",
+  "browser": "Microsoft Edge headless",
+  "cases": {
+    "desktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "รับลงทะเบียนยานพาหนะ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  ".badge"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>รับลงทะเบียนยานพาหนะ</span>"
+              },
+              {
+                "target": [
+                  ".alert > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6.mt-1"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "รับลงทะเบียนยานพาหนะ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": []
+      }
+    }
+  }
+}

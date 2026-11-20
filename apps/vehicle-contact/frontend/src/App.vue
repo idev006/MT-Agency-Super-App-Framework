@@ -8,6 +8,7 @@ import { organizationAdministrationRepositoryKey } from './application/organizat
 import { qrGovernanceRepositoryKey } from './application/qr/qr-governance-port.js'
 import { retentionRepositoryKey } from './application/retention/retention-port.js'
 import { registrationReviewRepositoryKey } from './application/registrations/registration-review-port.js'
+import { registrationIntakeRepositoryKey } from './application/registrations/registration-intake-port.js'
 import { systemSettingsRepositoryKey } from './application/settings/system-settings-port.js'
 import { vehicleSearchRepositoryKey } from './application/vehicles/vehicle-search-port.js'
 import { userDirectoryRepositoryKey } from './application/users/user-directory-port.js'
@@ -20,6 +21,7 @@ import { createGasOrganizationAdministrationRepository } from './infrastructure/
 import { createGasQrGovernanceRepository } from './infrastructure/qr/gas-qr-governance-repository.js'
 import { createGasRetentionRepository } from './infrastructure/retention/gas-retention-repository.js'
 import { createGasRegistrationReviewRepository } from './infrastructure/registrations/gas-registration-review-repository.js'
+import { createGasRegistrationIntakeRepository } from './infrastructure/registrations/gas-registration-intake-repository.js'
 import { createGasSystemSettingsRepository } from './infrastructure/settings/gas-system-settings-repository.js'
 import { useSessionStore } from './stores/session.js'
 import { useUiStore } from './stores/ui.js'
@@ -38,6 +40,7 @@ provide(systemSettingsRepositoryKey, createGasSystemSettingsRepository({ callOpe
 provide(qrGovernanceRepositoryKey, createGasQrGovernanceRepository({ callOperation: session.callProtected }))
 provide(retentionRepositoryKey, createGasRetentionRepository({ callOperation: session.callProtected }))
 provide(registrationReviewRepositoryKey, createGasRegistrationReviewRepository({ callOperation: session.callProtected }))
+provide(registrationIntakeRepositoryKey, createGasRegistrationIntakeRepository({ callPublicOperation: session.callPublic }))
 provide(auditRepositoryKey, createGasAuditRepository({ callOperation: session.callProtected }))
 </script>
 <template><RouterView /></template>

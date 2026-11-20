@@ -60,7 +60,7 @@ test('frontend gateway preflight allows configured development origin',async()=>
 test('frontend gateway rejects unknown origin and operations outside the POC allowlist',async()=>{
  let r=await worker.fetch(frontendRequest({},'https://evil.invalid','OPTIONS'),env());
  assert.equal(r.status,403);
- r=await worker.fetch(frontendRequest({apiVersion:'v1',group:'photos',action:'upload',payload:{},requestId:'frontend-test-01'}),env());
+ r=await worker.fetch(frontendRequest({apiVersion:'v1',group:'photos',action:'replace',payload:{},requestId:'frontend-test-01'}),env());
  assert.equal(r.status,403);
  assert.equal((await r.json()).error,'OPERATION_NOT_ALLOWED');
 });
@@ -134,6 +134,26 @@ test('frontend gateway allows registration review only through exact DTOs',async
   const denied=await worker.fetch(frontendRequest({apiVersion:'v1',group:'registrations',action:'review',payload:{requestId:'request-1',decision:'APPROVE',platePhotoVerified:true,roles:['SYSTEM_ADMIN']},requestId:'request_123',sessionToken:TOKEN}),env());
   assert.equal(denied.status,403);
   assert.equal((await denied.json()).error,'INVALID_OPERATION_PAYLOAD');
+ }finally{fake.restore();}
+});
+test('frontend gateway accepts bounded public campaign intake including a large image payload',async()=>{
+ const fake=await fakeGAS(body=>{
+  if(body.group==='campaigns')return envelope(true,{valid:true,campaignId:'campaign-1'});
+  if(body.group==='photos')return envelope(true,{photoId:'photo-1',slot:body.payload.slot});
+  return envelope(true,{requestId:'registration-1',vehicleId:'vehicle-1',status:'PENDING_APPROVAL'});
+ });
+ try{
+  const token='a'.repeat(64),base={apiVersion:'v1',requestId:'public_intake_01'};
+  let response=await worker.fetch(frontendRequest({...base,group:'campaigns',action:'validate',payload:{campaignToken:token}}),env());
+  assert.equal(response.status,200);
+  response=await worker.fetch(frontendRequest({...base,group:'photos',action:'upload',payload:{campaignToken:token,slot:'FRONT',base64Image:'a'.repeat(5000),mimeType:'image/png'}}),env());
+  assert.equal(response.status,200);
+  const photos=['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'].map((slot,index)=>({slot,photoId:'photo-'+index}));
+  response=await worker.fetch(frontendRequest({...base,group:'registrations',action:'submit',payload:{campaignToken:token,plate:'กข1234',province:'65',plateType:'PRIVATE',vehicleType:'CAR',brand:'Toyota',model:'Test',color:'ขาว',organizationId:'org-1',relationship:'OWNER',contactName:'Synthetic',contactPhone:'+66800000000',photos,idempotencyKey:'intake-idempotency-1'}}),env());
+  assert.equal(response.status,200);
+  assert.deepEqual(fake.calls.map(item=>item.group+'.'+item.action),['campaigns.validate','photos.upload','registrations.submit']);
+  const denied=await worker.fetch(frontendRequest({...base,group:'photos',action:'upload',payload:{campaignToken:token,slot:'UNKNOWN',base64Image:'aaaa',mimeType:'image/png'}}),env());
+  assert.equal(denied.status,403);
  }finally{fake.restore();}
 });
 test('access key is mandatory even for health and probes',async()=>{
