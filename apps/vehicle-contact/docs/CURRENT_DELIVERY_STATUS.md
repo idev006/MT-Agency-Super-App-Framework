@@ -1,7 +1,8 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
 **Last verified:** 2026-11-20 (Asia/Bangkok)  
-**Repository baseline:** `main` @ `7449309a96bb5717f04a922f11f6e699343aee99`  
+**Implementation/runtime evidence baseline before this docs-only reconciliation:** `main` @ `7449309a96bb5717f04a922f11f6e699343aee99`
+
 **Purpose:** compact continuation SSOT. Read this page first, then open only the linked evidence or active Issue needed for the next change.
 
 ## Runtime baseline
