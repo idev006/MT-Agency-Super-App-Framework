@@ -39,7 +39,7 @@ function mapPhotos(value, allowed) {
   }))
 }
 
-function mapVehicle(value, permissions) {
+export function mapVehicleResponse(value, permissions) {
   if (value === null) return null
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new VehicleSearchContractError()
   return {
@@ -56,7 +56,7 @@ function mapVehicle(value, permissions) {
   }
 }
 
-function mapHistory(value) {
+export function mapVehicleHistory(value) {
   if (!Array.isArray(value)) throw new VehicleSearchContractError()
   return value.map((item) => ({
     id: requiredText(item?.audit_id),
@@ -76,7 +76,7 @@ export function createGasVehicleSearchRepository({ callOperation }) {
         plate: String(criteria?.plate || '').trim(),
         province: String(criteria?.province || '').trim(),
       }, { signal })
-      const vehicle = mapVehicle(lookup.data, permissionSet)
+      const vehicle = mapVehicleResponse(lookup.data, permissionSet)
       if (!vehicle) {
         return { vehicle: null, history: [], requestIds: { lookup: lookup.requestId } }
       }
@@ -85,7 +85,7 @@ export function createGasVehicleSearchRepository({ callOperation }) {
       let historyRequestId = ''
       if (permissionSet.has(READ_HISTORY)) {
         const response = await callOperation('vehicles.history', { vehicleId: vehicle.vehicleId }, { signal })
-        history = mapHistory(response.data)
+        history = mapVehicleHistory(response.data)
         historyRequestId = response.requestId
       }
 

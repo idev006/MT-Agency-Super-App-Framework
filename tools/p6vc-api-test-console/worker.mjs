@@ -27,6 +27,9 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "registrations.listPending":[[],["limit","page","pageSize"]],
  "registrations.detail":[["requestId"],[]],
  "registrations.review":[["requestId","decision"],["platePhotoVerified"]],
+ "vehicles.lookup":[["plate","province"],[]],
+ "vehicles.history":[["vehicleId"],[]],
+ "qr.resolve":[["token"],[]],
  "qr.issue":[["vehicleId"],[]],"qr.revoke":[["vehicleId"],[]],"qr.replace":[["vehicleId"],[]],
  "system.config.get":[[],[]],"system.config.update":[["values"],[]],
  "retention.listDue":[[],["limit","page","pageSize"]],"retention.approve":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
@@ -112,6 +115,15 @@ function validFrontendEnvelope(input){
  if(operation==="auth.login"&&(typeof input.payload.username!=="string"||input.payload.username.length<1||input.payload.username.length>100||
    typeof input.payload.password!=="string"||input.payload.password.length<1||input.payload.password.length>128))return "INVALID_LOGIN_PAYLOAD";
  if(operation==="campaigns.validate"&&!/^[0-9a-f]{64}$/i.test(input.payload.campaignToken||""))return "INVALID_OPERATION_PAYLOAD";
+ if(operation==="vehicles.lookup"){
+  const p=input.payload;
+  if(typeof p.plate!=="string"||!p.plate.trim()||p.plate.length>64
+   ||typeof p.province!=="string"||!/^[A-Za-z0-9_-]{1,32}$/.test(p.province))
+   return "INVALID_OPERATION_PAYLOAD";
+ }
+ if(operation==="vehicles.history"&&(typeof input.payload.vehicleId!=="string"
+  ||!input.payload.vehicleId.trim()||input.payload.vehicleId.length>256))return "INVALID_OPERATION_PAYLOAD";
+ if(operation==="qr.resolve"&&!/^[0-9a-f]{64}$/i.test(input.payload.token||""))return "INVALID_OPERATION_PAYLOAD";
  if(operation==="registrations.submit"){
   const p=input.payload;
   if(!/^[0-9a-f]{64}$/i.test(p.campaignToken||"")||!Array.isArray(p.photos)||p.photos.length!==5

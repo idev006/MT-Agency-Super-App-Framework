@@ -136,6 +136,37 @@ test('frontend gateway allows registration review only through exact DTOs',async
   assert.equal((await denied.json()).error,'INVALID_OPERATION_PAYLOAD');
  }finally{fake.restore();}
 });
+test('frontend gateway allows authenticated vehicle lookup, history and QR resolution through exact DTOs',async()=>{
+ const fake=await fakeGAS(body=>envelope(true,{operation:body.group+'.'+body.action}));
+ try{
+  const base={apiVersion:'v1',requestId:'vehicle_journey_01',sessionToken:TOKEN};
+  for(const [group,action,payload] of [
+   ['vehicles','lookup',{plate:'กข 1234',province:'TH-65'}],
+   ['vehicles','history',{vehicleId:'vehicle-1'}],
+   ['qr','resolve',{token:'b'.repeat(64)}],
+  ]){
+   const response=await worker.fetch(frontendRequest({...base,group,action,payload}),env());
+   assert.equal(response.status,200);
+   assert.equal((await response.json()).ok,true);
+  }
+  assert.deepEqual(fake.calls.map(({group,action,payload})=>({operation:group+'.'+action,payload})),[
+   {operation:'vehicles.lookup',payload:{plate:'กข 1234',province:'TH-65'}},
+   {operation:'vehicles.history',payload:{vehicleId:'vehicle-1'}},
+   {operation:'qr.resolve',payload:{token:'b'.repeat(64)}},
+  ]);
+  for(const [group,action,payload,sessionToken] of [
+   ['vehicles','lookup',{plate:'กข 1234',province:'TH-65'},undefined],
+   ['vehicles','lookup',{plate:'กข 1234',province:'TH-65',role:'STAFF'},TOKEN],
+   ['vehicles','lookup',{plate:'',province:'TH-65'},TOKEN],
+   ['vehicles','history',{vehicleId:''},TOKEN],
+   ['qr','resolve',{token:'not-a-valid-qr'},TOKEN],
+  ]){
+   const response=await worker.fetch(frontendRequest({...base,group,action,payload,sessionToken}),env());
+   assert.equal(response.status,403);
+  }
+  assert.equal(fake.calls.length,3,'invalid requests must not reach GAS');
+ }finally{fake.restore();}
+});
 test('frontend gateway accepts bounded public campaign intake including a large image payload',async()=>{
  const fake=await fakeGAS(body=>{
   if(body.group==='campaigns')return envelope(true,{valid:true,campaignId:'campaign-1'});

@@ -8,7 +8,10 @@ const systemAdminNavigationEvidence = evidenceSlice === 'system-admin-navigation
 const systemAdminCompleteEvidence = evidenceSlice === 'system-admin-complete'
 const registrationReviewEvidence = evidenceSlice === 'registration-review'
 const registrationIntakeEvidence = evidenceSlice === 'registration-intake'
-const appUrl = process.env.P6VC_EVIDENCE_URL || (registrationIntakeEvidence
+const qrResolveEvidence = evidenceSlice === 'qr-resolve'
+const appUrl = process.env.P6VC_EVIDENCE_URL || (qrResolveEvidence
+  ? 'http://127.0.0.1:4173/#/app/vehicles/qr'
+  : registrationIntakeEvidence
   ? 'http://127.0.0.1:4173/#/app/registrations/new'
   : registrationReviewEvidence
   ? 'http://127.0.0.1:4173/#/app/registrations/review'
@@ -27,6 +30,8 @@ const evidenceDir = resolve(process.env.P6VC_EVIDENCE_DIR || (systemAdminNavigat
   ? '../docs/evidence/fe-registration-review-20261120'
   : registrationIntakeEvidence
   ? '../docs/evidence/fe-registration-intake-20261120'
+  : qrResolveEvidence
+  ? '../docs/evidence/fe-qr-resolve-20261120'
   : '../docs/evidence/fe-staff-vehicle-search-20261119'))
 const axeSource = await readFile(resolve('node_modules/axe-core/axe.min.js'), 'utf8')
 
@@ -145,6 +150,7 @@ const installFixture = `
       let data;
       if (operation === 'auth.session') data = ${JSON.stringify(sessionFixture)};
       else if (operation === 'vehicles.lookup') data = ${JSON.stringify(apiFixture)};
+      else if (operation === 'qr.resolve') data = ${JSON.stringify(apiFixture)};
       else if (operation === 'users.list') data = ${JSON.stringify(userFixture)};
       else if (operation === 'organizations.list') data = [{ organization_id: 'org-command', name: 'กองบัญชาการทดสอบ', org_type: 'POLICE', parent_id: '', status: 'ACTIVE' }];
       else if (operation === 'campaigns.list') data = [{ campaignId: 'campaign-1', startsAt: '2026-11-19T00:00:00.000Z', endsAt: '2026-12-19T00:00:00.000Z', maxSubmissions: 100, submittedCount: 3, status: 'ACTIVE' }];
@@ -303,7 +309,22 @@ async function screenshot(fileName, { fullPage = false } = {}) {
 await mkdir(evidenceDir, { recursive: true })
 const evidence = { generatedAt: new Date().toISOString(), evidenceSlice, appUrl, browser: 'Microsoft Edge headless', cases: {} }
 
-if (registrationIntakeEvidence) {
+if (qrResolveEvidence) {
+  const submitQr = async () => {
+    await evaluate(`(() => {
+      const input = document.querySelector('input[type="password"]');
+      const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+      setter.call(input, 'a'.repeat(64));
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.closest('form').requestSubmit();
+    })()`)
+    await waitUntil(`document.querySelector('#vehicle-result-title')`)
+  }
+  await setViewport(1440, 900); await navigate(); await setTheme('dark'); await submitQr()
+  evidence.cases.desktopDark = await auditPage(); await screenshot('qr-resolve-desktop-dark.png', { fullPage: true })
+  await setViewport(360, 800); await setTheme('corporate'); await submitQr()
+  evidence.cases.mobileCorporate = await auditPage(); await screenshot('qr-resolve-mobile-corporate.png', { fullPage: true })
+} else if (registrationIntakeEvidence) {
   await setViewport(1440, 900); await navigate(); await setTheme('dark')
   await waitUntil(`document.querySelector('input[type="file"]')`)
   evidence.cases.desktopDark = await auditPage(); await screenshot('registration-intake-desktop-dark.png', { fullPage: true })
@@ -413,7 +434,7 @@ const navigationFailed = systemAdminNavigationEvidence && (
   || evidence.navigationCoverage.plannedLinkCount !== 0
   || ['ค้นหายานพาหนะ', 'ตรวจสอบการลงทะเบียน', 'ยานพาหนะของฉัน'].some((label) => evidence.navigationCoverage.pageText.includes(label))
 )
-const refreshFailed = systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence || registrationReviewEvidence || registrationIntakeEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
+const refreshFailed = systemAdminEvidence || systemAdminNavigationEvidence || systemAdminCompleteEvidence || registrationReviewEvidence || registrationIntakeEvidence || qrResolveEvidence ? false : evidence.refreshPersistence.route !== '#/app/vehicles/search'
   || evidence.refreshPersistence.signInVisible
   || evidence.refreshPersistence.transport !== 'worker'
   || evidence.refreshPersistence.gasEndpoint !== gasPersistedEndpoint

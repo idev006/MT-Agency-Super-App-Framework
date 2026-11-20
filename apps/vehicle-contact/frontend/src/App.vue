@@ -11,8 +11,10 @@ import { registrationReviewRepositoryKey } from './application/registrations/reg
 import { registrationIntakeRepositoryKey } from './application/registrations/registration-intake-port.js'
 import { systemSettingsRepositoryKey } from './application/settings/system-settings-port.js'
 import { vehicleSearchRepositoryKey } from './application/vehicles/vehicle-search-port.js'
+import { qrResolveRepositoryKey } from './application/vehicles/qr-resolve-port.js'
 import { userDirectoryRepositoryKey } from './application/users/user-directory-port.js'
 import { createGasVehicleSearchRepository } from './infrastructure/vehicles/gas-vehicle-search-repository.js'
+import { createGasQrResolveRepository } from './infrastructure/vehicles/gas-qr-resolve-repository.js'
 import { createGasUserDirectoryRepository } from './infrastructure/users/gas-user-directory-repository.js'
 import { createGasAccountSecurityRepository } from './infrastructure/auth/gas-account-security-repository.js'
 import { createGasAuditRepository } from './infrastructure/audit/gas-audit-repository.js'
@@ -28,6 +30,9 @@ import { useUiStore } from './stores/ui.js'
 useUiStore()
 const session = useSessionStore()
 provide(vehicleSearchRepositoryKey, createGasVehicleSearchRepository({
+  callOperation: session.callProtected,
+}))
+provide(qrResolveRepositoryKey, createGasQrResolveRepository({
   callOperation: session.callProtected,
 }))
 provide(userDirectoryRepositoryKey, createGasUserDirectoryRepository({
