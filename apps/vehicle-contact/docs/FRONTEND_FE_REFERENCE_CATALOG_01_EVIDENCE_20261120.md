@@ -42,7 +42,7 @@ The slice uses the existing AppShell, PageTemplate and OperationalContextStrip. 
 | Mobile corporate browser evidence | PASS | Edge headless, 360x800, axe 0 violations, no horizontal overflow |
 | Real approved reference dataset | BLOCKED | Data Owner-approved values have not been supplied or seeded |
 | Authenticated live catalog content | NOT RUN | Avoided reading internal data before the migration/data approval gate |
-| Worker deployment | NOT RUN | Deploy only after commit/test evidence is fixed to a SHA |
+| Worker deployment | PASS | Version `277b4d77-dbe4-49f9-98a5-91405a1a1fe3`; text bindings declared in `wrangler.toml` |
 | Frontend Pages deployment | NOT RUN | Merge/deploy follows Worker compatibility deployment |
 
 Browser artifacts: [evidence/fe-reference-catalog-20261120](evidence/fe-reference-catalog-20261120/).
@@ -53,3 +53,11 @@ Browser artifacts: [evidence/fe-reference-catalog-20261120](evidence/fe-referenc
 - Real province, plate, vehicle, make/model, color and relationship data must not be guessed. A named Data Owner must approve the dataset before migration/seed and before enabling `ENFORCED`.
 - Worker deployment is backward compatible, but the frontend must not be released through the Worker path until that deployment is verified.
 - Public/anonymous catalog access remains out of scope; only authenticated assisted intake receives the protected catalog.
+
+## Worker deployment recovery evidence
+
+Two initial uploads omitted version-bound text variables and returned `GATEWAY_NOT_CONFIGURED`. Each was immediately rolled back to the last working version. No business request reached GAS during those failed probes. The non-secret bindings were then made explicit in `wrangler.toml`; passwords and access keys were not added. Final version `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` passed:
+
+- public health through Worker: HTTP 200, `ok=true`, Backend `0.5.0`;
+- protected reference request with a synthetic 64-character token: HTTP 200 logical `UNAUTHENTICATED` with matching request ID;
+- no authenticated catalog content and no write operation executed.
