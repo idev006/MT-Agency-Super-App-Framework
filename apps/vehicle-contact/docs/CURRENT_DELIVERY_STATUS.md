@@ -33,20 +33,19 @@ These are development facts, not production security, PDPA, UAT or release appro
 
 ### BLOCKED / HUMAN INPUT
 
-- The 2026-11-20 20:44 dry-run returned schema `0.3.0-draft`, one additive `CREATE_TABLE vc_reference_values` step, `blocked:[]`, `applied:false`, `status:DRY_RUN`. Preview gate PASS; the live spreadsheet has not been changed.
-- The guarded apply still requires explicit Project Owner approval. Until the table and approved data exist, the API/UI intentionally use explicit `LEGACY` mode and free text.
+- The 2026-11-20 20:59 guarded DEV apply returned schema `0.3.0-draft`, `status:APPLIED`, `backupCreated:true`. The 21:00 post-apply dry-run returned `steps:[]`, `blocked:[]`; schema migration and verification gates PASS.
+- The `vc_reference_values` structure now exists, but approved catalog rows do not. The API/UI intentionally remain in explicit `LEGACY` mode and free text until complete approved data is seeded.
 - A Data Owner-approved real catalog is still required. Do not guess province, plate, vehicle, make/model, color, relationship or organization values.
 - Production security/PDPA/UAT/release approval remains separate and open.
 
 ## Exact next actions
 
-1. If the Project Owner approves the observed one-table additive plan, set Script Property `VEHICLE_SCHEMA_MIGRATION_APPROVED=true`, run editor-only `applyVehicleSchemaFromEditor()`, capture only the sanitized status/schema version/backup-created result, then immediately disable the approval property.
-2. Run `migrateVehicleSchemaFromEditor()` again and confirm `steps:[]`, `blocked:[]`; if apply reports `RECOVERY_REQUIRED`, stop and inspect the Drive backup and migration journal instead of rerunning.
-3. Data Owner approves catalog values before any seed or `ENFORCED` mode. An empty `vc_reference_values` table remains `LEGACY` and does not validate unapproved values.
-4. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
-5. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
+1. Project Owner confirms Script Property `VEHICLE_SCHEMA_MIGRATION_APPROVED` was disabled/removed immediately after the successful apply.
+2. Data Owner reviews and approves catalog values and seed version before any rows are created or `ENFORCED` mode is considered. An empty `vc_reference_values` table remains `LEGACY` and does not validate unapproved values.
+3. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
+4. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
 
-Steps 1–3 and QR engineering may proceed independently; real catalog enforcement must wait for approved values and migration evidence.
+Steps 1–2 and QR engineering may proceed independently; real catalog enforcement must wait for approved values and seed evidence.
 
 ## QR WIP recovery
 
