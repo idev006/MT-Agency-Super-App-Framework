@@ -2,8 +2,10 @@
 
 **Document ID:** P6VC-HANDOVER-001  
 **Prepared:** 2026-11-17; **last reconciled:** 2026-11-20 (Asia/Bangkok)
-**GitHub baseline:** `main` @ `3cfcf0e46a904c1e936a071b48837cde4dfa17e5`
+**GitHub baseline:** `main` @ `7449309a96bb5717f04a922f11f6e699343aee99`
 **Purpose:** Restore project continuity when the original ChatGPT conversation cannot be opened. This is a **handover/index and evidence snapshot**, **not a replacement** for individual canonical design, requirements, decisions, live Issues or code. Refresh current commit/Issues/CI before making further changes.
+
+> Start with [Current Delivery Status / Resume Here](CURRENT_DELIVERY_STATUS.md). It is the compact continuation SSOT for current versions, active work, blockers and exact next actions. The remaining handover preserves historical context.
 
 ## 1. Project identity, purpose and active phase
 
@@ -110,6 +112,6 @@ When continuing work, report a table or concise structured summary with: `Work I
 
 ## 8. Ready-to-paste first message in a new chat
 
-> รับช่วงโครงการ **P6 Vehicle Contact** จาก GitHub SSOT `idev006/MT-Agency-Super-App-Framework` โดยเริ่มจาก `apps/vehicle-contact/docs/PROJECT_HANDOVER.md` แล้วตรวจ `main`, GitHub Issues, Roadmap, GAS source, workflows และหลักฐานล่าสุดจริงก่อนสรุป ไม่สร้างแผนแข่งขันกับ SSOT และไม่เปลี่ยนข้อกำหนดธุรกิจโดยพลการ รายงาน DONE-EVIDENCED / IN-PROGRESS / REVIEW / BLOCKED / TODO แยก source, deployment, live acceptance และ production approval ให้ชัด ปัจจุบัน baseline ที่ reconcile แล้วคือ `3cfcf0e`, GAS source Version 20, public Backend API `0.4.0`, STAFF search และ SYSTEM_ADMIN frontend slices; security/PDPA/UAT/release approval ยังเป็น gate แยกต่างหาก
+> รับช่วงโครงการ **P6 Vehicle Contact** จาก GitHub SSOT `idev006/MT-Agency-Super-App-Framework` โดยเริ่มจาก `apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md` แล้วตรวจ `main`, GitHub Issues และหลักฐานของ slice ที่จะทำ ไม่สร้างแผนแข่งขันกับ SSOT และไม่เปลี่ยนข้อกำหนดธุรกิจโดยพลการ รายงาน DONE-EVIDENCED / IN-PROGRESS / REVIEW / BLOCKED / TODO แยก source, deployment, live acceptance และ production approval ให้ชัด ปัจจุบัน baseline ที่ reconcile แล้วคือ `7449309`, GAS source Version 22, Backend API `0.5.0`, Frontend `0.6.0`; security/PDPA/UAT/release approval ยังเป็น gate แยกต่างหาก
 
 **Historical-chat note:** The earlier conversation was reportedly titled `MT-พัฒนาระบบตรวจสอบสิทธิ์จอด`; the exact chat/message ID and original chat's complete history were not independently recovered. This handover is grounded in versioned GitHub evidence, not a verbatim transcript of that chat.

@@ -1,0 +1,78 @@
+# P6 Vehicle Contact — Current Delivery Status / Resume Here
+
+**Last verified:** 2026-11-20 (Asia/Bangkok)  
+**Repository baseline:** `main` @ `7449309a96bb5717f04a922f11f6e699343aee99`  
+**Purpose:** compact continuation SSOT. Read this page first, then open only the linked evidence or active Issue needed for the next change.
+
+## Runtime baseline
+
+| Component | Verified development version | Evidence / endpoint |
+|---|---|---|
+| Frontend | `0.6.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44745036057](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44745036057) |
+| Cloudflare Worker | `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; health and fail-closed probes recorded in [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md) |
+| GAS Backend API | API `v1`, Backend `0.5.0`, source Version `22` | Push run [44701663467](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44701663467); Project Owner reported publishing Version 22; live health returned `ready` |
+
+These are development facts, not production security, PDPA, UAT or release approval.
+
+## Current delivery state
+
+### DONE-EVIDENCED
+
+- Shared Vue shell, persisted session/transport settings, permission-driven navigation and STAFF read-only vehicle search.
+- SYSTEM_ADMIN administration slices plus assisted registration intake and registration review.
+- Primary-journey plan and strict QR/vehicle read contracts through the Worker; manual authenticated QR resolver is delivered.
+- Protected registration reference-catalog contract: GAS `references.registration` -> Worker allowlist -> frontend Pinia/session cache -> assisted intake.
+- Unit/contract/build/audit, desktop/mobile, corporate/dark and accessibility evidence for Frontend `0.6.0`; see [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md).
+
+### IN-PROGRESS
+
+- [#61 Primary journey epic](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/61): registration -> approval -> QR/plate verification.
+- [#17 Operator screens](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/17): remaining unified detail/QR/device journey.
+- [#18 QR camera integration](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/18): local WIP exists but is **not merged or deployed**.
+
+### BLOCKED / HUMAN INPUT
+
+- The live spreadsheet has not been evidenced with the `vc_reference_values` worksheet. Until migration and approved data exist, the API/UI intentionally use explicit `LEGACY` mode and free text.
+- A Data Owner-approved real catalog is still required. Do not guess province, plate, vehicle, make/model, color, relationship or organization values.
+- Production security/PDPA/UAT/release approval remains separate and open.
+
+## Exact next actions
+
+1. Project Owner runs read-only `migrateVehicleSchemaFromEditor()` in Apps Script and shares the **sanitized preview only**; no migration is authorized by the preview.
+2. Data Owner approves the catalog values and migration plan; then perform the guarded additive migration with backup/journal/rollback evidence.
+3. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
+4. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
+
+Steps 1–2 and QR engineering may proceed independently; real catalog enforcement must wait for approved values and migration evidence.
+
+## QR WIP recovery
+
+The only current copy is local:
+
+```text
+stash@{0}: On codex/p6vc-qr-camera-scanner-20261120: wip: qr camera scanner before reference catalog
+```
+
+Safe continuation:
+
+```powershell
+git fetch origin main
+git switch -c codex/p6vc-qr-camera-scanner-resume origin/main
+git stash apply 'stash@{0}'
+```
+
+Resolve against current Frontend `0.6.0`, verify the diff, and do not drop the stash until the resumed changes are committed and pushed. Prior WIP evidence: pinned `html5-qrcode 2.3.8`, 12/12 focused tests, build and dependency audit passed; direct cleanup tests and physical Android/iOS evidence remain NOT RUN.
+
+## Credential and deployment guardrails
+
+- A Project Owner-managed DEV administrator credential exists out-of-band. Never copy its value into source, documentation, Issues, comments, logs or evidence.
+- Do not run a privileged login workflow without its explicit workflow confirmation. Do not publish credential-bearing output.
+- GAS source push still requires the exact owner phrase `PUSH_VEHICLE_GAS`; source version creation is not Web App publication.
+- Frontend authorization is never inferred from role names; navigation uses permissions returned by GAS, while GAS remains the authorization authority.
+
+## Resume checklist
+
+- Confirm `git status`, `origin/main` and the live Issue labels before work.
+- Use [#61](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/61) as the primary-journey epic and [Agile Kanban](AGILE_KANBAN.md) for live lane filters.
+- Open detailed evidence only for the slice being changed; do not re-read the full historical handover unless reconciling an old decision.
+- Record exact component versions, commit/PR, tests, deployment and residual blockers after every delivered slice.

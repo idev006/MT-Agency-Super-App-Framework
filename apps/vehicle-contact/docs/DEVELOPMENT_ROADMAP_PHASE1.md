@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — Phase 1 Development Roadmap & Work Breakdown
 
+> For current runtime versions, active work, blockers and exact continuation steps, start with [Current Delivery Status / Resume Here](CURRENT_DELIVERY_STATUS.md). This roadmap retains the longer milestone and governance context.
+
 **Document ID:** P6VC-PLAN-001  
 **Version:** 1.2.0 | **Baseline date:** 2026-11-17 | **Last reconciled:** 2026-11-20
 **Plan status:** ACTIVE PLANNING / NOT A COMMITTED RELEASE DATE  
