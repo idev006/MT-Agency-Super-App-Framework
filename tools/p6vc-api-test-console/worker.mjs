@@ -22,8 +22,9 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "campaigns.create":[["startsAt","endsAt","maxSubmissions"],[]],"campaigns.list":[[],["limit","page","pageSize"]],
  "campaigns.validate":[["campaignToken"],[]],
  "campaigns.revoke":[["campaignId"],[]],
+ "references.registration":[[],[]],
  "photos.upload":[["campaignToken","slot","base64Image","mimeType"],[]],
- "registrations.submit":[["campaignToken","plate","province","plateType","vehicleType","brand","model","color","organizationId","relationship","contactName","contactPhone","photos","idempotencyKey"],[]],
+ "registrations.submit":[["campaignToken","plate","province","plateType","vehicleType","brand","model","color","organizationId","relationship","contactName","contactPhone","photos","idempotencyKey"],["referenceVersion"]],
  "registrations.listPending":[[],["limit","page","pageSize"]],
  "registrations.detail":[["requestId"],[]],
  "registrations.review":[["requestId","decision"],["platePhotoVerified"]],
@@ -127,6 +128,7 @@ function validFrontendEnvelope(input){
  if(operation==="registrations.submit"){
   const p=input.payload;
   if(!/^[0-9a-f]{64}$/i.test(p.campaignToken||"")||!Array.isArray(p.photos)||p.photos.length!==5
+   ||(p.referenceVersion!==undefined&&!/^[0-9a-f]{64}$/i.test(p.referenceVersion))
    ||p.photos.some(photo=>!photo||typeof photo!=="object"||Object.keys(photo).some(key=>!["slot","photoId"].includes(key))
     ||!["FRONT","REAR","LEFT","RIGHT","FRONT_ANGLE"].includes(photo.slot)||typeof photo.photoId!=="string"||!photo.photoId))
    return "INVALID_OPERATION_PAYLOAD";

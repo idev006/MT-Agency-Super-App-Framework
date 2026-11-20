@@ -134,6 +134,20 @@ const sessionFixture = registrationReviewEvidence || registrationIntakeEvidence 
 const gasEvidenceEndpoint = 'https://script.google.com/macros/s/evidence-only/exec'
 const gasPersistedEndpoint = 'https://script.google.com/macros/s/persisted-evidence/exec'
 const workerEvidenceEndpoint = 'https://p6vc-evidence.example.workers.dev/api/frontend'
+const referenceFixture = {
+  mode: 'ADVISORY', version: 'a'.repeat(64),
+  lists: {
+    provinces: [{ code: 'BKK', label: 'กรุงเทพมหานคร' }, { code: 'CNX', label: 'เชียงใหม่' }],
+    plateTypes: [{ code: 'PRIVATE', label: 'รถยนต์ส่วนบุคคล' }],
+    vehicleTypes: [{ code: 'CAR', label: 'รถยนต์' }],
+    relationships: [{ code: 'OWNER', label: 'เจ้าของรถ' }],
+    brands: [{ code: 'TOYOTA', label: 'โตโยต้า' }],
+    models: [{ code: 'YARIS', label: 'ยาริส', parentCode: 'TOYOTA' }],
+    colors: [{ code: 'WHITE', label: 'ขาว' }, { code: 'BLACK', label: 'ดำ' }],
+  },
+  organizations: [{ code: 'org-command', label: 'กองบัญชาการทดสอบ' }],
+  policies: Object.fromEntries(['provinces', 'plateTypes', 'vehicleTypes', 'relationships', 'brands', 'models', 'colors', 'organizations'].map((key) => [key, 'ADVISORY'])),
+}
 
 const installFixture = `
   (() => {
@@ -148,7 +162,9 @@ const installFixture = `
       const request = JSON.parse(init.body || '{}');
       const operation = request.group + '.' + request.action;
       let data;
-      if (operation === 'auth.session') data = ${JSON.stringify(sessionFixture)};
+      if (operation === 'system.health') data = { service: 'p6-vehicle-contact', status: 'ready', apiVersion: 'v1', backendVersion: '0.5.0', releaseChannel: 'development' };
+      else if (operation === 'auth.session') data = ${JSON.stringify(sessionFixture)};
+      else if (operation === 'references.registration') data = ${JSON.stringify(referenceFixture)};
       else if (operation === 'vehicles.lookup') data = ${JSON.stringify(apiFixture)};
       else if (operation === 'qr.resolve') data = ${JSON.stringify(apiFixture)};
       else if (operation === 'users.list') data = ${JSON.stringify(userFixture)};

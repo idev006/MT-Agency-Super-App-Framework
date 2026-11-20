@@ -1,0 +1,192 @@
+{
+  "generatedAt": "2026-11-20T13:19:43.601Z",
+  "evidenceSlice": "registration-intake",
+  "appUrl": "http://127.0.0.1:4173/#/app/registrations/new",
+  "browser": "Microsoft Edge headless",
+  "cases": {
+    "desktopDark": {
+      "layout": {
+        "viewportWidth": 1440,
+        "viewportHeight": 900,
+        "documentClientWidth": 1425,
+        "documentScrollWidth": 1425,
+        "bodyScrollWidth": 1425,
+        "theme": "dark",
+        "title": "รับลงทะเบียนยานพาหนะ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  ".lg\\:grid > select[aria-label=\"ชุดสี มืด (dark)\"][value=\"dark\"]"
+                ],
+                "html": "<select class=\"select select-bordered min-h-11 w-full\" aria-label=\"ชุดสี มืด (dark)\" value=\"dark\">"
+              },
+              {
+                "target": [
+                  "div[role=\"status\"] > div > p:nth-child(1)"
+                ],
+                "html": "<p class=\"font-semibold\">รายการข้อมูลกลางพร้อมใช้ <span class=\"badge ml-2\">ADVISORY</span></p>"
+              },
+              {
+                "target": [
+                  ".ml-2"
+                ],
+                "html": "<span class=\"badge ml-2\">ADVISORY</span>"
+              },
+              {
+                "target": [
+                  ".text-xs.font-mono.text-base-content\\/60"
+                ],
+                "html": "<p class=\"font-mono text-xs text-base-content/60\">Reference aaaaaaaaaaaa</p>"
+              },
+              {
+                "target": [
+                  ".btn-sm"
+                ],
+                "html": "<button class=\"btn btn-ghost btn-sm\" type=\"button\">โหลดใหม่</button>"
+              },
+              {
+                "target": [
+                  ".field-stack:nth-child(2) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกจังหวัด</option><option value=\"BKK\">กรุงเทพมหานคร</option><option value=\"CNX\">เชียงใหม่</option></select>"
+              },
+              {
+                "target": [
+                  ".sm\\:grid-cols-2.xl\\:grid-cols-3.gap-4 > .field-stack:nth-child(3) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกประเภทป้าย</option><option value=\"PRIVATE\">รถยนต์ส่วนบุคคล</option></select>"
+              },
+              {
+                "target": [
+                  ".field-stack:nth-child(4) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกประเภทยานพาหนะ</option><option value=\"CAR\">รถยนต์</option></select>"
+              },
+              {
+                "target": [
+                  ".field-stack:nth-child(7) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกสี</option><option value=\"WHITE\">ขาว</option><option value=\"BLACK\">ดำ</option></select>"
+              },
+              {
+                "target": [
+                  ".sm\\:grid-cols-3 > .field-stack:nth-child(3) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกความสัมพันธ์</option><option value=\"OWNER\">เจ้าของรถ</option></select>"
+              },
+              {
+                "target": [
+                  ".badge-warning"
+                ],
+                "html": "<span class=\"badge badge-warning\">ระบบทดสอบ</span>"
+              },
+              {
+                "target": [
+                  ".router-link-active > span"
+                ],
+                "html": "<span>รับลงทะเบียนยานพาหนะ</span>"
+              },
+              {
+                "target": [
+                  ".alert-warning > div > strong"
+                ],
+                "html": "<strong class=\"font-medium\">สำหรับการพัฒนาเท่านั้น</strong>"
+              },
+              {
+                "target": [
+                  ".leading-6.mt-1"
+                ],
+                "html": "<p class=\"mt-1 leading-6\">ห้ามใช้ข้อมูลบุคคลจริงในสภาพแวดล้อมนี้</p>"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "mobileCorporate": {
+      "layout": {
+        "viewportWidth": 360,
+        "viewportHeight": 800,
+        "documentClientWidth": 360,
+        "documentScrollWidth": 360,
+        "bodyScrollWidth": 360,
+        "theme": "corporate",
+        "title": "รับลงทะเบียนยานพาหนะ — P6 Vehicle Contact",
+        "activeElement": "BODY"
+      },
+      "axe": {
+        "violations": [],
+        "incomplete": [
+          {
+            "id": "color-contrast",
+            "impact": "serious",
+            "nodes": [
+              {
+                "target": [
+                  "div[role=\"status\"] > div > p:nth-child(1)"
+                ],
+                "html": "<p class=\"font-semibold\">รายการข้อมูลกลางพร้อมใช้ <span class=\"badge ml-2\">ADVISORY</span></p>"
+              },
+              {
+                "target": [
+                  ".ml-2"
+                ],
+                "html": "<span class=\"badge ml-2\">ADVISORY</span>"
+              },
+              {
+                "target": [
+                  ".text-xs.font-mono.text-base-content\\/60"
+                ],
+                "html": "<p class=\"font-mono text-xs text-base-content/60\">Reference aaaaaaaaaaaa</p>"
+              },
+              {
+                "target": [
+                  ".btn-sm"
+                ],
+                "html": "<button class=\"btn btn-ghost btn-sm\" type=\"button\">โหลดใหม่</button>"
+              },
+              {
+                "target": [
+                  ".field-stack:nth-child(2) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกจังหวัด</option><option value=\"BKK\">กรุงเทพมหานคร</option><option value=\"CNX\">เชียงใหม่</option></select>"
+              },
+              {
+                "target": [
+                  ".sm\\:grid-cols-2.xl\\:grid-cols-3.gap-4 > .field-stack:nth-child(3) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกประเภทป้าย</option><option value=\"PRIVATE\">รถยนต์ส่วนบุคคล</option></select>"
+              },
+              {
+                "target": [
+                  ".field-stack:nth-child(4) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกประเภทยานพาหนะ</option><option value=\"CAR\">รถยนต์</option></select>"
+              },
+              {
+                "target": [
+                  ".field-stack:nth-child(7) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกสี</option><option value=\"WHITE\">ขาว</option><option value=\"BLACK\">ดำ</option></select>"
+              },
+              {
+                "target": [
+                  ".sm\\:grid-cols-3 > .field-stack:nth-child(3) > select"
+                ],
+                "html": "<select class=\"select select-bordered w-full\" required=\"\"><option disabled=\"\" value=\"\">เลือกความสัมพันธ์</option><option value=\"OWNER\">เจ้าของรถ</option></select>"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
