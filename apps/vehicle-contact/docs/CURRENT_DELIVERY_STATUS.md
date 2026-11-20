@@ -11,11 +11,11 @@
 |---|---|---|
 | Frontend | `0.6.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44745036057](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44745036057) |
 | Cloudflare Worker | `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; health and fail-closed probes recorded in [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md) |
-| GAS Backend API | API `v1`, Backend `0.5.0`, source Version `22` | Push run [44701663467](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44701663467); Project Owner reported publishing Version 22; live health returned `ready` |
+| GAS Backend API | Live API `v1`, Backend `0.5.0`; candidate source Version `24` contains Backend `0.6.0` | Seed-source push run [44826384253](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44826384253) passed from `e9afc6b`; Version 24 is not yet published to the Web App |
 
 These are development facts, not production security, PDPA, UAT or release approval.
 
-Backend `0.6.0` is a source candidate containing the approved seed-v1 manifest and editor-only automation. It is not pushed or published; live Backend remains `0.5.0`.
+Backend `0.6.0` is pushed as Apps Script source Version 24 with the approved seed-v1 manifest and editor-only automation. It is not yet published; live Backend remains `0.5.0`.
 
 ## Current delivery state
 
@@ -37,15 +37,15 @@ Backend `0.6.0` is a source candidate containing the approved seed-v1 manifest a
 
 - The 2026-11-20 20:59 guarded DEV apply returned schema `0.3.0-draft`, `status:APPLIED`, `backupCreated:true`. The 21:00 post-apply dry-run returned `steps:[]`, `blocked:[]`; schema migration and verification gates PASS.
 - The Project Owner confirmed the one-time migration approval property was disabled after use; no further schema write is authorized.
-- The `vc_reference_values` structure now exists, but approved catalog rows do not. The API/UI intentionally remain in explicit `LEGACY` mode and free text until complete approved data is seeded.
-- A Data Owner-approved real catalog is still required. Do not guess province, plate, vehicle, make/model, color, relationship or organization values.
+- The `vc_reference_values` structure exists and approved seed-v1 values are encoded in source, but no catalog row has been applied. The API/UI intentionally remain in explicit `LEGACY` mode and free text until the checksum-approved seed is executed.
 - Production security/PDPA/UAT/release approval remains separate and open.
 
 ## Exact next actions
 
-1. Review [Reference Catalog Seed v1 implementation evidence](REFERENCE_CATALOG_SEED_V1_EVIDENCE_20261121.md). GAS push and checksum-bound seed apply remain separately gated; an empty `vc_reference_values` table remains `LEGACY`.
-2. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
-3. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
+1. Project Owner publishes Apps Script source Version 24 as a new Web App version, then verifies public health reports Backend `0.6.0`.
+2. Run editor-only `previewVehicleReferenceSeedFromEditor()` and share only the sanitized status/count/checksum result. Checksum-bound seed apply remains separately gated; the empty `vc_reference_values` table remains `LEGACY`.
+3. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
+4. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
 
 Catalog review and QR engineering may proceed independently; real catalog enforcement must wait for approved values and seed evidence.
 
