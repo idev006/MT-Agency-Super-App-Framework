@@ -4,6 +4,7 @@
 **Created:** 2026-11-17 | **Last reconciled:** 2026-11-20 (Asia/Bangkok) | **Status:** OPERATIONAL ISSUE-BASED KANBAN; **NOT** a verified native GitHub Projects v2 board
 **Canonical planning document:** [Development Roadmap](DEVELOPMENT_ROADMAP_PHASE1.md)  
 **Primary journey epic:** [Registration-to-verification workflow](PRIMARY_WORKFLOW_DELIVERY_PLAN.md)
+**Compact continuation SSOT:** [Current Delivery Status / Resume Here](CURRENT_DELIVERY_STATUS.md)
 **Work-tracking source:** [GitHub Issues](https://github.com/idev006/MT-Agency-Super-App-Framework/issues) with stable issue IDs `VC-W01`–`VC-W31` plus P6VC engineering gates #38–#39. Actual issue state and `status:*` label supersede this document's historical snapshots.
 
 ## 1. Live Kanban lanes
@@ -12,8 +13,8 @@ These links query **live GitHub Issues** by label. To inspect all app tickets, s
 
 | Lane | Live GitHub filter | Reconciled count (2026-11-20) | Rule |
 |---|---|---:|---|
-| BACKLOG / TODO | [status:todo](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Atodo%22) | 5 | Requirements and dependencies understood, no active worker assigned |
-| IN PROGRESS | [status:in-progress](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ain-progress%22) | 1 | Work actually started, evidence/branch and next step recorded |
+| BACKLOG / TODO | [status:todo](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Atodo%22) | 4 | Requirements and dependencies understood, no active worker assigned |
+| IN PROGRESS | [status:in-progress](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ain-progress%22) | 3 | Work actually started, evidence/branch and next step recorded |
 | REVIEW / TEST | [status:review](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Areview%22) | 3 | Deliverable ready for technical/business review or tests, not yet accepted |
 | BLOCKED | [status:blocked](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Ablocked%22) | 16 | Missing approval, security/architecture proof, access or hard dependency |
 | DONE — EVIDENCED | [status:done-evidenced](https://github.com/idev006/MT-Agency-Super-App-Framework/issues?q=is%3Aissue+label%3A%22status%3Adone-evidenced%22) | 7 | Closed with evidence; scope-limited completion only |
@@ -40,7 +41,7 @@ The crosswalk above is the 2026-11-17 historical snapshot. Use the **live links 
 | Result | Work / evidence |
 |---|---|
 | DONE-EVIDENCED | `VC-W15` Vue shared shell and `VC-W16` login/session adapter: PRs [#45](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/45)–[#47](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/47), responsive/accessibility evidence and live session acceptance. Existing completed items remain `VC-W01`, `VC-W23`–`VC-W25`, `VC-W30`. |
-| IN-PROGRESS | `VC-W17`: intake, registration review and STAFF plate search are delivered and wired; QR scanner/resolve, unified detail and full deployed synthetic journey are not complete. |
+| IN-PROGRESS | `#61`, `VC-W17` and `VC-W18`: intake, registration review, STAFF plate search and manual QR resolve are delivered and wired; camera integration, unified detail and full deployed synthetic journey are not complete. |
 | REVIEW | `VC-W07`, `VC-W29`, `VC-W31`: data-dictionary approval, deployment governance reconciliation and the remaining secured/physical-device acceptance are still open. |
 | BLOCKED / guarded | `VC-W04` and `VC-W06` have implemented authentication/RBAC with automated and live development evidence, but remain blocked from DONE pending named security/policy approval. `VC-W11`–`VC-W14` contain substantial backend implementation but retain their security/privacy/release dependencies. |
 
@@ -79,7 +80,7 @@ Use the [Primary Workflow Delivery Plan](PRIMARY_WORKFLOW_DELIVERY_PLAN.md) as t
 
 ## 4. Prioritization and next sprint candidate
 
-**Immediate critical path:** [VC-W02](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/2) project owners → [VC-W04](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/4) auth provider → [VC-W05](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/5) non-bypassable GAS ingress → [VC-W06](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/6) RBAC → protected Backend groups. These are **blocked pending people/decisions**.
+**Immediate executable path:** read-only Sheet migration preview and approved reference data under [VC-W07](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/7)/[VC-W27](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/27), while [VC-W18](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/18) QR camera engineering continues independently. Then run the controlled synthetic Frontend → Worker → GAS journey under [#61](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/61). The production governance path through VC-W02/04/05/06 remains blocked pending named people/decisions and must not be bypassed.
 
 **Engineering work that can proceed with synthetic data in parallel:** [VC-W08](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/8) fake Sheets tests and [VC-W18](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/18) QR scanner integration under the [Primary Workflow Delivery Plan](PRIMARY_WORKFLOW_DELIVERY_PLAN.md). The Vue shell/login and intake/review/search source slices already exist; controlled deployed E2E remains separate. **VC-W10** Google Drive photo adapter depends on effective Drive sharing permissions and approved image-access model.
 
@@ -99,7 +100,7 @@ Every issue MUST include: specific user/business need; links to authoritative re
 
 Track weekly: total work items by live lane, throughput (# evidenced closed this week), cycle time (first in-progress to accepted), age of blocked items, WIP count, PR review lead time, CI pass/fail, defect reopen rate and critical security gate status. Compute from real issue history; do not fabricate baselines or completion percentages.
 
-**Historical snapshot (2026-11-17):** 29 initial work items plus later `VC-W30`–`VC-W31`. **Reconciled 2026-11-20 scope:** 31 `VC-W` items plus two P6VC engineering-gate issues (#38–#39). Live labels after reconciliation: 7 DONE-EVIDENCED, 1 IN-PROGRESS, 3 REVIEW, 16 BLOCKED, 5 TODO and 1 ON-HOLD. A development Web App is live at Backend API `0.4.0`; production/security/PDPA approval remains unconfirmed and must not be inferred.
+**Historical snapshot (2026-11-17):** 29 initial work items plus later `VC-W30`–`VC-W31`. **Reconciled 2026-11-20 scope:** 31 `VC-W` items plus two P6VC engineering-gate issues (#38–#39) and primary-journey epic #61. The 33 work/gate issues contain 7 DONE-EVIDENCED, 2 IN-PROGRESS, 3 REVIEW, 16 BLOCKED, 4 TODO and 1 ON-HOLD; #61 is the additional in-progress epic, so the live in-progress filter totals 3. A development Web App is live at Backend API `0.5.0`; production/security/PDPA approval remains unconfirmed and must not be inferred.
 
 ## 8. Native GitHub Projects board status
 
