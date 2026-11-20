@@ -180,11 +180,25 @@ test('frontend gateway accepts bounded public campaign intake including a large 
   response=await worker.fetch(frontendRequest({...base,group:'photos',action:'upload',payload:{campaignToken:token,slot:'FRONT',base64Image:'a'.repeat(5000),mimeType:'image/png'}}),env());
   assert.equal(response.status,200);
   const photos=['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'].map((slot,index)=>({slot,photoId:'photo-'+index}));
-  response=await worker.fetch(frontendRequest({...base,group:'registrations',action:'submit',payload:{campaignToken:token,plate:'กข1234',province:'65',plateType:'PRIVATE',vehicleType:'CAR',brand:'Toyota',model:'Test',color:'ขาว',organizationId:'org-1',relationship:'OWNER',contactName:'Synthetic',contactPhone:'+66800000000',photos,idempotencyKey:'intake-idempotency-1'}}),env());
+  response=await worker.fetch(frontendRequest({...base,group:'registrations',action:'submit',payload:{campaignToken:token,plate:'กข1234',province:'65',plateType:'PRIVATE',vehicleType:'CAR',brand:'Toyota',model:'Test',color:'ขาว',organizationId:'org-1',relationship:'OWNER',contactName:'Synthetic',contactPhone:'+66800000000',photos,idempotencyKey:'intake-idempotency-1',referenceVersion:'c'.repeat(64)}}),env());
   assert.equal(response.status,200);
   assert.deepEqual(fake.calls.map(item=>item.group+'.'+item.action),['campaigns.validate','photos.upload','registrations.submit']);
   const denied=await worker.fetch(frontendRequest({...base,group:'photos',action:'upload',payload:{campaignToken:token,slot:'UNKNOWN',base64Image:'aaaa',mimeType:'image/png'}}),env());
   assert.equal(denied.status,403);
+ }finally{fake.restore();}
+});
+test('frontend gateway allows protected registration references with an exact empty payload',async()=>{
+ const fake=await fakeGAS(()=>envelope(true,{mode:'LEGACY',version:'d'.repeat(64),lists:{},organizations:[],policies:{}}));
+ try{
+  const base={apiVersion:'v1',requestId:'reference_catalog_01',group:'references',action:'registration',payload:{},sessionToken:TOKEN};
+  let response=await worker.fetch(frontendRequest(base),env());
+  assert.equal(response.status,200);
+  assert.deepEqual(fake.calls.map(item=>item.group+'.'+item.action),['references.registration']);
+  response=await worker.fetch(frontendRequest({...base,sessionToken:undefined}),env());
+  assert.equal(response.status,403);
+  response=await worker.fetch(frontendRequest({...base,payload:{role:'SYSTEM_ADMIN'}}),env());
+  assert.equal(response.status,403);
+  assert.equal(fake.calls.length,1,'invalid reference requests must not reach GAS');
  }finally{fake.restore();}
 });
 test('access key is mandatory even for health and probes',async()=>{

@@ -1,5 +1,5 @@
 <script setup>
-import { provide } from 'vue'
+import { provide, watch } from 'vue'
 import { RouterView } from 'vue-router'
 import { accountSecurityRepositoryKey } from './application/auth/account-security-port.js'
 import { auditRepositoryKey } from './application/audit/audit-port.js'
@@ -9,6 +9,7 @@ import { qrGovernanceRepositoryKey } from './application/qr/qr-governance-port.j
 import { retentionRepositoryKey } from './application/retention/retention-port.js'
 import { registrationReviewRepositoryKey } from './application/registrations/registration-review-port.js'
 import { registrationIntakeRepositoryKey } from './application/registrations/registration-intake-port.js'
+import { registrationReferenceRepositoryKey } from './application/reference-data/registration-reference-port.js'
 import { systemSettingsRepositoryKey } from './application/settings/system-settings-port.js'
 import { vehicleSearchRepositoryKey } from './application/vehicles/vehicle-search-port.js'
 import { qrResolveRepositoryKey } from './application/vehicles/qr-resolve-port.js'
@@ -24,11 +25,26 @@ import { createGasQrGovernanceRepository } from './infrastructure/qr/gas-qr-gove
 import { createGasRetentionRepository } from './infrastructure/retention/gas-retention-repository.js'
 import { createGasRegistrationReviewRepository } from './infrastructure/registrations/gas-registration-review-repository.js'
 import { createGasRegistrationIntakeRepository } from './infrastructure/registrations/gas-registration-intake-repository.js'
+import { createGasRegistrationReferenceRepository } from './infrastructure/reference-data/gas-registration-reference-repository.js'
 import { createGasSystemSettingsRepository } from './infrastructure/settings/gas-system-settings-repository.js'
 import { useSessionStore } from './stores/session.js'
+import { useRegistrationReferenceStore } from './stores/registration-reference.js'
 import { useUiStore } from './stores/ui.js'
 useUiStore()
 const session = useSessionStore()
+const referenceData = useRegistrationReferenceStore()
+const registrationReferenceRepository = createGasRegistrationReferenceRepository({ callOperation: session.callProtected })
+referenceData.configure(registrationReferenceRepository)
+provide(registrationReferenceRepositoryKey, registrationReferenceRepository)
+watch(
+  () => [session.authenticated, session.sessionVerified, session.session?.userId, session.transport, session.endpoint],
+  ([authenticated, verified, userId, transport, endpoint]) => {
+    if (!authenticated) { referenceData.clear(); return }
+    if (!verified || !userId) return
+    referenceData.ensureLoaded({ userId, transport, endpoint }).catch(() => {})
+  },
+  { immediate: true },
+)
 provide(vehicleSearchRepositoryKey, createGasVehicleSearchRepository({
   callOperation: session.callProtected,
 }))

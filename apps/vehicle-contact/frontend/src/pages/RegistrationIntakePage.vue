@@ -1,15 +1,19 @@
 <script setup>
-import { computed, inject, reactive, ref } from 'vue'
+import { computed, inject, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { registrationIntakeRepositoryKey } from '../application/registrations/registration-intake-port.js'
 import ConfirmDialog from '../components/common/ConfirmDialog.vue'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
+import SearchableReferenceCombobox from '../features/reference-data/components/SearchableReferenceCombobox.vue'
 import { REGISTRATION_PHOTO_SLOTS, useRegistrationIntake } from '../features/registrations/useRegistrationIntake.js'
+import { useRegistrationReferenceStore } from '../stores/registration-reference.js'
 import { useSessionStore } from '../stores/session.js'
 
 const auth = useSessionStore()
 const { roles, permissions, session, transport } = storeToRefs(auth)
+const referenceData = useRegistrationReferenceStore()
+const { phase: referencePhase, failure: referenceFailure, lists, organizations, mode: referenceMode, version: referenceVersion } = storeToRefs(referenceData)
 const work = useRegistrationIntake({ repository: inject(registrationIntakeRepositoryKey), permissions })
 const campaignToken = ref('')
 const confirmationOpen = ref(false)
@@ -17,9 +21,26 @@ const files = reactive({})
 const fields = reactive({ plate: '', province: '', plateType: '', vehicleType: '', brand: '', model: '', color: '', organizationId: '', relationship: '', contactName: '', contactPhone: '' })
 const allPhotosReady = computed(() => REGISTRATION_PHOTO_SLOTS.every((slot) => files[slot.id] instanceof File))
 const busy = computed(() => ['validating', 'uploading', 'submitting'].includes(work.phase.value))
+const canonicalMode = computed(() => ['ADVISORY', 'ENFORCED'].includes(referenceMode.value))
+const models = computed(() => lists.value.models.filter(({ parentCode }) => parentCode === fields.brand))
 
 function selectFile(slot, event) { files[slot] = event.target.files?.[0] || null }
-async function confirmSubmit() { confirmationOpen.value = false; await work.submit({ campaignToken: campaignToken.value.trim(), fields: { ...fields }, files }) }
+async function confirmSubmit() {
+  confirmationOpen.value = false
+  const reference = canonicalMode.value ? { referenceVersion: referenceVersion.value } : {}
+  await work.submit({ campaignToken: campaignToken.value.trim(), fields: { ...fields, ...reference }, files })
+}
+function reconcileSelections() {
+  const allowed = (key, value) => !value || lists.value[key].some(({ code }) => code === value)
+  for (const [field, key] of [['province', 'provinces'], ['plateType', 'plateTypes'], ['vehicleType', 'vehicleTypes'], ['relationship', 'relationships'], ['brand', 'brands'], ['color', 'colors']]) {
+    if (!allowed(key, fields[field])) fields[field] = ''
+  }
+  if (fields.model && !models.value.some(({ code }) => code === fields.model)) fields.model = ''
+  if (fields.organizationId && !organizations.value.some(({ code }) => code === fields.organizationId)) fields.organizationId = ''
+}
+async function reloadReferences() { try { await referenceData.reload(); reconcileSelections() } catch {} }
+watch(() => fields.brand, (value, previous) => { if (previous && value !== previous) fields.model = '' })
+watch(referenceVersion, reconcileSelections)
 </script>
 
 <template>
@@ -28,9 +49,13 @@ async function confirmSubmit() { confirmationOpen.value = false; await work.subm
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
 
     <div v-if="!work.canReceive.value" class="alert alert-warning">เซสชันนี้ไม่มีสิทธิ์รับลงทะเบียนยานพาหนะ</div>
+    <div v-else-if="referencePhase === 'idle' || referencePhase === 'loading'" class="alert alert-info" role="status"><span class="loading loading-spinner loading-sm"></span><span>กำลังโหลดรายการสำหรับรับลงทะเบียน</span></div>
+    <div v-else-if="referencePhase === 'error'" class="alert alert-error" role="alert"><div><p class="font-semibold">โหลดรายการสำหรับรับลงทะเบียนไม่สำเร็จ</p><p class="text-sm">รหัสข้อผิดพลาด {{ referenceFailure?.code || 'REFERENCE_DATA_UNAVAILABLE' }}</p></div><button class="btn btn-sm" type="button" @click="reloadReferences">ลองอีกครั้ง</button></div>
     <div v-else-if="work.phase.value === 'success'" class="card card-border bg-base-100"><div class="card-body"><span class="badge badge-success">ส่งคำขอแล้ว</span><h2 class="card-title text-2xl">คำขอเข้าสู่คิวตรวจสอบ</h2><p>รหัสคำขอ <strong class="break-all">{{ work.result.value.requestId }}</strong></p><p class="text-sm text-base-content/70">รหัสยานพาหนะ {{ work.result.value.vehicleId }}</p><div class="card-actions mt-3"><button class="btn btn-primary" type="button" @click="work.reset">รับลงทะเบียนรายการถัดไป</button><RouterLink class="btn" :to="{ name: 'registration-review' }">เปิดคิวตรวจสอบ</RouterLink></div></div></div>
 
     <form v-else class="space-y-6" @submit.prevent="confirmationOpen = true">
+      <div v-if="referenceMode === 'LEGACY'" class="alert alert-warning" role="status"><div><p class="font-semibold">ยังไม่ได้เปิดใช้รายการข้อมูลกลาง</p><p class="text-sm">ระบบใช้ช่องกรอกแบบเดิมชั่วคราวและจะไม่ส่ง reference version จนกว่าข้อมูลกลางจะพร้อม</p></div></div>
+      <div v-else class="alert border-base-300 bg-base-100" role="status"><div><p class="font-semibold">รายการข้อมูลกลางพร้อมใช้ <span class="badge ml-2">{{ referenceMode }}</span></p><p class="font-mono text-xs text-base-content/60">Reference {{ referenceVersion.slice(0, 12) }}</p></div><button class="btn btn-ghost btn-sm" type="button" @click="reloadReferences">โหลดใหม่</button></div>
       <fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-5 sm:p-6">
         <legend class="fieldset-legend text-lg font-semibold">1. แคมเปญรับลงทะเบียน</legend>
         <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
@@ -44,13 +69,13 @@ async function confirmSubmit() { confirmationOpen.value = false; await work.subm
         <legend class="fieldset-legend text-lg font-semibold">2. ข้อมูลยานพาหนะ</legend>
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <label class="field-stack"><span class="label-text font-semibold">เลขทะเบียน</span><input v-model.trim="fields.plate" class="input input-bordered w-full" required maxlength="24" /></label>
-          <label class="field-stack"><span class="label-text font-semibold">รหัสจังหวัด</span><input v-model.trim="fields.province" class="input input-bordered w-full" required maxlength="32" /></label>
-          <label class="field-stack"><span class="label-text font-semibold">ประเภทป้าย</span><input v-model.trim="fields.plateType" class="input input-bordered w-full" required maxlength="100" /></label>
-          <label class="field-stack"><span class="label-text font-semibold">ประเภทยานพาหนะ</span><input v-model.trim="fields.vehicleType" class="input input-bordered w-full" required maxlength="100" /></label>
-          <label class="field-stack"><span class="label-text font-semibold">ยี่ห้อ</span><input v-model.trim="fields.brand" class="input input-bordered w-full" required maxlength="100" /></label>
-          <label class="field-stack"><span class="label-text font-semibold">รุ่น</span><input v-model.trim="fields.model" class="input input-bordered w-full" required maxlength="100" /></label>
-          <label class="field-stack"><span class="label-text font-semibold">สี</span><input v-model.trim="fields.color" class="input input-bordered w-full" required maxlength="100" /></label>
-          <label class="field-stack"><span class="label-text font-semibold">รหัสหน่วยงาน</span><input v-model.trim="fields.organizationId" class="input input-bordered w-full" required maxlength="100" /></label>
+          <label class="field-stack"><span class="label-text font-semibold">จังหวัดของทะเบียน</span><select v-if="canonicalMode" v-model="fields.province" class="select select-bordered w-full" required><option disabled value="">เลือกจังหวัด</option><option v-for="item in lists.provinces" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.province" class="input input-bordered w-full" required maxlength="32" /></label>
+          <label class="field-stack"><span class="label-text font-semibold">ประเภทป้าย</span><select v-if="canonicalMode" v-model="fields.plateType" class="select select-bordered w-full" required><option disabled value="">เลือกประเภทป้าย</option><option v-for="item in lists.plateTypes" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.plateType" class="input input-bordered w-full" required maxlength="100" /></label>
+          <label class="field-stack"><span class="label-text font-semibold">ประเภทยานพาหนะ</span><select v-if="canonicalMode" v-model="fields.vehicleType" class="select select-bordered w-full" required><option disabled value="">เลือกประเภทยานพาหนะ</option><option v-for="item in lists.vehicleTypes" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.vehicleType" class="input input-bordered w-full" required maxlength="100" /></label>
+          <label class="field-stack"><span class="label-text font-semibold">ยี่ห้อ</span><SearchableReferenceCombobox v-if="canonicalMode && lists.brands.length" v-model="fields.brand" label="ยี่ห้อ" :options="lists.brands" required /><input v-else v-model.trim="fields.brand" class="input input-bordered w-full" required maxlength="100" /><span v-if="canonicalMode && !lists.brands.length" class="label-text-alt">ยังไม่มีรายการยี่ห้อ จึงใช้ข้อความตามข้อมูลเดิม</span></label>
+          <label class="field-stack"><span class="label-text font-semibold">รุ่น</span><SearchableReferenceCombobox v-if="canonicalMode && lists.models.length && (!fields.brand || models.length)" v-model="fields.model" label="รุ่น" :options="models" :disabled="!fields.brand" required /><input v-else v-model.trim="fields.model" class="input input-bordered w-full" required maxlength="100" /><span v-if="canonicalMode && lists.models.length && !fields.brand" class="label-text-alt">เลือกยี่ห้อก่อนเพื่อแสดงรุ่นที่เกี่ยวข้อง</span><span v-else-if="canonicalMode && !models.length" class="label-text-alt">ยังไม่มีรุ่นสำหรับยี่ห้อนี้ จึงใช้ข้อความตามข้อมูลเดิม</span></label>
+          <label class="field-stack"><span class="label-text font-semibold">สี</span><select v-if="canonicalMode && lists.colors.length" v-model="fields.color" class="select select-bordered w-full" required><option disabled value="">เลือกสี</option><option v-for="item in lists.colors" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.color" class="input input-bordered w-full" required maxlength="100" /><span v-if="canonicalMode && !lists.colors.length" class="label-text-alt">ยังไม่มีรายการสี จึงใช้ข้อความตามข้อมูลเดิม</span></label>
+          <label class="field-stack"><span class="label-text font-semibold">หน่วยงาน</span><SearchableReferenceCombobox v-if="canonicalMode" v-model="fields.organizationId" label="หน่วยงาน" :options="organizations" required /><input v-else v-model.trim="fields.organizationId" class="input input-bordered w-full" required maxlength="100" /></label>
         </div>
       </fieldset>
 
@@ -59,7 +84,7 @@ async function confirmSubmit() { confirmationOpen.value = false; await work.subm
         <div class="grid gap-4 sm:grid-cols-3">
           <label class="field-stack"><span class="label-text font-semibold">ชื่อผู้ประสานงาน</span><input v-model.trim="fields.contactName" class="input input-bordered w-full" required maxlength="200" /></label>
           <label class="field-stack"><span class="label-text font-semibold">โทรศัพท์รูปแบบสากล</span><input v-model.trim="fields.contactPhone" class="input input-bordered w-full" type="tel" required pattern="\+[1-9][0-9]{6,14}" placeholder="+66812345678" /></label>
-          <label class="field-stack"><span class="label-text font-semibold">ความสัมพันธ์กับรถ</span><input v-model.trim="fields.relationship" class="input input-bordered w-full" required maxlength="100" /></label>
+          <label class="field-stack"><span class="label-text font-semibold">ความสัมพันธ์กับรถ</span><select v-if="canonicalMode" v-model="fields.relationship" class="select select-bordered w-full" required><option disabled value="">เลือกความสัมพันธ์</option><option v-for="item in lists.relationships" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.relationship" class="input input-bordered w-full" required maxlength="100" /></label>
         </div>
       </fieldset>
 
@@ -74,6 +99,7 @@ async function confirmSubmit() { confirmationOpen.value = false; await work.subm
       <div v-if="work.phase.value === 'uploading'" class="alert alert-info" role="status"><span class="loading loading-spinner loading-sm"></span><span>กำลังอัปโหลดภาพ {{ Object.keys(work.uploaded.value).length }} / 5</span></div>
       <div v-else-if="work.phase.value === 'submitting'" class="alert alert-info" role="status"><span class="loading loading-spinner loading-sm"></span><span>กำลังส่งคำขอลงทะเบียน</span></div>
       <div v-else-if="work.phase.value === 'uncertain'" class="alert alert-warning">ไม่ทราบผลแน่ชัด ห้ามส่งซ้ำทันที ให้จด Request ID และตรวจสอบกับเจ้าหน้าที่สนับสนุน</div>
+      <div v-else-if="work.phase.value === 'error' && work.failure.value?.code === 'REFERENCE_VERSION_STALE'" class="alert alert-warning"><div><p class="font-semibold">รายการข้อมูลกลางมีการปรับปรุง</p><p class="text-sm">โหลดรายการใหม่ ตรวจสอบค่าที่เลือก แล้วกดส่งคำขออีกครั้ง ระบบจะไม่ส่งซ้ำอัตโนมัติ</p></div><button class="btn btn-sm" type="button" @click="reloadReferences">โหลดรายการใหม่</button></div>
       <div v-else-if="work.phase.value === 'error'" class="alert alert-error"><span>ส่งคำขอไม่สำเร็จ ({{ work.failure.value?.code }})</span></div>
 
       <div class="flex justify-end"><button class="btn btn-primary min-h-11" type="submit" :disabled="busy || !allPhotosReady || campaignToken.length !== 64">ตรวจทานและส่งคำขอ</button></div>
