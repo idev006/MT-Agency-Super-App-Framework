@@ -43,7 +43,7 @@ Authoritative operation names: [API inventory](../../contracts/api-inventory.v1.
 
 ## Schema and migration
 
-The canonical [database.schema.json](../../schema/database.schema.json) has a **0.2.0-draft physical extension** with 24 tabs and append-only columns, based on existing approved business requirements. It has **not** been applied to the user's production spreadsheet. The Infrastructure-owned editor-only migration executor performs a pre-change Drive backup, Script Properties journal, additive table/header changes and post-change header comparison. Any drift requiring destructive changes is blocked. Details: [GAS migration runbook](../../docs/GAS_MIGRATION_RUNBOOK.md).
+The canonical [database.schema.json](../../schema/database.schema.json) has a **0.3.0-draft physical extension** with 25 tabs and append-only columns, based on existing approved business requirements. It has **not** been applied to the user's production spreadsheet. The Infrastructure-owned editor-only migration executor performs a pre-change Drive backup, Script Properties journal, additive table/header changes and post-change header comparison. Any drift requiring destructive changes is blocked. Details: [GAS migration runbook](../../docs/GAS_MIGRATION_RUNBOOK.md).
 
 GAS Editor entrypoints:
 - `verifyVehicleSchemaFromEditor`, `inspectVehicleSchemaDriftFromEditor`, `proposeVehicleSchemaChangeFromEditor`

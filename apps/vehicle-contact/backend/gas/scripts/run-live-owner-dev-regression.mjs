@@ -164,6 +164,11 @@ async function run(){
  await test('CAMPAIGNS.VALIDATE','campaigns.validate',async()=>{
   assert.equal(ok(await request('campaigns.validate',{campaignToken:state.campaign.campaignToken})).valid,true);
  });
+ await test('REFERENCES.REGISTRATION','references.registration',async()=>{
+  const catalog=ok(await request('references.registration',{},state.tokens.reg));
+  assert.ok(['LEGACY','ADVISORY','ENFORCED'].includes(catalog.mode));
+  assert.equal(typeof catalog.version,'string');
+ });
  for(const slot of ['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'])await test('PHOTOS.UPLOAD.'+slot,'photos.upload',async()=>{
   const data=ok(await request('photos.upload',{campaignToken:state.campaign.campaignToken,slot,base64Image:png,mimeType:'image/png'}));
   state.photos.push({slot,photoId:data.photoId});

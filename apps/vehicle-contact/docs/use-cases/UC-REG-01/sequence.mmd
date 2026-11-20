@@ -3,8 +3,15 @@ sequenceDiagram
   actor Registrant
   participant FE as Vue Registration Form
   participant API as GAS API
+  participant Ref as ReferenceOperations
   participant Reg as VehicleOperations
   participant DB as Google Sheets
+  opt Assisted intake with verified admin session
+    FE->>API: references.registration
+    API->>Ref: Require vehicle.registration.approve
+    Ref->>DB: Read active canonical values and organizations
+    Ref-->>FE: mode, version, lists, policies
+  end
   Registrant->>FE: Submit vehicle, contact, five photoIds, idempotencyKey
   FE->>API: registrations.submit(payload,campaignToken)
   API->>Reg: Validate DTO and business fields

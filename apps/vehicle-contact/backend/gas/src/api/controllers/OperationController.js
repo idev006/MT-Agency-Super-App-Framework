@@ -5,12 +5,14 @@ import {createIdentityOperations} from '../../application/use-cases/IdentityOper
 import {createAdministrationOperations} from '../../application/use-cases/AdministrationOperations.js';
 import {createVehicleOperations} from '../../application/use-cases/VehicleOperations.js';
 import {createMediaRetentionOperations} from '../../application/use-cases/MediaRetentionOperations.js';
+import {createReferenceOperations} from '../../application/use-cases/ReferenceOperations.js';
 const permissions={
  'system.config.get':'system.settings.read','system.config.update':'system.settings.manage',
  'auth.changePassword':'session.authenticated','auth.logout':'session.authenticated','auth.session':'session.authenticated','auth.linkGoogle':'session.authenticated',
  'users.create':'users.manage','users.list':'users.manage','users.update':'users.manage','users.suspend':'users.manage','users.resetPassword':'users.manage','users.assignRoles':'users.manage',
  'organizations.list':'organizations.read','organizations.create':'organizations.manage','organizations.update':'organizations.manage','organizations.disable':'organizations.manage',
  'campaigns.create':'campaigns.manage','campaigns.list':'campaigns.manage','campaigns.revoke':'campaigns.manage',
+ 'references.registration':'vehicle.registration.approve',
  'registrations.listPending':'vehicle.registration.approve','registrations.detail':'vehicle.registration.approve','registrations.review':'vehicle.registration.approve',
  'vehicles.lookup':'vehicle.lookup','vehicles.detail':'vehicle.lookup','vehicles.update':'vehicle.update','vehicles.cancel':'vehicle.update','vehicles.history':'vehicle.history.read',
  'contacts.read':'vehicle.contact.read','contacts.update':'vehicle.update',
@@ -33,18 +35,20 @@ const safeErrors=new Set([
  'INVALID_QR','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
  'DELETION_NOT_AUTHORIZED','DELETION_RETRY_REQUIRED','BUSY','SCHEMA_MISMATCH','MISSING_TABLE','IDLE_POLICY_NOT_CONFIGURED',
  'INVALID_LIMIT','INVALID_PAGINATION','NO_CHANGES','ORGANIZATION_INACTIVE','PARENT_NOT_FOUND','INVALID_ORG_TYPE','INVALID_ORG_PARENT',
- 'SELF_DEMOTION_DENIED','SELF_ROLE_EXPANSION_DENIED','SELF_SUSPEND_DENIED','RETENTION_POLICY_NOT_CONFIGURED','OPERATION_DISABLED','OPERATION_RECOVERY_REQUIRED'
+ 'SELF_DEMOTION_DENIED','SELF_ROLE_EXPANSION_DENIED','SELF_SUSPEND_DENIED','RETENTION_POLICY_NOT_CONFIGURED','OPERATION_DISABLED','OPERATION_RECOVERY_REQUIRED',
+ 'REFERENCE_DATA_INVALID','REFERENCE_DATA_BOUNDS','REFERENCE_VERSION_STALE','INVALID_REFERENCE_VALUE'
 ]);
 export function createOperationController({store,security,sessions,drivePhotos,allowDestructiveRetention=false}) {
  const admin=createAdministrationOperations({store,security});
+ const references=createReferenceOperations({store,security});
  const handlers={
-  ...createIdentityOperations({store,security,sessions}),...admin,
-  ...createVehicleOperations({store,security,campaigns:admin}),
+  ...createIdentityOperations({store,security,sessions}),...admin,'references.registration':references['references.registration'],
+  ...createVehicleOperations({store,security,campaigns:admin,references}),
   ...createMediaRetentionOperations({store,security,drivePhotos,campaigns:admin,allowDestructiveRetention})
  };
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
- if(entries.length!==49||DTO_OPERATIONS.length!==49||entries.some(op=>!DTO_OPERATIONS.includes(op))
+ if(entries.length!==50||DTO_OPERATIONS.length!==50||entries.some(op=>!DTO_OPERATIONS.includes(op))
   ||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
   throw new Error('INCOMPLETE_API_DISPATCH');
  function dispatch(request){

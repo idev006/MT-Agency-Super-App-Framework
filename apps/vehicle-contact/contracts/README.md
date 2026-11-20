@@ -5,6 +5,7 @@
 ## Source files
 
 - [api-inventory.v1.json](api-inventory.v1.json) — machine-readable proposed API groups, actions, tracking IDs and implementation/test states.
+- [error-catalog.v1.json](error-catalog.v1.json) — machine-readable safe client error codes and retry guidance.
 - [../docs/APPROVED_REQUIREMENTS_BASELINE_R01_R26.md](../docs/APPROVED_REQUIREMENTS_BASELINE_R01_R26.md) — approved business requirements and actor decisions.
 - [../docs/GAS_API_SPEC.md](../docs/GAS_API_SPEC.md) — **currently deployed bootstrap behavior only**, not the complete target API.
 - [../backend/gas/src/api/routes/Router.js](../backend/gas/src/api/routes/Router.js) — actual public GAS ingress allowlist.

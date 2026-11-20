@@ -1,5 +1,5 @@
 // Google Apps Script Editor-only REAL staging probes. Not routed by doGet/doPost.
-// All reads/writes are explicitly pinned to an isolated synthetic 24-tab spreadsheet.
+// All reads/writes are explicitly pinned to the isolated synthetic canonical spreadsheet.
 import {createApplication} from '../../composition/Container.js';
 import {createSheetStore} from '../persistence/sheets/SheetStore.js';
 const SANDBOX_ID='1kmUaBUC8slFICGLzxpNEUBsU87Sf-tnfe32AUs208As';
@@ -10,7 +10,7 @@ const PNG='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCA
 const ROLES=['test_sysadmin','test_registration','test_staff','test_owner','test_worker','test_firstlogin'];
 function validateSandbox(spreadsheetApp) {
  const book=spreadsheetApp.openById(SANDBOX_ID);
- if(book.getName()!==SANDBOX_LABEL||book.getSheets().length!==24)
+ if(book.getName()!==SANDBOX_LABEL||book.getSheets().length!==25)
   throw new Error('SANDBOX_ID_OR_SCHEMA_GUARD_FAILED');
  const users=book.getSheetByName('vc_users');
  if(!users||users.getLastRow()<7)throw new Error('SANDBOX_TEST_USERS_MISSING');

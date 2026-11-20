@@ -1,6 +1,6 @@
 import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition} from '../../domain/policies/VehicleLifecycle.js';
 import {paginate} from '../pagination/Pagination.js';
-export function createVehicleOperations({store,security,campaigns}) {
+export function createVehicleOperations({store,security,campaigns,references}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
  const phone=v=>{if(typeof v!=='string'||!/^\+[1-9][0-9]{6,14}$/.test(v))throw new Error('INVALID_PHONE_E164');return v;};
@@ -38,6 +38,7 @@ export function createVehicleOperations({store,security,campaigns}) {
   const idem=need(p.idempotencyKey,'IDEMPOTENCY_KEY',100);
   const digest=security.sha256(JSON.stringify({...p,campaignToken:undefined}));
   return store.withLock(()=>{
+   references.assertRegistration(p);
    const campaign=campaigns.getCampaign(p.campaignToken,{requireCapacity:false});
    const idemKey=security.sha256('registration:'+campaign.campaign_id+':'+idem);
    const old=store.one('vc_idempotency',{key:idemKey});
