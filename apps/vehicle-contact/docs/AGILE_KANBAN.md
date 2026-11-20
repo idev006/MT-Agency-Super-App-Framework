@@ -58,6 +58,7 @@ Delivery evidence since the initial snapshot:
 - The explicitly gated 20:59 DEV apply then returned `APPLIED` with backup created; the 21:00 post-apply dry-run returned no steps and no blockers. `VC-W27` moved from BLOCKED to REVIEW. Catalog content approval remains open under `VC-W07`.
 - Reference Seed v1 source was merged in PR [#72](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/72). Manual workflow [44826384253](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44826384253) pushed the tested Backend `0.6.0` artifact and created GAS source Version 24; Web App publication, live preview and checksum-bound seed apply remain separate gates.
 - Brand/default refinement was merged in PR [#75](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/75). Manual workflow [44831990140](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44831990140) pushed Backend `0.7.0` with the 645-row manifest and created GAS source Version 25; Web App publication, live preview and checksum-bound seed apply remain separate gates.
+- The Project Owner published Web App **Version 26** on 2026-11-21 05:55. Credential-free `system.health` probes (direct GAS and Worker -> GAS) both returned Backend `0.7.0`, `status:ready`; publication gate PASS. Live seed preview and checksum-bound apply remain open under `VC-W07`.
 
 ### Primary journey execution order
 
@@ -104,7 +105,7 @@ Every issue MUST include: specific user/business need; links to authoritative re
 
 Track weekly: total work items by live lane, throughput (# evidenced closed this week), cycle time (first in-progress to accepted), age of blocked items, WIP count, PR review lead time, CI pass/fail, defect reopen rate and critical security gate status. Compute from real issue history; do not fabricate baselines or completion percentages.
 
-**Historical snapshot (2026-11-17):** 29 initial work items plus later `VC-W30`–`VC-W31`. **Reconciled 2026-11-20 scope:** 31 `VC-W` items plus two P6VC engineering-gate issues (#38–#39) and primary-journey epic #61. The 33 work/gate issues contain 7 DONE-EVIDENCED, 2 IN-PROGRESS, 4 REVIEW, 15 BLOCKED, 4 TODO and 1 ON-HOLD; #61 is the additional in-progress epic, so the live in-progress filter totals 3. A development Web App is live at Backend API `0.5.0`; production/security/PDPA approval remains unconfirmed and must not be inferred.
+**Historical snapshot (2026-11-17):** 29 initial work items plus later `VC-W30`–`VC-W31`. **Reconciled 2026-11-20 scope:** 31 `VC-W` items plus two P6VC engineering-gate issues (#38–#39) and primary-journey epic #61. The 33 work/gate issues contain 7 DONE-EVIDENCED, 2 IN-PROGRESS, 4 REVIEW, 15 BLOCKED, 4 TODO and 1 ON-HOLD; #61 is the additional in-progress epic, so the live in-progress filter totals 3. A development Web App is live at Backend API `0.7.0` (Version 26, verified 2026-11-21); production/security/PDPA approval remains unconfirmed and must not be inferred.
 
 ## 8. Native GitHub Projects board status
 
