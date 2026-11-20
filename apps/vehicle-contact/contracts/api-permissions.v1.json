@@ -165,6 +165,13 @@
       "enabled": false
     },
     {
+      "id": "VC-REFERENCES-001",
+      "operation": "references.registration",
+      "requiredPermission": "vehicle.registration.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
       "id": "VC-REGISTRATIONS-001",
       "operation": "registrations.submit",
       "requiredPermission": "campaign.token.valid",

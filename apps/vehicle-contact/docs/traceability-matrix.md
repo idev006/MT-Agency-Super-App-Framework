@@ -3,7 +3,7 @@
 **Document ID:** P6VC-TRACE-SEQ-001 | 2026-11-17 | **Design traceability, not live-operation certification**.
 
 ## Read me first
-This matrix maps each of the **50 canonical API v1 operations to one primary owning Use Case (20 diagrams)** and a test identifier. The permission column below is from `contracts/api-permissions.v1.json` and retains its **PROPOSED_NOT_SECURITY_APPROVED** status; source implementation permission may differ (listed below). Do not treat contract `enabled:false` as a test result.
+This matrix maps each of the **51 canonical API v1 operations to one primary owning Use Case (20 diagrams)** and a test identifier. The permission column below is from `contracts/api-permissions.v1.json` and retains its **PROPOSED_NOT_SECURITY_APPROVED** status; source implementation permission may differ (listed below). Do not treat contract `enabled:false` as a test result.
 
 | Canonical v1 operation | Inventory ID | Owning UC / specification | Proposed contract permission | Planned or tested TC | Live authenticated GAS |
 |---|---|---|---|---|---|
@@ -30,6 +30,7 @@ This matrix maps each of the **50 canonical API v1 operations to one primary own
 | `campaigns.list` | `VC-CAMPAIGNS-002` | [UC-CAMP-01](use-cases/UC-CAMP-01/specification.md) | `campaigns.manage` | ACTOR-02 | PENDING_REAL_GAS |
 | `campaigns.validate` | `VC-CAMPAIGNS-003` | [UC-CAMP-02](use-cases/UC-CAMP-02/specification.md) | PUBLIC | ACTOR-02 | PENDING_REAL_GAS |
 | `campaigns.revoke` | `VC-CAMPAIGNS-004` | [UC-CAMP-01](use-cases/UC-CAMP-01/specification.md) | `campaigns.manage` | ACTOR-02 | PENDING_REAL_GAS |
+| `references.registration` | `VC-REFERENCES-001` | [UC-REG-01](use-cases/UC-REG-01/specification.md) | `vehicle.registration.approve` | REF-CATALOG-01 | PENDING_REAL_GAS |
 | `registrations.submit` | `VC-REGISTRATIONS-001` | [UC-REG-01](use-cases/UC-REG-01/specification.md) | `campaign.token.valid` | ACTOR-03 | PENDING_REAL_GAS |
 | `registrations.listPending` | `VC-REGISTRATIONS-002` | [UC-REG-02](use-cases/UC-REG-02/specification.md) | `vehicle.registration.approve` | ACTOR-03 | PENDING_REAL_GAS |
 | `registrations.detail` | `VC-REGISTRATIONS-003` | [UC-REG-02](use-cases/UC-REG-02/specification.md) | `vehicle.registration.approve` | ACTOR-03 | PENDING_REAL_GAS |

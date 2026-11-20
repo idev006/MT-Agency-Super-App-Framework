@@ -307,9 +307,10 @@
     },
     {
       "id": "UC-REG-01",
-      "title": "Public vehicle application submission with five photos",
-      "actor": "Anonymous registrant with valid campaign",
+      "title": "Vehicle application submission with five photos",
+      "actor": "Registrant or assisted REGISTRATION_ADMIN with valid campaign",
       "ops": [
+        "references.registration",
         "registrations.submit"
       ],
       "tests": [
@@ -318,14 +319,16 @@
         "EDGE-03",
         "EDGE-04",
         "EDGE-09",
-        "GAS-FLOW.REGISTRATION_SUBMIT"
+        "GAS-FLOW.REGISTRATION_SUBMIT",
+        "REF-CATALOG-01"
       ],
-      "pre": "Campaign active with available quota; organization active; all mandatory vehicle/contact fields present; exactly five staged photo IDs.",
+      "pre": "Campaign active with available quota; organization active; all mandatory vehicle/contact fields present; exactly five staged photo IDs. Assisted intake may load canonical references with vehicle.registration.approve.",
       "success": "Store PENDING_APPROVAL registration, claim media, increment quota once, persist idempotency response and operation journal.",
       "failure": "Duplicate plate+province, invalid campaign, staged photo mismatch, quota exhaustion or idempotency conflict denied; caught write errors compensated but abrupt timeout requires manual recovery.",
       "tables": [
         "vc_campaigns",
         "vc_organizations",
+        "vc_reference_values",
         "vc_photo_staging",
         "vc_registration_requests",
         "vc_idempotency",
@@ -336,10 +339,12 @@
       "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
       "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
       "source": [
+        "backend/gas/src/application/use-cases/ReferenceOperations.js",
         "backend/gas/src/application/use-cases/VehicleOperations.js"
       ],
       "testSources": [
-        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs",
+        "backend/gas/tests/reference-data.test.mjs"
       ],
       "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
     },
