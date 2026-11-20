@@ -29,7 +29,8 @@ Frontend navigation is permission-driven. Cloudflare Worker validates the public
 
 Observed on 2026-11-20:
 
-- Frontend `0.4.0`; Backend API `0.4.0`, `apiVersion: v1`
+- Frontend `0.6.0`; Backend API `0.5.0`, `apiVersion: v1`; compatible Worker version `277b4d77-dbe4-49f9-98a5-91405a1a1fe3`
+- the registration reference contract, one-load-per-sign-in cache and responsive intake controls are recorded in [FE-REFERENCE-CATALOG-01](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md)
 - assisted intake and its live deployment are recorded in [FE-REGISTRATION-INTAKE-01](FRONTEND_FE_REGISTRATION_INTAKE_01_EVIDENCE_20261120.md)
 - registration review is recorded in [FE-REGISTRATION-ADMIN-01](FRONTEND_FE_REGISTRATION_ADMIN_01_EVIDENCE_20261120.md)
 - STAFF plate lookup is recorded in [FE-STAFF-01](FRONTEND_FE_STAFF_01_EVIDENCE_20261119.md)
