@@ -123,7 +123,7 @@ test('GAS-VM-00 compiled reference seed preview is read-only and checksum-bound'
  const before=JSON.stringify(data.get('vc_reference_values'));
  assert.equal(typeof context.previewVehicleReferenceSeedFromEditor,'function');
  const result=context.previewVehicleReferenceSeedFromEditor();
- assert.equal(result.status,'READY');assert.equal(result.rowCount,121);assert.equal(result.addCount,121);
+ assert.equal(result.status,'READY');assert.equal(result.rowCount,645);assert.equal(result.addCount,645);
  assert.match(result.checksum,/^[a-f0-9]{64}$/);assert.equal(result.dataModified,false);
  assert.equal(JSON.stringify(data.get('vc_reference_values')),before);assert.equal(metrics.writes,0);assert.ok(logs.length>0);
 });

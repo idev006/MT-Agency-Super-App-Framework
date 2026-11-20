@@ -9,7 +9,7 @@ This document proposes the first bounded catalog. It is not approval to create r
 
 **Approval record:** Project Owner supplied the exact phrase `APPROVE_REFERENCE_SEED_V1` on 2026-11-20. This authorizes the manifest, preview/apply source and tests only.
 
-**Product refinement:** On 2026-11-21 the Project Owner directed that color have defaults plus a user-entered fallback, while vehicle model remains user-entered. This approves 16 initial colors and keeps `MODEL` empty/advisory.
+**Product refinement:** On 2026-11-21 the Project Owner directed that color and brand have defaults plus user-entered fallbacks, while vehicle model remains user-entered. This approves 16 initial colors, 524 DLT-observed brands and keeps `MODEL` empty/advisory.
 
 ## 1. Catalog boundaries
 
@@ -19,7 +19,8 @@ This document proposes the first bounded catalog. It is not approval to create r
 | `VEHICLE_TYPE` | Department of Land Transport registration categories `รย.1`–`รย.17` | 17 active rows, codes `RY01`–`RY17` | READY FOR DATA OWNER REVIEW |
 | `PLATE_TYPE` | P6 product taxonomy; must not duplicate vehicle-registration type | 5 candidate rows | BUSINESS DECISION REQUIRED |
 | `RELATIONSHIP` | P6 contact/responsibility policy | 6 candidate rows | BUSINESS DECISION REQUIRED |
-| `BRAND` / `MODEL` | No complete authoritative bounded source selected | 0 rows | DEFER; model is always user-entered |
+| `BRAND` | DLT first-registration open data, union 2565–2568 and Jan–Feb 2569 | 524 active rows | APPROVED — ADVISORY with custom entry |
+| `MODEL` | No stable bounded catalog required | 0 rows | DEFER; model is always user-entered |
 | `COLOR` | P6 initial color vocabulary with explicit custom entry | 16 active rows | APPROVED — ADVISORY |
 | Organizations | Existing active `vc_organizations` records | no duplicated rows | EXISTING AUTHORITY |
 
@@ -28,6 +29,7 @@ Official references:
 - [Royal Society province-name dataset on Thailand Government Data Catalog](https://data.go.th/en/dataset/orst_0101) — public Thai/Romanized names; annual metadata; maintained by the Royal Society.
 - [Department of Provincial Administration population statistics](https://stat.bora.dopa.go.th/new_stat/webPage/statByYear.php) — government province-code field (`CC-CODE`).
 - [Department of Land Transport summary of the Motor Vehicle Act](https://legal.dlt.go.th/gen2/app/api/legal-download.php?download=1&file=article_20231030_164150_fd79887c.pdf) — six broad vehicle classes, 17 registration categories and the separate special red-plate concept.
+- [Department of Land Transport first-registration open data](https://data.go.th/th/dataset/stat_1_1_01_first_regis_vehicles_car) — public vehicle type, brand and model observations; 524 unique nonblank brands extracted across 2565–2568 and Jan–Feb 2569.
 
 These sources establish candidate vocabulary. The Data Owner still approves the exact application codes, labels and scope.
 
@@ -65,15 +67,16 @@ These sources establish candidate vocabulary. The Data Owner still approves the 
 | Plate type | 5 |
 | Relationship | 6 |
 | Color | 16 |
-| **Total proposed initial rows** | **121** |
+| Brand | 524 |
+| **Total proposed initial rows** | **645** |
 
-Brand and model remain empty/advisory. Model is always a bounded free-text field. Color presents the 16 defaults and a visible “สีอื่น — ระบุเอง” path; the custom value remains advisory and is never silently converted to a code.
+Brand presents the DLT-observed defaults and a visible “ไม่พบยี่ห้อ? ระบุเอง” path. Model is always a bounded free-text field. Color presents the 16 defaults and a visible “สีอื่น — ระบุเอง” path. Custom values remain advisory and are never silently converted to a code.
 
 ## 4. Automation contract after approval
 
 Initial seed automation should be GAS Editor-only, not a public HTTP write:
 
-1. `previewVehicleReferenceSeedFromEditor()` validates all 121 rows, stable IDs/codes, duplicate constraints, formula safety, parents, current Sheet differences and a deterministic SHA-256 checksum. It performs no writes.
+1. `previewVehicleReferenceSeedFromEditor()` validates all 645 rows, stable IDs/codes, duplicate constraints, formula safety, parents, current Sheet differences and a deterministic SHA-256 checksum. It performs no writes.
 2. The Project Owner reviews the sanitized counts/diff/checksum and sets a one-time Script Property equal to that exact checksum.
 3. `applyVehicleReferenceSeedFromEditor()` acquires a lock, creates a Drive backup, journals PREPARED/APPLYING/APPLIED, inserts only the approved manifest and verifies the resulting catalog/version.
 4. The approval property is immediately removed. Failure enters `RECOVERY_REQUIRED`; never rerun blindly.
@@ -89,7 +92,7 @@ The Data Owner / Project Owner must explicitly decide:
 - [x] Use all 17 DLT vehicle-registration categories (`RY01`–`RY17`) rather than a simplified car/motorcycle taxonomy.
 - [x] Approve the five proposed plate types.
 - [x] Approve the six proposed relationships.
-- [x] Defer brand/model; keep model as user-entered text.
+- [x] Seed 524 DLT-observed brands with explicit custom entry; keep model as user-entered text.
 - [x] Seed 16 advisory colors and allow an explicit custom color value.
 - [x] Keep seed v1 in `ADVISORY`; do not enable `ENFORCED` yet.
 - [x] Authorize implementation of checksum-bound editor-only preview/apply automation. This does not authorize GAS push or seed apply.

@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
-**Last verified:** 2026-11-20 (Asia/Bangkok)  
-**Implementation/runtime evidence baseline before this docs-only reconciliation:** `main` @ `7449309a96bb5717f04a922f11f6e699343aee99`
+**Last verified:** 2026-11-21 (Asia/Bangkok)
+**Implementation/runtime evidence baseline:** `main` @ `30ada8735734530202559e6891efdc22969be444`
 
 **Purpose:** compact continuation SSOT. Read this page first, then open only the linked evidence or active Issue needed for the next change.
 
@@ -9,13 +9,13 @@
 
 | Component | Verified development version | Evidence / endpoint |
 |---|---|---|
-| Frontend | `0.6.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44745036057](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44745036057) |
+| Frontend | `0.6.1` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44829619296](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44829619296) |
 | Cloudflare Worker | `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; health and fail-closed probes recorded in [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md) |
 | GAS Backend API | Live API `v1`, Backend `0.5.0`; candidate source Version `24` contains Backend `0.6.0` | Seed-source push run [44826384253](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44826384253) passed from `e9afc6b`; Version 24 is not yet published to the Web App |
 
 These are development facts, not production security, PDPA, UAT or release approval.
 
-Backend `0.6.0` is pushed as Apps Script source Version 24 with the earlier 105-row manifest. The current Backend `0.6.1` / Frontend `0.6.1` candidates add 16 default colors, custom color entry and an always-free-text model; they are not pushed/deployed. Live Backend remains `0.5.0`.
+Backend `0.6.0` is pushed as Apps Script source Version 24 with the superseded 105-row manifest. Frontend `0.6.1` is live with color defaults/custom entry and an always-free-text model. Current Backend/Frontend `0.7.0` candidates add 524 DLT-observed brands plus custom brand entry; they are not pushed/deployed. Live Backend remains `0.5.0`.
 
 ## Current delivery state
 
@@ -42,7 +42,7 @@ Backend `0.6.0` is pushed as Apps Script source Version 24 with the earlier 105-
 
 ## Exact next actions
 
-1. Review and merge the Backend/Frontend `0.6.1` color/model refinement, then perform a new explicitly confirmed GAS source push. Do not seed from Version 24 because its checksum represents the superseded 105-row manifest.
+1. Review and merge Backend/Frontend `0.7.0`, then perform a new explicitly confirmed GAS source push. Do not seed from Version 24 because its checksum represents the superseded 105-row manifest.
 2. Publish the resulting Web App version, verify health, then run editor-only `previewVehicleReferenceSeedFromEditor()` and share only the sanitized status/count/checksum result. Checksum-bound seed apply remains separately gated; the empty `vc_reference_values` table remains `LEGACY`.
 3. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
 4. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
@@ -65,7 +65,7 @@ git switch -c codex/p6vc-qr-camera-scanner-resume origin/main
 git stash apply 'stash@{0}'
 ```
 
-Resolve against current Frontend `0.6.0`, verify the diff, and do not drop the stash until the resumed changes are committed and pushed. Prior WIP evidence: pinned `html5-qrcode 2.3.8`, 12/12 focused tests, build and dependency audit passed; direct cleanup tests and physical Android/iOS evidence remain NOT RUN.
+Resolve against current Frontend `0.6.1` or later, verify the diff, and do not drop the stash until the resumed changes are committed and pushed. Prior WIP evidence: pinned `html5-qrcode 2.3.8`, 12/12 focused tests, build and dependency audit passed; direct cleanup tests and physical Android/iOS evidence remain NOT RUN.
 
 ## Credential and deployment guardrails
 

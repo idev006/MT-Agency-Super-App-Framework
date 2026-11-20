@@ -6,6 +6,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog.vue'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import SearchableReferenceCombobox from '../features/reference-data/components/SearchableReferenceCombobox.vue'
+import { CUSTOM_BRAND_CHOICE, reconcileBrandValue, resolveBrandValue } from '../features/registrations/brand-field.js'
 import { CUSTOM_COLOR_CHOICE, reconcileColorValue, resolveColorValue } from '../features/registrations/color-field.js'
 import { REGISTRATION_PHOTO_SLOTS, useRegistrationIntake } from '../features/registrations/useRegistrationIntake.js'
 import { useRegistrationReferenceStore } from '../stores/registration-reference.js'
@@ -18,6 +19,8 @@ const { phase: referencePhase, failure: referenceFailure, lists, organizations, 
 const work = useRegistrationIntake({ repository: inject(registrationIntakeRepositoryKey), permissions })
 const campaignToken = ref('')
 const confirmationOpen = ref(false)
+const brandChoice = ref('')
+const customBrand = ref('')
 const colorChoice = ref('')
 const customColor = ref('')
 const files = reactive({})
@@ -34,15 +37,26 @@ async function confirmSubmit() {
 }
 function reconcileSelections() {
   const allowed = (key, value) => !value || lists.value[key].some(({ code }) => code === value)
-  for (const [field, key] of [['province', 'provinces'], ['plateType', 'plateTypes'], ['vehicleType', 'vehicleTypes'], ['relationship', 'relationships'], ['brand', 'brands']]) {
+  for (const [field, key] of [['province', 'provinces'], ['plateType', 'plateTypes'], ['vehicleType', 'vehicleTypes'], ['relationship', 'relationships']]) {
     if (!allowed(key, fields[field])) fields[field] = ''
   }
+  const brand = reconcileBrandValue(fields.brand, lists.value.brands)
+  brandChoice.value = brand.choice
+  customBrand.value = brand.customValue
   const color = reconcileColorValue(fields.color, lists.value.colors)
   colorChoice.value = color.choice
   customColor.value = color.customValue
   if (fields.organizationId && !organizations.value.some(({ code }) => code === fields.organizationId)) fields.organizationId = ''
 }
 async function reloadReferences() { try { await referenceData.reload(); reconcileSelections() } catch {} }
+function toggleCustomBrand() {
+  brandChoice.value = brandChoice.value === CUSTOM_BRAND_CHOICE ? '' : CUSTOM_BRAND_CHOICE
+}
+watch(brandChoice, (value) => {
+  if (value !== CUSTOM_BRAND_CHOICE) customBrand.value = ''
+  fields.brand = resolveBrandValue(value, customBrand.value)
+})
+watch(customBrand, (value) => { if (brandChoice.value === CUSTOM_BRAND_CHOICE) fields.brand = resolveBrandValue(brandChoice.value, value) })
 watch(colorChoice, (value) => {
   if (value !== CUSTOM_COLOR_CHOICE) customColor.value = ''
   fields.color = resolveColorValue(value, customColor.value)
@@ -80,7 +94,7 @@ watch(referenceVersion, reconcileSelections)
           <label class="field-stack"><span class="label-text font-semibold">จังหวัดของทะเบียน</span><select v-if="canonicalMode" v-model="fields.province" class="select select-bordered w-full" required><option disabled value="">เลือกจังหวัด</option><option v-for="item in lists.provinces" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.province" class="input input-bordered w-full" required maxlength="32" /></label>
           <label class="field-stack"><span class="label-text font-semibold">ประเภทป้าย</span><select v-if="canonicalMode" v-model="fields.plateType" class="select select-bordered w-full" required><option disabled value="">เลือกประเภทป้าย</option><option v-for="item in lists.plateTypes" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.plateType" class="input input-bordered w-full" required maxlength="100" /></label>
           <label class="field-stack"><span class="label-text font-semibold">ประเภทยานพาหนะ</span><select v-if="canonicalMode" v-model="fields.vehicleType" class="select select-bordered w-full" required><option disabled value="">เลือกประเภทยานพาหนะ</option><option v-for="item in lists.vehicleTypes" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.vehicleType" class="input input-bordered w-full" required maxlength="100" /></label>
-          <label class="field-stack"><span class="label-text font-semibold">ยี่ห้อ</span><SearchableReferenceCombobox v-if="canonicalMode && lists.brands.length" v-model="fields.brand" label="ยี่ห้อ" :options="lists.brands" required /><input v-else v-model.trim="fields.brand" class="input input-bordered w-full" required maxlength="100" /><span v-if="canonicalMode && !lists.brands.length" class="label-text-alt">ยังไม่มีรายการยี่ห้อ จึงใช้ข้อความตามข้อมูลเดิม</span></label>
+          <div class="field-stack"><span class="label-text font-semibold">ยี่ห้อ</span><template v-if="canonicalMode && lists.brands.length"><SearchableReferenceCombobox v-if="brandChoice !== CUSTOM_BRAND_CHOICE" v-model="brandChoice" label="ยี่ห้อ" :options="lists.brands" required /><input v-else v-model.trim="customBrand" class="input input-bordered w-full" required maxlength="100" aria-label="ระบุยี่ห้อยานพาหนะ" placeholder="ระบุยี่ห้อตามสมุดคู่มือจดทะเบียน" /><button class="btn btn-ghost btn-sm self-start" type="button" @click="toggleCustomBrand">{{ brandChoice === CUSTOM_BRAND_CHOICE ? 'เลือกจากรายการยี่ห้อ' : 'ไม่พบยี่ห้อ? ระบุเอง' }}</button></template><input v-else v-model.trim="fields.brand" class="input input-bordered w-full" required maxlength="100" aria-label="ยี่ห้อยานพาหนะ" /><span class="label-text-alt">ค้นหายี่ห้อจากรายการ หรือระบุเองหากไม่พบ</span></div>
           <label class="field-stack"><span class="label-text font-semibold">รุ่น</span><input v-model.trim="fields.model" class="input input-bordered w-full" required maxlength="100" placeholder="กรอกรุ่นตามสมุดคู่มือจดทะเบียน" /><span class="label-text-alt">กรอกชื่อรุ่นเองเพื่อรองรับรถทุกรุ่น</span></label>
           <label class="field-stack"><span class="label-text font-semibold">สี</span><select v-if="canonicalMode && lists.colors.length" v-model="colorChoice" class="select select-bordered w-full" required aria-describedby="vehicle-color-help"><option disabled value="">เลือกสี</option><option v-for="item in lists.colors" :key="item.code" :value="item.code">{{ item.label }}</option><option :value="CUSTOM_COLOR_CHOICE">สีอื่น — ระบุเอง</option></select><input v-if="canonicalMode && lists.colors.length && colorChoice === CUSTOM_COLOR_CHOICE" v-model.trim="customColor" class="input input-bordered w-full" required maxlength="100" aria-label="ระบุสีรถ" placeholder="ระบุสีตามสมุดคู่มือจดทะเบียน" /><input v-else-if="!canonicalMode || !lists.colors.length" v-model.trim="fields.color" class="input input-bordered w-full" required maxlength="100" /><span id="vehicle-color-help" class="label-text-alt">เลือกสีตั้งต้น หรือเลือกสีอื่นเพื่อกรอกเอง</span></label>
           <label class="field-stack"><span class="label-text font-semibold">หน่วยงาน</span><SearchableReferenceCombobox v-if="canonicalMode" v-model="fields.organizationId" label="หน่วยงาน" :options="organizations" required /><input v-else v-model.trim="fields.organizationId" class="input input-bordered w-full" required maxlength="100" /></label>

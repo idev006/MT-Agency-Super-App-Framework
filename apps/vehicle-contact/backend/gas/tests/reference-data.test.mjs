@@ -43,7 +43,7 @@ test('catalog is bounded and legacy mode tolerates incomplete additive migration
 test('enforced catalog validates version, strict active codes and authoritative organization',()=>{
  const refs=createReferenceOperations({store:store(complete(),'ENFORCED'),security}),catalog=refs['references.registration']();
  assert.equal(catalog.mode,'ENFORCED');
- const payload={referenceVersion:catalog.version,province:'BKK',plateType:'PRIVATE',vehicleType:'CAR',relationship:'OWNER',organizationId:'ORG-1',color:'ฟ้าอมเทา',model:'รุ่นพิเศษ'};
+ const payload={referenceVersion:catalog.version,province:'BKK',plateType:'PRIVATE',vehicleType:'CAR',relationship:'OWNER',organizationId:'ORG-1',brand:'ยี่ห้อท้องถิ่น',color:'ฟ้าอมเทา',model:'รุ่นพิเศษ'};
  assert.doesNotThrow(()=>refs.assertRegistration(payload));
  assert.throws(()=>refs.assertRegistration({...payload,referenceVersion:'old'}),/REFERENCE_VERSION_STALE/);
  assert.throws(()=>refs.assertRegistration({...payload,province:'OLD'}),/INVALID_REFERENCE_VALUE/);
