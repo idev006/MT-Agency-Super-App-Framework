@@ -25,7 +25,7 @@ Invalid MIME/signature/slot, revoked campaign, staging quota or failed Sheet wri
 - Test case IDs: `ACTOR-03`, `EDGE-01`, `EDGE-08`, `EDGE-10`, `GAS-FLOW.MEDIA_FRONT`.
 - Executable evidence references: `backend/gas/tests/actor-usecase-acceptance.test.mjs`.
 - Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **NOT_WIRED**; design must align Vue 3, Pinia, Router and API adapter per Master Web Blueprint.
+- FE status: **WIRED_IN_SOURCE / LIVE_ACCEPTANCE_PENDING**; five-slot native file inputs, bounded client mapping and Cloudflare large-payload validation are recorded in [FE-REGISTRATION-INTAKE-01 evidence](../../FRONTEND_FE_REGISTRATION_INTAKE_01_EVIDENCE_20261120.md).
 
 ## 7. Development notes / explicit gaps
 Upload occurs before acquiring Sheets lock; if cleanup trash fails an orphan may remain and needs reconciliation. Parent-folder Anyone-with-link exposure is an accepted risk in approved requirements.

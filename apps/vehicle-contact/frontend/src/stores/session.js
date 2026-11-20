@@ -208,9 +208,13 @@ export const useSessionStore = defineStore('session', () => {
     })
   }
 
+  function callPublic(operation, payload = {}, options = {}) {
+    return client().call(operation, payload, options)
+  }
+
   return {
     transport, directEndpoint, workerEndpoint, endpoint, endpointValid,
     phase, session, sessionVerified, lastResult, error, backendRelease, authenticated, busy, roles, permissions, menuItems,
-    setTransport, updateEndpoint, checkConnection, loadReleaseInfo, signIn, restoreSession, signOut, callProtected,
+    setTransport, updateEndpoint, checkConnection, loadReleaseInfo, signIn, restoreSession, signOut, callProtected, callPublic,
   }
 })
