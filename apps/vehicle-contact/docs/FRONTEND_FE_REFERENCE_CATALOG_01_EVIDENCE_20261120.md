@@ -43,7 +43,7 @@ The slice uses the existing AppShell, PageTemplate and OperationalContextStrip. 
 | Real approved reference dataset | BLOCKED | Data Owner-approved values have not been supplied or seeded |
 | Authenticated live catalog content | NOT RUN | Avoided reading internal data before the migration/data approval gate |
 | Worker deployment | PASS | Version `277b4d77-dbe4-49f9-98a5-91405a1a1fe3`; text bindings declared in `wrangler.toml` |
-| Frontend Pages deployment | NOT RUN | Merge/deploy follows Worker compatibility deployment |
+| Frontend Pages deployment | PASS | PR [#65](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/65), main `5d7b213`; Pages run [44744472502](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44744472502) |
 
 Browser artifacts: [evidence/fe-reference-catalog-20261120](evidence/fe-reference-catalog-20261120/).
 
@@ -61,3 +61,10 @@ Two initial uploads omitted version-bound text variables and returned `GATEWAY_N
 - public health through Worker: HTTP 200, `ok=true`, Backend `0.5.0`;
 - protected reference request with a synthetic 64-character token: HTTP 200 logical `UNAUTHENTICATED` with matching request ID;
 - no authenticated catalog content and no write operation executed.
+
+## Live frontend verification
+
+- GitHub Pages HTML: HTTP 200.
+- Deployed JavaScript asset: HTTP 200.
+- Bundle contains Frontend `0.6.0`, `references.registration` and the explicit LEGACY-mode copy.
+- Worker health remains HTTP 200 and reports Backend `0.5.0` after the Pages deployment.

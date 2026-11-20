@@ -26,7 +26,7 @@ Deliver **security first**, then complete the primary workflow using **synthetic
 | Scanner POC | **POC EXISTS** | Android/iOS camera access user-reported; actual decode/switch matrix not fully evidenced |
 | AuthN/AuthZ/RBAC | **IMPLEMENTED / RELEASE REVIEW BLOCKED** | Username/password sessions, server permissions, revocation and 5 roles × 44 protected-operation tests exist; named security/policy approval and non-bypassable ingress proof remain open |
 | STAFF read-only vehicle search | **PASS — SOURCE/INTEGRATION** | PR #47 and FE-STAFF-01 evidence; live operational UAT remains open |
-| Registration intake and review | **PASS — SOURCE/DEVELOPMENT DEPLOYMENT; REFERENCE UI IN REVIEW** | PRs #57–#60; reference-catalog Backend 0.5.0 is live and Frontend 0.6.0 source has contract/responsive evidence; approved list data and controlled mutating browser E2E remain open |
+| Registration intake and review | **PASS — DEVELOPMENT DEPLOYMENT; REFERENCE DATA BLOCKED** | PRs #57–#60 and #65; Backend 0.5.0, compatible Worker and Frontend 0.6.0 are live; approved list data, guarded Sheet migration and controlled mutating browser E2E remain open |
 | Primary registration-to-verification journey | **IN-PROGRESS** | Intake/review/search slices exist; QR Worker/browser/device path and full deployed synthetic journey remain open |
 | SYSTEM_ADMIN administration | **PASS — SOURCE/INTEGRATION** | PRs #48–#54 cover users, organizations, campaigns, QR, settings, retention, audit, pagination and responsive inputs |
 | GAS development deployment | **PASS — DEVELOPMENT** | Source Version 22 from `cf2e777`; owner-reported Web App publication; independent public health on 2026-11-20 returned ready / API v1 / backend 0.5.0 |
