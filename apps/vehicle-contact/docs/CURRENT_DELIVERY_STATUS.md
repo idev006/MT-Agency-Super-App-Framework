@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
 **Last verified:** 2026-11-21 (Asia/Bangkok)
-**Implementation/runtime evidence baseline:** `main` @ `2b32c18` (PR #76)
+**Implementation/runtime evidence baseline:** `main` @ `c445573` (PR #84)
 
 **Purpose:** compact continuation SSOT. Read this page first, then open only the linked evidence or active Issue needed for the next change.
 
@@ -9,13 +9,13 @@
 
 | Component | Verified development version | Evidence / endpoint |
 |---|---|---|
-| Frontend | `0.7.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44832506283](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44832506283) |
-| Cloudflare Worker | `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; health and fail-closed probes recorded in [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md) |
-| GAS Backend API | Live API `v1`, Backend `0.7.0` via Web App **Version 26**; source Version `28` (Backend `0.7.2`) pushed but deployment not yet switched | 0.7.2 push run [44845690152](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44845690152) from `3b3c6be`; 07:57 health probes (direct + Worker) still report `0.7.0`; editor entrypoints already ran HEAD 0.7.2 for recovery/apply |
+| Frontend | `0.8.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44853383966](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44853383966); deployed bundle verified to contain the photo gallery + `registrations.photo` |
+| Cloudflare Worker | `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; health and fail-closed probes recorded in [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md); source allowlist now includes `registrations.photo` (Worker redeploy not yet performed) |
+| GAS Backend API | Live API `v1`, Backend `0.7.0` via Web App **Version 26**; source **Version 29** (Backend `0.8.0`) pushed, publication pending | 0.8.0 push run [44855602628](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44855602628) from `c445573` ("Created version 29"); earlier Version 28 (`0.7.2`) was superseded unpublished |
 
 These are development facts, not production security, PDPA, UAT or release approval.
 
-**Reference seed is APPLIED (2026-11-21 07:56):** after the coercion incident and two gated fixes (PRs #78, #80), recovery cleared 645 dirty rows and the checksum-approved reapply wrote 645 verified plain-text rows; post-apply preview returned `ALREADY_APPLIED`. Catalog mode is `ADVISORY`; `ENFORCED` remains separately gated. See [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md). Remaining runtime gap: the Web App deployment still serves Version 26 / Backend `0.7.0`; switch it to Version 28 (`0.7.2`).
+**Reference seed is APPLIED (2026-11-21 07:56):** after the coercion incident and two gated fixes (PRs #78, #80), recovery cleared 645 dirty rows and the checksum-approved reapply wrote 645 verified plain-text rows; post-apply preview returned `ALREADY_APPLIED`. Catalog mode is `ADVISORY`; `ENFORCED` remains separately gated. See [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md). Remaining runtime gap: the Web App deployment still serves Version 26 / Backend `0.7.0`; publish Version 29 (`0.8.0`).
 
 ## Current delivery state
 
@@ -32,7 +32,7 @@ These are development facts, not production security, PDPA, UAT or release appro
 ### IN-PROGRESS
 
 - [#61 Primary journey epic](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/61): registration -> approval -> QR/plate verification.
-- Review-detail photo gallery slice (Backend `0.8.0` / Frontend `0.8.0` source): truncated requestId + copy-full, hero FRONT image + 4 thumbnails via new gated `registrations.photo` (52-operation inventory, permission `vehicle.registration.approve`, snapshot ownership check + access audit, memory-only rendering). Local gates PASS (GAS check, Worker 28, frontend 139, SSOT 52/52); awaiting `PUSH_VEHICLE_GAS`, Web App publication and browser acceptance.
+- Review-detail photo gallery slice MERGED (PR #84) and PUSHED (GAS source Version 29, Backend `0.8.0`; Frontend `0.8.0` live on Pages): truncated requestId + copy-full, hero FRONT image + 4 thumbnails via new gated `registrations.photo` (52-operation inventory, permission `vehicle.registration.approve`, snapshot ownership check + access audit, memory-only rendering). Remaining gates: owner publishes Web App Version 29, owner redeploys the Worker (deployed Worker `277b4d77` predates the `registrations.photo` allowlist entry), then assistant probes health and runs the owner-approved approval E2E; browser acceptance still NOT RUN.
 - [#17 Operator screens](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/17): remaining unified detail/QR/device journey.
 - [#18 QR camera integration](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/18): local WIP exists but is **not merged or deployed**.
 
@@ -45,11 +45,11 @@ These are development facts, not production security, PDPA, UAT or release appro
 
 ## Exact next actions
 
-1. Push Backend `0.8.0` (fresh `PUSH_VEHICLE_GAS` confirmation required; supersedes unpublished Version 28) and switch the development Web App deployment to the new version; verify health reports `0.8.0` direct and via Worker.
-2. Owner signs in to the frontend again (master data loads once per sign-in) and confirms canonical province/plate/vehicle/relationship/brand/color lists on the intake form in `ADVISORY` mode; capture sanitized browser evidence.
-3. Review/approve the 10 synthetic pending registrations (SPA or `registrations.review`), then continue vehicle/contact/QR creation and plate lookup per Epic #61.
-4. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
-5. Continue the synthetic journey from approval -> vehicle/contact/QR -> plate lookup/QR resolve and attach recovery/denial evidence (registration leg already evidenced).
+1. Owner publishes Web App **Version 29** (Backend `0.8.0`): GAS Editor → Deploy → Manage deployments → Edit → Version 29 → Deploy. Assistant then probes `system.health` direct + via Worker expecting `0.8.0`.
+2. Owner redeploys the Cloudflare Worker from current `tools/p6vc-api-test-console/worker.mjs` (dashboard paste + Deploy, same secrets/vars); the deployed version lacks the `registrations.photo` allowlist entry, so the gallery and approval E2E are blocked through the Worker until then.
+3. Run the owner-approved synthetic approval E2E: local scratch script `.tmp/p6vc-e2e-approval.mjs` (untracked; credentials ONLY via env `P6VC_ADMIN_USER`/`P6VC_ADMIN_PASS`, never persisted). Flow: login → listPending(10) → per request detail → `registrations.photo` FRONT → review APPROVE (`platePhotoVerified:true`) → `vehicles.lookup` → `qr.resolve` (token memory-only) → negatives (`INVALID_REQUEST_STATE`, `PHOTO_NOT_FOUND`) → logout; then evidence doc + PR + #61 comment. Owner must re-supply the transient DEV credential in the new session.
+4. Owner signs in to the frontend and accepts the gallery/copy UX on the synthetic requests; capture sanitized browser evidence.
+5. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
 
 Catalog review and QR engineering may proceed independently; real catalog enforcement must wait for approved values and seed evidence.
 
