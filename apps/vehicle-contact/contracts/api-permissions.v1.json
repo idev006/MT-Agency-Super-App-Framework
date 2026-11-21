@@ -249,6 +249,13 @@
       "enabled": false
     },
     {
+      "id": "VC-VEHICLES-007",
+      "operation": "vehicles.list",
+      "requiredPermission": "vehicle.list",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
       "id": "VC-CONTACTS-001",
       "operation": "contacts.read",
       "requiredPermission": "vehicle.contact.read",

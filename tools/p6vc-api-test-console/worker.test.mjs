@@ -252,6 +252,7 @@ test('frontend gateway forwards owner-scoped and retention-worker reads through 
   const base={apiVersion:'v1',requestId:'scoped_reads_01',sessionToken:TOKEN};
   const cases=[
    ['vehicles','listMine',{page:1,pageSize:10}],
+   ['vehicles','list',{page:1,pageSize:10}],
    ['changes','listMine',{page:1,pageSize:10}],
    ['retention','listExecutable',{page:1,pageSize:10}],
   ];
@@ -264,6 +265,7 @@ test('frontend gateway forwards owner-scoped and retention-worker reads through 
   assert.deepEqual(fake.calls.map(x=>x.payload),cases.map(c=>c[2]));
   for(const [group,action,payload,sessionToken] of [
    ['vehicles','listMine',{page:1,pageSize:10},undefined],
+   ['vehicles','list',{page:1,pageSize:10,status:'INACTIVE'},TOKEN],
    ['changes','listMine',{page:1,pageSize:10,role:'OWNER'},TOKEN],
    ['retention','listExecutable',{page:1,pageSize:10,vehicleId:'vehicle-1'},TOKEN],
    ['vehicles','listMine',{},'not-a-session-token'],

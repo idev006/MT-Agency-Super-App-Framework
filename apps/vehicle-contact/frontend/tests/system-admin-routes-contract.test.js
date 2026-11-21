@@ -14,6 +14,7 @@ describe('complete SYSTEM_ADMIN route contract', () => {
     ['system-settings', 'system.settings.read'],
     ['retention-approval', 'retention.read'],
     ['audit-review', 'audit.read'],
+    ['vehicle-registry', 'vehicle.list'],
   ])('wires %s with permission %s', (route, permission) => {
     expect(router).toContain(`name: '${route}'`)
     expect(router).toContain(`requiredPermissions: ['${permission}']`)

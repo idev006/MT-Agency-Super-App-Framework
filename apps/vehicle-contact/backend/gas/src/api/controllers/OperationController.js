@@ -14,7 +14,7 @@ const permissions={
  'campaigns.create':'campaigns.manage','campaigns.list':'campaigns.manage','campaigns.revoke':'campaigns.manage',
  'references.registration':'vehicle.registration.approve',
  'registrations.listPending':'vehicle.registration.approve','registrations.detail':'vehicle.registration.approve','registrations.review':'vehicle.registration.approve','registrations.photo':'vehicle.registration.approve',
- 'vehicles.lookup':'vehicle.lookup','vehicles.detail':'vehicle.lookup','vehicles.update':'vehicle.update','vehicles.cancel':'vehicle.update','vehicles.history':'vehicle.history.read','vehicles.listMine':'vehicle.own.read',
+ 'vehicles.lookup':'vehicle.lookup','vehicles.detail':'vehicle.lookup','vehicles.update':'vehicle.update','vehicles.cancel':'vehicle.update','vehicles.history':'vehicle.history.read','vehicles.listMine':'vehicle.own.read','vehicles.list':'vehicle.list',
  'contacts.read':'vehicle.contact.read','contacts.update':'vehicle.update',
  'changes.submit':'vehicle.change.submit','changes.listPending':'vehicle.change.approve','changes.review':'vehicle.change.approve','changes.listMine':'vehicle.own.read',
  'qr.resolve':'vehicle.lookup','qr.issue':'qr.manage','qr.revoke':'qr.manage','qr.replace':'qr.manage',
@@ -48,7 +48,7 @@ export function createOperationController({store,security,sessions,drivePhotos,a
  };
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
- if(entries.length!==54||DTO_OPERATIONS.length!==54||entries.some(op=>!DTO_OPERATIONS.includes(op))
+ if(entries.length!==55||DTO_OPERATIONS.length!==55||entries.some(op=>!DTO_OPERATIONS.includes(op))
   ||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
   throw new Error('INCOMPLETE_API_DISPATCH');
  function dispatch(request){

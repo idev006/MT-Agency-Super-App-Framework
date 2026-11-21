@@ -289,6 +289,14 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     brand:v.make,model:v.model,color:v.color,status:v.status,version:Number(v.version)}));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
+ function vehicleList(p){
+  // Admin registry read: all ACTIVE vehicles, minimal non-PII fields (no contacts, no owner id).
+  // Single bounded snapshot read; no cross-sheet join. Gated by vehicle.list (admin roles only).
+  const items=store.list('vc_vehicles').filter(v=>String(v.status)==='ACTIVE')
+   .map(v=>({vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,vehicleType:v.vehicle_type,
+    brand:v.make,model:v.model,color:v.color,status:v.status,version:Number(v.version),createdAt:v.created_at}));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
+ }
  function changeListMine(p,a){
   const items=store.list('vc_change_requests').filter(r=>String(r.submitted_by)===String(a.userId))
    .map(r=>({requestId:r.change_id,vehicleId:r.vehicle_id,status:r.status,submittedAt:r.submitted_at,
@@ -324,7 +332,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   'registrations.submit':registrationSubmit,'registrations.listPending':registrationPending,
   'registrations.detail':registrationDetail,'registrations.review':registrationReview,
   'vehicles.lookup':vehicleLookup,'vehicles.detail':vehicleDetail,'vehicles.update':vehicleUpdate,
-  'vehicles.cancel':vehicleCancel,'vehicles.history':vehicleHistory,'vehicles.listMine':vehicleListMine,
+  'vehicles.cancel':vehicleCancel,'vehicles.history':vehicleHistory,'vehicles.listMine':vehicleListMine,'vehicles.list':vehicleList,
   'contacts.read':contactRead,'contacts.update':contactUpdate,
   'changes.submit':changeSubmit,'changes.listPending':changePending,'changes.review':changeReview,'changes.listMine':changeListMine,
   'qr.resolve':resolveQr,'qr.issue':(p,a)=>manageQr(p,a,'issue'),

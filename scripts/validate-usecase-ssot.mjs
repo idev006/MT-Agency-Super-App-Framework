@@ -15,7 +15,7 @@ const schema=JSON.parse(txt(app+'schema/database.schema.json'));
 const ops=inventory.operations.map(o=>o.group+'.'+o.action);
 const known=new Set(ops),seen=new Map(),ids=new Set();
 assert(catalog.cases.length===20,'Phase-1 sequence catalog must contain 20 use cases');
-assert(ops.length===55,'Phase-1 API inventory unexpectedly changed from 55 operations (update agreed coverage mapping)');
+assert(ops.length===56,'Phase-1 API inventory unexpectedly changed from 56 operations (update agreed coverage mapping)');
 assert(new Set(ops).size===ops.length,'Duplicate API inventory operation');
 assert(policy.operations.length===ops.length,'Permission contract inventory length drift');
 assert(policy.operations.every(p=>known.has(p.operation)),'Unknown permission-contract operation');

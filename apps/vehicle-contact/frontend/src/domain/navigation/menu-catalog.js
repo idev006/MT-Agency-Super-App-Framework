@@ -8,6 +8,7 @@ export const menuCatalog = Object.freeze([
   { id: 'registration-review', icon: 'registration', label: 'ตรวจสอบการลงทะเบียน', description: 'พิจารณารายการที่รอตรวจสอบ', route: 'registration-review', permissionsAny: ['vehicle.registration.approve'] },
   { id: 'change-review', icon: 'registration', label: 'ตรวจสอบคำขอเปลี่ยนแปลง', description: 'เปรียบเทียบค่าปัจจุบันกับที่เสนอ แล้วอนุมัติหรือปฏิเสธ', route: 'change-review', permissionsAny: ['vehicle.change.approve'] },
   { id: 'my-vehicles', label: 'ยานพาหนะของฉัน', description: 'ดูข้อมูลและส่งคำขอเปลี่ยนแปลง', route: 'my-vehicles', permissionsAny: ['vehicle.change.submit'] },
+  { id: 'vehicle-registry', icon: 'registration', label: 'ทะเบียนยานพาหนะ', description: 'รายการยานพาหนะที่อนุมัติแล้วทั้งหมดสำหรับผู้ดูแลระบบ', route: 'vehicle-registry', permissionsAny: ['vehicle.list'] },
   { id: 'user-admin', icon: 'users', label: 'ผู้ใช้และสิทธิ์', description: 'ตรวจสอบผู้ใช้ สถานะ บทบาท และสิทธิ์', route: 'user-directory', permissionsAny: ['users.manage'] },
   { id: 'organizations', icon: 'organizations', label: 'หน่วยงาน', description: 'จัดการโครงสร้างหน่วยงานตำรวจและหน่วยงานภายนอก', route: 'organization-administration', permissionsAny: ['organizations.read', 'organizations.manage'] },
   { id: 'campaigns', icon: 'campaigns', label: 'แคมเปญลงทะเบียน', description: 'สร้าง ตรวจสอบ และเพิกถอนแคมเปญลงทะเบียน', route: 'campaign-administration', permissionsAny: ['campaigns.manage'] },

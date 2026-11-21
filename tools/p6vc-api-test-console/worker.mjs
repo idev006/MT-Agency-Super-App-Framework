@@ -36,6 +36,7 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "vehicles.cancel":[["vehicleId"],[]],
  "vehicles.history":[["vehicleId"],[]],
  "vehicles.listMine":[[],["limit","page","pageSize"]],
+ "vehicles.list":[[],["limit","page","pageSize"]],
  "contacts.read":[["vehicleId"],[]],"contacts.update":[["vehicleId"],["contactName","contactPhone"]],
  "changes.submit":[["vehicleId"],["contactName","contactPhone","brand","model","color"]],
  "changes.listPending":[[],["limit","page","pageSize"]],"changes.review":[["requestId","decision"],[]],

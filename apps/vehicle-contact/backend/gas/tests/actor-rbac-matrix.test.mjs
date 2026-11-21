@@ -1,4 +1,4 @@
-// Exhaustive 55-operation × actor-role authorization acceptance matrix (synthetic only).
+// Exhaustive 56-operation × actor-role authorization acceptance matrix (synthetic only).
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -20,9 +20,9 @@ const validPayload=op=>{
  validateOperationPayload(op,payload);
  return payload;
 };
-test('MATRIX-00 inventory = 55 routes (54 DTOs + health), public endpoints intentionally scoped',()=>{
- assert.equal(declared.length,55);
- assert.equal(new Set(declared).size,55);
+test('MATRIX-00 inventory = 56 routes (55 DTOs + health), public endpoints intentionally scoped',()=>{
+ assert.equal(declared.length,56);
+ assert.equal(new Set(declared).size,56);
  assert.deepEqual(DTO_OPERATIONS.slice().sort(),declared.filter(x=>x!=='system.health').sort());
  assert.deepEqual([...publicOps].sort(),['auth.login','auth.googleLogin','campaigns.validate','photos.upload','registrations.submit'].sort());
  assert.deepEqual(Object.keys(OPERATION_PERMISSIONS).sort(),declared.filter(op=>op!=='system.health'&&!publicOps.has(op)).sort());
@@ -35,10 +35,10 @@ test('MATRIX-01 every protected route rejects missing session using a valid DTO,
   assert.equal(h.io.writes,before,'unauthorized call must have no business data writes');
   count++;
  }
- assert.equal(count,49);
- console.log('RBAC anonymous denied at 49 protected operations with schema-valid payloads');
+ assert.equal(count,50);
+ console.log('RBAC anonymous denied at 50 protected operations with schema-valid payloads');
 });
-test('MATRIX-02 five actor roles × 49 protected operations: server session, not client role, governs access',()=>{
+test('MATRIX-02 five actor roles × 50 protected operations: server session, not client role, governs access',()=>{
  let total=0,denied=0,granted=0;
  for(const [actor,role]of Object.entries(actors)){
   const grants=ROLE_PERMISSIONS[role];
@@ -57,8 +57,8 @@ test('MATRIX-02 five actor roles × 49 protected operations: server session, not
    total++;
   }
  }
- assert.equal(total,245);
- console.log('RBAC 5 roles × 49 operations = '+total+' checks; role-allowed='+granted+', denied='+denied);
+ assert.equal(total,250);
+ console.log('RBAC 5 roles × 50 operations = '+total+' checks; role-allowed='+granted+', denied='+denied);
 });
 test('MATRIX-03 anonymous public operations require correct business token or credentials, not fake role',()=>{
  for(const op of [...publicOps]){

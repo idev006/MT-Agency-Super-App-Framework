@@ -42,6 +42,7 @@ This matrix maps each of the **55 canonical API v1 operations to one primary own
 | `vehicles.cancel` | `VC-VEHICLES-004` | [UC-RET-01](use-cases/UC-RET-01/specification.md) | `vehicle.update` | ACTOR-06 | PENDING_REAL_GAS |
 | `vehicles.history` | `VC-VEHICLES-005` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.history.read` | ACTOR-03 | PENDING_REAL_GAS |
 | `vehicles.listMine` | `VC-VEHICLES-006` | [UC-OWNER-01](use-cases/UC-OWNER-01/specification.md) | `vehicle.own.read` | ACTOR-04 | PENDING_REAL_GAS |
+| `vehicles.list` | `VC-VEHICLES-007` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.list` | REG-01 | PENDING_REAL_GAS |
 | `contacts.read` | `VC-CONTACTS-001` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.contact.read` | ACTOR-03 | PENDING_REAL_GAS |
 | `contacts.update` | `VC-CONTACTS-002` | [UC-VEH-02](use-cases/UC-VEH-02/specification.md) | `vehicle.contact.read` | ACTOR-04 | PENDING_REAL_GAS |
 | `changes.submit` | `VC-CHANGES-001` | [UC-OWNER-01](use-cases/UC-OWNER-01/specification.md) | `campaign.token.valid` | ACTOR-04 | PENDING_REAL_GAS |

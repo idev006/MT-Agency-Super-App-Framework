@@ -229,6 +229,12 @@ async function run(){
  });
  await test('VEHICLES.LIST_MINE.FORBIDDEN','vehicles.listMine',async()=>
   denied(await request('vehicles.listMine',{limit:100},state.tokens.staff),'FORBIDDEN'));
+ await test('VEHICLES.LIST','vehicles.list',async()=>{
+  const rows=ok(await request('vehicles.list',{limit:100},state.tokens.sys));
+  assert.ok(rows.some(x=>x.vehicleId===state.approved.vehicleId));
+ });
+ await test('VEHICLES.LIST.FORBIDDEN','vehicles.list',async()=>
+  denied(await request('vehicles.list',{limit:100},state.tokens.staff),'FORBIDDEN'));
  await test('CHANGES.SUBMIT','changes.submit',async()=>{
   state.change=ok(await request('changes.submit',{vehicleId:state.approved.vehicleId,color:'ORANGE'},state.tokens.owner));
   assert.ok(state.change.requestId);

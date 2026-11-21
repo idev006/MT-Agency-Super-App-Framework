@@ -51,6 +51,7 @@ Owner-gate legend: 🔑 = needs owner action/credential/decision; 🤖 = assista
 | C3 | **Vehicle maintenance edit** (update/link owner/contact/photo replace/cancel) | G3 edit | C2 | `expectedVersion` conflict UX; REGADMIN gated |
 | C4 | OWNER **`my-vehicles`** (list → submit change → track) | G1 FE / 2B | B1+A3 | server-scoped reads wired; owner journey E2E |
 | C5 | RETENTION_WORKER **execution console** (list executable → execute → status/retry) | G4 FE / 3B | D5+B3 | gated destructive UX; two-person; legal_hold |
+| C6 | SYSTEM_ADMIN **approved-vehicle registry** (`vehicles.list` browse all ACTIVE, non-PII) | G3 admin read | — | admin-only `vehicle.list`; minimal fields; no join; PDPA ratification (VC-ADR-017) |
 
 ### WS-D — Decisions & security ratification — 🔑
 | ID | Decision | Ref | Recommended default |
@@ -120,6 +121,7 @@ Owner-gate legend: 🔑 = needs owner action/credential/decision; 🤖 = assista
 | B3 | 🔑 WAITING business mapping | — |
 | B4 | ✅ MERGED (#94) | [Login constant-work evidence](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md) — 5/5 + suite 123/123 |
 | C1–C4 | ✅ SOURCE COMPLETE + TEST GREEN (FE 172/172, build green) | C1 change-review, C2 vehicle-detail, C3 maintenance, C4 my-vehicles; live/browser acceptance pending `.env` + owner sign-in. **C5** ⬜ gated D5+B3 |
+| C6 | ✅ DEPLOYED LIVE — GAS **V48 `0.9.1`**, Worker `20180237-…`; GAS 139/139, FE 180/180, Worker 31/31, edge 14/14 | [C6 evidence](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md) — admin-only `vehicles.list` (11 ACTIVE live); [VC-ADR-017](DECISION_LOG.md) PDPA ratification + authenticated probe/browser acceptance pending `.env` |
 | D-R1/D-R2/D3/D4/D5 | 🔑 WAITING owner | VC-ADR-014/015 recorded |
 | E1–E3 | E1 design + E3 dossier ✅ PREPARED (await owner); E2 ✅ DONE | [E1 migration design](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) (D-E1 decision), [E3 sign-off dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md) (4 human gates OPEN), [E2 evidence](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md) |
 | NF-1 | ✅ ROOT-CAUSE FIXED + LIVE REPAIR DONE — Web App **V47**, GAS suite **134/134** | [Number-format display-corruption incident](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md) — singular→plural `setNumberFormats` (root cause #1), build wrapper-derivation + GAS-VM-03 guard (#2), numeric-General `0.###############` equivalence (#3). Every-sheet repair: 6,659 cells / 21 sheets fixed, **values never touched**; final pass `totalMismatched:0,totalApplied:0` (25 sheets, idempotent) |
