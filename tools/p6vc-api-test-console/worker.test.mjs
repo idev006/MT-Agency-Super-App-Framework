@@ -60,7 +60,7 @@ test('frontend gateway preflight allows configured development origin',async()=>
 test('frontend gateway rejects unknown origin and operations outside the POC allowlist',async()=>{
  let r=await worker.fetch(frontendRequest({},'https://evil.invalid','OPTIONS'),env());
  assert.equal(r.status,403);
- r=await worker.fetch(frontendRequest({apiVersion:'v1',group:'photos',action:'replace',payload:{},requestId:'frontend-test-01'}),env());
+ r=await worker.fetch(frontendRequest({apiVersion:'v1',group:'vehicles',action:'delete',payload:{},requestId:'frontend-test-01'}),env());
  assert.equal(r.status,403);
  assert.equal((await r.json()).error,'OPERATION_NOT_ALLOWED');
 });
@@ -210,6 +210,54 @@ test('frontend gateway allows protected registration references with an exact em
   response=await worker.fetch(frontendRequest({...base,payload:{role:'SYSTEM_ADMIN'}}),env());
   assert.equal(response.status,403);
   assert.equal(fake.calls.length,1,'invalid reference requests must not reach GAS');
+ }finally{fake.restore();}
+});
+test('frontend gateway forwards maintenance/change/retention ops through exact DTOs',async()=>{
+ const fake=await fakeGAS(body=>envelope(true,{operation:body.group+'.'+body.action}));
+ try{
+  const base={apiVersion:'v1',requestId:'maint_journey_01',sessionToken:TOKEN};
+  const cases=[
+   ['vehicles','detail',{vehicleId:'vehicle-1'}],
+   ['vehicles','update',{vehicleId:'vehicle-1',expectedVersion:3,color:'Red'}],
+   ['vehicles','cancel',{vehicleId:'vehicle-1'}],
+   ['contacts','read',{vehicleId:'vehicle-1'}],
+   ['contacts','update',{vehicleId:'vehicle-1',contactName:'Synthetic',contactPhone:'+66800000000'}],
+   ['changes','submit',{vehicleId:'vehicle-1',contactPhone:'+66800000001'}],
+   ['changes','listPending',{page:1,pageSize:10}],
+   ['changes','review',{requestId:'change-1',decision:'APPROVE'}],
+   ['photos','list',{vehicleId:'vehicle-1'}],
+   ['retention','execute',{jobId:'job-1'}],
+  ];
+  for(const [group,action,payload] of cases){
+   const r=await worker.fetch(frontendRequest({...base,group,action,payload}),env());
+   assert.equal(r.status,200,group+'.'+action);
+   assert.equal((await r.json()).ok,true,group+'.'+action);
+  }
+  assert.deepEqual(fake.calls.map(x=>x.group+'.'+x.action),cases.map(c=>c[0]+'.'+c[1]));
+  for(const [group,action,payload,sessionToken] of [
+   ['vehicles','update',{vehicleId:'vehicle-1'},TOKEN],
+   ['vehicles','detail',{vehicleId:'vehicle-1',role:'STAFF'},TOKEN],
+   ['changes','review',{requestId:'change-1',decision:'APPROVE'},undefined],
+   ['contacts','update',{vehicleId:'vehicle-1',contactName:'x',password:'leak'},TOKEN],
+  ]){
+   const r=await worker.fetch(frontendRequest({...base,group,action,payload,sessionToken}),env());
+   assert.equal(r.status,403,group+'.'+action+' negative');
+  }
+  assert.equal(fake.calls.length,cases.length,'invalid maintenance requests must not reach GAS');
+ }finally{fake.restore();}
+});
+test('frontend gateway accepts protected photo replace with a large image and rejects bad shape',async()=>{
+ const fake=await fakeGAS(body=>envelope(true,{photoId:'photo-1',slot:body.payload.slot}));
+ try{
+  const base={apiVersion:'v1',requestId:'photo_replace_01',sessionToken:TOKEN};
+  let r=await worker.fetch(frontendRequest({...base,group:'photos',action:'replace',payload:{vehicleId:'vehicle-1',slot:'FRONT',base64Image:'a'.repeat(40000),mimeType:'image/png'}}),env());
+  assert.equal(r.status,200);
+  assert.deepEqual(fake.calls.map(x=>x.group+'.'+x.action),['photos.replace']);
+  r=await worker.fetch(frontendRequest({...base,group:'photos',action:'replace',payload:{vehicleId:'vehicle-1',slot:'UNKNOWN',base64Image:'aaaa',mimeType:'image/png'}}),env());
+  assert.equal(r.status,403);
+  r=await worker.fetch(frontendRequest({...base,sessionToken:undefined,group:'photos',action:'replace',payload:{vehicleId:'vehicle-1',slot:'FRONT',base64Image:'aaaa',mimeType:'image/png'}}),env());
+  assert.equal(r.status,403);
+  assert.equal(fake.calls.length,1,'invalid photo replace must not reach GAS');
  }finally{fake.restore();}
 });
 test('access key is mandatory even for health and probes',async()=>{
