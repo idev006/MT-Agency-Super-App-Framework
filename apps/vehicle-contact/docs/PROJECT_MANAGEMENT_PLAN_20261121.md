@@ -115,10 +115,10 @@ Owner-gate legend: 🔑 = needs owner action/credential/decision; 🤖 = assista
 | A1 | 🔑 WAITING owner publish V38 | source Version 38 pushed (run 44878044190) |
 | A2 | 🔑 WAITING DEV credential | — |
 | A3 | 🔑 WAITING DEV credential | runner coverage wired (#90) |
-| B1 | 🤖 SOURCE+TESTS GREEN (PR pending) | [Org cycle evidence](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md) — 7/7 + suite 118/118 |
+| B1 | ✅ MERGED (#93) | [Org cycle evidence](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md) — 7/7 |
 | B2 | ⬜ TODO | — |
 | B3 | 🔑 WAITING business mapping | — |
-| B4 | ⬜ TODO | — |
+| B4 | 🤖 SOURCE+TESTS GREEN (PR pending) | [Login constant-work evidence](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md) — 5/5 + suite 123/123 |
 | C1–C5 | ⬜ TODO (after M0) | — |
 | D-R1/D-R2/D3/D4/D5 | 🔑 WAITING owner | VC-ADR-014/015 recorded |
 | E1–E3 | ⬜ TODO | — |

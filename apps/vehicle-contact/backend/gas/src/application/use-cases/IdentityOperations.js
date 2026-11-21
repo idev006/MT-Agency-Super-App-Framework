@@ -1,5 +1,8 @@
 import {ROLE_PERMISSIONS} from '../security/SessionService.js';
 import {paginate} from '../pagination/Pagination.js';
+// Static dummy hash with the same PBKDF2 cost as GasSecurity.hashPassword (150000 rounds).
+// Used for unknown/inactive users so login always performs equal work (no username-enumeration timing oracle).
+const DUMMY_PASSWORD_HASH='pbkdf2-sha256$150000$'+'0'.repeat(32)+'$'+'0'.repeat(64);
 export function createIdentityOperations({store,security,sessions}) {
  const required=(value,name,max=256)=>{if(typeof value!=='string'||!value.trim()||value.length>max)throw new Error('INVALID_'+name);return value.trim();};
  const text=v=>required(v,'TEXT').replace(/[\r\n]/g,' ');
@@ -19,8 +22,10 @@ export function createIdentityOperations({store,security,sessions}) {
   const username=required(p.username,'USERNAME',100).normalize('NFKC').toLowerCase();
   const digest=attempts(username);
   const user=store.one('vc_users',{username_normalized:username});
-  // Never reveal whether username exists.
-  if(!user||user.status!=='ACTIVE'||!security.verifyPassword(p.password,user.password_hash)) {
+  // Never reveal whether the username exists (message AND timing): verify unconditionally.
+  const active=!!user&&user.status==='ACTIVE';
+  const verified=security.verifyPassword(p.password,active?user.password_hash:DUMMY_PASSWORD_HASH);
+  if(!active||!verified) {
    recordAttempt(digest,'FAILED');throw new Error('INVALID_CREDENTIALS');
   }
   recordAttempt(digest,'SUCCESS');
