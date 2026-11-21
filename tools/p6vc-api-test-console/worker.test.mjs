@@ -246,6 +246,34 @@ test('frontend gateway forwards maintenance/change/retention ops through exact D
   assert.equal(fake.calls.length,cases.length,'invalid maintenance requests must not reach GAS');
  }finally{fake.restore();}
 });
+test('frontend gateway forwards owner-scoped and retention-worker reads through exact DTOs',async()=>{
+ const fake=await fakeGAS(body=>envelope(true,{operation:body.group+'.'+body.action}));
+ try{
+  const base={apiVersion:'v1',requestId:'scoped_reads_01',sessionToken:TOKEN};
+  const cases=[
+   ['vehicles','listMine',{page:1,pageSize:10}],
+   ['changes','listMine',{page:1,pageSize:10}],
+   ['retention','listExecutable',{page:1,pageSize:10}],
+  ];
+  for(const [group,action,payload] of cases){
+   const r=await worker.fetch(frontendRequest({...base,group,action,payload}),env());
+   assert.equal(r.status,200,group+'.'+action);
+   assert.equal((await r.json()).ok,true,group+'.'+action);
+  }
+  assert.deepEqual(fake.calls.map(x=>x.group+'.'+x.action),cases.map(c=>c[0]+'.'+c[1]));
+  assert.deepEqual(fake.calls.map(x=>x.payload),cases.map(c=>c[2]));
+  for(const [group,action,payload,sessionToken] of [
+   ['vehicles','listMine',{page:1,pageSize:10},undefined],
+   ['changes','listMine',{page:1,pageSize:10,role:'OWNER'},TOKEN],
+   ['retention','listExecutable',{page:1,pageSize:10,vehicleId:'vehicle-1'},TOKEN],
+   ['vehicles','listMine',{},'not-a-session-token'],
+  ]){
+   const r=await worker.fetch(frontendRequest({...base,group,action,payload,sessionToken}),env());
+   assert.equal(r.status,403,group+'.'+action+' negative');
+  }
+  assert.equal(fake.calls.length,cases.length,'invalid scoped reads must not reach GAS');
+ }finally{fake.restore();}
+});
 test('frontend gateway accepts protected photo replace with a large image and rejects bad shape',async()=>{
  const fake=await fakeGAS(body=>envelope(true,{photoId:'photo-1',slot:body.payload.slot}));
  try{
