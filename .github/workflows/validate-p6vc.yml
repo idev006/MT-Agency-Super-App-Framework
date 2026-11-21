@@ -51,6 +51,7 @@ jobs:
         run: |
           node --check tools/p6vc-api-test-console/worker.mjs
           node --check tools/p6vc-api-test-console/worker.test.mjs
+          node --check tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs
           node --test tools/p6vc-api-test-console/worker.test.mjs
       - name: Build and test GAS backend artifact
         working-directory: apps/vehicle-contact/backend/gas
