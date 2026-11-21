@@ -149,7 +149,9 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  }
  function vehicleLookup(p,a){
   const [plate,province]=vehicleBusinessKey(p.plate,p.province).split('|');
-  const list=store.list('vc_vehicles').filter(v=>v.plate_normalized===plate&&v.province_code===province&&v.status==='ACTIVE');
+  // Tolerate legacy rows whose numeric-looking province_code was coerced to a
+  // number by Sheets before the text-preserving write fix; compare as strings.
+  const list=store.list('vc_vehicles').filter(v=>String(v.plate_normalized)===plate&&String(v.province_code)===province&&String(v.status)==='ACTIVE');
   if(list.length>1)throw new Error('DUPLICATE_ACTIVE_VEHICLE');
   if(!list.length){lookupAudit(a,'NO_MATCH','PLATE','NOT_FOUND');return null;}
   return vehicleView(list[0],a,'PLATE');
