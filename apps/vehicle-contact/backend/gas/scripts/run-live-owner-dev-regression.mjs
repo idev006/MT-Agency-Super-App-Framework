@@ -1,6 +1,7 @@
 // Owner-authorized development regression against the pinned P6VC GAS Web App.
 // This script creates synthetic records, disables/suspends them during cleanup,
 // and never prints credentials, session tokens, raw responses, or personal data.
+import './load-env.mjs';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
