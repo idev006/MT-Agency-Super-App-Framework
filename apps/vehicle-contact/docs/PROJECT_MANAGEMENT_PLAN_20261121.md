@@ -112,13 +112,13 @@ Owner-gate legend: 🔑 = needs owner action/credential/decision; 🤖 = assista
 
 | Slice | Status | Evidence / PR |
 |---|---|---|
-| A1 | ✅ DONE — V39 published, health `0.9.0` verified via Worker | M0 closed (A1+A2). **Live-hardening gap:** V39 source `3646e39` predates B1/B4/B2 → re-push `main` @ `647c463` + publish required for production |
+| A1 | ✅ DONE — live Web App **V41** (assistant clasp self-deploy), health `0.9.0 ready` via direct exec + Worker; hardening B1/B4/B2/C1 LIVE (source `ab83384`); webapp-manifest 404 incident fixed (#104) | M0 closed. [Incident SSOT](GAS_CLASP_WEBAPP_MANIFEST_INCIDENT_20261121.md). Residual: authenticated B1/B4/B2 probes await `.env` |
 | A2 | ✅ LIVE PASS **10/10** + negatives | [Live DEV E2E evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md) — 8 approved + 2 pre-fix, lookup+QR MATCH, `INVALID_REQUEST_STATE`/`PHOTO_NOT_FOUND` |
 | A3 | ✅ LIVE PASS **70/70**, **55/55** ops | [Live DEV E2E evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md) — all 5 roles, 3 scoped ops + FORBIDDEN negatives, cleanup PASS |
 | B1 | ✅ MERGED (#93) | [Org cycle evidence](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md) — 7/7 |
 | B2 | ✅ MERGED (#96) — 7/7 + full suite | [Journal recovery evidence](BACKEND_JOURNAL_RECOVERY_EVIDENCE_20261121.md) + [runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) — auto submit reconciliation (D-SEQ-05); failure tests + manual runbook (D-SEQ-09); B2b durable journaling deferred |
 | B3 | 🔑 WAITING business mapping | — |
 | B4 | ✅ MERGED (#94) | [Login constant-work evidence](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md) — 5/5 + suite 123/123 |
-| C1–C5 | ⬜ TODO (after M0) | — |
+| C1–C4 | ✅ SOURCE COMPLETE + TEST GREEN (FE 172/172, build green) | C1 change-review, C2 vehicle-detail, C3 maintenance, C4 my-vehicles; live/browser acceptance pending `.env` + owner sign-in. **C5** ⬜ gated D5+B3 |
 | D-R1/D-R2/D3/D4/D5 | 🔑 WAITING owner | VC-ADR-014/015 recorded |
-| E1–E3 | ⬜ TODO | — |
+| E1–E3 | E1 design + E3 dossier ✅ PREPARED (await owner); E2 ✅ DONE | [E1 migration design](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) (D-E1 decision), [E3 sign-off dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md) (4 human gates OPEN), [E2 evidence](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md) |
