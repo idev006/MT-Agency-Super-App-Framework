@@ -5,7 +5,7 @@
   "status": "PROPOSED_CONTRACT_NOT_DEPLOYED",
   "lastReviewed": "2026-11-17",
   "notes": [
-    "All 52 logical operations now have source handlers or bootstrap health route. This is NOT a verified, deployed or production-ready implementation.",
+    "All 55 logical operations now have source handlers or bootstrap health route. This is NOT a verified, deployed or production-ready implementation.",
     "Protected GAS ingress remains disabled by default and requires explicit server-side feature flag after security/privacy/release reviews.",
     "Request/response JSON Schema and staging API tests are outstanding; all verification flags remain false."
   ],
@@ -494,6 +494,20 @@
       "liveVerified": false
     },
     {
+      "id": "VC-VEHICLES-006",
+      "group": "vehicles",
+      "action": "listMine",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/vehicles.listMine",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
       "id": "VC-CONTACTS-001",
       "group": "contacts",
       "action": "read",
@@ -558,6 +572,20 @@
       "status": "SOURCE_WRITTEN_UNVERIFIED",
       "protected": true,
       "requestSchemaRef": "#/definitions/requests/changes.review",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
+      "id": "VC-CHANGES-004",
+      "group": "changes",
+      "action": "listMine",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/changes.listMine",
       "responseSchemaRef": "#/definitions/ApiResponse",
       "implementationVerified": false,
       "integrationVerified": false,
@@ -712,6 +740,20 @@
       "status": "SOURCE_WRITTEN_UNVERIFIED",
       "protected": true,
       "requestSchemaRef": "#/definitions/requests/retention.jobStatus",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
+      "id": "VC-RETENTION-005",
+      "group": "retention",
+      "action": "listExecutable",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/retention.listExecutable",
       "responseSchemaRef": "#/definitions/ApiResponse",
       "implementationVerified": false,
       "integrationVerified": false,

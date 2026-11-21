@@ -254,6 +254,20 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    audit(a,'change',requestId,'CHANGE_'+p.decision);return {requestId,status:p.decision};
   });
  }
+ function vehicleListMine(p,a){
+  // OWNER-scoped read: filter strictly by the server session identity, never a client-supplied owner id.
+  // Single bounded snapshot read; no cross-sheet join (minimal vehicle fields only).
+  const items=store.list('vc_vehicles').filter(v=>String(v.owner_user_id)===String(a.userId)&&String(v.status)==='ACTIVE')
+   .map(v=>({vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,vehicleType:v.vehicle_type,
+    brand:v.make,model:v.model,color:v.color,status:v.status,version:Number(v.version)}));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
+ }
+ function changeListMine(p,a){
+  const items=store.list('vc_change_requests').filter(r=>String(r.submitted_by)===String(a.userId))
+   .map(r=>({requestId:r.change_id,vehicleId:r.vehicle_id,status:r.status,submittedAt:r.submitted_at,
+    reviewedAt:r.reviewed_at,proposedDelta:JSON.parse(r.proposed_delta)}));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
+ }
  function resolveQr(p,a){
   const token=need(p.token,'TOKEN');
   if(!/^[a-f0-9]{64}$/i.test(token))throw new Error('INVALID_QR');
@@ -283,9 +297,9 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   'registrations.submit':registrationSubmit,'registrations.listPending':registrationPending,
   'registrations.detail':registrationDetail,'registrations.review':registrationReview,
   'vehicles.lookup':vehicleLookup,'vehicles.detail':vehicleDetail,'vehicles.update':vehicleUpdate,
-  'vehicles.cancel':vehicleCancel,'vehicles.history':vehicleHistory,
+  'vehicles.cancel':vehicleCancel,'vehicles.history':vehicleHistory,'vehicles.listMine':vehicleListMine,
   'contacts.read':contactRead,'contacts.update':contactUpdate,
-  'changes.submit':changeSubmit,'changes.listPending':changePending,'changes.review':changeReview,
+  'changes.submit':changeSubmit,'changes.listPending':changePending,'changes.review':changeReview,'changes.listMine':changeListMine,
   'qr.resolve':resolveQr,'qr.issue':(p,a)=>manageQr(p,a,'issue'),
   'qr.revoke':(p,a)=>manageQr(p,a,'revoke'),'qr.replace':(p,a)=>manageQr(p,a,'replace')
  });

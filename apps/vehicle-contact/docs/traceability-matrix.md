@@ -3,7 +3,7 @@
 **Document ID:** P6VC-TRACE-SEQ-001 | 2026-11-17 | **Design traceability, not live-operation certification**.
 
 ## Read me first
-This matrix maps each of the **52 canonical API v1 operations to one primary owning Use Case (20 diagrams)** and a test identifier. The permission column below is from `contracts/api-permissions.v1.json` and retains its **PROPOSED_NOT_SECURITY_APPROVED** status; source implementation permission may differ (listed below). Do not treat contract `enabled:false` as a test result.
+This matrix maps each of the **55 canonical API v1 operations to one primary owning Use Case (20 diagrams)** and a test identifier. The permission column below is from `contracts/api-permissions.v1.json` and retains its **PROPOSED_NOT_SECURITY_APPROVED** status; source implementation permission may differ (listed below). Do not treat contract `enabled:false` as a test result.
 
 | Canonical v1 operation | Inventory ID | Owning UC / specification | Proposed contract permission | Planned or tested TC | Live authenticated GAS |
 |---|---|---|---|---|---|
@@ -41,11 +41,13 @@ This matrix maps each of the **52 canonical API v1 operations to one primary own
 | `vehicles.update` | `VC-VEHICLES-003` | [UC-VEH-02](use-cases/UC-VEH-02/specification.md) | `vehicle.update` | ACTOR-04 | PENDING_REAL_GAS |
 | `vehicles.cancel` | `VC-VEHICLES-004` | [UC-RET-01](use-cases/UC-RET-01/specification.md) | `vehicle.update` | ACTOR-06 | PENDING_REAL_GAS |
 | `vehicles.history` | `VC-VEHICLES-005` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.history.read` | ACTOR-03 | PENDING_REAL_GAS |
+| `vehicles.listMine` | `VC-VEHICLES-006` | [UC-OWNER-01](use-cases/UC-OWNER-01/specification.md) | `vehicle.own.read` | ACTOR-04 | PENDING_REAL_GAS |
 | `contacts.read` | `VC-CONTACTS-001` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.contact.read` | ACTOR-03 | PENDING_REAL_GAS |
 | `contacts.update` | `VC-CONTACTS-002` | [UC-VEH-02](use-cases/UC-VEH-02/specification.md) | `vehicle.contact.read` | ACTOR-04 | PENDING_REAL_GAS |
 | `changes.submit` | `VC-CHANGES-001` | [UC-OWNER-01](use-cases/UC-OWNER-01/specification.md) | `campaign.token.valid` | ACTOR-04 | PENDING_REAL_GAS |
 | `changes.listPending` | `VC-CHANGES-002` | [UC-OWNER-01](use-cases/UC-OWNER-01/specification.md) | `vehicle.change.approve` | ACTOR-04 | PENDING_REAL_GAS |
 | `changes.review` | `VC-CHANGES-003` | [UC-OWNER-01](use-cases/UC-OWNER-01/specification.md) | `vehicle.change.approve` | ACTOR-04 | PENDING_REAL_GAS |
+| `changes.listMine` | `VC-CHANGES-004` | [UC-OWNER-01](use-cases/UC-OWNER-01/specification.md) | `vehicle.own.read` | ACTOR-04 | PENDING_REAL_GAS |
 | `qr.resolve` | `VC-QR-001` | [UC-QR-01](use-cases/UC-QR-01/specification.md) | `vehicle.lookup` | ACTOR-03 | PENDING_REAL_GAS |
 | `qr.issue` | `VC-QR-002` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-04 | PENDING_REAL_GAS |
 | `qr.revoke` | `VC-QR-003` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-04 | PENDING_REAL_GAS |
@@ -57,6 +59,7 @@ This matrix maps each of the **52 canonical API v1 operations to one primary own
 | `retention.approve` | `VC-RETENTION-002` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.delete.approve` | ACTOR-06 | PENDING_REAL_GAS |
 | `retention.execute` | `VC-RETENTION-003` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.worker` | ACTOR-06 | PENDING_REAL_GAS |
 | `retention.jobStatus` | `VC-RETENTION-004` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.read` | ACTOR-06 | PENDING_REAL_GAS |
+| `retention.listExecutable` | `VC-RETENTION-005` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.worker` | ACTOR-06 | PENDING_REAL_GAS |
 | `audit.query` | `VC-AUDIT-001` | [UC-AUD-01](use-cases/UC-AUD-01/specification.md) | `audit.read` | ACTOR-06 | PENDING_REAL_GAS |
 | `audit.export` | `VC-AUDIT-002` | [UC-AUD-01](use-cases/UC-AUD-01/specification.md) | `audit.read` | ACTOR-06 | PENDING_REAL_GAS |
 

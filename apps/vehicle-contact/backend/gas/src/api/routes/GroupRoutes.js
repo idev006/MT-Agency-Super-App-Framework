@@ -7,12 +7,12 @@ const GROUPS=Object.freeze({
  campaigns:Object.freeze(['create','list','validate','revoke']),
  references:Object.freeze(['registration']),
  registrations:Object.freeze(['submit','listPending','detail','review','photo']),
- vehicles:Object.freeze(['lookup','detail','update','cancel','history']),
+ vehicles:Object.freeze(['lookup','detail','update','cancel','history','listMine']),
  contacts:Object.freeze(['read','update']),
- changes:Object.freeze(['submit','listPending','review']),
+ changes:Object.freeze(['submit','listPending','review','listMine']),
  qr:Object.freeze(['resolve','issue','revoke','replace']),
  photos:Object.freeze(['upload','list','replace']),
- retention:Object.freeze(['listDue','approve','execute','jobStatus']),
+ retention:Object.freeze(['listDue','listExecutable','approve','execute','jobStatus']),
  audit:Object.freeze(['query','export'])
 });
 export const API_GROUPS=GROUPS;

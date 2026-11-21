@@ -222,9 +222,19 @@ async function run(){
  await test('VEHICLES.HISTORY','vehicles.history',async()=>{
   assert.ok(ok(await request('vehicles.history',{vehicleId:state.approved.vehicleId},state.tokens.staff)).length>0);
  });
+ await test('VEHICLES.LIST_MINE','vehicles.listMine',async()=>{
+  const rows=ok(await request('vehicles.listMine',{limit:100},state.tokens.owner));
+  assert.ok(rows.some(x=>x.vehicleId===state.approved.vehicleId));
+ });
+ await test('VEHICLES.LIST_MINE.FORBIDDEN','vehicles.listMine',async()=>
+  denied(await request('vehicles.listMine',{limit:100},state.tokens.staff),'FORBIDDEN'));
  await test('CHANGES.SUBMIT','changes.submit',async()=>{
   state.change=ok(await request('changes.submit',{vehicleId:state.approved.vehicleId,color:'ORANGE'},state.tokens.owner));
   assert.ok(state.change.requestId);
+ });
+ await test('CHANGES.LIST_MINE','changes.listMine',async()=>{
+  const rows=ok(await request('changes.listMine',{limit:100},state.tokens.owner));
+  assert.ok(rows.some(x=>x.requestId===state.change.requestId));
  });
  await test('CHANGES.LIST_PENDING','changes.listPending',async()=>{
   const rows=ok(await request('changes.listPending',{limit:100},state.tokens.reg));
@@ -256,6 +266,11 @@ async function run(){
  await test('RETENTION.LIST_DUE','retention.listDue',async()=>{
   assert.ok(Array.isArray(ok(await request('retention.listDue',{limit:100},adminToken))));
  });
+ await test('RETENTION.LIST_EXECUTABLE','retention.listExecutable',async()=>{
+  assert.ok(Array.isArray(ok(await request('retention.listExecutable',{limit:100},state.tokens.worker))));
+ });
+ await test('RETENTION.LIST_EXECUTABLE.FORBIDDEN','retention.listExecutable',async()=>
+  denied(await request('retention.listExecutable',{limit:100},state.tokens.staff),'FORBIDDEN'));
  await test('RETENTION.JOB_STATUS','retention.jobStatus',async()=>{
   assert.equal(ok(await request('retention.jobStatus',{jobId:'no-such-job-'+tag},adminToken)),null);
  });

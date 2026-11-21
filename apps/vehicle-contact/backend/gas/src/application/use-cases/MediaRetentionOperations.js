@@ -76,6 +76,15 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
    .map(j=>({jobId:j.job_id,vehicleId:j.vehicle_id,dueAt:j.due_at,status:j.status}));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
+ function executableJobs(p){
+  // RETENTION_WORKER-scoped read: only jobs the worker may actually execute (approved/failed, due, no hold).
+  // Lets the worker discover work without retention.read; single bounded snapshot read, no join.
+  const cutoff=Date.parse(now()),items=store.list('vc_retention_jobs').filter(j=>
+   ['DELETION_APPROVED','DELETION_FAILED'].includes(j.status)&&j.approved_by&&Date.parse(j.due_at)<=cutoff
+   &&j.legal_hold!==true&&String(j.legal_hold)!=='true')
+   .map(j=>({jobId:j.job_id,vehicleId:j.vehicle_id,dueAt:j.due_at,status:j.status,attempts:Number(j.attempts),lastError:j.last_error}));
+  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
+ }
  function approveDeletion(p,actor){
   const jobId=need(p.jobId,'JOB_ID');
   return store.withLock(()=>{
@@ -132,7 +141,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
  return Object.freeze({
   'photos.upload':uploadPhoto,'photos.list':photosList,'photos.replace':replacePhoto,
   'registrations.photo':registrationPhoto,
-  'retention.listDue':dueJobs,'retention.approve':approveDeletion,
+  'retention.listDue':dueJobs,'retention.listExecutable':executableJobs,'retention.approve':approveDeletion,
   'retention.execute':executeDeletion,'retention.jobStatus':status,
   'audit.query':queryAudit,'audit.export':p=>({format:'JSON',rows:queryAudit({...(p.vehicleId?{vehicleId:p.vehicleId}:{}),limit:100})})
  });

@@ -4,7 +4,7 @@
 
 ## 1. Authority and scope
 - Business baseline: [Approved requirements](../../APPROVED_REQUIREMENTS_BASELINE_R01_R26.md).
-- API operations: `retention.approve`, `retention.execute`, `retention.jobStatus` (API v1 JSON envelope, GAS POST except public health GET).
+- API operations: `retention.approve`, `retention.execute`, `retention.jobStatus`, `retention.listExecutable` (API v1 JSON envelope, GAS POST except public health GET).
 - Implementation: `backend/gas/src/application/use-cases/MediaRetentionOperations.js`; server permission source `backend/gas/src/api/controllers/OperationController.js`.
 - Diagram source: [sequence.mmd](sequence.mmd) (Mermaid, reviewed alongside spec).
 
@@ -33,7 +33,7 @@ Not due, hold, missing approver, disabled worker flag, storage fault produces re
 - FE status: **NOT_WIRED**; design must align Vue 3, Pinia, Router and API adapter per Master Web Blueprint.
 
 ## 7. Development notes / explicit gaps
-Deletion first trashes Drive then mutates multiple Sheets tables; abrupt interruption and repeated file trash calls can leave DELETION_FAILED and need verified reconciliation.
+Deletion first trashes Drive then mutates multiple Sheets tables; abrupt interruption and repeated file trash calls can leave DELETION_FAILED and need verified reconciliation. `retention.listExecutable` gives RETENTION_WORKER a least-privilege queue (permission `retention.worker`, not `retention.read`): a single bounded snapshot of `vc_retention_jobs` filtered to `DELETION_APPROVED`/`DELETION_FAILED`, due, non-hold, with an approver, so the worker can discover executable jobIds without broader retention visibility. No cross-sheet join.
 
 ## 8. Approval conditions
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
