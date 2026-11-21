@@ -78,7 +78,7 @@ Owner-gate legend: 🔑 = needs owner action/credential/decision; 🤖 = assista
 | **M3 — Worker execution gated + rehearsed** | C5 + D5 + B3 | destructive retention (synthetic only) |
 | **M4 — Production readiness** | E1 + E2 + E3 + D4 | release candidacy |
 
-**Critical path:** A1 (🔑 publish) → A2 (🔑 credential) → **M0**. **B1 is independent — start now in parallel.**
+**Critical path:** ~~A2 (🔑 credential)~~ **DONE — live 10/10** against V37 (functional 0.9.0). **M0 now only waits on A1** (🔑 owner publish V38 → health reads 0.9.0). **M1** has B1 ✅ + B4 ✅ + A3 ✅; only **B2** remains. B1/B4 were independent and landed in parallel.
 
 ## 5. Execution rules (every slice)
 
@@ -112,13 +112,13 @@ Owner-gate legend: 🔑 = needs owner action/credential/decision; 🤖 = assista
 
 | Slice | Status | Evidence / PR |
 |---|---|---|
-| A1 | 🔑 WAITING owner publish V38 | source Version 38 pushed (run 44878044190) |
-| A2 | 🔑 WAITING DEV credential | — |
-| A3 | 🔑 WAITING DEV credential | runner coverage wired (#90) |
+| A1 | 🔑 WAITING owner publish V38 | source Version 38 pushed (run 44878044190); V37 already functionally 0.9.0, health label stale |
+| A2 | ✅ LIVE PASS **10/10** + negatives | [Live DEV E2E evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md) — 8 approved + 2 pre-fix, lookup+QR MATCH, `INVALID_REQUEST_STATE`/`PHOTO_NOT_FOUND` |
+| A3 | ✅ LIVE PASS **70/70**, **55/55** ops | [Live DEV E2E evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md) — all 5 roles, 3 scoped ops + FORBIDDEN negatives, cleanup PASS |
 | B1 | ✅ MERGED (#93) | [Org cycle evidence](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md) — 7/7 |
-| B2 | ⬜ TODO | — |
+| B2 | ⬜ TODO (next autonomous slice) | — |
 | B3 | 🔑 WAITING business mapping | — |
-| B4 | 🤖 SOURCE+TESTS GREEN (PR pending) | [Login constant-work evidence](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md) — 5/5 + suite 123/123 |
+| B4 | ✅ MERGED (#94) | [Login constant-work evidence](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md) — 5/5 + suite 123/123 |
 | C1–C5 | ⬜ TODO (after M0) | — |
 | D-R1/D-R2/D3/D4/D5 | 🔑 WAITING owner | VC-ADR-014/015 recorded |
 | E1–E3 | ⬜ TODO | — |
