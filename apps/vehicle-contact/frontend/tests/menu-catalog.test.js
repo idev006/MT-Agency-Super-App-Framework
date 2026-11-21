@@ -12,7 +12,7 @@ describe('permission-driven menu SSOT', () => {
     const items = menuForPermissions(ROLE_PERMISSIONS.SYSTEM_ADMIN)
     const ids = items.map((item) => item.id)
     expect(ids).toEqual([
-      'dashboard', 'connection', 'account-security', 'user-admin', 'organizations',
+      'dashboard', 'connection', 'account-security', 'vehicle-registry', 'user-admin', 'organizations',
       'campaigns', 'qr-governance', 'system-settings', 'retention', 'audit',
     ])
     expect(ids).not.toContain('vehicle-search')
@@ -47,6 +47,7 @@ describe('permission-driven menu SSOT', () => {
     ['retention.delete.approve', 'retention'],
     ['audit.read', 'audit'],
     ['vehicle.change.approve', 'change-review'],
+    ['vehicle.list', 'vehicle-registry'],
   ])('maps %s to only its authorized capability group', (permission, expectedId) => {
     const ids = menuForPermissions([permission]).map((item) => item.id)
     expect(ids).toEqual(['dashboard', 'connection', expectedId])

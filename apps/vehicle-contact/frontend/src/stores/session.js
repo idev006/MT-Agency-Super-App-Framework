@@ -19,7 +19,7 @@ const previewSession = Object.freeze({
     'session.authenticated', 'system.settings.read', 'system.settings.manage', 'users.manage',
     'organizations.read', 'organizations.manage', 'campaigns.manage', 'qr.manage',
     'retention.read', 'retention.delete.approve', 'audit.read', 'vehicle.lookup', 'vehicle.contact.read',
-    'vehicle.photos.read', 'vehicle.history.read',
+    'vehicle.photos.read', 'vehicle.history.read', 'vehicle.list',
   ],
   expiresAt: '2026-11-18T18:30:00.000Z', mustChangePassword: false,
 })

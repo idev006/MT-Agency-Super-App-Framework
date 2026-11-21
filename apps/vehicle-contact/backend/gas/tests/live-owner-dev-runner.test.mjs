@@ -10,7 +10,7 @@ const liveWorkflow=fs.readFileSync(new URL('../../../../../.github/workflows/p6v
 test('owner development runner statically covers every API inventory operation',()=>{
  const operations=inventory.operations.map(x=>x.group+'.'+x.action);
  const missing=operations.filter(operation=>!source.includes("'"+operation+"'"));
- assert.equal(operations.length,55);
+ assert.equal(operations.length,56);
  assert.deepEqual(missing,[]);
 });
 

@@ -508,6 +508,20 @@
       "liveVerified": false
     },
     {
+      "id": "VC-VEHICLES-007",
+      "group": "vehicles",
+      "action": "list",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/vehicles.list",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
       "id": "VC-CONTACTS-001",
       "group": "contacts",
       "action": "read",

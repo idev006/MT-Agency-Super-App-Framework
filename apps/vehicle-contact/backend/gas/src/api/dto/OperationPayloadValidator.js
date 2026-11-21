@@ -38,6 +38,7 @@ const SCHEMAS={
  'vehicles.cancel':[{vehicleId:'s'},{}],
  'vehicles.history':[{vehicleId:'s'},{}],
  'vehicles.listMine':[{}, {limit:'n',page:'n',pageSize:'n'}],
+ 'vehicles.list':[{}, {limit:'n',page:'n',pageSize:'n'}],
  'contacts.read':[{vehicleId:'s'},{}],
  'contacts.update':[{vehicleId:'s'},{contactName:'s',contactPhone:'s'}],
  'changes.submit':[{vehicleId:'s'},{contactName:'s',contactPhone:'s',brand:'s',model:'s',color:'s'}],
