@@ -3,7 +3,7 @@
 **Last verified:** 2026-11-21 (Asia/Bangkok)
 **Implementation/runtime evidence baseline:** `main` @ `0d3b1f6` (PR #87, Backend `0.8.1`)
 
-**Purpose:** compact continuation SSOT. Read this page first, then open only the linked evidence or active Issue needed for the next change.
+**Purpose:** compact continuation SSOT. Read this page first, then open only the linked evidence or active Issue needed for the next change. For the current source structure / module / operation map see [CODE_MAP_20261121.md](CODE_MAP_20261121.md).
 
 ## Runtime baseline
 
