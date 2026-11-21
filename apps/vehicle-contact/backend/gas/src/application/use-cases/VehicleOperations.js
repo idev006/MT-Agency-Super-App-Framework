@@ -33,6 +33,27 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    return file;
   });
  }
+ function reconcileSubmitTimeout(idemKey){
+  // A previous attempt may have died (GAS timeout/restart) after PREPARED but before the
+  // idempotency commit, leaving an orphan application + CLAIMED photos. Reverse those partial
+  // writes (single-table lookups, no cross-sheet join) so a retry can proceed. Campaign quota
+  // cannot be proven incremented from state alone, so it is flagged for the manual runbook.
+  const orphans=store.list('vc_registration_requests',{idempotency_key:idemKey},5);
+  if(!orphans.length)return;
+  let blocked=false;
+  for(const orphan of orphans){
+   const journal=store.one('vc_operation_journal',{entity_id:orphan.request_id,operation:'registrations.submit'});
+   let photoIds=[];try{photoIds=(JSON.parse(orphan.application_json).photos||[]).map(f=>f.photoId);}catch{}
+   const errors=[];const attempt=fn=>{try{fn();}catch(e){errors.push(String(e?.message||'RECOVERY_FAILED').slice(0,64));}};
+   for(const pid of photoIds){const st=store.one('vc_photo_staging',{photo_id:pid});if(st&&st.status==='CLAIMED')attempt(()=>store.update('vc_photo_staging',{photo_id:pid},{status:'STAGED',used_at:''}));}
+   let removed=false;attempt(()=>{store.remove('vc_registration_requests',{request_id:orphan.request_id});removed=true;});
+   if(journal){let detail={};try{detail=JSON.parse(journal.detail_json);}catch{}
+    attempt(()=>store.update('vc_operation_journal',{event_id:journal.event_id},{status:'RECOVERY_REQUIRED',
+     detail_json:JSON.stringify({...detail,recovery:{requestRemoved:removed,photosRestored:photoIds,quotaCheck:'MANUAL',errors}})}));}
+   if(errors.length)blocked=true;
+  }
+  if(blocked)throw new Error('OPERATION_RECOVERY_REQUIRED');
+ }
  function registrationSubmit(p){
   const payload=body(p),key=payload.plate_normalized+'|'+payload.province_code;
   const idem=need(p.idempotencyKey,'IDEMPOTENCY_KEY',100);
@@ -42,11 +63,17 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    const campaign=campaigns.getCampaign(p.campaignToken,{requireCapacity:false});
    const idemKey=security.sha256('registration:'+campaign.campaign_id+':'+idem);
    const old=store.one('vc_idempotency',{key:idemKey});
-   if(old){if(old.request_digest!==digest||old.status!=='COMPLETED')throw new Error('IDEMPOTENCY_CONFLICT');return JSON.parse(old.result_json);}
+   if(old){
+    if(old.request_digest!==digest||old.status!=='COMPLETED')throw new Error('IDEMPOTENCY_CONFLICT');
+    const result=JSON.parse(old.result_json);
+    const j=store.one('vc_operation_journal',{entity_id:result.requestId,operation:'registrations.submit'});
+    if(j&&j.status==='PREPARED'){try{store.update('vc_operation_journal',{event_id:j.event_id},{status:'APPLIED'});}catch{}}
+    return result;
+   }
    // A script timeout may interrupt a previous attempt before it writes the idempotency result.
-   // Refuse to create a second application; the operation journal requires reconciliation.
-   if(store.list('vc_registration_requests',{idempotency_key:idemKey},2).length)
-    throw new Error('OPERATION_RECOVERY_REQUIRED');
+   // Reconcile a timed-out partial attempt (remove orphan, restore photos) so a retry can proceed.
+   // Ambiguous campaign quota is flagged RECOVERY_REQUIRED for the manual recovery runbook.
+   reconcileSubmitTimeout(idemKey);
    if(Number(campaign.submitted_count)>=Number(campaign.max_submissions))throw new Error('CAMPAIGN_INVALID');
    const org=store.one('vc_organizations',{organization_id:payload.organization_id});
    if(!org||org.status!=='ACTIVE')throw new Error('ORGANIZATION_INACTIVE');

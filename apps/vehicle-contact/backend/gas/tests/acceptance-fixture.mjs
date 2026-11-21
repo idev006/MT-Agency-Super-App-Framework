@@ -11,7 +11,7 @@ export const FIXED_NOW='2026-11-17T12:00:00.000Z';
 export function createAcceptanceHarness(){
  const tables=new Map(Object.keys(DATABASE_SCHEMA.tables).map(t=>[t,[]]));
  const io={locks:0,writes:0,driveUploads:0,driveDeletes:0};
- let current=FIXED_NOW, counter=100,throwOnDriveTrash=false,throwOnTableWrite=null;
+ let current=FIXED_NOW, counter=100,throwOnDriveTrash=false,throwOnTableWrite=null,writeFailAfter=null;
  const id=()=>String(++counter).padStart(64,'0');
  const sha256=x=>createHash('sha256').update(String(x)).digest('hex');
  const copy=x=>structuredClone(x);
@@ -23,7 +23,7 @@ export function createAcceptanceHarness(){
   list(t,filter={},limit=5000){if(!Number.isSafeInteger(limit)||limit<1||limit>5000)throw Error('INVALID_LIMIT');return copy(data(t).filter(x=>where(x,filter)).slice(0,limit));},
   listNewest(t,filter={},limit=5000){return copy(data(t).filter(x=>where(x,filter)).slice(-limit));},
   insert(t,row){
-   if(throwOnTableWrite===t)throw Error('TEST_INJECTED_STORE_WRITE_FAILURE');
+   if(throwOnTableWrite===t||(writeFailAfter!==null&&io.writes===writeFailAfter))throw Error('TEST_INJECTED_STORE_WRITE_FAILURE');
    const cols=schema(t);
    for(const c of cols)if(c.required&&(row[c.name]===undefined||row[c.name]===''))throw Error('REQUIRED_FIELD:'+c.name);
    for(const k of Object.keys(row))if(!cols.some(c=>c.name===k))throw Error('UNKNOWN_COLUMN:'+t+'.'+k);
@@ -32,14 +32,14 @@ export function createAcceptanceHarness(){
    data(t).push(copy(row));io.writes++;return copy(row);
   },
   update(t,filter,patch){
-   if(throwOnTableWrite===t)throw Error('TEST_INJECTED_STORE_WRITE_FAILURE');
+   if(throwOnTableWrite===t||(writeFailAfter!==null&&io.writes===writeFailAfter))throw Error('TEST_INJECTED_STORE_WRITE_FAILURE');
    if(Object.keys(patch||{}).some(k=>!schema(t).some(c=>c.name===k)))throw Error('INVALID_PATCH');
    const hits=data(t).filter(x=>where(x,filter));
    if(hits.length!==1)throw Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
    Object.assign(hits[0],copy(patch));io.writes++;return copy(hits[0]);
   },
   remove(t,filter){
-   if(throwOnTableWrite===t)throw Error('TEST_INJECTED_STORE_WRITE_FAILURE');
+   if(throwOnTableWrite===t||(writeFailAfter!==null&&io.writes===writeFailAfter))throw Error('TEST_INJECTED_STORE_WRITE_FAILURE');
    const hits=data(t).filter(x=>where(x,filter));
    if(hits.length!==1)throw Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
    data(t).splice(data(t).indexOf(hits[0]),1);io.writes++;return true;
@@ -108,7 +108,7 @@ export function createAcceptanceHarness(){
  return{call,as,store,security,sessions,tokens,seed,read,io,drivePhotos,driveState,deletedFiles,
   stagePhotos,registrationPayload,createCampaign,createOrganization,
   now:()=>current,setTime:x=>current=x,
-  setDriveTrashFail:b=>throwOnDriveTrash=b,setWriteFailure:t=>throwOnTableWrite=t};
+  setDriveTrashFail:b=>throwOnDriveTrash=b,setWriteFailure:t=>throwOnTableWrite=t,setWriteFailAfter:n=>writeFailAfter=n};
 }
 export function assertOk(assert,response,context){
  assert.equal(response.ok,true,context+': '+JSON.stringify(response.error||response));
