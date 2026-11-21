@@ -1,5 +1,6 @@
 import {runStagingAuthAcceptance,runStagingLifecycleAcceptance} from '../infrastructure/testing/StagingAcceptanceProbe.js';
 import {normalizeNumberFormats} from '../infrastructure/persistence/sheets/NumberFormatRepair.js';
+import {repairDisplayErrors} from '../infrastructure/persistence/sheets/DisplayErrorRepair.js';
 import {benchmarkStagingPasswordHash} from '../infrastructure/security/HashDiagnostics.js';
 import {createOneTimeAdminPasswordReset} from '../infrastructure/security/AdminPasswordReset.js';
 import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
@@ -142,6 +143,15 @@ export function resetVehicleAdminPasswordFromEditor() {
 export function normalizeVehicleNumberFormatsFromEditor() {
  const spreadsheetId=PropertiesService.getScriptProperties().getProperty('VEHICLE_SHEET_ID');
  const result=normalizeNumberFormats({spreadsheetApp:SpreadsheetApp,spreadsheetId,lockService:LockService});
+ Logger.log(JSON.stringify(result));
+ return result;
+}
+
+// Trusted GAS Editor ONLY. Audits every schema sheet for visible spreadsheet errors.
+// Writes only legacy vehicle province errors with an exact approved-registration match.
+export function repairVehicleDisplayErrorsFromEditor() {
+ const spreadsheetId=PropertiesService.getScriptProperties().getProperty('VEHICLE_SHEET_ID');
+ const result=repairDisplayErrors({spreadsheetApp:SpreadsheetApp,spreadsheetId,lockService:LockService});
  Logger.log(JSON.stringify(result));
  return result;
 }

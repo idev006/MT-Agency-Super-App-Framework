@@ -1,5 +1,6 @@
 // Live public-URL smoke, non-sensitive. No credentials, vehicle, phone, QR token or Drive data.
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 const url=process.env.P6VC_GAS_EXEC_URL;
 if(!url || !/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(url))
@@ -34,8 +35,12 @@ const checks=[
  ['LIVE-10 POST_LOGIN_INVALID',{method:'POST',body:msg('auth','login',{})},false,'INVALID_REQUEST'],
  ['LIVE-11 POST_HEALTH_CORRELATION',{method:'POST',body:msg('system','health',{}, {requestId:'safeTestCorrelation01'})},true,null,'ready','safeTestCorrelation01']
 ];
+const report={status:'RUNNING',environment:'REMOTE_GAS_PUBLIC',target:url,
+ sourceCommit:process.env.GITHUB_SHA||null,startedAt:new Date().toISOString(),tests:[],
+ scope:'Public health, envelope, correlation and anonymous denial; no credentials or mutations'};
 let pass=0,failed=0;
 for(const [name,options,expectedOk,expectedCode,expectedStatus,expectedId=null]of checks){
+ const started=Date.now();
  try{
   const {http,data}=await request(name,options);
   assert.equal(http,200,'expected HTTP 200 (GAS ContentService JSON)');
@@ -43,11 +48,16 @@ for(const [name,options,expectedOk,expectedCode,expectedStatus,expectedId=null]o
   if(expectedCode)assert.equal(data.error?.code,expectedCode,'API logical error code');
   if(expectedStatus)assert.equal(data.data?.status,expectedStatus,'health status');
   assert.equal(data.requestId,expectedId,'request correlation');
-  pass++;console.log('PASS: '+name);
+  pass++;report.tests.push({id:name,status:'PASS',durationMs:Date.now()-started});console.log('PASS: '+name);
  }catch(e){
-  failed++;console.error('FAIL: '+name+' ('+String(e.message).slice(0,220)+')');
+  const reason=String(e.message).slice(0,220);
+  failed++;report.tests.push({id:name,status:'FAIL',durationMs:Date.now()-started,reason});
+  console.error('FAIL: '+name+' ('+reason+')');
  }
 }
+report.status=failed?'FAIL':'PASS';report.passed=pass;report.failed=failed;report.finishedAt=new Date().toISOString();
+fs.mkdirSync('test-results',{recursive:true});
+fs.writeFileSync('test-results/p6vc-live-public-smoke.json',JSON.stringify(report,null,2)+'\n');
 console.log('RESULT: '+pass+'/'+checks.length+' passed; 0 credential/PII/business-data payloads submitted');
 if(failed){
  console.error('Check whether published /exec deployment is still on an older version. A source push is not Web App publication.');

@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - safe-public-smoke
+          - full-api-suite
           - single-admin-login
           - synthetic-business-e2e
           - bootstrap-system-admin-records
@@ -58,6 +59,9 @@ jobs:
             [ "$GITHUB_ACTOR" = 'idev006' ] || { echo 'DENIED: privileged live tests are owner-only'; exit 1; }
             [ "$GITHUB_REF" = 'refs/heads/main' ] || { echo 'DENIED: privileged live tests are main-only'; exit 1; }
           fi
+          if [ "$P6VC_MODE" = 'full-api-suite' ] && [ "$P6VC_CONFIRMATION" != 'RUN_FULL_API_SUITE' ]; then
+            echo 'DENIED: exact full-suite confirmation required'; exit 1
+          fi
           if [ "$P6VC_MODE" = 'single-admin-login' ] && [ "$P6VC_CONFIRMATION" != 'TEST_LOGIN_ON_APPROVED_SHEET' ]; then
             echo 'DENIED: exact login-test confirmation required'; exit 1
           fi
@@ -79,6 +83,13 @@ jobs:
       - name: Safe public health and deny smoke
         if: inputs.mode == 'safe-public-smoke'
         run: node apps/vehicle-contact/backend/gas/scripts/smoke-api.mjs
+      - name: Full public, Worker and guarded authenticated API suite
+        if: inputs.mode == 'full-api-suite'
+        env:
+          P6VC_TEST_USERNAME: ${{ secrets.P6VC_TEST_USERNAME }}
+          P6VC_TEST_PASSWORD: ${{ secrets.P6VC_TEST_PASSWORD }}
+          P6VC_ALLOW_OWNER_DEV_WRITES: RUN_SYNTHETIC_OWNER_DEV
+        run: node apps/vehicle-contact/backend/gas/scripts/run-live-api-suite.mjs --require-authenticated
       - name: Approved single-admin login/session/logout acceptance
         if: inputs.mode == 'single-admin-login'
         env:
@@ -120,6 +131,18 @@ jobs:
         with:
           name: p6vc-live-http-acceptance-evidence
           path: test-results/p6vc-live-http-acceptance.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Save sanitized full API suite evidence
+        if: always() && inputs.mode == 'full-api-suite'
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6vc-live-api-suite-evidence
+          path: |
+            test-results/p6vc-live-api-suite.json
+            test-results/p6vc-live-public-smoke.json
+            test-results/p6vc-live-worker-failclosed.json
+            test-results/p6vc-live-owner-dev-regression.json
           if-no-files-found: warn
           retention-days: 7
       - name: Record selected scope
