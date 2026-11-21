@@ -14,11 +14,13 @@ import { systemSettingsRepositoryKey } from './application/settings/system-setti
 import { vehicleSearchRepositoryKey } from './application/vehicles/vehicle-search-port.js'
 import { vehicleDetailRepositoryKey } from './application/vehicles/vehicle-detail-port.js'
 import { changeReviewRepositoryKey } from './application/vehicles/change-review-port.js'
+import { myVehiclesRepositoryKey } from './application/vehicles/my-vehicles-port.js'
 import { qrResolveRepositoryKey } from './application/vehicles/qr-resolve-port.js'
 import { userDirectoryRepositoryKey } from './application/users/user-directory-port.js'
 import { createGasVehicleSearchRepository } from './infrastructure/vehicles/gas-vehicle-search-repository.js'
 import { createGasVehicleDetailRepository } from './infrastructure/vehicles/gas-vehicle-detail-repository.js'
 import { createGasChangeReviewRepository } from './infrastructure/vehicles/gas-change-review-repository.js'
+import { createGasMyVehiclesRepository } from './infrastructure/vehicles/gas-my-vehicles-repository.js'
 import { createGasQrResolveRepository } from './infrastructure/vehicles/gas-qr-resolve-repository.js'
 import { createGasUserDirectoryRepository } from './infrastructure/users/gas-user-directory-repository.js'
 import { createGasAccountSecurityRepository } from './infrastructure/auth/gas-account-security-repository.js'
@@ -54,6 +56,7 @@ provide(vehicleSearchRepositoryKey, createGasVehicleSearchRepository({
 }))
 provide(vehicleDetailRepositoryKey, createGasVehicleDetailRepository({ callOperation: session.callProtected }))
 provide(changeReviewRepositoryKey, createGasChangeReviewRepository({ callOperation: session.callProtected }))
+provide(myVehiclesRepositoryKey, createGasMyVehiclesRepository({ callOperation: session.callProtected }))
 provide(qrResolveRepositoryKey, createGasQrResolveRepository({
   callOperation: session.callProtected,
 }))
