@@ -42,6 +42,6 @@ The backend was correct in both cases; the **contract documentation was wrong**.
 - **Protected large-image ops need explicit size-limit exemptions + shape validation + session enforcement**; never reuse the public-upload path (which bypasses the session check).
 
 ## 6. Remaining gates
-- **Worker redeploy** (assistant self-deploys via `wrangler deploy`) to make the allowlist live.
+- **Worker redeploy — DONE:** assistant self-deployed via `wrangler deploy` (Version ID `3384ace9-7a65-4486-9ff4-2cd22393edee`, `main` @ `a77d4bd`, PR #98). **Live-verified through the Worker:** `vehicles.detail` + `changes.listPending` with a dummy session → `UNAUTHENTICATED` (route recognized + forwarded, not `OPERATION_NOT_ALLOWED`); non-allowlisted `vehicles.delete` → `OPERATION_NOT_ALLOWED` (fail-closed negative PASS).
 - FE slices C1–C5 build on this enabler.
 - Live hardening re-push (B1/B4/B2) still awaits owner `PUSH_VEHICLE_GAS` — see [PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md).
