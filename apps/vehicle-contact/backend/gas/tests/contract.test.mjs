@@ -19,6 +19,8 @@ assert.equal(health.status,'ready');
 assert.equal(health.apiVersion,'v1');
 assert.match(health.backendVersion,/^\d+\.\d+\.\d+$/);
 assert.equal(health.releaseChannel,'development');
+const pkgVersion=JSON.parse(readFileSync(resolve(import.meta.dirname,'../package.json'),'utf8')).version;
+assert.equal(health.backendVersion,pkgVersion,'system.health backendVersion must equal package.json version so a published deployment is verifiable by probe');
 const tabs=Object.fromEntries(Object.entries(VEHICLE_SCHEMA_V1).map(([n,h])=>[n,[...h]]));
 function fakeSheet(name) {return{
   getName(){return name;},
