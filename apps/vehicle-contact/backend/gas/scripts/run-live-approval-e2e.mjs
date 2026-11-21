@@ -3,6 +3,7 @@
 // resolve), and runs review/photo negatives. Creates synthetic approvals only; never touches real data.
 // Credentials and tokens are env/memory-only; the report is sanitized (no passwords, session tokens,
 // raw QR tokens, or personal data). Requires the explicit owner-dev write guard, like the regression runner.
+import './load-env.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {randomUUID} from 'node:crypto';
@@ -14,7 +15,7 @@ const password=process.env.P6VC_ADMIN_PASS;
 const batchPrefix=process.env.P6VC_BATCH_PREFIX||'ฑฆ';
 const batchExpected=Number(process.env.P6VC_BATCH_EXPECTED||'10');
 assert.match(endpoint||'',/^https:\/\/[a-z0-9.-]+\.workers\.dev\/api\/frontend$/,'P6VC_WORKER_FRONTEND_URL must be the Worker /api/frontend endpoint');
-assert.ok(user&&password,'P6VC_ADMIN_USER and P6VC_ADMIN_PASS are required (env only, never persisted)');
+assert.ok(user&&password,'P6VC_ADMIN_USER and P6VC_ADMIN_PASS are required (env or gitignored .env; never committed)');
 assert.equal(process.env.P6VC_ALLOW_OWNER_DEV_WRITES,'RUN_SYNTHETIC_OWNER_DEV','owner-dev synthetic write guard is required');
 
 let sessionToken=null;

@@ -78,7 +78,7 @@ Owner-gate legend: 🔑 = needs owner action/credential/decision; 🤖 = assista
 | **M3 — Worker execution gated + rehearsed** | C5 + D5 + B3 | destructive retention (synthetic only) |
 | **M4 — Production readiness** | E1 + E2 + E3 + D4 | release candidacy |
 
-**Critical path:** ~~A2 (🔑 credential)~~ **DONE — live 10/10** against V37 (functional 0.9.0). **M0 now only waits on A1** (🔑 owner publish V38 → health reads 0.9.0). **M1** now source-complete: B1 ✅ + B4 ✅ + A3 ✅ + **B2 ✅ merged (#96)**; M1 live-proof waits on the batched B1/B4/B2 GAS push (🔑 `PUSH_VEHICLE_GAS`). B1/B4/B2 were independent and landed in parallel.
+**Critical path:** ~~A2 (🔑 credential)~~ **DONE — live 10/10**. ~~A1~~ **DONE — V39 published, health `0.9.0` verified via Worker → M0 CLOSED.** FE C1–C5 unblocked. **M1** source-complete (B1+B4+A3+B2 merged); **M1 live-proof now requires a re-push** — live V39 source `3646e39` predates B1/B4/B2, so owner `PUSH_VEHICLE_GAS` of `main` @ `647c463` + publish + authenticated hardening probe is the production gate. **48h production target:** see [PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md).
 
 ## 5. Execution rules (every slice)
 
@@ -112,7 +112,7 @@ Owner-gate legend: 🔑 = needs owner action/credential/decision; 🤖 = assista
 
 | Slice | Status | Evidence / PR |
 |---|---|---|
-| A1 | 🔑 WAITING owner publish V38 | source Version 38 pushed (run 44878044190); V37 already functionally 0.9.0, health label stale |
+| A1 | ✅ DONE — V39 published, health `0.9.0` verified via Worker | M0 closed (A1+A2). **Live-hardening gap:** V39 source `3646e39` predates B1/B4/B2 → re-push `main` @ `647c463` + publish required for production |
 | A2 | ✅ LIVE PASS **10/10** + negatives | [Live DEV E2E evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md) — 8 approved + 2 pre-fix, lookup+QR MATCH, `INVALID_REQUEST_STATE`/`PHOTO_NOT_FOUND` |
 | A3 | ✅ LIVE PASS **70/70**, **55/55** ops | [Live DEV E2E evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md) — all 5 roles, 3 scoped ops + FORBIDDEN negatives, cleanup PASS |
 | B1 | ✅ MERGED (#93) | [Org cycle evidence](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md) — 7/7 |
