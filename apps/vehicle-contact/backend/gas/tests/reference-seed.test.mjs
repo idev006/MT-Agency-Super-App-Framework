@@ -205,7 +205,7 @@ test('write-failure recovery path rejoins a clean apply under coercion',()=>{
 });
 
 // Guard against fakes mirroring typo'd method names: every fake Range method must be a real GAS Range API.
-const REAL_GAS_RANGE_METHODS=new Set(['getValues','getDisplayValues','setValues','setNumberFormat','clearContent','clear','clearFormat','clearDataValidations','clearNote','getA1Notation','getRow','getColumn','getNumRows','getNumColumns','getSheet']);
+const REAL_GAS_RANGE_METHODS=new Set(['getValues','getDisplayValues','setValues','setNumberFormat','setNumberFormats','clearContent','clear','clearFormat','clearDataValidations','clearNote','getA1Notation','getRow','getColumn','getNumRows','getNumColumns','getSheet']);
 test('fake Range surface contains only real GAS Range methods',()=>{
  for(const cls of [Range,CoercingRange])
   for(const name of Object.getOwnPropertyNames(cls.prototype))

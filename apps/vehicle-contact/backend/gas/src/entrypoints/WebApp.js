@@ -1,4 +1,5 @@
 import {runStagingAuthAcceptance,runStagingLifecycleAcceptance} from '../infrastructure/testing/StagingAcceptanceProbe.js';
+import {normalizeNumberFormats} from '../infrastructure/persistence/sheets/NumberFormatRepair.js';
 import {benchmarkStagingPasswordHash} from '../infrastructure/security/HashDiagnostics.js';
 import {createOneTimeAdminPasswordReset} from '../infrastructure/security/AdminPasswordReset.js';
 import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
@@ -132,5 +133,15 @@ export function resetVehicleAdminPasswordFromEditor() {
  });
  const result=tool.apply();
  Logger.log(JSON.stringify(result)); // Sanitized counters and state ONLY.
+ return result;
+}
+
+// Trusted GAS Editor ONLY. Format-only repair of the setNumberFormat(singular)
+// display bug; reports per-sheet mismatch scope and re-applies correct formats.
+// NEVER touches cell values. Not callable over doGet/doPost.
+export function normalizeVehicleNumberFormatsFromEditor() {
+ const spreadsheetId=PropertiesService.getScriptProperties().getProperty('VEHICLE_SHEET_ID');
+ const result=normalizeNumberFormats({spreadsheetApp:SpreadsheetApp,spreadsheetId,lockService:LockService});
+ Logger.log(JSON.stringify(result));
  return result;
 }

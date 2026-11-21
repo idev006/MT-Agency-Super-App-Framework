@@ -65,7 +65,10 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
  // ISO strings to Dates. Force text format on string cells so codes/timestamps
  // survive verbatim; keep General for genuine numbers/booleans.
  function writeRow(range,cells){
-  if(typeof range.setNumberFormat==='function')range.setNumberFormat([cells.map(v=>typeof v==='string'?'@':'General')]);
+  // setNumberFormats (plural) takes the 2D per-cell matrix; the singular
+  // setNumberFormat takes a single String and would stringify the array into a
+  // comma-joined custom format, corrupting display (#VALUE! / repeated text).
+  if(typeof range.setNumberFormats==='function')range.setNumberFormats([cells.map(v=>typeof v==='string'?'@':'General')]);
   range.setValues([cells]);
  }
  function invalidate(name){snapshot.delete(name);}
