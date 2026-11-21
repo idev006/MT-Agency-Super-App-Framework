@@ -151,10 +151,10 @@ test('GAS-VM-03 every exported WebApp entrypoint has a callable global GAS wrapp
  const source=readFileSync(resolve(root,'src/entrypoints/WebApp.js'),'utf8');
  const exported=[...source.matchAll(/export\s+function\s+([A-Za-z0-9_]+)/g)].map(m=>m[1]);
  assert.ok(exported.includes('doGet')&&exported.includes('doPost'));
- assert.ok(exported.includes('normalizeVehicleNumberFormatsFromEditor'),'repair entrypoint must be exported');
+ assert.ok(exported.includes('normalizeVehicleNumberFormatsFromEditor'),'format repair entrypoint must be exported');
+ assert.ok(exported.includes('repairVehicleDisplayErrorsFromEditor'),'display error repair entrypoint must be exported');
  const missing=exported.filter(fn=>typeof context[fn]!=='function');
  assert.deepEqual(missing,[],'exported entrypoints lacking a global GAS wrapper: '+missing.join(','));
- assert.equal(exported.length,17);
 });
 
 test('GAS-VM-02 compiled Editor full vehicle lifecycle operates on fake Sheets and Drive with 5 uploaded images',()=>{

@@ -230,7 +230,7 @@ async function run(){
  await test('VEHICLES.LIST_MINE.FORBIDDEN','vehicles.listMine',async()=>
   denied(await request('vehicles.listMine',{limit:100},state.tokens.staff),'FORBIDDEN'));
  await test('VEHICLES.LIST','vehicles.list',async()=>{
-  const rows=ok(await request('vehicles.list',{limit:100},state.tokens.sys));
+  const rows=ok(await request('vehicles.list',{limit:100},adminToken));
   assert.ok(rows.some(x=>x.vehicleId===state.approved.vehicleId));
  });
  await test('VEHICLES.LIST.FORBIDDEN','vehicles.list',async()=>
@@ -288,6 +288,8 @@ async function run(){
 }
 
 async function performRestore(){
+ if(state.approved?.vehicleId&&!state.cancelled&&state.tokens.reg)await cleanup('VEHICLE_CANCEL',async()=>
+  ok(await request('vehicles.cancel',{vehicleId:state.approved.vehicleId},state.tokens.reg)));
  if(adminToken&&state.campaign?.campaignId)await cleanup('CAMPAIGN_REVOKE',async()=>ok(await request('campaigns.revoke',{campaignId:state.campaign.campaignId},adminToken)));
  if(adminToken&&state.org?.organizationId)await cleanup('ORGANIZATION_DISABLE',async()=>ok(await request('organizations.disable',{organizationId:state.org.organizationId},adminToken)));
  if(adminToken)for(const [kind,user] of Object.entries(state.users))await cleanup('USER_SUSPEND_'+kind,async()=>

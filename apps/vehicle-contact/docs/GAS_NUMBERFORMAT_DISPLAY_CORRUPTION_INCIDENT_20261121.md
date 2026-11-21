@@ -1,10 +1,26 @@
 # GAS Sheets number-format display corruption — root cause, every-sheet repair & build-wrapper drift
 
 **Date:** 2026-11-21 (Asia/Bangkok)
-**Severity:** DEV data-display corruption across **21 sheets / 6,659 cells** (grid showed comma-repeat custom formats and `#VALUE!`). **Stored cell VALUES were never corrupted** — display formats only.
-**Status:** RESOLVED — root cause fixed in source; live Web App **Version 47** (`status:ready` / `backendVersion:0.9.0`); every-sheet repair executed live and verified **idempotent** (final pass `totalMismatched:0`, `totalApplied:0`, `valuesUntouched:true`, 25 sheets).
-**Source fixes:** `SheetStore.js` (plural `setNumberFormats`), `scripts/build.mjs` (derive GAS wrappers from exports), `NumberFormatRepair.js` (format-only repair + numeric-General equivalence), `WebApp.js` (editor entrypoint). Branch `codex/p6vc-numberformat-rootcause-20261121`.
+**Severity:** original DEV data-display corruption across **21 sheets / 6,659 cells** (grid showed comma-repeat custom formats and `#VALUE!`). In that original incident, **stored cell VALUES were not changed** — display formats only; the later numeric-backed legacy-value case is documented separately below.
+**Status:** RESOLVED — the original format incident was repaired idempotently (25 sheets, `valuesUntouched:true`). A follow-up audit on the same day found and resolved **9 numeric-backed legacy `province_code` values** plus a blank `vc_vehicles!A1`; final all-sheet display audit: `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`. Published API remains Version 48 / `0.9.1`; the editor-only follow-up repair is in GAS HEAD.
+**Source fixes:** `SheetStore.js` (plural `setNumberFormats`), `scripts/build.mjs` (derive GAS wrappers from exports), `NumberFormatRepair.js` (format-only repair + numeric-General equivalence), `DisplayErrorRepair.js` (all-sheet error audit + narrowly matched legacy value restoration), `WebApp.js` (editor entrypoints). Branches `codex/p6vc-numberformat-rootcause-20261121`, `codex/p6vc-sheet-error-repair-20261121`.
 **Related SSOT:** `SHEETSTORE_COERCION_FIX_AND_SHEETS_BEST_PRACTICES_20261121.md`, `REFERENCE_SEED_COERCION_INCIDENT_20261121.md`, `GAS_CLASP_WEBAPP_MANIFEST_INCIDENT_20261121.md`.
+
+## Follow-up recurrence — legacy values and schema-header drift (2026-11-21)
+
+The first format-only repair could not correct nine remaining `#VALUE!` cells in `vc_vehicles.province_code` (`C6`, `C8:C15`). These were **numeric-backed legacy values**, not clean stored strings with only a bad display format. Changing the number format cannot change the stored type. Separately, `vc_vehicles!A1` was blank instead of the canonical `vehicle_id`; strict readers and the audit correctly treated that as schema drift rather than silently guessing column positions.
+
+Resolution:
+
+1. Restored the canonical A1 header from `DATABASE_SCHEMA`; no business-data column was inferred or shifted.
+2. Added `repairVehicleDisplayErrorsFromEditor()` / `DisplayErrorRepair.js`. It audits **every schema sheet** for `#VALUE!`, `#REF!`, `#DIV/0!`, `#N/A`, `#NAME?`, `#NUM!`, `#NULL!` and `#ERROR!` using display values.
+3. The only automatic value write is `vc_vehicles.province_code`. It requires a non-formula target, exactly one `APPROVED` registration snapshot, matching `vehicle_id` **and** `plate_normalized`, and a valid province code. It never uses `IFERROR`, never masks unrelated errors, and never rewrites other sheets.
+4. First live value-restoration pass: `totalErrorsBefore:9`, `totalErrorsAfter:0`, `totalRepaired:9`, with zero `FORMULA_ERROR`, `SOURCE_NOT_FOUND` or `SOURCE_MISMATCH` skips. Second pass: zero errors and zero repairs.
+5. Strengthened audit completeness: a missing/drifted sheet returns `AUDIT_INCOMPLETE` with `incompleteSheets`, never a false global `OK`. Final live pass at **21:56:45 Asia/Bangkok**: `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`.
+6. Regression coverage `display-error-repair.test.mjs`: matched restoration + idempotency, formula/unmatched-source protection, unrelated-sheet reporting without writes, and schema-drift fail-closed behavior. GAS-VM-03 requires both maintenance entrypoints and callable wrappers for every export; it no longer asserts a brittle fixed wrapper count.
+7. Post-seed live audit at **22:23:39 Asia/Bangkok**, after cancelling 11 old synthetic vehicles and creating 10 replacements through the real API lifecycle: `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`. All ten numeric-looking province codes were written as strings without recreating visible errors.
+
+This follow-up was pushed to **GAS HEAD only** for editor maintenance. It did not create a new anonymous Web App version; live API publication remains separately controlled.
 
 ## Symptom (owner report)
 
@@ -50,7 +66,7 @@ if (!entrypoints.includes('doGet') || !entrypoints.includes('doPost'))
   throw new Error('WebApp entrypoints must export doGet and doPost');
 ```
 
-Regression guard **GAS-VM-03** (`tests/gas-staging-editor-vm.test.mjs`) loads the built bundle in a fake GAS VM and asserts **every** exported `WebApp` function has a callable global wrapper (17/17), so this drift fails CI rather than reaching the editor.
+Regression guard **GAS-VM-03** (`tests/gas-staging-editor-vm.test.mjs`) loads the built bundle in a fake GAS VM and asserts **every** exported `WebApp` function has a callable global wrapper, so this drift fails CI rather than reaching the editor. Required maintenance entrypoints are named explicitly; a hardcoded function-count assertion is forbidden because it breaks whenever a legitimate entrypoint is added.
 
 ## Root cause #3 (false-positive during repair) — numeric "General" equivalence
 
@@ -129,6 +145,9 @@ All 25 schema sheets now carry correct display formats; no values touched; re-ru
 6. **Check every sheet, report scope per sheet.** Iterate the full schema; report `MISSING_TABLE`/`SCHEMA_MISMATCH` as non-fatal skips with per-sheet counts so the owner sees exactly what was checked and changed.
 7. **Avoid cross-sheet joins.** The repair reads each sheet independently (no joins) — Sheets is not an RDBMS; per-sheet scans keep it fast and lock-safe.
 8. **No secrets in artifacts.** `.clasp.json`/`.clasprc.json` gitignored; clasp creds in named profile `-u p6vc`; never in repo/docs/logs/chat.
+9. **Never mask spreadsheet errors with `IFERROR`.** Find the underlying value/formula/format problem. An automated value repair must be narrowly scoped to a provable source and exact business-key match; unmatched or formula errors remain visible in the report for human diagnosis.
+10. **Format repair and value repair are different operations.** `setNumberFormats()` cannot convert a numeric-backed legacy cell into a string. Verify stored type and display separately, then restore only values that have an authoritative snapshot.
+11. **A skipped sheet invalidates global success.** Missing tables, blank/drifted headers, extra non-empty columns or column-count mismatches must produce `AUDIT_INCOMPLETE`; never report `OK` for a partial audit. Schema headers come from the canonical schema, not column-position guesses.
 
 ## Repair runbook (maintenance, editor-only)
 
@@ -138,6 +157,8 @@ All 25 schema sheets now carry correct display formats; no values touched; re-ru
 4. Read the `Logger.log` JSON: confirm `valuesUntouched:true`, inspect `totalMismatched`/`totalApplied` and per-sheet `mismatchDetail`.
 5. Re-run once more: a correct repair is **idempotent** (`totalMismatched:0`, `totalApplied:0`).
 6. To make the fix live for anonymous traffic, `create-version` + `update-deployment AKfycby15c-… -V <N>` and verify `/exec` health (the runtime `SheetStore` fix is what protects new writes).
+
+For visible spreadsheet error values, run `repairVehicleDisplayErrorsFromEditor` instead. Require `status:OK`, `auditedSheets:25`, `incompleteSheets:[]` and `totalErrorsAfter:0`; investigate `AUDIT_INCOMPLETE` or `ERROR_VALUES_REMAIN` rather than masking cells. Re-run to prove zero repairs. This tool writes only exact-match legacy `vc_vehicles.province_code` values; all other errors are report-only.
 
 > `clasp run` automation is **not** currently available: it needs an API-executable deployment **and** the Apps Script API enabled in the script's GCP Cloud project (owner action). Until then, use the editor-UI path above.
 
