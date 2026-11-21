@@ -11,11 +11,11 @@
 |---|---|---|
 | Frontend | `0.7.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44832506283](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44832506283) |
 | Cloudflare Worker | `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; health and fail-closed probes recorded in [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md) |
-| GAS Backend API | Live API `v1`, Backend `0.7.0` via Web App **Version 26** (published 2026-11-21 05:55 by Project Owner) | Source Version 25 push run [44831990140](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44831990140) from `7ba9133`; credential-free `system.health` verified 2026-11-21 via direct GAS POST and Worker -> GAS, both returning `backendVersion:0.7.0`, `status:ready` |
+| GAS Backend API | Live API `v1`, Backend `0.7.0` via Web App **Version 26**; source Version `27` contains the Backend `0.7.1` seed-coercion fix, not yet published | Version 26 health verified 2026-11-21 direct + Worker; 0.7.1 push run [44843016692](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44843016692) from `1b6d85d` (PR #78) |
 
 These are development facts, not production security, PDPA, UAT or release approval.
 
-Web App Version 26 is live with Backend `0.7.0` and the 645-row manifest, including 524 DLT-observed brands. Frontend `0.7.0` is live with custom brand/color entry and an always-free-text model. No seed row has been applied; `vc_reference_values` is empty and the API/UI intentionally remain in `LEGACY` mode.
+Web App Version 26 is live with Backend `0.7.0`. The 07:06 DEV seed apply failed verification because real Sheets coerced numeric codes/ISO timestamps on write; the installer is fail-closed (backup + `RECOVERY_REQUIRED` journal, approval consumed). Backend `0.7.1` (source Version 27, PR #78) writes plain text and adds gated `recoverVehicleReferenceSeedFromEditor`; see [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md). No valid seed row exists yet; the API/UI remain `LEGACY`.
 
 ## Current delivery state
 
@@ -37,12 +37,12 @@ Web App Version 26 is live with Backend `0.7.0` and the 645-row manifest, includ
 
 - The 2026-11-20 20:59 guarded DEV apply returned schema `0.3.0-draft`, `status:APPLIED`, `backupCreated:true`. The 21:00 post-apply dry-run returned `steps:[]`, `blocked:[]`; schema migration and verification gates PASS.
 - The Project Owner confirmed the one-time migration approval property was disabled after use; no further schema write is authorized.
-- The `vc_reference_values` structure exists and approved seed-v1 values are encoded in source, but no catalog row has been applied. The API/UI intentionally remain in explicit `LEGACY` mode and free text until the checksum-approved seed is executed.
+- `vc_reference_values` holds 645 coercion-dirty rows from the failed 07:06 apply; they are unusable by the catalog reader and must be cleared only through the gated recovery entrypoint. The API/UI intentionally remain `LEGACY` until recovery plus a checksum-approved reapply succeeds.
 - Production security/PDPA/UAT/release approval remains separate and open.
 
 ## Exact next actions
 
-1. Run editor-only `previewVehicleReferenceSeedFromEditor()` and share only the sanitized status/count/checksum result (expect `READY`, `rowCount:645`). Checksum-bound seed apply remains separately gated; the empty `vc_reference_values` table remains `LEGACY`.
+1. Publish source Version 27 (Backend `0.7.1`) to the development Web App; verify health reports `0.7.1`. Then follow the gated recovery runbook in [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md): recovery approval -> `recoverVehicleReferenceSeedFromEditor` (`RECOVERED`, clearedCount 645) -> preview `READY` -> checksum approval -> apply `APPLIED` -> preview `ALREADY_APPLIED`. Checksum unchanged: `d561c7d6f0ed9832843c77523b324bcc916b6fb1ad569c5bc11b8d3e705846cb`.
 2. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
 3. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
 
