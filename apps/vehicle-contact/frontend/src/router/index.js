@@ -8,6 +8,7 @@ import GatewayPocView from '../views/GatewayPocView.vue'
 import VehicleSearchPage from '../pages/VehicleSearchPage.vue'
 import QrResolvePage from '../pages/QrResolvePage.vue'
 import RegistrationReviewPage from '../pages/RegistrationReviewPage.vue'
+import ChangeReviewPage from '../pages/ChangeReviewPage.vue'
 import RegistrationIntakePage from '../pages/RegistrationIntakePage.vue'
 import ForbiddenPage from '../pages/ForbiddenPage.vue'
 import UserDirectoryPage from '../pages/UserDirectoryPage.vue'
@@ -32,6 +33,7 @@ export const router = createRouter({
         { path: 'vehicles/qr', name: 'qr-resolve', component: QrResolvePage, meta: { title: 'ตรวจสอบ QR ยานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
         { path: 'registrations/new', name: 'registration-intake', component: RegistrationIntakePage, meta: { title: 'รับลงทะเบียนยานพาหนะ', requiredPermissions: ['vehicle.registration.approve'] } },
         { path: 'registrations/review', name: 'registration-review', component: RegistrationReviewPage, meta: { title: 'ตรวจสอบการลงทะเบียน', requiredPermissions: ['vehicle.registration.approve'] } },
+        { path: 'vehicles/changes/review', name: 'change-review', component: ChangeReviewPage, meta: { title: 'ตรวจสอบคำขอเปลี่ยนแปลง', requiredPermissions: ['vehicle.change.approve'] } },
         { path: 'forbidden', name: 'forbidden', component: ForbiddenPage, meta: { title: 'ไม่มีสิทธิ์เปิดงาน' } },
         { path: 'admin/users', name: 'user-directory', component: UserDirectoryPage, meta: { title: 'ผู้ใช้และสิทธิ์', requiredPermissions: ['users.manage'] } },
         { path: 'account/security', name: 'account-security', component: AccountSecurityPage, meta: { title: 'บัญชีและความปลอดภัย', requiredPermissions: ['session.authenticated'] } },

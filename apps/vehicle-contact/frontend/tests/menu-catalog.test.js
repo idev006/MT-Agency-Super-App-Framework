@@ -46,6 +46,7 @@ describe('permission-driven menu SSOT', () => {
     ['qr.manage', 'qr-governance'],
     ['retention.delete.approve', 'retention'],
     ['audit.read', 'audit'],
+    ['vehicle.change.approve', 'change-review'],
   ])('maps %s to only its authorized capability group', (permission, expectedId) => {
     const ids = menuForPermissions([permission]).map((item) => item.id)
     expect(ids).toEqual(['dashboard', 'connection', expectedId])

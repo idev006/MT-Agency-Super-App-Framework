@@ -28,8 +28,8 @@ test('all table-list operations return server pagination envelopes and reject un
   {request_id:'reg-2',vehicle_id:'v-2',status:'PENDING_APPROVAL',submitted_at:'2026-11-17T02:00:00.000Z'}
  ]);
  h.seed('vc_change_requests',[
-  {change_id:'change-1',vehicle_id:'v-1',status:'PENDING',submitted_at:'2026-11-17T03:00:00.000Z'},
-  {change_id:'change-2',vehicle_id:'v-2',status:'PENDING',submitted_at:'2026-11-17T04:00:00.000Z'}
+  {change_id:'change-1',vehicle_id:'v-1',status:'PENDING',submitted_at:'2026-11-17T03:00:00.000Z',proposed_delta:'{"brand":"Honda"}'},
+  {change_id:'change-2',vehicle_id:'v-2',status:'PENDING',submitted_at:'2026-11-17T04:00:00.000Z',proposed_delta:'{"color":"แดง"}'}
  ]);
  h.seed('vc_retention_jobs',[
   {job_id:'job-1',vehicle_id:'v-1',due_at:'2026-11-16T00:00:00.000Z',status:'WAITING_RETENTION',legal_hold:false},
