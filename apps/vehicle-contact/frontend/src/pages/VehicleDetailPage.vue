@@ -26,7 +26,7 @@ watch(() => route.params.vehicleId, (id) => { if (route.name === 'vehicle-detail
   <PageTemplateComponent eyebrow="งานค้นหา" title="รายละเอียดยานพาหนะ" description="ดูข้อมูล ผู้ประสานงาน รูปประกอบ และประวัติตามสิทธิ์ของเซสชันนี้">
     <template #breadcrumbs><span class="text-base-content"><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><RouterLink class="link" :to="{ name: 'vehicle-search' }">ค้นหายานพาหนะ</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">รายละเอียด</span></span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
-    <template #toolbar><RouterLink class="btn btn-sm" :to="{ name: 'vehicle-search' }">ค้นหาใหม่</RouterLink></template>
+    <template #toolbar><div class="flex gap-2"><RouterLink class="btn btn-sm" :to="{ name: 'vehicle-search' }">ค้นหาใหม่</RouterLink><RouterLink v-if="permissionSet.has('vehicle.update') && detail.vehicleId.value" class="btn btn-sm btn-primary" :to="{ name: 'vehicle-maintenance', params: { vehicleId: detail.vehicleId.value } }">แก้ไขข้อมูล</RouterLink></div></template>
 
     <section aria-live="polite" aria-atomic="false">
       <div v-if="detail.phase.value === 'loading'" class="space-y-4" role="status"><span class="sr-only">กำลังโหลดรายละเอียด</span><div class="skeleton h-40 w-full"></div><div class="grid gap-4 sm:grid-cols-2"><div class="skeleton h-40"></div><div class="skeleton h-40"></div></div></div>
