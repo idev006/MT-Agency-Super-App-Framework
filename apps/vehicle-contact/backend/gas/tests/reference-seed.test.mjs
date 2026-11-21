@@ -11,7 +11,7 @@ class Range{
  getDisplayValues(){return this.values().map(row=>row.map(String));}
  getValues(){return this.values();}
  setNumberFormat(){return this;}
- clearContents(){
+ clearContent(){
   for(let r=0;r<this.rows;r++)for(let c=0;c<this.columns;c++)if(this.sheet.data[this.row-1+r])this.sheet.data[this.row-1+r][this.column-1+c]='';
  }
  setValues(values){
@@ -202,5 +202,13 @@ test('write-failure recovery path rejoins a clean apply under coercion',()=>{
  f.values.set('VEHICLE_REFERENCE_SEED_APPROVED_SHA256',preview.checksum);
  assert.equal(f.installer.apply().status,'APPLIED');
  assert.equal(f.installer.preview().status,'ALREADY_APPLIED');
+});
+
+// Guard against fakes mirroring typo'd method names: every fake Range method must be a real GAS Range API.
+const REAL_GAS_RANGE_METHODS=new Set(['getValues','getDisplayValues','setValues','setNumberFormat','clearContent','clear','clearFormat','clearDataValidations','clearNote','getA1Notation','getRow','getColumn','getNumRows','getNumColumns','getSheet']);
+test('fake Range surface contains only real GAS Range methods',()=>{
+ for(const cls of [Range,CoercingRange])
+  for(const name of Object.getOwnPropertyNames(cls.prototype))
+   if(name!=='constructor'&&name!=='values')assert.ok(REAL_GAS_RANGE_METHODS.has(name),'not a real GAS Range method: '+name);
 });
 
