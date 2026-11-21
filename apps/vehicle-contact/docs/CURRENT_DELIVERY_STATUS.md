@@ -11,7 +11,7 @@
 |---|---|---|
 | Frontend | `0.7.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44832506283](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44832506283) |
 | Cloudflare Worker | `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; health and fail-closed probes recorded in [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md) |
-| GAS Backend API | Live API `v1`, Backend `0.7.0` via Web App **Version 26**; source Version `27` contains the Backend `0.7.1` seed-coercion fix, not yet published | Version 26 health verified 2026-11-21 direct + Worker; 0.7.1 push run [44843016692](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44843016692) from `1b6d85d` (PR #78) |
+| GAS Backend API | Live API `v1`, Backend `0.7.0` via Web App **Version 26**; source Version `28` contains Backend `0.7.2` (coercion fix + real `clearContent` recovery API), not yet published | 0.7.2 push run [44845690152](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44845690152) from `3b3c6be` (PRs #78, #80); 07:38 recover failed on typo'd `clearContents`, fixed in 0.7.2 with API-surface guard test |
 
 These are development facts, not production security, PDPA, UAT or release approval.
 
@@ -42,7 +42,7 @@ Web App Version 26 is live with Backend `0.7.0`. The 07:06 DEV seed apply failed
 
 ## Exact next actions
 
-1. Publish source Version 27 (Backend `0.7.1`) to the development Web App; verify health reports `0.7.1`. Then follow the gated recovery runbook in [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md): recovery approval -> `recoverVehicleReferenceSeedFromEditor` (`RECOVERED`, clearedCount 645) -> preview `READY` -> checksum approval -> apply `APPLIED` -> preview `ALREADY_APPLIED`. Checksum unchanged: `d561c7d6f0ed9832843c77523b324bcc916b6fb1ad569c5bc11b8d3e705846cb`.
+1. Publish source Version 28 (Backend `0.7.2`) to the development Web App; verify health reports `0.7.2`. Then follow the gated recovery runbook in [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md): fresh recovery approval -> `recoverVehicleReferenceSeedFromEditor` (`RECOVERED`, clearedCount 645) -> preview `READY` -> checksum approval -> apply `APPLIED` -> preview `ALREADY_APPLIED`. Checksum unchanged: `d561c7d6f0ed9832843c77523b324bcc916b6fb1ad569c5bc11b8d3e705846cb`.
 2. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
 3. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
 
