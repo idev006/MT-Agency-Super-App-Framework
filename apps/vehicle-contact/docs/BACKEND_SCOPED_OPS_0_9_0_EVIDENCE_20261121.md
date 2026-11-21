@@ -101,3 +101,37 @@ node scripts/validate-usecase-ssot.mjs
 cd apps/vehicle-contact/backend/gas && npm test
 cd tools/p6vc-api-test-console && node --test worker.test.mjs
 ```
+
+## 7. Live deployment verification + backendVersion marker-drift fix (2026-11-21)
+
+**Push:** owner authorized `PUSH_VEHICLE_GAS`; workflow run
+[44868644525](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44868644525)
+pushed 54 files from commit `04fd95b` and created immutable source **Version 36**.
+Owner then published the Web App as **Version 37** (2026-11-21 13:51).
+
+**Bug found (marker drift):** after publication, `system.health` through the Worker still
+reported `backendVersion: "0.8.1"`. Root cause: the health marker is a hardcoded literal in
+`src/api/groups/system/SystemGroup.js`, separate from `package.json`. The 0.9.0 slice bumped
+`package.json` but **not** the health literal, so the published deployment was functionally
+0.9.0 yet indistinguishable from 0.8.1 by health probe — a recurrence of the V33/V35 lesson
+(see [SheetStore coercion fix & best practices](SHEETSTORE_COERCION_FIX_AND_SHEETS_BEST_PRACTICES_20261121.md)).
+
+**Functional proof that 0.9.0 was actually live (independent of the marker):** through the Worker,
+`vehicles.listMine` with a syntactically-valid dummy session returned `UNAUTHENTICATED`
+(route recognized, session required), while a fabricated `vehicles.listMineXYZ` returned
+`OPERATION_NOT_ALLOWED` (Worker allowlist rejection). The new ops were therefore present in the
+published Version 37 source; only the version label was stale.
+
+**Fix + permanent guard:**
+- `SystemGroup.js` health `backendVersion` → `"0.9.0"`.
+- `tests/contract.test.mjs` now asserts `health.backendVersion === package.json version`, so any
+  future marker drift fails CI before push. Full backend suite re-run: **PASS**.
+
+**Best practice (recorded for the team):** a behavior/version change MUST bump the health
+`backendVersion` literal together with `package.json`; the contract guard now enforces this.
+Always verify a publication with a health probe **and** a functional probe of a changed route —
+do not assume "owner published" means the new code is served.
+
+**Remaining gate:** the marker fix requires a fresh source push (new owner `PUSH_VEHICLE_GAS`)
+and a new Web App publication before health reads `0.9.0`. Live authenticated E2E of the three
+new ops (real OWNER/WORKER sessions) still awaits the owner's transient DEV credential.
