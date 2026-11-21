@@ -254,7 +254,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  }
  function changePending(p){
   const items=store.list('vc_change_requests',{status:'PENDING'})
-   .map(r=>({requestId:r.change_id,vehicleId:r.vehicle_id,submittedAt:r.submitted_at}));
+   .map(r=>({requestId:r.change_id,vehicleId:r.vehicle_id,submittedAt:r.submitted_at,proposedDelta:JSON.parse(r.proposed_delta)}));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function changeReview(p,a){
