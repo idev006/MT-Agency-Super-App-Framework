@@ -32,7 +32,10 @@ const thaiDateTime = (value) => {
             <h2 id="vehicle-result-title" class="mt-1 text-3xl font-semibold">{{ vehicle.plate }}</h2>
             <p class="mt-1 text-base-content/70">จังหวัด {{ vehicle.province }}</p>
           </div>
-          <span class="badge badge-success">สถานะใช้งาน</span>
+          <div class="flex items-center gap-2">
+            <span class="badge badge-success">สถานะใช้งาน</span>
+            <RouterLink class="btn btn-sm" :to="{ name: 'vehicle-detail', params: { vehicleId: vehicle.vehicleId } }">ดูรายละเอียด</RouterLink>
+          </div>
         </div>
         <dl class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div><dt class="text-sm text-base-content/60">ประเภทรถ</dt><dd class="mt-1 font-medium">{{ vehicle.vehicleType || 'ไม่ระบุ' }}</dd></div>

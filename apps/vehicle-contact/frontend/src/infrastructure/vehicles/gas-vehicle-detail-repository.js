@@ -1,4 +1,4 @@
-import { mapVehicleResponse } from './gas-vehicle-search-repository.js'
+import { mapVehicleResponse, mapVehicleHistory } from './gas-vehicle-search-repository.js'
 
 export function createGasVehicleDetailRepository({ callOperation }) {
   if (typeof callOperation !== 'function') throw new TypeError('callOperation is required')
@@ -9,6 +9,10 @@ export function createGasVehicleDetailRepository({ callOperation }) {
       if (!vehicle) return { vehicle: null, version: 0, requestId: response.requestId }
       const version = Number.isSafeInteger(response.data?.version) ? response.data.version : 0
       return { vehicle, version, requestId: response.requestId }
+    },
+    async history(vehicleId, { signal } = {}) {
+      const response = await callOperation('vehicles.history', { vehicleId: String(vehicleId || '').trim() }, { signal })
+      return { history: mapVehicleHistory(response.data), requestId: response.requestId }
     },
   })
 }

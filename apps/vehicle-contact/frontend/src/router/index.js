@@ -6,6 +6,7 @@ import AppShell from '../layouts/AppShell.vue'
 import DashboardView from '../views/DashboardView.vue'
 import GatewayPocView from '../views/GatewayPocView.vue'
 import VehicleSearchPage from '../pages/VehicleSearchPage.vue'
+import VehicleDetailPage from '../pages/VehicleDetailPage.vue'
 import QrResolvePage from '../pages/QrResolvePage.vue'
 import RegistrationReviewPage from '../pages/RegistrationReviewPage.vue'
 import ChangeReviewPage from '../pages/ChangeReviewPage.vue'
@@ -31,6 +32,7 @@ export const router = createRouter({
         { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: 'ภาพรวม' } },
         { path: 'connection', name: 'connection-test', component: GatewayPocView, meta: { title: 'ทดสอบการเชื่อมต่อ' } },
         { path: 'vehicles/search', name: 'vehicle-search', component: VehicleSearchPage, meta: { title: 'ค้นหายานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
+        { path: 'vehicles/detail/:vehicleId', name: 'vehicle-detail', component: VehicleDetailPage, meta: { title: 'รายละเอียดยานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
         { path: 'vehicles/qr', name: 'qr-resolve', component: QrResolvePage, meta: { title: 'ตรวจสอบ QR ยานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
         { path: 'registrations/new', name: 'registration-intake', component: RegistrationIntakePage, meta: { title: 'รับลงทะเบียนยานพาหนะ', requiredPermissions: ['vehicle.registration.approve'] } },
         { path: 'registrations/review', name: 'registration-review', component: RegistrationReviewPage, meta: { title: 'ตรวจสอบการลงทะเบียน', requiredPermissions: ['vehicle.registration.approve'] } },
