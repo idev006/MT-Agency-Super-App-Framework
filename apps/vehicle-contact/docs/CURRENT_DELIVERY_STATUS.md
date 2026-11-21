@@ -26,6 +26,8 @@ These are development facts, not production security, PDPA, UAT or release appro
 - Primary-journey plan and strict QR/vehicle read contracts through the Worker; manual authenticated QR resolver is delivered.
 - Protected registration reference-catalog contract: GAS `references.registration` -> Worker allowlist -> frontend Pinia/session cache -> assisted intake.
 - Unit/contract/build/audit, desktop/mobile, corporate/dark and accessibility evidence for Frontend `0.6.0`; see [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md).
+- Reference seed APPLIED (645 rows, `ADVISORY`) after gated coercion-incident recovery; live catalog served 77/524/16/17 via Worker.
+- Owner-authorized synthetic API E2E: admin login -> campaign create -> 50 photo uploads -> **10/10 registrations `PENDING_APPROVAL`** with canonical codes + referenceVersion, idempotent replay and listPending verified; see [synthetic E2E evidence](SYNTHETIC_REGISTRATION_E2E_20261121.md).
 
 ### IN-PROGRESS
 
@@ -44,8 +46,9 @@ These are development facts, not production security, PDPA, UAT or release appro
 
 1. Switch the development Web App deployment to source Version 28 (Backend `0.7.2`); verify health reports `0.7.2` direct and via Worker.
 2. Owner signs in to the frontend again (master data loads once per sign-in) and confirms canonical province/plate/vehicle/relationship/brand/color lists on the intake form in `ADVISORY` mode; capture sanitized browser evidence.
-2. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
-3. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
+3. Review/approve the 10 synthetic pending registrations (SPA or `registrations.review`), then continue vehicle/contact/QR creation and plate lookup per Epic #61.
+4. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
+5. Continue the synthetic journey from approval -> vehicle/contact/QR -> plate lookup/QR resolve and attach recovery/denial evidence (registration leg already evidenced).
 
 Catalog review and QR engineering may proceed independently; real catalog enforcement must wait for approved values and seed evidence.
 
