@@ -11,11 +11,11 @@
 |---|---|---|
 | Frontend | `0.7.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44832506283](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44832506283) |
 | Cloudflare Worker | `277b4d77-dbe4-49f9-98a5-91405a1a1fe3` | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; health and fail-closed probes recorded in [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md) |
-| GAS Backend API | Live API `v1`, Backend `0.7.0` via Web App **Version 26**; source Version `28` contains Backend `0.7.2` (coercion fix + real `clearContent` recovery API), not yet published | 0.7.2 push run [44845690152](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44845690152) from `3b3c6be` (PRs #78, #80); 07:38 recover failed on typo'd `clearContents`, fixed in 0.7.2 with API-surface guard test |
+| GAS Backend API | Live API `v1`, Backend `0.7.0` via Web App **Version 26**; source Version `28` (Backend `0.7.2`) pushed but deployment not yet switched | 0.7.2 push run [44845690152](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44845690152) from `3b3c6be`; 07:57 health probes (direct + Worker) still report `0.7.0`; editor entrypoints already ran HEAD 0.7.2 for recovery/apply |
 
 These are development facts, not production security, PDPA, UAT or release approval.
 
-Web App Version 26 is live with Backend `0.7.0`. The 07:06 DEV seed apply failed verification because real Sheets coerced numeric codes/ISO timestamps on write; the installer is fail-closed (backup + `RECOVERY_REQUIRED` journal, approval consumed). Backend `0.7.1` (source Version 27, PR #78) writes plain text and adds gated `recoverVehicleReferenceSeedFromEditor`; see [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md). No valid seed row exists yet; the API/UI remain `LEGACY`.
+**Reference seed is APPLIED (2026-11-21 07:56):** after the coercion incident and two gated fixes (PRs #78, #80), recovery cleared 645 dirty rows and the checksum-approved reapply wrote 645 verified plain-text rows; post-apply preview returned `ALREADY_APPLIED`. Catalog mode is `ADVISORY`; `ENFORCED` remains separately gated. See [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md). Remaining runtime gap: the Web App deployment still serves Version 26 / Backend `0.7.0`; switch it to Version 28 (`0.7.2`).
 
 ## Current delivery state
 
@@ -37,12 +37,13 @@ Web App Version 26 is live with Backend `0.7.0`. The 07:06 DEV seed apply failed
 
 - The 2026-11-20 20:59 guarded DEV apply returned schema `0.3.0-draft`, `status:APPLIED`, `backupCreated:true`. The 21:00 post-apply dry-run returned `steps:[]`, `blocked:[]`; schema migration and verification gates PASS.
 - The Project Owner confirmed the one-time migration approval property was disabled after use; no further schema write is authorized.
-- `vc_reference_values` holds 645 coercion-dirty rows from the failed 07:06 apply; they are unusable by the catalog reader and must be cleared only through the gated recovery entrypoint. The API/UI intentionally remain `LEGACY` until recovery plus a checksum-approved reapply succeeds.
+- `vc_reference_values` now holds 645 verified seed rows (`ADVISORY`). The 07:06 coercion-dirty rows were cleared by the gated 07:52 recovery; both Drive backups remain. `ENFORCED` mode and production security/PDPA/UAT/release approval remain separate and open.
 - Production security/PDPA/UAT/release approval remains separate and open.
 
 ## Exact next actions
 
-1. Publish source Version 28 (Backend `0.7.2`) to the development Web App; verify health reports `0.7.2`. Then follow the gated recovery runbook in [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md): fresh recovery approval -> `recoverVehicleReferenceSeedFromEditor` (`RECOVERED`, clearedCount 645) -> preview `READY` -> checksum approval -> apply `APPLIED` -> preview `ALREADY_APPLIED`. Checksum unchanged: `d561c7d6f0ed9832843c77523b324bcc916b6fb1ad569c5bc11b8d3e705846cb`.
+1. Switch the development Web App deployment to source Version 28 (Backend `0.7.2`); verify health reports `0.7.2` direct and via Worker.
+2. Owner signs in to the frontend again (master data loads once per sign-in) and confirms canonical province/plate/vehicle/relationship/brand/color lists on the intake form in `ADVISORY` mode; capture sanitized browser evidence.
 2. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
 3. Complete one sanitized synthetic Frontend -> Worker -> GAS registration-to-QR/plate journey and attach recovery/denial evidence.
 

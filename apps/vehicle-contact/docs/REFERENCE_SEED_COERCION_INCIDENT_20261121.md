@@ -14,6 +14,11 @@
 | 07:06 | `applyVehicleReferenceSeedFromEditor()` with exact checksum property | **Error `REFERENCE_SEED_VERIFICATION_FAILED`** at installer verify step |
 | ~07:20 | Owner-confirmed push of Backend `0.7.1` fix | Source Version 27 created (run 44843016692) |
 | 07:38 | `recoverVehicleReferenceSeedFromEditor()` with recovery approval | **Error `TypeError: ...clearContents is not a function`** — the fix used a non-existent GAS method name; real API is `clearContent()` (singular). Failed before any data change; journal stayed `RECOVERY_REQUIRED`, recovery approval consumed |
+| 07:52 | Recovery rerun after 0.7.2 push (editor HEAD source) | `RECOVERED`, `clearedCount:645` — dirty rows cleared, backup retained |
+| 07:53 | Duplicate recovery rerun | Rejected `REFERENCE_SEED_RECOVERY_APPROVAL_REQUIRED` before any change — approval already consumed; expected fail-closed behavior |
+| 07:54 | `previewVehicleReferenceSeedFromEditor()` | `READY`, rowCount 645, addCount 645, existingCount 0, checksum unchanged |
+| 07:56 | `applyVehicleReferenceSeedFromEditor()` with exact checksum property | **`APPLIED`, rowCount 645, `backupCreated:true`, mode `ADVISORY`** — plain-text write verified |
+| 07:56 | Post-apply preview | `ALREADY_APPLIED`, existingCount 645, addCount 0, `dataModified:false` — idempotency PASS |
 
 ## Root cause
 
@@ -35,6 +40,8 @@ strategy gap, now closed by a coercion-emulating fake.
 - The 645 written rows are coercion-dirty; the catalog reader rejects non-string codes,
   so no corrupted dropdown list can be served. API/UI remain effectively `LEGACY`.
 - No public API operation was added or changed by the incident.
+
+**Resolved 07:56:** gated recovery cleared the 645 dirty rows and the checksum-approved reapply wrote 645 verified plain-text rows (`APPLIED` -> `ALREADY_APPLIED`). The catalog is now seeded in `ADVISORY` mode.
 
 ## Fix — PR #78, Backend 0.7.1 (merged to main `1b6d85d`)
 
@@ -70,8 +77,8 @@ strategy gap, now closed by a coercion-emulating fake.
 | GAS source push (0.7.1) | PASS | Owner confirmation `PUSH_VEHICLE_GAS`; run [44843016692](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44843016692) from main `1b6d85d`; tests/build PASS; source Version 27 created; no Web App publication |
 | GAS Range API-surface guard | PASS | 13/13 seed tests incl. fake-method-name whitelist against real GAS Range API (Backend 0.7.2) |
 | GAS source push (0.7.2) | PASS | Fresh owner confirmation `PUSH_VEHICLE_GAS`; run [44845690152](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44845690152) from main `3b3c6be` (PR #80); tests/build PASS; source Version 28 created; no Web App publication |
-| Web App publication (0.7.2) | NOT RUN | Separate manual owner step |
-| Live recovery + reapply | NOT RUN | Gated runbook below |
+| Web App publication (0.7.2) | NOT RUN | 07:57 credential-free health probes (direct + Worker) still report Backend `0.7.0` (Version 26). Editor entrypoints ran HEAD source 0.7.2; the deployment must still be switched to Version 28. Catalog reader code is unchanged since 0.7.0, so seeded lists are servable meanwhile |
+| Live recovery + reapply | PASS | 07:52 `RECOVERED`/645; 07:54 `READY`; 07:56 `APPLIED`/645/backup; 07:56 `ALREADY_APPLIED` — all owner-reported sanitized editor logs |
 
 ## Gated recovery runbook (owner executes in Apps Script editor)
 
