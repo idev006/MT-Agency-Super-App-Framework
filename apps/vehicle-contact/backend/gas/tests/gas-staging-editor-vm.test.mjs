@@ -58,7 +58,8 @@ function makeFakeGAS() {
     return {
      getValues(){return get();},
      getDisplayValues(){return get().map(row=>row.map(v=>typeof v==='boolean'?(v?'TRUE':'FALSE'):String(v)));},
-     setNumberFormat(){return this;},
+     setNumberFormat(fmt){if(typeof fmt!=='string')throw new Error('setNumberFormat(singular) requires a String');return this;},
+     setNumberFormats(fmt){if(!Array.isArray(fmt))throw new Error('setNumberFormats(plural) requires a 2D array');return this;},
      clearContent(){for(let i=0;i<height;i++)for(let j=0;j<width;j++)if(rows[r+i-1])rows[r+i-1][c+j-1]='';metrics.writes++;},
      setValues(next){
       assert.equal(next.length,height);
@@ -143,6 +144,17 @@ test('GAS-VM-01 compiled Editor authentication + lookup probes execute with cano
  assert.ok(modules.length>=48);
  assert.ok(logs.length>0);
  console.log('Compiled GAS VM Editor AUTH acceptance PASSED '+result.passed+'/'+result.tests);
+});
+
+test('GAS-VM-03 every exported WebApp entrypoint has a callable global GAS wrapper',()=>{
+ const {context}=makeFakeGAS();
+ const source=readFileSync(resolve(root,'src/entrypoints/WebApp.js'),'utf8');
+ const exported=[...source.matchAll(/export\s+function\s+([A-Za-z0-9_]+)/g)].map(m=>m[1]);
+ assert.ok(exported.includes('doGet')&&exported.includes('doPost'));
+ assert.ok(exported.includes('normalizeVehicleNumberFormatsFromEditor'),'repair entrypoint must be exported');
+ const missing=exported.filter(fn=>typeof context[fn]!=='function');
+ assert.deepEqual(missing,[],'exported entrypoints lacking a global GAS wrapper: '+missing.join(','));
+ assert.equal(exported.length,17);
 });
 
 test('GAS-VM-02 compiled Editor full vehicle lifecycle operates on fake Sheets and Drive with 5 uploaded images',()=>{

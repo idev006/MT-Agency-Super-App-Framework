@@ -11,7 +11,13 @@ const out=join(root,'dist');
 const maxLines=800;
 const entryFile='backend/gas/src/entrypoints/WebApp.js';
 const allowedFolders=['entrypoints','api','application','domain','infrastructure','composition'];
-const entrypoints=['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor','previewVehicleReferenceSeedFromEditor','applyVehicleReferenceSeedFromEditor','recoverVehicleReferenceSeedFromEditor','bootstrapVehicleAdminFromEditor','benchmarkVehiclePasswordHashFromEditor','inspectVehicleAdminResetFromEditor','resetVehicleAdminPasswordFromEditor','runVehicleStagingAuthTestsFromEditor','runVehicleStagingLifecycleTestsFromEditor'];
+// Derive global GAS wrappers from the actual exported entrypoints so a newly added
+// editor function can never be compiled into the module body yet remain uncallable
+// from the GAS Editor (the stale hardcoded-list bug that hid normalizeVehicleNumberFormats).
+const entrySource=readFileSync(join(root,'src/entrypoints/WebApp.js'),'utf8');
+const entrypoints=[...entrySource.matchAll(/export\s+function\s+([A-Za-z0-9_]+)/g)].map(m=>m[1]);
+if(!entrypoints.includes('doGet')||!entrypoints.includes('doPost'))
+  throw new Error('WebApp entrypoints must export doGet and doPost');
 
 function scan(dir) {
   return readdirSync(dir,{withFileTypes:true}).flatMap(d=>{

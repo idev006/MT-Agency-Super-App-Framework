@@ -29,9 +29,16 @@ const sheet={
   assert.equal(c,1);assert.equal(w,headers.length);
   return {
    setNumberFormat(fmt){
+    // Real GAS singular setNumberFormat accepts ONLY a String; passing an array
+    // is the display-corruption bug (comma-joined custom format). Reject it.
+    assert.equal(typeof fmt,'string','setNumberFormat(singular) must receive a String, not an array');
+    for(let i=0;i<h;i++)for(let j=0;j<w;j++)cellFormat.set(`${r+i}:${c+j}`,fmt);
+    return this;
+   },
+   setNumberFormats(fmt){
+    assert.ok(Array.isArray(fmt),'setNumberFormats(plural) must receive a 2D array');
     for(let i=0;i<h;i++)for(let j=0;j<w;j++){
-     const f=Array.isArray(fmt)?fmt[i][j]:fmt;
-     cellFormat.set(`${r+i}:${c+j}`,f);
+     cellFormat.set(`${r+i}:${c+j}`,fmt[i][j]);
     }
     return this;
    },
