@@ -74,6 +74,12 @@ export function applyVehicleReferenceSeedFromEditor() {
    checksum:result.checksum,backupCreated:result.backupCreated===true,mode:result.mode}));
  return result;
 }
+export function recoverVehicleReferenceSeedFromEditor() {
+ const result=createApplication({propertiesService:PropertiesService,spreadsheetApp:SpreadsheetApp,
+   lockService:LockService,driveApp:DriveApp,utilities:Utilities}).recoverReferenceSeed();
+ Logger.log(JSON.stringify({status:result.status,seedVersion:result.seedVersion,clearedCount:result.clearedCount}));
+ return result;
+}
 
 // Run only after additive migration, in a synthetic staging spreadsheet. Never over HTTP.
 export function bootstrapVehicleAdminFromEditor() {

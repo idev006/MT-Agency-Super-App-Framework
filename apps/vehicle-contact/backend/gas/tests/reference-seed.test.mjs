@@ -10,12 +10,37 @@ class Range{
  values(){return Array.from({length:this.rows},(_,r)=>Array.from({length:this.columns},(_,c)=>this.sheet.data[this.row-1+r]?.[this.column-1+c]??''));}
  getDisplayValues(){return this.values().map(row=>row.map(String));}
  getValues(){return this.values();}
+ setNumberFormat(){return this;}
+ clearContents(){
+  for(let r=0;r<this.rows;r++)for(let c=0;c<this.columns;c++)if(this.sheet.data[this.row-1+r])this.sheet.data[this.row-1+r][this.column-1+c]='';
+ }
  setValues(values){
   if(this.sheet.failWrite)throw new Error('INJECTED_REFERENCE_WRITE_FAILURE');
   assert.equal(values.length,this.rows);
   for(let r=0;r<this.rows;r++){
    this.sheet.data[this.row-1+r]??=[];
    for(let c=0;c<this.columns;c++)this.sheet.data[this.row-1+r][this.column-1+c]=values[r][c];
+  }
+ }
+}
+// Emulates real Sheets USER_ENTERED semantics: without a plain-text format, numeric strings
+// become numbers and ISO timestamps become Date objects on write.
+const coerce=value=>{
+ if(typeof value==='string'&&/^\d+$/.test(value))return Number(value);
+ if(typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(value))return new Date(value);
+ return value;
+};
+class CoercingRange extends Range{
+ setNumberFormat(format){this.format=format;return this;}
+ setValues(values){
+  if(this.sheet.failWrite)throw new Error('INJECTED_REFERENCE_WRITE_FAILURE');
+  assert.equal(values.length,this.rows);
+  for(let r=0;r<this.rows;r++){
+   this.sheet.data[this.row-1+r]??=[];
+   for(let c=0;c<this.columns;c++){
+    const value=values[r][c];
+    this.sheet.data[this.row-1+r][this.column-1+c]=this.format==='@'?String(value):coerce(value);
+   }
   }
  }
 }
@@ -28,8 +53,11 @@ class Sheet{
  }
  getRange(row,column,rows,columns){return new Range(this,row,column,rows,columns);}
 }
-function fixture(rows=[HEADERS]){
- const sheet=new Sheet(rows),values=new Map([['VEHICLE_SHEET_ID','sheet-1']]),backups=[];
+class CoercingSheet extends Sheet{
+ getRange(row,column,rows,columns){return new CoercingRange(this,row,column,rows,columns);}
+}
+function fixture(rows=[HEADERS],{coercing=false}={}){
+ const sheet=new (coercing?CoercingSheet:Sheet)(rows),values=new Map([['VEHICLE_SHEET_ID','sheet-1']]),backups=[];
  const props={getProperty:key=>values.get(key)||null,setProperty:(key,value)=>values.set(key,value),deleteProperty:key=>values.delete(key)};
  const lock={tryLock:()=>true,releaseLock(){}};
  const utilities={DigestAlgorithm:{SHA_256:'SHA_256'},Charset:{UTF_8:'UTF_8'},computeDigest(_algorithm,value){return [...createHash('sha256').update(value).digest()];}};
@@ -98,5 +126,81 @@ test('write failure enters recovery-required and consumes approval',()=>{
  assert.throws(()=>f.installer.apply(),/INJECTED_REFERENCE_WRITE_FAILURE/);
  assert.equal(f.backups.length,1);assert.equal(f.values.has('VEHICLE_REFERENCE_SEED_APPROVED_SHA256'),false);
  assert.equal(JSON.parse(f.values.get('VEHICLE_REFERENCE_SEED_JOURNAL')).status,'RECOVERY_REQUIRED');
+});
+
+test('apply survives real Sheets USER_ENTERED coercion via plain-text format',()=>{
+ const f=fixture([HEADERS],{coercing:true}),preview=f.installer.preview();
+ f.values.set('VEHICLE_REFERENCE_SEED_APPROVED_SHA256',preview.checksum);
+ const applied=f.installer.apply();
+ assert.equal(applied.status,'APPLIED');assert.equal(applied.dataModified,true);
+ const province=f.sheet.data.find(row=>row[0]==='REF-PROVINCE-10');
+ assert.equal(province[2],'10');assert.equal(typeof province[2],'string');
+ assert.equal(province[8],'2026-11-20T00:00:00.000Z');assert.equal(typeof province[8],'string');
+ assert.equal(f.installer.preview().status,'ALREADY_APPLIED');
+});
+
+test('coerced legacy rows are BLOCKED, never silently accepted',()=>{
+ const dirty=['REF-PROVINCE-10','PROVINCE',10,'กรุงเทพมหานคร','',1,'ACTIVE','REFERENCE_SEED_V1',new Date('2026-11-20T00:00:00.000Z')];
+ const f=fixture([HEADERS,dirty],{coercing:true});
+ const preview=f.installer.preview();
+ assert.equal(preview.status,'BLOCKED');assert.equal(preview.existingCount,1);
+});
+
+test('recover requires explicit approval and a recovery journal',()=>{
+ const f=fixture();
+ assert.throws(()=>f.installer.recover(),/RECOVERY_APPROVAL_REQUIRED/);
+ f.values.set('VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED','true');
+ assert.throws(()=>f.installer.recover(),/RECOVERY_NOT_REQUIRED/);
+ assert.equal(f.values.has('VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED'),false);
+ assert.equal(f.sheet.getLastRow(),1);
+});
+
+test('recover clears only seed-owned rows, journals RECOVERED, then reapply succeeds',()=>{
+ const dirty=[
+  ['REF-PROVINCE-10','PROVINCE',10,'กรุงเทพมหานคร','',1,'ACTIVE','REFERENCE_SEED_V1',new Date('2026-11-20T00:00:00.000Z')],
+  ['REF-BRAND-TOYOTA','BRAND','TOYOTA','TOYOTA','',1,'ACTIVE','REFERENCE_SEED_V1',new Date('2026-11-20T00:00:00.000Z')]
+ ];
+ const f=fixture([HEADERS,...dirty],{coercing:true});
+ f.values.set('VEHICLE_REFERENCE_SEED_JOURNAL',JSON.stringify({status:'RECOVERY_REQUIRED',backupRef:'backup-1',checksum:'prior'}));
+ f.values.set('VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED','true');
+ const recovered=f.installer.recover();
+ assert.equal(recovered.status,'RECOVERED');assert.equal(recovered.clearedCount,2);assert.equal(recovered.dataModified,true);
+ assert.equal(f.values.has('VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED'),false);
+ const journal=JSON.parse(f.values.get('VEHICLE_REFERENCE_SEED_JOURNAL'));
+ assert.equal(journal.status,'RECOVERED');assert.equal(journal.previousStatus,'RECOVERY_REQUIRED');assert.equal(journal.backupRef,'backup-1');
+ assert.equal(f.sheet.getLastRow(),1);
+ const preview=f.installer.preview();
+ assert.equal(preview.status,'READY');
+ f.values.set('VEHICLE_REFERENCE_SEED_APPROVED_SHA256',preview.checksum);
+ assert.equal(f.installer.apply().status,'APPLIED');
+ assert.equal(f.installer.preview().status,'ALREADY_APPLIED');
+});
+
+test('recover refuses foreign rows and missing backup reference',()=>{
+ const foreign=['REF-PROVINCE-10','PROVINCE','10','กรุงเทพมหานคร','',1,'ACTIVE','manual','2026-11-20T00:00:00.000Z'];
+ const f=fixture([HEADERS,foreign]);
+ f.values.set('VEHICLE_REFERENCE_SEED_JOURNAL',JSON.stringify({status:'RECOVERY_REQUIRED',backupRef:'backup-1'}));
+ f.values.set('VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED','true');
+ assert.throws(()=>f.installer.recover(),/RECOVERY_CONFLICT/);
+ assert.equal(f.sheet.getLastRow(),2);
+ assert.equal(f.values.has('VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED'),false);
+ const g=fixture();
+ g.values.set('VEHICLE_REFERENCE_SEED_JOURNAL',JSON.stringify({status:'RECOVERY_REQUIRED'}));
+ g.values.set('VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED','true');
+ assert.throws(()=>g.installer.recover(),/RECOVERY_BACKUP_MISSING/);
+});
+
+test('write-failure recovery path rejoins a clean apply under coercion',()=>{
+ const f=fixture([HEADERS],{coercing:true}),preview=f.installer.preview();
+ f.values.set('VEHICLE_REFERENCE_SEED_APPROVED_SHA256',preview.checksum);f.sheet.failWrite=true;
+ assert.throws(()=>f.installer.apply(),/INJECTED_REFERENCE_WRITE_FAILURE/);
+ f.sheet.failWrite=false;
+ f.values.set('VEHICLE_REFERENCE_SEED_APPROVED_SHA256',preview.checksum);
+ assert.throws(()=>f.installer.apply(),/REFERENCE_SEED_RECOVERY_REQUIRED/);
+ f.values.set('VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED','true');
+ assert.equal(f.installer.recover().status,'RECOVERED');
+ f.values.set('VEHICLE_REFERENCE_SEED_APPROVED_SHA256',preview.checksum);
+ assert.equal(f.installer.apply().status,'APPLIED');
+ assert.equal(f.installer.preview().status,'ALREADY_APPLIED');
 });
 
