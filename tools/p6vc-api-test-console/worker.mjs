@@ -24,19 +24,26 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "campaigns.revoke":[["campaignId"],[]],
  "references.registration":[[],[]],
  "photos.upload":[["campaignToken","slot","base64Image","mimeType"],[]],
+ "photos.list":[["vehicleId"],[]],"photos.replace":[["vehicleId","slot","base64Image","mimeType"],[]],
  "registrations.submit":[["campaignToken","plate","province","plateType","vehicleType","brand","model","color","organizationId","relationship","contactName","contactPhone","photos","idempotencyKey"],["referenceVersion"]],
  "registrations.listPending":[[],["limit","page","pageSize"]],
  "registrations.detail":[["requestId"],[]],
  "registrations.review":[["requestId","decision"],["platePhotoVerified"]],
  "registrations.photo":[["requestId","photoId"],[]],
  "vehicles.lookup":[["plate","province"],[]],
+ "vehicles.detail":[["vehicleId"],[]],
+ "vehicles.update":[["vehicleId","expectedVersion"],["plate","province","plateType","vehicleType","brand","model","color","ownerUserId"]],
+ "vehicles.cancel":[["vehicleId"],[]],
  "vehicles.history":[["vehicleId"],[]],
  "vehicles.listMine":[[],["limit","page","pageSize"]],
+ "contacts.read":[["vehicleId"],[]],"contacts.update":[["vehicleId"],["contactName","contactPhone"]],
+ "changes.submit":[["vehicleId"],["contactName","contactPhone","brand","model","color"]],
+ "changes.listPending":[[],["limit","page","pageSize"]],"changes.review":[["requestId","decision"],[]],
  "changes.listMine":[[],["limit","page","pageSize"]],
  "qr.resolve":[["token"],[]],
  "qr.issue":[["vehicleId"],[]],"qr.revoke":[["vehicleId"],[]],"qr.replace":[["vehicleId"],[]],
  "system.config.get":[[],[]],"system.config.update":[["values"],[]],
- "retention.listDue":[[],["limit","page","pageSize"]],"retention.listExecutable":[[],["limit","page","pageSize"]],"retention.approve":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
+ "retention.listDue":[[],["limit","page","pageSize"]],"retention.listExecutable":[[],["limit","page","pageSize"]],"retention.approve":[["jobId"],[]],"retention.execute":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
  "audit.query":[[],["vehicleId","limit","page","pageSize"]],"audit.export":[[],["vehicleId","limit"]]
 });
 const FRONTEND_OPERATIONS=new Set(Object.keys(FRONTEND_PAYLOAD_FIELDS));
@@ -90,7 +97,7 @@ function validFrontendEnvelope(input){
  if(!FRONTEND_OPERATIONS.has(operation))return "OPERATION_NOT_ALLOWED";
  const payloadSize=JSON.stringify(input.payload||{}).length;
  if(!input.payload||typeof input.payload!=="object"||Array.isArray(input.payload)
-  ||(operation==="photos.upload"?payloadSize>7_500_000:payloadSize>32768))
+  ||(operation==="photos.upload"||operation==="photos.replace"?payloadSize>7_500_000:payloadSize>32768))
   return "INVALID_PAYLOAD";
  if(typeof input.requestId!=="string"||!/^[A-Za-z0-9_-]{8,80}$/.test(input.requestId))return "INVALID_REQUEST_ID";
  const keys=Object.keys(input.payload);
@@ -103,6 +110,16 @@ function validFrontendEnvelope(input){
    ||!/^[A-Za-z0-9+/]+={0,2}$/.test(p.base64Image)||!["image/jpeg","image/png","image/webp"].includes(p.mimeType))
    return "INVALID_OPERATION_PAYLOAD";
   if(input.sessionToken!==undefined)return "INVALID_PUBLIC_PAYLOAD";
+  return null;
+ }
+ if(operation==="photos.replace"){
+  const p=input.payload;
+  if(typeof p.vehicleId!=="string"||!p.vehicleId.trim()||p.vehicleId.length>256
+   ||!["FRONT","REAR","LEFT","RIGHT","FRONT_ANGLE"].includes(p.slot)
+   ||typeof p.base64Image!=="string"||p.base64Image.length<4||p.base64Image.length>7_000_000
+   ||!/^[A-Za-z0-9+/]+={0,2}$/.test(p.base64Image)||!["image/jpeg","image/png","image/webp"].includes(p.mimeType))
+   return "INVALID_OPERATION_PAYLOAD";
+  if(!/^[0-9a-f]{64}$/i.test(input.sessionToken||""))return "INVALID_SESSION_PAYLOAD";
   return null;
  }
  const safeValue=(value,depth=0)=>{
@@ -147,7 +164,7 @@ async function frontendGateway(request,env,origin){
  if(request.headers.get("content-type")?.split(";")[0]!=="application/json")
   return frontendReply(origin,{error:"JSON_REQUIRED"},415);
  let input;try{input=JSON.parse(raw);}catch{return frontendReply(origin,{error:"INVALID_JSON"},400);}
- if(!(input?.group==="photos"&&input?.action==="upload")&&raw.length>32768)
+ if(!(input?.group==="photos"&&(input?.action==="upload"||input?.action==="replace"))&&raw.length>32768)
   return frontendReply(origin,{error:"REQUEST_TOO_LARGE"},413);
  const invalid=validFrontendEnvelope(input);
  if(invalid)return frontendReply(origin,{error:invalid},403);

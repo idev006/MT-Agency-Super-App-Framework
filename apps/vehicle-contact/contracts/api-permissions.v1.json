@@ -258,15 +258,15 @@
     {
       "id": "VC-CONTACTS-002",
       "operation": "contacts.update",
-      "requiredPermission": "vehicle.contact.read",
+      "requiredPermission": "vehicle.update",
       "identitySource": "SERVER_VERIFIED_SESSION",
       "enabled": false
     },
     {
       "id": "VC-CHANGES-001",
       "operation": "changes.submit",
-      "requiredPermission": "campaign.token.valid",
-      "identitySource": "SERVER_VERIFIED_CAMPAIGN",
+      "requiredPermission": "vehicle.change.submit",
+      "identitySource": "SERVER_VERIFIED_SESSION",
       "enabled": false
     },
     {
