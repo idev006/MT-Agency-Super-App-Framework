@@ -18,6 +18,7 @@ Resolution:
 4. First live value-restoration pass: `totalErrorsBefore:9`, `totalErrorsAfter:0`, `totalRepaired:9`, with zero `FORMULA_ERROR`, `SOURCE_NOT_FOUND` or `SOURCE_MISMATCH` skips. Second pass: zero errors and zero repairs.
 5. Strengthened audit completeness: a missing/drifted sheet returns `AUDIT_INCOMPLETE` with `incompleteSheets`, never a false global `OK`. Final live pass at **21:56:45 Asia/Bangkok**: `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`.
 6. Regression coverage `display-error-repair.test.mjs`: matched restoration + idempotency, formula/unmatched-source protection, unrelated-sheet reporting without writes, and schema-drift fail-closed behavior. GAS-VM-03 requires both maintenance entrypoints and callable wrappers for every export; it no longer asserts a brittle fixed wrapper count.
+7. Post-seed live audit at **22:23:39 Asia/Bangkok**, after cancelling 11 old synthetic vehicles and creating 10 replacements through the real API lifecycle: `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`. All ten numeric-looking province codes were written as strings without recreating visible errors.
 
 This follow-up was pushed to **GAS HEAD only** for editor maintenance. It did not create a new anonymous Web App version; live API publication remains separately controlled.
 

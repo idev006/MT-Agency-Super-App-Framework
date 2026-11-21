@@ -105,6 +105,21 @@ An earlier credential-free run at 21:48–21:49 correctly returned `PASS_PUBLIC_
 
 Offline `npm --prefix apps/vehicle-contact/backend/gas run check` also passed after the final source changes, including 250 RBAC matrix checks, compiled GAS AUTH 19/19, lifecycle 21/21 and display-error repair 4/4.
 
+## DEV vehicle reinitialization evidence — 2026-11-21
+
+After reading the canonical 25-table schema and lifecycle documentation, the owner-authorized DEV reset used the domain lifecycle rather than physically clearing `vc_vehicles`. Physical deletion would orphan contacts, photos, QR tokens, registration/change history, audits and retention jobs.
+
+Run window **22:10:43–22:22:37 Asia/Bangkok**, with the exact synthetic-write gate and an allowlist of synthetic plate prefixes:
+
+- Retired **11** existing synthetic vehicles through `vehicles.cancel`; this preserved relations, revoked active QR tokens and scheduled retention.
+- Created **10** new `ACTIVE` vehicles through campaign → five photo uploads → registration → approval.
+- Verified every new vehicle through lookup, exactly **1 contact**, exactly **5 photos**, and QR resolution to the same vehicle ID.
+- Verified `vehicles.list` contained exactly the new synthetic active set (`registryMatches:true`).
+- Cleanup **2/2 PASS**: campaign revoked and automation admin logged out. The new organization and ten vehicles intentionally remain active as DEV fixtures.
+- Sanitized local report: `test-results/p6vc-dev-vehicle-seed.json` (`status:PASS`, `cleanupFailed:0`, `secretsExposed:false`). The one-off mutating seed script and report remain gitignored.
+
+Post-seed GAS editor audit at **22:23:28–22:23:39 Asia/Bangkok** returned `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`, with zero formula/source skips. This proves the new numeric-looking province strings did not recreate visible spreadsheet errors.
+
 ## Manual GitHub Actions run
 
 Workflow: **P6VC Live Acceptance (manual only)** → mode `full-api-suite`.
