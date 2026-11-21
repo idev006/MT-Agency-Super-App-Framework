@@ -69,7 +69,7 @@ strategy gap, now closed by a coercion-emulating fake.
 | CI (PR #78) | PASS | Run [44842843561](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44842843561) |
 | GAS source push (0.7.1) | PASS | Owner confirmation `PUSH_VEHICLE_GAS`; run [44843016692](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44843016692) from main `1b6d85d`; tests/build PASS; source Version 27 created; no Web App publication |
 | GAS Range API-surface guard | PASS | 13/13 seed tests incl. fake-method-name whitelist against real GAS Range API (Backend 0.7.2) |
-| GAS source push (0.7.2) | PENDING | Requires fresh owner confirmation `PUSH_VEHICLE_GAS` |
+| GAS source push (0.7.2) | PASS | Fresh owner confirmation `PUSH_VEHICLE_GAS`; run [44845690152](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44845690152) from main `3b3c6be` (PR #80); tests/build PASS; source Version 28 created; no Web App publication |
 | Web App publication (0.7.2) | NOT RUN | Separate manual owner step |
 | Live recovery + reapply | NOT RUN | Gated runbook below |
 
