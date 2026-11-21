@@ -31,10 +31,12 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "registrations.photo":[["requestId","photoId"],[]],
  "vehicles.lookup":[["plate","province"],[]],
  "vehicles.history":[["vehicleId"],[]],
+ "vehicles.listMine":[[],["limit","page","pageSize"]],
+ "changes.listMine":[[],["limit","page","pageSize"]],
  "qr.resolve":[["token"],[]],
  "qr.issue":[["vehicleId"],[]],"qr.revoke":[["vehicleId"],[]],"qr.replace":[["vehicleId"],[]],
  "system.config.get":[[],[]],"system.config.update":[["values"],[]],
- "retention.listDue":[[],["limit","page","pageSize"]],"retention.approve":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
+ "retention.listDue":[[],["limit","page","pageSize"]],"retention.listExecutable":[[],["limit","page","pageSize"]],"retention.approve":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
  "audit.query":[[],["vehicleId","limit","page","pageSize"]],"audit.export":[[],["vehicleId","limit"]]
 });
 const FRONTEND_OPERATIONS=new Set(Object.keys(FRONTEND_PAYLOAD_FIELDS));

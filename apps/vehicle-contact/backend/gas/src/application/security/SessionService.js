@@ -3,7 +3,7 @@ export const ROLE_PERMISSIONS=Object.freeze({
  SYSTEM_ADMIN:['session.authenticated','system.settings.read','system.settings.manage','users.manage','organizations.read','organizations.manage','campaigns.manage','qr.manage','retention.read','retention.delete.approve','audit.read'],
  REGISTRATION_ADMIN:['session.authenticated','organizations.read','vehicle.registration.approve','vehicle.lookup','vehicle.contact.read','vehicle.photos.read','vehicle.update','vehicle.history.read','vehicle.change.approve','qr.manage','retention.read'],
  STAFF:['session.authenticated','organizations.read','vehicle.lookup','vehicle.contact.read','vehicle.photos.read','vehicle.history.read'],
- OWNER:['session.authenticated','vehicle.change.submit'],
+ OWNER:['session.authenticated','vehicle.change.submit','vehicle.own.read'],
  RETENTION_WORKER:['session.authenticated','retention.worker']
 });
 export function createSessionService({store,security}) {

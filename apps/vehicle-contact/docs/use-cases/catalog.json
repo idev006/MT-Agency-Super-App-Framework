@@ -465,7 +465,9 @@
       "ops": [
         "changes.submit",
         "changes.listPending",
-        "changes.review"
+        "changes.review",
+        "vehicles.listMine",
+        "changes.listMine"
       ],
       "tests": [
         "ACTOR-04",
@@ -632,7 +634,8 @@
       "ops": [
         "retention.approve",
         "retention.execute",
-        "retention.jobStatus"
+        "retention.jobStatus",
+        "retention.listExecutable"
       ],
       "tests": [
         "ACTOR-06",

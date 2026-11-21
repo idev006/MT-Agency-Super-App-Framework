@@ -53,16 +53,16 @@ Legend: **BE** = GAS use-case implemented; **FE** = frontend page/repository wir
 | Changes | **changes.submit** | vehicle.change.submit → OWNER | ✅ | ❌ | OWNER cannot discover vehicleId (design gap) |
 | Changes | **changes.listPending** | vehicle.change.approve → REGADMIN | ✅ | ❌ | no change-review screen |
 | Changes | **changes.review** | vehicle.change.approve → REGADMIN | ✅ | ❌ | |
-| Changes | **vehicles.listMine** (NEW) | OWNER own-vehicle read | ❌ | ❌ | does not exist — required for OWNER |
-| Changes | **changes.listMine / status** (NEW) | OWNER own-change tracking | ❌ | ❌ | does not exist — required for OWNER |
+| Changes | **vehicles.listMine** (NEW) | vehicle.own.read → OWNER | ✅ | ❌ | source written 0.9.0 (VC-ADR-014); FE `my-vehicles` pending |
+| Changes | **changes.listMine** (NEW) | vehicle.own.read → OWNER | ✅ | ❌ | source written 0.9.0 (VC-ADR-014); FE pending |
 | QR | qr.issue/revoke/replace | qr.manage → SYSADMIN/REGADMIN | ✅ | ✅ | QrGovernance |
 | Retention | retention.listDue/jobStatus | retention.read → SYSADMIN/REGADMIN | ✅ | ✅ | RetentionApproval |
 | Retention | retention.approve | retention.delete.approve → SYSADMIN | ✅ | ✅ | |
-| Retention | **retention.execute** | retention.worker → RETENTION_WORKER | ✅ | ❌ | worker has no read/list; destructive flag disabled |
+| Retention | **retention.execute** | retention.worker → RETENTION_WORKER | ✅ | ❌ | worker read path added (`retention.listExecutable`, VC-ADR-015); destructive flag still disabled; FE pending |
 | Settings | system.config.get/update | system.settings.read/manage → SYSADMIN | ✅ | ✅ | SystemSettings |
 | Audit | audit.query/export | audit.read → SYSADMIN | ✅ | ✅ | AuditReview |
 
-**Backend is essentially complete (51/51 ops).** The gaps are concentrated in the **frontend** and in **two design holes** (OWNER discovery, RETENTION_WORKER read).
+**Backend is complete in source (54/54 DTO ops + health = 55 routes, `0.9.0`).** The two design holes (OWNER discovery, RETENTION_WORKER read) are now closed in source via `vehicles.listMine`, `changes.listMine`, `retention.listExecutable` (VC-ADR-014/015, CI-green, live GAS push pending). Remaining gaps are concentrated in the **frontend**.
 
 ---
 

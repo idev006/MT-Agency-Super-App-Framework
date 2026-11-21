@@ -242,6 +242,13 @@
       "enabled": false
     },
     {
+      "id": "VC-VEHICLES-006",
+      "operation": "vehicles.listMine",
+      "requiredPermission": "vehicle.own.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
       "id": "VC-CONTACTS-001",
       "operation": "contacts.read",
       "requiredPermission": "vehicle.contact.read",
@@ -273,6 +280,13 @@
       "id": "VC-CHANGES-003",
       "operation": "changes.review",
       "requiredPermission": "vehicle.change.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-CHANGES-004",
+      "operation": "changes.listMine",
+      "requiredPermission": "vehicle.own.read",
       "identitySource": "SERVER_VERIFIED_SESSION",
       "enabled": false
     },
@@ -350,6 +364,13 @@
       "id": "VC-RETENTION-004",
       "operation": "retention.jobStatus",
       "requiredPermission": "retention.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-RETENTION-005",
+      "operation": "retention.listExecutable",
+      "requiredPermission": "retention.worker",
       "identitySource": "SERVER_VERIFIED_SESSION",
       "enabled": false
     },
