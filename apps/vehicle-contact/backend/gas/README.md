@@ -50,7 +50,8 @@ GAS Editor entrypoints:
 - `migrateVehicleSchemaFromEditor` — dry-run only
 - `applyVehicleSchemaFromEditor` — requires `VEHICLE_SCHEMA_MIGRATION_APPROVED=true` Script Property
 - `previewVehicleReferenceSeedFromEditor` — read-only 645-row seed diff and deterministic checksum
-- `applyVehicleReferenceSeedFromEditor` — requires `VEHICLE_REFERENCE_SEED_APPROVED_SHA256` to equal the exact preview checksum; creates backup/journal and consumes approval
+- `applyVehicleReferenceSeedFromEditor` — requires `VEHICLE_REFERENCE_SEED_APPROVED_SHA256` to equal the exact preview checksum; writes rows as plain text (`@`) so Sheets cannot coerce codes/timestamps; creates backup/journal and consumes approval
+- `recoverVehicleReferenceSeedFromEditor` — requires `VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED=true` plus a `PREPARED/APPLYING/RECOVERY_REQUIRED` journal with a backup reference; clears only seed-owned rows, journals `RECOVERED` and consumes approval
 - `bootstrapVehicleAdminFromEditor` — one-time, staging-only, approved admin initialization
 
 ## Staging configuration

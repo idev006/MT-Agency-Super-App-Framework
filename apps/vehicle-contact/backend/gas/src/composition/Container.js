@@ -55,6 +55,11 @@ export function createApplication(deps={}) {
       return createReferenceSeedInstaller({spreadsheetApp:s.spreadsheetApp,spreadsheetId:id,lockService:s.lockService,
         driveApp:s.driveApp,propertiesService:s.propertiesService,utilities:s.utilities}).apply();
     },
+    recoverReferenceSeed(){
+      const s=services(),id=s.propertiesService.getScriptProperties().getProperty('VEHICLE_SHEET_ID');
+      return createReferenceSeedInstaller({spreadsheetApp:s.spreadsheetApp,spreadsheetId:id,lockService:s.lockService,
+        driveApp:s.driveApp,propertiesService:s.propertiesService,utilities:s.utilities}).recover();
+    },
     verifySchema(){return verifySchemaUseCase(schemaRepository());},
     inspectSchemaDrift(){
       const result=verifySchemaUseCase(schemaRepository());

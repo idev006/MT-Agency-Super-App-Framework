@@ -2,7 +2,9 @@ import {REFERENCE_SEED_V1} from '../../domain/reference/ReferenceSeedV1.js';
 
 const TABLE='vc_reference_values';
 const APPROVAL='VEHICLE_REFERENCE_SEED_APPROVED_SHA256';
+const RECOVERY_APPROVAL='VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED';
 const JOURNAL='VEHICLE_REFERENCE_SEED_JOURNAL';
+const SEED_REFERENCE_ID=/^REF-(PROVINCE|VEHICLE_TYPE|PLATE_TYPE|RELATIONSHIP|COLOR|BRAND)-/;
 const HEADERS=Object.freeze(['reference_id','catalog','code','label_th','parent_code','sort_order','status','updated_by','updated_at']);
 const invalid=code=>{throw new Error(code);};
 const text=(value,max)=>typeof value==='string'&&value.length>0&&value.length<=max&&!/^[=+@-]/.test(value);
@@ -28,7 +30,7 @@ export function createReferenceSeedInstaller({spreadsheetApp,spreadsheetId,lockS
   if(counts.PROVINCE!==77||counts.VEHICLE_TYPE!==17||counts.PLATE_TYPE!==5||counts.RELATIONSHIP!==6
    ||counts.COLOR!==16||counts.BRAND!==524||Object.keys(counts).length!==6)invalid('REFERENCE_SEED_MANIFEST_INVALID');
  }
- function rowValues(row){return HEADERS.map(header=>row[header]);}
+ function rowValues(row){return HEADERS.map(header=>String(row[header]));}
  function inspect(book){
   validateManifest();
   const sheet=book.getSheetByName(TABLE);
@@ -37,7 +39,7 @@ export function createReferenceSeedInstaller({spreadsheetApp,spreadsheetId,lockS
   const headers=count?sheet.getRange(1,1,1,count).getDisplayValues()[0].map(String):[];
   if(JSON.stringify(headers)!==JSON.stringify(HEADERS))invalid('REFERENCE_SEED_HEADERS_INVALID');
   const lastRow=sheet.getLastRow();
-  const existing=lastRow>1?sheet.getRange(2,1,lastRow-1,HEADERS.length).getValues()
+  const existing=lastRow>1?sheet.getRange(2,1,lastRow-1,HEADERS.length).getDisplayValues()
    .filter(row=>row.some(value=>String(value).trim()!=='')):[];
   if(!existing.length)return {status:'READY',addCount:REFERENCE_SEED_V1.rows.length,existingCount:0};
   const expected=REFERENCE_SEED_V1.rows.map(rowValues);
@@ -74,7 +76,10 @@ export function createReferenceSeedInstaller({spreadsheetApp,spreadsheetId,lockS
    state={seedVersion:REFERENCE_SEED_V1.seedVersion,checksum,status:'PREPARED',backupRef:backup.getId(),startedAt};setJournal(state);
    state.status='APPLYING';setJournal(state);
    const sheet=book.getSheetByName(TABLE);
-   sheet.getRange(2,1,REFERENCE_SEED_V1.rows.length,HEADERS.length).setValues(REFERENCE_SEED_V1.rows.map(rowValues));
+   // Plain-text format prevents Sheets USER_ENTERED coercion of codes like "01" and ISO timestamps.
+   const target=sheet.getRange(2,1,REFERENCE_SEED_V1.rows.length,HEADERS.length);
+   target.setNumberFormat('@');
+   target.setValues(REFERENCE_SEED_V1.rows.map(rowValues));
    const verified=inspect(book);
    if(verified.status!=='ALREADY_APPLIED')invalid('REFERENCE_SEED_VERIFICATION_FAILED');
    state.status='APPLIED';state.completedAt=clock();setJournal(state);
@@ -88,6 +93,30 @@ export function createReferenceSeedInstaller({spreadsheetApp,spreadsheetId,lockS
    if(consumed)props.deleteProperty(APPROVAL);
   }
  }
- return Object.freeze({preview,apply,checksum});
+ function recover(){
+  if(props.getProperty(RECOVERY_APPROVAL)!=='true')invalid('REFERENCE_SEED_RECOVERY_APPROVAL_REQUIRED');
+  const lock=lockService.getScriptLock();
+  if(!lock.tryLock(25000))invalid('REFERENCE_SEED_BUSY');
+  try{
+   const raw=props.getProperty(JOURNAL),journal=raw?JSON.parse(raw):null;
+   if(!journal||!['PREPARED','APPLYING','RECOVERY_REQUIRED'].includes(journal.status))invalid('REFERENCE_SEED_RECOVERY_NOT_REQUIRED');
+   if(!journal.backupRef)invalid('REFERENCE_SEED_RECOVERY_BACKUP_MISSING');
+   const book=spreadsheetApp.openById(spreadsheetId),sheet=book.getSheetByName(TABLE);
+   if(!sheet)invalid('REFERENCE_SEED_TABLE_MISSING');
+   const count=sheet.getLastColumn();
+   const headers=count?sheet.getRange(1,1,1,count).getDisplayValues()[0].map(String):[];
+   if(JSON.stringify(headers)!==JSON.stringify(HEADERS))invalid('REFERENCE_SEED_HEADERS_INVALID');
+   const lastRow=sheet.getLastRow();
+   const existing=lastRow>1?sheet.getRange(2,1,lastRow-1,HEADERS.length).getDisplayValues():[];
+   if(existing.some(row=>!SEED_REFERENCE_ID.test(String(row[0]))||String(row[7])!=='REFERENCE_SEED_V1'))invalid('REFERENCE_SEED_RECOVERY_CONFLICT');
+   if(existing.length)sheet.getRange(2,1,existing.length,HEADERS.length).clearContents();
+   setJournal({seedVersion:REFERENCE_SEED_V1.seedVersion,checksum,status:'RECOVERED',previousStatus:journal.status,backupRef:journal.backupRef,recoveredAt:clock()});
+   return Object.freeze({status:'RECOVERED',seedVersion:REFERENCE_SEED_V1.seedVersion,clearedCount:existing.length,dataModified:existing.length>0});
+  }finally{
+   lock.releaseLock();
+   props.deleteProperty(RECOVERY_APPROVAL);
+  }
+ }
+ return Object.freeze({preview,apply,recover,checksum});
 }
 
