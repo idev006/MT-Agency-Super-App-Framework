@@ -64,6 +64,7 @@ Assistant self-deployed via the owner-authorized clasp/wrangler path (no secret 
    - `vehicles.list` anonymous (no session) → **`INVALID_SESSION_PAYLOAD`** (Worker fails closed; op recognized as protected).
    - `vehicles.list` spoofed `{status:"INACTIVE"}` → **`INVALID_OPERATION_PAYLOAD`** (Worker allowlist rejects non-DTO field).
 3. **Live data positive-control (gviz CSV, owner browser session, no creds):** `vc_vehicles` = **14 rows → `ACTIVE` 11 / `INACTIVE` 3**. The registry's server-side `ACTIVE` filter will return the **11** approved-and-active vehicles; the 3 cancelled/inactive are correctly excluded. (Read via plain `out:csv` with owner cookies; `out:json`/`tq` require OAuth → ACCESS_DENIED, per the documented gviz quirk.)
+4. **Source merged + frontend live:** PR **#108** merged to `main` @ **`cef47e7`** (CI `Validate P6 Vehicle Contact` all steps green: SSOT validators 56/56 ops, FE 180/180 + build, Worker 31/31, GAS `npm run check` + artifact 54 `.gs`). `deploy-pages-ssot` run **44910792210** success → live Pages bundle `assets/index-CfsuYp98.js` contains `vehicle-registry` (route/menu), `vehicles.list` (op) and "ทะเบียนยานพาหนะ" (page title). The registry screen is now reachable on GitHub Pages for an authenticated SYSTEM_ADMIN.
 
 ## Live gate (owner action)
 
