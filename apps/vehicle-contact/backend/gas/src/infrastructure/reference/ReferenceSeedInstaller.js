@@ -109,7 +109,7 @@ export function createReferenceSeedInstaller({spreadsheetApp,spreadsheetId,lockS
    const lastRow=sheet.getLastRow();
    const existing=lastRow>1?sheet.getRange(2,1,lastRow-1,HEADERS.length).getDisplayValues():[];
    if(existing.some(row=>!SEED_REFERENCE_ID.test(String(row[0]))||String(row[7])!=='REFERENCE_SEED_V1'))invalid('REFERENCE_SEED_RECOVERY_CONFLICT');
-   if(existing.length)sheet.getRange(2,1,existing.length,HEADERS.length).clearContents();
+   if(existing.length)sheet.getRange(2,1,existing.length,HEADERS.length).clearContent();
    setJournal({seedVersion:REFERENCE_SEED_V1.seedVersion,checksum,status:'RECOVERED',previousStatus:journal.status,backupRef:journal.backupRef,recoveredAt:clock()});
    return Object.freeze({status:'RECOVERED',seedVersion:REFERENCE_SEED_V1.seedVersion,clearedCount:existing.length,dataModified:existing.length>0});
   }finally{

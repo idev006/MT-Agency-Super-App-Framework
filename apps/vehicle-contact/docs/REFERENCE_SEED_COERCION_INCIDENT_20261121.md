@@ -12,6 +12,8 @@
 | 07:03 | `previewVehicleReferenceSeedFromEditor()` | `READY`, rowCount 645, addCount 645, existingCount 0, `dataModified:false`, checksum `d561c7d6f0ed9832843c77523b324bcc916b6fb1ad569c5bc11b8d3e705846cb` |
 | 07:03 | Local recomputation of manifest SHA-256 from canonical source | Identical checksum — preview gate PASS |
 | 07:06 | `applyVehicleReferenceSeedFromEditor()` with exact checksum property | **Error `REFERENCE_SEED_VERIFICATION_FAILED`** at installer verify step |
+| ~07:20 | Owner-confirmed push of Backend `0.7.1` fix | Source Version 27 created (run 44843016692) |
+| 07:38 | `recoverVehicleReferenceSeedFromEditor()` with recovery approval | **Error `TypeError: ...clearContents is not a function`** — the fix used a non-existent GAS method name; real API is `clearContent()` (singular). Failed before any data change; journal stayed `RECOVERY_REQUIRED`, recovery approval consumed |
 
 ## Root cause
 
@@ -47,6 +49,11 @@ strategy gap, now closed by a coercion-emulating fake.
    - journals `RECOVERED` (keeping `backupRef` and `previousStatus`) and consumes the approval.
 4. Manifest unchanged: checksum remains `d561c7d6f0ed9832843c77523b324bcc916b6fb1ad569c5bc11b8d3e705846cb`;
    the owner's 07:03 preview stays valid.
+5. **Backend 0.7.2 follow-up:** the 0.7.1 recovery path called `clearContents()`, which does
+   not exist in the GAS Range API (correct name: `clearContent()`); the unit fake mirrored
+   the typo and passed. Renamed in installer and fakes, and added an API-surface guard test
+   asserting every fake Range method is a real documented GAS Range method, so typo'd
+   platform calls can no longer pass CI.
 
 ## Verification gates
 
@@ -61,13 +68,15 @@ strategy gap, now closed by a coercion-emulating fake.
 | SSOT validators | PASS | 0 errors; 20 diagrams; 51/51 operations |
 | CI (PR #78) | PASS | Run [44842843561](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44842843561) |
 | GAS source push (0.7.1) | PASS | Owner confirmation `PUSH_VEHICLE_GAS`; run [44843016692](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44843016692) from main `1b6d85d`; tests/build PASS; source Version 27 created; no Web App publication |
-| Web App publication (0.7.1) | NOT RUN | Separate manual owner step |
+| GAS Range API-surface guard | PASS | 13/13 seed tests incl. fake-method-name whitelist against real GAS Range API (Backend 0.7.2) |
+| GAS source push (0.7.2) | PENDING | Requires fresh owner confirmation `PUSH_VEHICLE_GAS` |
+| Web App publication (0.7.2) | NOT RUN | Separate manual owner step |
 | Live recovery + reapply | NOT RUN | Gated runbook below |
 
 ## Gated recovery runbook (owner executes in Apps Script editor)
 
 1. Publish the new source version to the development Web App deployment; verify
-   `system.health` reports Backend `0.7.1`.
+   `system.health` reports Backend `0.7.2`.
 2. Add Script Property `VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED` = `true`.
 3. Run `recoverVehicleReferenceSeedFromEditor()` — expect `RECOVERED`, `clearedCount:645`.
    On `RECOVERY_CONFLICT` or any other error: stop and report; do not retry blindly.

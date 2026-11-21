@@ -59,7 +59,7 @@ function makeFakeGAS() {
      getValues(){return get();},
      getDisplayValues(){return get().map(row=>row.map(v=>typeof v==='boolean'?(v?'TRUE':'FALSE'):String(v)));},
      setNumberFormat(){return this;},
-     clearContents(){for(let i=0;i<height;i++)for(let j=0;j<width;j++)if(rows[r+i-1])rows[r+i-1][c+j-1]='';metrics.writes++;},
+     clearContent(){for(let i=0;i<height;i++)for(let j=0;j<width;j++)if(rows[r+i-1])rows[r+i-1][c+j-1]='';metrics.writes++;},
      setValues(next){
       assert.equal(next.length,height);
       next.forEach((line,i)=>{assert.equal(line.length,width);while(rows.length<r+i)rows.push(Array(rows[0].length).fill(''));line.forEach((v,j)=>rows[r+i-1][c+j-1]=normalized(v));});
