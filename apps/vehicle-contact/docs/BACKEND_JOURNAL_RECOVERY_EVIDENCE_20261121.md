@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — B2 operation-journal reconciliation + recovery evidence
 
 **Date:** 2026-11-21 | **Scope:** GAS backend source + tests + runbook (no contract/DTO/permission/inventory/Worker change; no live GAS push).
-**Classification:** SOURCE + SYNTHETIC CI EVIDENCE. Closes PM-plan slice **B2** (D-SEQ-05 / D-SEQ-09). Live GAS push batched, awaits next owner `PUSH_VEHICLE_GAS`.
+**Classification:** SOURCE + SYNTHETIC CI EVIDENCE. Closes PM-plan slice **B2** (D-SEQ-05 / D-SEQ-09). **Merged PR #96** (`main` @ `b2f8a6a`), CI green. Live GAS push batched with B1/B4, awaits next owner `PUSH_VEHICLE_GAS`.
 
 ## 1. Bug / gap
 
