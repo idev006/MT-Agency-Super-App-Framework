@@ -5,7 +5,7 @@
 **Architecture:** Vue 3 → typed API adapter → GAS /exec JSON envelope → Router + session/permission enforcement → application use cases → Sheets / Drive adapters. The public health route is special. Client-side roles are never authoritative.
 
 ## Coverage
-20 business Use Case specifications + 20 versioned Mermaid `.mmd` sequence diagrams cover **51/51 declared v1 API operations exactly once as primary owner**. Sharing an operation across UI screens is allowed via reference to its owning UC; do not fork competing diagrams.
+20 business Use Case specifications + 20 versioned Mermaid `.mmd` sequence diagrams cover **52/52 declared v1 API operations exactly once as primary owner**. Sharing an operation across UI screens is allowed via reference to its owning UC; do not fork competing diagrams.
 
 | Use Case | Title | Owned operations | Source diagram | Evidence |
 |---|---|---:|---|---|

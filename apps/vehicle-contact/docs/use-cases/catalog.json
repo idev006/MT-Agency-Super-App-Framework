@@ -355,7 +355,8 @@
       "ops": [
         "registrations.listPending",
         "registrations.detail",
-        "registrations.review"
+        "registrations.review",
+        "registrations.photo"
       ],
       "tests": [
         "ACTOR-03",
@@ -377,7 +378,9 @@
       "kind": "AS_IMPLEMENTED_SOURCE_REVIEW_NOT_GAS_E2E",
       "status": "DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP",
       "source": [
-        "backend/gas/src/application/use-cases/VehicleOperations.js"
+        "backend/gas/src/application/use-cases/VehicleOperations.js",
+        "backend/gas/src/application/use-cases/MediaRetentionOperations.js",
+        "backend/gas/src/infrastructure/media/DrivePhotos.js"
       ],
       "testSources": [
         "backend/gas/tests/actor-usecase-acceptance.test.mjs"

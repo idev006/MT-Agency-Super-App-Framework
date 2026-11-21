@@ -69,6 +69,21 @@ export function createGasRegistrationReviewRepository({ callOperation }) {
       const response = await callOperation('registrations.detail', { requestId })
       return { registration: mapDetail(response.data), requestId: response.requestId }
     },
+    async photo({ requestId, photoId }) {
+      const response = await callOperation('registrations.photo', { requestId, photoId })
+      const value = response.data
+      if (!value || typeof value !== 'object' || value.photoId !== photoId
+        || typeof value.slot !== 'string' || !value.slot
+        || !['image/jpeg', 'image/png', 'image/webp'].includes(value.mimeType)
+        || typeof value.base64Image !== 'string' || !value.base64Image || value.base64Image.length > 7_000_000
+        || !/^[A-Za-z0-9+/]+={0,2}$/.test(value.base64Image)) {
+        throw new RegistrationReviewContractError()
+      }
+      return {
+        photo: Object.freeze({ photoId: value.photoId, slot: value.slot, mimeType: value.mimeType, base64Image: value.base64Image }),
+        requestId: response.requestId,
+      }
+    },
     async review({ requestId, decision, platePhotoVerified = false }) {
       const response = await callOperation('registrations.review', {
         requestId,

@@ -32,6 +32,7 @@ These are development facts, not production security, PDPA, UAT or release appro
 ### IN-PROGRESS
 
 - [#61 Primary journey epic](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/61): registration -> approval -> QR/plate verification.
+- Review-detail photo gallery slice (Backend `0.8.0` / Frontend `0.8.0` source): truncated requestId + copy-full, hero FRONT image + 4 thumbnails via new gated `registrations.photo` (52-operation inventory, permission `vehicle.registration.approve`, snapshot ownership check + access audit, memory-only rendering). Local gates PASS (GAS check, Worker 28, frontend 139, SSOT 52/52); awaiting `PUSH_VEHICLE_GAS`, Web App publication and browser acceptance.
 - [#17 Operator screens](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/17): remaining unified detail/QR/device journey.
 - [#18 QR camera integration](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/18): local WIP exists but is **not merged or deployed**.
 
@@ -44,7 +45,7 @@ These are development facts, not production security, PDPA, UAT or release appro
 
 ## Exact next actions
 
-1. Switch the development Web App deployment to source Version 28 (Backend `0.7.2`); verify health reports `0.7.2` direct and via Worker.
+1. Push Backend `0.8.0` (fresh `PUSH_VEHICLE_GAS` confirmation required; supersedes unpublished Version 28) and switch the development Web App deployment to the new version; verify health reports `0.8.0` direct and via Worker.
 2. Owner signs in to the frontend again (master data loads once per sign-in) and confirms canonical province/plate/vehicle/relationship/brand/color lists on the intake form in `ADVISORY` mode; capture sanitized browser evidence.
 3. Review/approve the 10 synthetic pending registrations (SPA or `registrations.review`), then continue vehicle/contact/QR creation and plate lookup per Epic #61.
 4. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.

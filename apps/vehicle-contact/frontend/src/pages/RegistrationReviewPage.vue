@@ -1,5 +1,5 @@
 <script setup>
-import { inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { registrationReviewRepositoryKey } from '../application/registrations/registration-review-port.js'
 import ConfirmDialog from '../components/common/ConfirmDialog.vue'
@@ -15,6 +15,29 @@ const { roles, permissions, session, transport } = storeToRefs(auth)
 const work = useRegistrationReview({ repository: inject(registrationReviewRepositoryKey), permissions })
 const pendingDecision = ref(null)
 const platePhotoVerified = ref(false)
+const copied = ref(false)
+
+const slotLabels = { FRONT: 'ด้านหน้า', REAR: 'ด้านหลัง', LEFT: 'ด้านซ้าย', RIGHT: 'ด้านขวา', FRONT_ANGLE: 'มุมเฉียงหน้า' }
+const detailPhotos = computed(() => work.selected.value?.application?.photos || [])
+const activePhotoState = computed(() => work.photoStates.value[work.activePhotoId.value] || null)
+const activeSlot = computed(() => detailPhotos.value.find((photo) => photo.photoId === work.activePhotoId.value)?.slot || '')
+
+function shortId(value) {
+  return typeof value === 'string' && value.length > 8 ? `${value.slice(0, 8)}…` : value
+}
+
+function slotLabel(slot) {
+  return slotLabels[slot] || slot
+}
+
+async function copyRequestId() {
+  if (!work.selected.value) return
+  try {
+    await navigator.clipboard.writeText(work.selected.value.requestId)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  } catch { /* clipboard unavailable; full id remains selectable via title */ }
+}
 
 onMounted(work.load)
 
@@ -54,7 +77,7 @@ async function confirmDecision() {
           <h2 id="registration-queue-title" class="mb-3 text-xl font-semibold">รายการรอตรวจสอบ</h2>
           <ul class="list rounded-box border border-base-300 bg-base-100">
             <li v-for="item in work.registrations.value" :key="item.requestId" class="list-row grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <div class="min-w-0"><strong class="block truncate">คำขอ {{ item.requestId }}</strong><p class="mt-1 text-sm text-base-content/65">ส่งเมื่อ {{ formatBangkokDateTime(item.submittedAt, '-') }}</p></div>
+              <div class="min-w-0"><strong class="block truncate">คำขอ <span class="font-mono" :title="item.requestId">{{ shortId(item.requestId) }}</span></strong><p class="mt-1 text-sm text-base-content/65">ส่งเมื่อ {{ formatBangkokDateTime(item.submittedAt, '-') }}</p></div>
               <button class="btn btn-sm" type="button" @click="work.inspect(item.requestId)">ตรวจรายละเอียด</button>
             </li>
           </ul>
@@ -65,16 +88,60 @@ async function confirmDecision() {
           <div v-if="work.phase.value === 'loading-detail'" class="flex min-h-48 items-center justify-center" role="status"><span class="loading loading-spinner"></span><span class="sr-only">กำลังโหลดรายละเอียด</span></div>
           <div v-else-if="!work.selected.value" class="grid min-h-48 place-items-center text-center text-base-content/65"><p>เลือกรายการเพื่อดูข้อมูลและหลักฐานก่อนตัดสินใจ</p></div>
           <template v-else>
-            <div class="flex flex-wrap items-start justify-between gap-3"><div><p class="text-sm text-base-content/60">คำขอ {{ work.selected.value.requestId }}</p><h2 id="registration-detail-title" class="mt-1 text-2xl font-semibold">{{ work.selected.value.application.plate }} · {{ work.selected.value.application.province }}</h2></div><button class="btn btn-ghost btn-sm" type="button" @click="work.clearSelection">ปิดรายละเอียด</button></div>
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="min-w-0">
+                <p class="flex flex-wrap items-center gap-2 text-sm text-base-content/60">
+                  <span>คำขอ <span class="font-mono" :title="work.selected.value.requestId">{{ shortId(work.selected.value.requestId) }}</span></span>
+                  <button class="btn btn-ghost btn-sm" type="button" @click="copyRequestId">{{ copied ? 'คัดลอกแล้ว' : 'คัดลอกเลขเต็ม' }}</button>
+                  <span class="badge badge-warning">{{ work.selected.value.status }}</span>
+                </p>
+                <h2 id="registration-detail-title" class="mt-1 text-2xl font-semibold">{{ work.selected.value.application.plate }} · {{ work.selected.value.application.province }}</h2>
+                <p class="mt-1 text-sm text-base-content/60">ส่งเมื่อ {{ formatBangkokDateTime(work.selected.value.submittedAt, '-') }}</p>
+              </div>
+              <button class="btn btn-ghost btn-sm" type="button" @click="work.clearSelection">ปิดรายละเอียด</button>
+            </div>
             <dl class="mt-5 grid gap-4 sm:grid-cols-2">
               <div><dt class="text-sm text-base-content/60">ยานพาหนะ</dt><dd class="font-medium">{{ work.selected.value.application.brand }} {{ work.selected.value.application.model }} · {{ work.selected.value.application.color }}</dd></div>
               <div><dt class="text-sm text-base-content/60">ประเภท</dt><dd class="font-medium">{{ work.selected.value.application.vehicleType }} / {{ work.selected.value.application.plateType }}</dd></div>
               <div><dt class="text-sm text-base-content/60">ผู้ประสานงาน</dt><dd class="font-medium">{{ work.selected.value.application.contactName }} · {{ work.selected.value.application.contactPhone }}</dd></div>
               <div><dt class="text-sm text-base-content/60">ความสัมพันธ์</dt><dd class="font-medium">{{ work.selected.value.application.relationship }}</dd></div>
             </dl>
-            <div class="mt-5"><h3 class="font-semibold">หลักฐานภาพ {{ work.selected.value.application.photos.length }} รายการ</h3><ul class="mt-2 grid gap-2 sm:grid-cols-2"><li v-for="photo in work.selected.value.application.photos" :key="photo.photoId" class="rounded-box bg-base-200 px-3 py-2 text-sm"><strong>{{ photo.slot }}</strong><span class="ml-2 text-base-content/75">{{ photo.mimeType || 'ไฟล์ภาพ' }}</span></li></ul></div>
+            <div class="mt-5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <h3 class="font-semibold">หลักฐานภาพ {{ detailPhotos.length }} รายการ</h3>
+                <span v-if="activeSlot" class="badge badge-ghost">{{ slotLabel(activeSlot) }}</span>
+              </div>
+              <div class="mt-3 overflow-hidden rounded-box border border-base-300 bg-base-200">
+                <div class="relative aspect-[4/3] w-full">
+                  <img v-if="activePhotoState?.status === 'ready'" :src="activePhotoState.dataUrl" :alt="`ภาพหลักฐานยานพาหนะ ${slotLabel(activeSlot)}`" class="absolute inset-0 h-full w-full object-contain" />
+                  <div v-else-if="activePhotoState?.status === 'error'" class="absolute inset-0 grid place-items-center p-4 text-center">
+                    <div>
+                      <p class="text-sm text-base-content/70">โหลดภาพไม่สำเร็จ ({{ activePhotoState.code }})</p>
+                      <button class="btn btn-sm mt-2" type="button" @click="work.retryPhoto(work.activePhotoId.value)">ลองใหม่</button>
+                    </div>
+                  </div>
+                  <div v-else class="absolute inset-0 grid place-items-center" role="status"><span class="loading loading-spinner loading-lg"></span><span class="sr-only">กำลังโหลดภาพหลักฐาน</span></div>
+                </div>
+              </div>
+              <ul class="mt-3 grid grid-cols-5 gap-2">
+                <li v-for="photo in detailPhotos" :key="photo.photoId">
+                  <button type="button" class="block w-full overflow-hidden rounded-box border-2 bg-base-200"
+                    :class="photo.photoId === work.activePhotoId.value ? 'border-primary' : 'border-transparent hover:border-base-300'"
+                    :aria-pressed="photo.photoId === work.activePhotoId.value" :aria-label="`ดูภาพ${slotLabel(photo.slot)}`"
+                    @click="work.selectPhoto(photo.photoId)">
+                    <span class="relative block aspect-square w-full">
+                      <img v-if="work.photoStates.value[photo.photoId]?.status === 'ready'" :src="work.photoStates.value[photo.photoId].dataUrl" alt="" class="absolute inset-0 h-full w-full object-cover" />
+                      <span v-else-if="work.photoStates.value[photo.photoId]?.status === 'error'" class="absolute inset-0 grid place-items-center text-xs text-error">ผิดพลาด</span>
+                      <span v-else class="skeleton absolute inset-0"></span>
+                    </span>
+                    <span class="block truncate px-1 py-1 text-center text-[11px] leading-tight text-base-content/75">{{ slotLabel(photo.slot) }}</span>
+                  </button>
+                </li>
+              </ul>
+              <p class="mt-2 text-xs text-base-content/60">ภาพแสดงในหน่วยความจำเท่านั้น ไม่บันทึกลงเครื่อง และการเปิดภาพแต่ละครั้งถูกบันทึก audit</p>
+            </div>
             <label class="mt-5 flex min-h-11 cursor-pointer items-start gap-3 rounded-box border border-base-300 p-4"><input v-model="platePhotoVerified" class="checkbox checkbox-primary mt-0.5" type="checkbox" /><span><strong class="block">ตรวจสอบภาพป้ายทะเบียนแล้ว</strong><small class="text-base-content/65">ต้องยืนยันก่อนอนุมัติ ระบบจะสร้างยานพาหนะ ผู้ประสานงาน และ QR</small></span></label>
-            <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button class="btn" type="button" @click="requestDecision('REJECT')">ปฏิเสธคำขอ</button><button class="btn btn-primary" type="button" :disabled="!platePhotoVerified" @click="requestDecision('APPROVE')">อนุมัติการลงทะเบียน</button></div>
+            <div class="sticky bottom-0 z-10 mt-5 flex flex-col-reverse gap-3 border-t border-base-300 bg-base-100 py-3 sm:static sm:flex-row sm:justify-end sm:border-0 sm:py-0"><button class="btn" type="button" @click="requestDecision('REJECT')">ปฏิเสธคำขอ</button><button class="btn btn-primary" type="button" :disabled="!platePhotoVerified" @click="requestDecision('APPROVE')">อนุมัติการลงทะเบียน</button></div>
           </template>
         </section>
       </div>

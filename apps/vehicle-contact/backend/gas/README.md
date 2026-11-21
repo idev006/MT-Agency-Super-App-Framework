@@ -1,6 +1,6 @@
 # P6 Vehicle Contact — GAS Backend source
 
-**Current source state (2026-11-17):** All **50 logical v1 operations** are represented by source handlers/health route. **No new build, execution, end-to-end test, Apps Script deployment or production release is claimed.** Protected operations remain **disabled by default** via server-side `VEHICLE_API_ENABLED` Script Property.
+**Current source state (2026-11-17):** All **51 logical v1 operations** are represented by source handlers/health route. **No new build, execution, end-to-end test, Apps Script deployment or production release is claimed.** Protected operations remain **disabled by default** via server-side `VEHICLE_API_ENABLED` Script Property.
 
 ## Architecture
 
@@ -20,7 +20,7 @@ src/entrypoints/WebApp.js                 doGet/doPost; Editor-only admin entryp
 
 Other legacy prototype modules remain present for reference; only modules wired through `OperationController.js` are part of the new feature-gated path.
 
-## v1 source inventory (50 operations)
+## v1 source inventory (51 operations)
 
 | Group | Count |
 |---|---:|
@@ -29,7 +29,7 @@ Other legacy prototype modules remain present for reference; only modules wired 
 | users | 6 |
 | organizations | 4 |
 | campaigns | 4 |
-| registrations | 4 |
+| registrations | 5 |
 | vehicles | 5 |
 | contacts | 2 |
 | changes | 3 |
@@ -37,7 +37,7 @@ Other legacy prototype modules remain present for reference; only modules wired 
 | photos | 3 |
 | retention | 4 |
 | audit | 2 |
-| **Total** | **50** |
+| **Total** | **51** |
 
 Authoritative operation names: [API inventory](../../contracts/api-inventory.v1.json). All `implementationVerified`, `integrationVerified` and `liveVerified` flags remain false pending evidence. A source handler is **not proof** of correct behavior, secure deployment or API completion.
 
@@ -75,14 +75,14 @@ Do not run `clasp push` or enable public/protected data handlers without code re
 
 ## Known gaps / release blockers
 
-1. **Verification:** source has not been built or tested in this development increment. GAS Runtime, Authorization, LockService concurrency, Drive sharing and 50 API success/failure cases require separate evidence.
+1. **Verification:** source has not been built or tested in this development increment. GAS Runtime, Authorization, LockService concurrency, Drive sharing and 51 API success/failure cases require separate evidence.
 2. **Recoverability:** Sheets is not ACID. Multi-row writes, staged media, deletion retries, migration recovery and idempotency need fault-injection/reconciliation testing and potentially further hardening.
 3. **Operational:** scheduler notifications, full per-operation JSON Schema/OpenAPI specifications, production-ready owner-claim proof and session/privacy/security sign-off remain open.
 4. **Deployment:** branch is not main and no new `clasp` action, Apps Script version or live Web App deployment has occurred.
 
 ## 2026-11-17 source wiring and concurrency refactor
 
-- GAS `WebApp.doPost` → `api/routes/Router.js` → `api/routes/GroupRoutes.js` (13 business groups / 50 allowed operation names) → `api/controllers/OperationController.js` (DTO, server-side session/RBAC, response/error mapping) → injected application use cases → `infrastructure/persistence/sheets/SheetStore.js` and `infrastructure/media/DrivePhotos.js`.
+- GAS `WebApp.doPost` → `api/routes/Router.js` → `api/routes/GroupRoutes.js` (13 business groups / 51 allowed operation names) → `api/controllers/OperationController.js` (DTO, server-side session/RBAC, response/error mapping) → injected application use cases → `infrastructure/persistence/sheets/SheetStore.js` and `infrastructure/media/DrivePhotos.js`.
 - `composition/Container.js` wires the dependencies and checks the server-owned `VEHICLE_API_ENABLED` gate.
 - Regular Google Sheets writes are sequential writes. `store.sequence(fn)` is a clarity-only wrapper around `fn()`: **no implicit transaction, rollback, or lock**.
 - `store.withLock(fn)` is used only around critical concurrent read/check/write sequences (registration quota/duplicate, approval, plate version, QR rotation, user uniqueness, photo slot/quota and retention state). It flushes pending Spreadsheet writes before releasing the GAS script lock.

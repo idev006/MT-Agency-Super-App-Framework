@@ -10,6 +10,10 @@ sequenceDiagram
   API->>API: Require vehicle.registration.approve
   API->>DB: Read pending application and 5 media refs
   API-->>FE: Review details and photo references
+  Admin->>FE: Open photo evidence (hero + thumbnails)
+  FE->>API: registrations.photo(requestId,photoId)
+  API->>DB: Verify photo belongs to request snapshot and append access audit
+  API-->>FE: Base64 image bytes rendered in memory only
   Admin->>FE: Inspect plate photo then approve or reject
   FE->>API: registrations.review(decision,platePhotoVerified)
   API->>Review: Acquire ScriptLock and reload pending state

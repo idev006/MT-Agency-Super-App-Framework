@@ -17,9 +17,18 @@ export function createDrivePhotos({driveApp,utilities,folderId}) {
   const file=driveApp.getFolderById(folderId).createFile(blob);
   return {storage_ref:file.getId(),mime_type:mime,size_bytes:bytes.length};
  }
+ function read(storageRef){
+  if(typeof storageRef!=='string'||!storageRef||storageRef.length>150)throw new Error('INVALID_STORAGE_REF');
+  const blob=driveApp.getFileById(storageRef).getBlob();
+  const mime=blob.getContentType();
+  if(!['image/jpeg','image/png','image/webp'].includes(mime))throw new Error('INVALID_MIME');
+  const bytes=blob.getBytes();
+  if(bytes.length<20||bytes.length>5*1024*1024)throw new Error('INVALID_IMAGE_SIZE');
+  return {base64Image:utilities.base64Encode(bytes),mime_type:mime,size_bytes:bytes.length};
+ }
  function trash(storageRef){
   if(typeof storageRef!=='string'||!storageRef||storageRef.length>150)throw new Error('INVALID_STORAGE_REF');
   driveApp.getFileById(storageRef).setTrashed(true);return true;
  }
- return Object.freeze({upload,trash});
+ return Object.freeze({upload,read,trash});
 }

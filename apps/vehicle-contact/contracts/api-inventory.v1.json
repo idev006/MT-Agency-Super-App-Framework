@@ -5,7 +5,7 @@
   "status": "PROPOSED_CONTRACT_NOT_DEPLOYED",
   "lastReviewed": "2026-11-17",
   "notes": [
-    "All 51 logical operations now have source handlers or bootstrap health route. This is NOT a verified, deployed or production-ready implementation.",
+    "All 52 logical operations now have source handlers or bootstrap health route. This is NOT a verified, deployed or production-ready implementation.",
     "Protected GAS ingress remains disabled by default and requires explicit server-side feature flag after security/privacy/release reviews.",
     "Request/response JSON Schema and staging API tests are outstanding; all verification flags remain false."
   ],
@@ -404,6 +404,20 @@
       "status": "SOURCE_WRITTEN_UNVERIFIED",
       "protected": true,
       "requestSchemaRef": "#/definitions/requests/registrations.review",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
+      "id": "VC-REGISTRATIONS-005",
+      "group": "registrations",
+      "action": "photo",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/registrations.photo",
       "responseSchemaRef": "#/definitions/ApiResponse",
       "implementationVerified": false,
       "integrationVerified": false,

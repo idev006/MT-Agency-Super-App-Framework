@@ -200,6 +200,13 @@
       "enabled": false
     },
     {
+      "id": "VC-REGISTRATIONS-005",
+      "operation": "registrations.photo",
+      "requiredPermission": "vehicle.registration.approve",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
       "id": "VC-VEHICLES-001",
       "operation": "vehicles.lookup",
       "requiredPermission": "vehicle.lookup",

@@ -4,8 +4,8 @@
 
 ## 1. Authority and scope
 - Business baseline: [Approved requirements](../../APPROVED_REQUIREMENTS_BASELINE_R01_R26.md).
-- API operations: `registrations.listPending`, `registrations.detail`, `registrations.review` (API v1 JSON envelope, GAS POST except public health GET).
-- Implementation: `backend/gas/src/application/use-cases/VehicleOperations.js`; server permission source `backend/gas/src/api/controllers/OperationController.js`.
+- API operations: `registrations.listPending`, `registrations.detail`, `registrations.review`, `registrations.photo` (API v1 JSON envelope, GAS POST except public health GET).
+- Implementation: `backend/gas/src/application/use-cases/VehicleOperations.js`; photo evidence read `backend/gas/src/application/use-cases/MediaRetentionOperations.js` via `backend/gas/src/infrastructure/media/DrivePhotos.js`; server permission source `backend/gas/src/api/controllers/OperationController.js`.
 - Diagram source: [sequence.mmd](sequence.mmd) (Mermaid, reviewed alongside spec).
 
 ## 2. Preconditions
@@ -32,7 +32,7 @@ Insufficient approval permission, unreadable plate, duplicate active vehicle, al
 - FE status: **WIRED_IN_SOURCE / LIVE_ACCEPTANCE_PENDING**; route, queue, detail, pagination, explicit approve/reject confirmation and Cloudflare DTO allowlist are recorded in [FE-REGISTRATION-ADMIN-01 evidence](../../FRONTEND_FE_REGISTRATION_ADMIN_01_EVIDENCE_20261120.md).
 
 ## 7. Development notes / explicit gaps
-The backend checks platePhotoVerified boolean supplied by admin session; actual human visual verification is outside code and requires UAT. Current approve path performs multiple Sheets writes without full durable compensation.
+The backend checks platePhotoVerified boolean supplied by admin session; actual human visual verification is outside code and requires UAT. Current approve path performs multiple Sheets writes without full durable compensation. Photo evidence is fetched one image at a time via `registrations.photo` (request-snapshot ownership check plus access audit); the frontend renders bytes in memory only and never caches them in browser storage.
 
 ## 8. Approval conditions
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
@@ -55,6 +55,10 @@ sequenceDiagram
   API->>API: Require vehicle.registration.approve
   API->>DB: Read pending application and 5 media refs
   API-->>FE: Review details and photo references
+  Admin->>FE: Open photo evidence (hero + thumbnails)
+  FE->>API: registrations.photo(requestId,photoId)
+  API->>DB: Verify photo belongs to request snapshot and append access audit
+  API-->>FE: Base64 image bytes rendered in memory only
   Admin->>FE: Inspect plate photo then approve or reject
   FE->>API: registrations.review(decision,platePhotoVerified)
   API->>Review: Acquire ScriptLock and reload pending state

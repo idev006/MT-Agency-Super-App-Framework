@@ -60,6 +60,16 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   }
   return {vehicleId,slot,replaced:true};
  }
+ function registrationPhoto(p,actor){
+  const requestId=need(p.requestId,'REQUEST_ID'),photoId=need(p.photoId,'PHOTO_ID');
+  const request=store.one('vc_registration_requests',{request_id:requestId});
+  if(!request)throw new Error('NOT_FOUND');
+  const photo=(JSON.parse(request.application_json).photos||[]).find(f=>f.photoId===photoId);
+  if(!photo)throw new Error('PHOTO_NOT_FOUND');
+  audit(actor,'registration',requestId,'REGISTRATION_PHOTO_VIEWED');
+  const media=drivePhotos.read(photo.storageRef);
+  return {photoId,slot:photo.slot,mimeType:media.mime_type,base64Image:media.base64Image};
+ }
  function dueJobs(p){
   const cutoff=Date.parse(now()),items=store.list('vc_retention_jobs').filter(j=>
    j.status==='WAITING_RETENTION'&&Date.parse(j.due_at)<=cutoff&&j.legal_hold!==true&&String(j.legal_hold)!=='true')
@@ -121,6 +131,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
  }
  return Object.freeze({
   'photos.upload':uploadPhoto,'photos.list':photosList,'photos.replace':replacePhoto,
+  'registrations.photo':registrationPhoto,
   'retention.listDue':dueJobs,'retention.approve':approveDeletion,
   'retention.execute':executeDeletion,'retention.jobStatus':status,
   'audit.query':queryAudit,'audit.export':p=>({format:'JSON',rows:queryAudit({...(p.vehicleId?{vehicleId:p.vehicleId}:{}),limit:100})})

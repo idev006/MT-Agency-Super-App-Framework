@@ -18,7 +18,7 @@ GAS Web Apps implement `doGet/doPost` only; this is a logical `apiVersion/group/
 
 ## Proposed v1 source router — implementation update (not a deployed API contract)
 
-The historic table above describes an earlier live bootstrap, not the current branch's source inventory. Current source implements 50 logical group/action handlers as defined in [api-inventory.v1.json](../contracts/api-inventory.v1.json). The complete operation set spans system (3), auth (6), users (6), organizations (4), campaigns (4), registrations (4), vehicles (5), contacts (2), changes (3), QR (4), photos (3), retention (4), audit (2).
+The historic table above describes an earlier live bootstrap, not the current branch's source inventory. Current source implements 51 logical group/action handlers as defined in [api-inventory.v1.json](../contracts/api-inventory.v1.json). The complete operation set spans system (3), auth (6), users (6), organizations (4), campaigns (4), registrations (5), vehicles (5), contacts (2), changes (3), QR (4), photos (3), retention (4), audit (2).
 
 ### Runtime path and security
 

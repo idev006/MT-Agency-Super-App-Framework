@@ -6,7 +6,7 @@ const GROUPS=Object.freeze({
  organizations:Object.freeze(['list','create','update','disable']),
  campaigns:Object.freeze(['create','list','validate','revoke']),
  references:Object.freeze(['registration']),
- registrations:Object.freeze(['submit','listPending','detail','review']),
+ registrations:Object.freeze(['submit','listPending','detail','review','photo']),
  vehicles:Object.freeze(['lookup','detail','update','cancel','history']),
  contacts:Object.freeze(['read','update']),
  changes:Object.freeze(['submit','listPending','review']),

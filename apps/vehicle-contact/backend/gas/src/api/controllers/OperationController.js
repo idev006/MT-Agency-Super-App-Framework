@@ -13,7 +13,7 @@ const permissions={
  'organizations.list':'organizations.read','organizations.create':'organizations.manage','organizations.update':'organizations.manage','organizations.disable':'organizations.manage',
  'campaigns.create':'campaigns.manage','campaigns.list':'campaigns.manage','campaigns.revoke':'campaigns.manage',
  'references.registration':'vehicle.registration.approve',
- 'registrations.listPending':'vehicle.registration.approve','registrations.detail':'vehicle.registration.approve','registrations.review':'vehicle.registration.approve',
+ 'registrations.listPending':'vehicle.registration.approve','registrations.detail':'vehicle.registration.approve','registrations.review':'vehicle.registration.approve','registrations.photo':'vehicle.registration.approve',
  'vehicles.lookup':'vehicle.lookup','vehicles.detail':'vehicle.lookup','vehicles.update':'vehicle.update','vehicles.cancel':'vehicle.update','vehicles.history':'vehicle.history.read',
  'contacts.read':'vehicle.contact.read','contacts.update':'vehicle.update',
  'changes.submit':'vehicle.change.submit','changes.listPending':'vehicle.change.approve','changes.review':'vehicle.change.approve',
@@ -30,7 +30,7 @@ const safeErrors=new Set([
  'PASSWORD_CHANGE_REQUIRED','LOGIN_RATE_LIMIT','INVALID_CREDENTIALS','INVALID_GOOGLE_TOKEN','IDENTITY_ALREADY_LINKED',
  'INVALID_PASSWORD','DUPLICATE_USERNAME','INVALID_ROLES','DUPLICATE_KEY','DUPLICATE_VEHICLE','DUPLICATE_ACTIVE_VEHICLE',
  'INVALID_CAMPAIGN','CAMPAIGN_INVALID','FIVE_PHOTOS_REQUIRED','PLATE_PHOTO_NOT_VERIFIED','PHOTO_SLOT_INVARIANT','IDEMPOTENCY_CONFLICT','OWNER_NOT_FOUND','PHOTO_NOT_STAGED','INVALID_SLOT','INVALID_MEDIA',
- 'INVALID_MIME','PHOTO_UPLOAD_LIMIT','INVALID_IMAGE_SIZE','IMAGE_SIGNATURE_MISMATCH','VEHICLE_NOT_ACTIVE','VERSION_CONFLICT',
+ 'INVALID_MIME','PHOTO_UPLOAD_LIMIT','INVALID_IMAGE_SIZE','IMAGE_SIGNATURE_MISMATCH','PHOTO_NOT_FOUND','VEHICLE_NOT_ACTIVE','VERSION_CONFLICT',
  'CONTACT_NOT_FOUND','PRIMARY_CONTACT_INVARIANT','INVALID_REQUEST_STATE','INVALID_DECISION','OWNERSHIP_NOT_VERIFIED',
  'INVALID_QR','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
  'DELETION_NOT_AUTHORIZED','DELETION_RETRY_REQUIRED','BUSY','SCHEMA_MISMATCH','MISSING_TABLE','IDLE_POLICY_NOT_CONFIGURED',
@@ -48,7 +48,7 @@ export function createOperationController({store,security,sessions,drivePhotos,a
  };
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
- if(entries.length!==50||DTO_OPERATIONS.length!==50||entries.some(op=>!DTO_OPERATIONS.includes(op))
+ if(entries.length!==51||DTO_OPERATIONS.length!==51||entries.some(op=>!DTO_OPERATIONS.includes(op))
   ||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
   throw new Error('INCOMPLETE_API_DISPATCH');
  function dispatch(request){
