@@ -28,6 +28,7 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "registrations.listPending":[[],["limit","page","pageSize"]],
  "registrations.detail":[["requestId"],[]],
  "registrations.review":[["requestId","decision"],["platePhotoVerified"]],
+ "registrations.photo":[["requestId","photoId"],[]],
  "vehicles.lookup":[["plate","province"],[]],
  "vehicles.history":[["vehicleId"],[]],
  "qr.resolve":[["token"],[]],

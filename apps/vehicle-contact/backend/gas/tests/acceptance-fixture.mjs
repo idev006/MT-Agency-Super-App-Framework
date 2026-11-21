@@ -56,6 +56,7 @@ export function createAcceptanceHarness(){
  const driveState=new Map(),deletedFiles=new Set();
  const drivePhotos={
   upload(base64,mime){io.driveUploads++;const ref='staging-media-'+id().slice(-6);driveState.set(ref,{base64,mime});return{storage_ref:ref,mime_type:mime,size_bytes:200};},
+  read(ref){const f=driveState.get(ref);if(!f)throw Error('NOT_FOUND');return{base64Image:f.base64,mime_type:f.mime,size_bytes:200};},
   trash(ref){if(throwOnDriveTrash)throw Error('TEST_DRIVE_FAILURE');io.driveDeletes++;deletedFiles.add(ref);driveState.delete(ref);return true;}
  };
  const actors=[

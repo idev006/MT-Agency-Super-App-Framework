@@ -120,6 +120,7 @@ test('frontend gateway allows registration review only through exact DTOs',async
   for(const [operation,payload] of [
    ['registrations.listPending',{page:1,pageSize:10}],
    ['registrations.detail',{requestId:'request-1'}],
+   ['registrations.photo',{requestId:'request-1',photoId:'photo-1'}],
    ['registrations.review',{requestId:'request-1',decision:'APPROVE',platePhotoVerified:true}],
   ]){
    const [group,action]=operation.split('.');
@@ -129,11 +130,21 @@ test('frontend gateway allows registration review only through exact DTOs',async
   assert.deepEqual(fake.calls.map(({group,action,payload})=>({operation:group+'.'+action,payload})),[
    {operation:'registrations.listPending',payload:{page:1,pageSize:10}},
    {operation:'registrations.detail',payload:{requestId:'request-1'}},
+   {operation:'registrations.photo',payload:{requestId:'request-1',photoId:'photo-1'}},
    {operation:'registrations.review',payload:{requestId:'request-1',decision:'APPROVE',platePhotoVerified:true}},
   ]);
   const denied=await worker.fetch(frontendRequest({apiVersion:'v1',group:'registrations',action:'review',payload:{requestId:'request-1',decision:'APPROVE',platePhotoVerified:true,roles:['SYSTEM_ADMIN']},requestId:'request_123',sessionToken:TOKEN}),env());
   assert.equal(denied.status,403);
   assert.equal((await denied.json()).error,'INVALID_OPERATION_PAYLOAD');
+  for(const [payload,sessionToken] of [
+   [{requestId:'request-1'},TOKEN],
+   [{requestId:'request-1',photoId:'photo-1',slot:'FRONT'},TOKEN],
+   [{requestId:'request-1',photoId:'photo-1'},undefined],
+  ]){
+   const response=await worker.fetch(frontendRequest({apiVersion:'v1',group:'registrations',action:'photo',payload,requestId:'request_123',sessionToken}),env());
+   assert.equal(response.status,403);
+  }
+  assert.equal(fake.calls.length,4,'invalid photo requests must not reach GAS');
  }finally{fake.restore();}
 });
 test('frontend gateway allows authenticated vehicle lookup, history and QR resolution through exact DTOs',async()=>{

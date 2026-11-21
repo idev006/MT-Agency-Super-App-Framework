@@ -29,7 +29,7 @@ export function createApplication(deps={}) {
     const sessions=createSessionService({store,security});
     const folderId=props.getProperty('VEHICLE_PHOTOS_FOLDER_ID');
     const drivePhotos=folderId?createDrivePhotos({driveApp:s.driveApp,utilities:s.utilities,folderId}):{
-      upload(){throw new Error('DRIVE_NOT_CONFIGURED');},trash(){throw new Error('DRIVE_NOT_CONFIGURED');}
+      upload(){throw new Error('DRIVE_NOT_CONFIGURED');},read(){throw new Error('DRIVE_NOT_CONFIGURED');},trash(){throw new Error('DRIVE_NOT_CONFIGURED');}
     };
     return createOperationController({store,security,sessions,drivePhotos,
       allowDestructiveRetention:props.getProperty('VEHICLE_RETENTION_EXECUTE_ENABLED')==='true'});

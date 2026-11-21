@@ -188,6 +188,13 @@ async function run(){
  await test('REGISTRATIONS.DETAIL','registrations.detail',async()=>{
   assert.equal(ok(await request('registrations.detail',{requestId:state.registration.requestId},state.tokens.reg)).requestId,state.registration.requestId);
  });
+ await test('REGISTRATIONS.PHOTO','registrations.photo',async()=>{
+  const detail=ok(await request('registrations.detail',{requestId:state.registration.requestId},state.tokens.reg));
+  const first=detail.application.photos[0];
+  const photo=ok(await request('registrations.photo',{requestId:state.registration.requestId,photoId:first.photoId},state.tokens.reg));
+  assert.equal(photo.photoId,first.photoId);assert.equal(photo.slot,first.slot);
+  assert.ok(typeof photo.base64Image==='string'&&photo.base64Image.length>0);
+ });
  await test('REGISTRATIONS.REVIEW','registrations.review',async()=>{
   state.approved=ok(await request('registrations.review',{requestId:state.registration.requestId,decision:'APPROVE',platePhotoVerified:true},state.tokens.reg));
   assert.equal(state.approved.status,'APPROVED');

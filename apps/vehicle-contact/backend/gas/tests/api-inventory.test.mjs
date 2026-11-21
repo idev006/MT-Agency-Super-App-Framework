@@ -4,7 +4,7 @@ const root=new URL('../../../contracts/',import.meta.url);
 const inventory=JSON.parse(readFileSync(new URL('api-inventory.v1.json',root),'utf8'));
 const permissions=JSON.parse(readFileSync(new URL('api-permissions.v1.json',root),'utf8'));
 const operations=inventory.operations.map(x=>x.group+'.'+x.action);
-assert.equal(operations.length,51);
+assert.equal(operations.length,52);
 assert.equal(new Set(operations).size,operations.length,'duplicate operation');
 assert.equal(new Set(inventory.operations.map(x=>x.id)).size,operations.length,'duplicate ID');
 assert.deepEqual(permissions.operations.map(x=>x.operation),operations);

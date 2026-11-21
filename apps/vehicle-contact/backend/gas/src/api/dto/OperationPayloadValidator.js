@@ -30,6 +30,7 @@ const SCHEMAS={
  'registrations.listPending':[{}, {limit:'n',page:'n',pageSize:'n'}],
  'registrations.detail':[{requestId:'s'},{}],
  'registrations.review':[{requestId:'s',decision:'s'},{platePhotoVerified:'b'}],
+ 'registrations.photo':[{requestId:'s',photoId:'s'},{}],
  'vehicles.lookup':[{plate:'s',province:'s'},{}],
  'vehicles.detail':[{vehicleId:'s'},{}],
  'vehicles.update':[{vehicleId:'s',expectedVersion:'n'},
