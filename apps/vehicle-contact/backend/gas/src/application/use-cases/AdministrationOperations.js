@@ -43,7 +43,7 @@ export function createAdministrationOperations({store,security}) {
   if(p.name!==undefined)patch.name=required(p.name,'ORG_NAME');
   if(p.parentId!==undefined){
    if(p.parentId===id)throw new Error('INVALID_ORG_PARENT');
-   if(p.parentId&&!store.one('vc_organizations',{organization_id:p.parentId}))throw new Error('PARENT_NOT_FOUND');
+   if(p.parentId){if(!store.one('vc_organizations',{organization_id:p.parentId}))throw new Error('PARENT_NOT_FOUND');const byId=new Map(store.list('vc_organizations').map(o=>[o.organization_id,o]));const seen=new Set();let cursor=p.parentId;while(cursor&&!seen.has(cursor)){if(cursor===id)throw new Error('INVALID_ORG_PARENT');seen.add(cursor);cursor=byId.get(cursor)?.parent_id||'';}}
    patch.parent_id=p.parentId;
   }
   store.sequence(()=>{store.update('vc_organizations',{organization_id:id},patch);audit(a,'ORG_UPDATED',id)});
