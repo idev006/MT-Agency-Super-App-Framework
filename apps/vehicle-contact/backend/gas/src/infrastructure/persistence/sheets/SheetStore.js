@@ -61,6 +61,13 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
  function literalCell(value){
   return typeof value==='string'&&/^[\s]*[=+@-]/.test(value)?"'"+value:value;
  }
+ // Real Sheets USER_ENTERED coerces numeric-looking strings ("10") to numbers and
+ // ISO strings to Dates. Force text format on string cells so codes/timestamps
+ // survive verbatim; keep General for genuine numbers/booleans.
+ function writeRow(range,cells){
+  if(typeof range.setNumberFormat==='function')range.setNumberFormat([cells.map(v=>typeof v==='string'?'@':'General')]);
+  range.setValues([cells]);
+ }
  function invalidate(name){snapshot.delete(name);}
  function insert(name,data){
   const t=table(name);
@@ -69,7 +76,7 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
   const key=DATABASE_SCHEMA.tables[name].columns.find(c=>c.key==='primary')?.name;
   if(key&&records(name,{[key]:data[key]}).length)throw new Error('DUPLICATE_KEY');
   const values=t.headers.map(h=>literalCell(data[h]===undefined?'':data[h]));
-  t.sheet.appendRow(values);
+  writeRow(t.sheet.getRange(t.sheet.getLastRow()+1,1,1,t.headers.length),values);
   invalidate(name);
   return {...data};
  }
@@ -78,7 +85,7 @@ export function createSheetStore({spreadsheetApp,spreadsheetId,lockService}) {
   if(hits.length!==1)throw new Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
   if(!patch||Object.keys(patch).some(k=>!t.headers.includes(k)))throw new Error('INVALID_PATCH');
   const next={...hits[0].data,...patch};
-  t.sheet.getRange(hits[0].row,1,1,t.headers.length).setValues([t.headers.map(h=>literalCell(next[h]===undefined?'':next[h]))]);
+  writeRow(t.sheet.getRange(hits[0].row,1,1,t.headers.length),t.headers.map(h=>literalCell(next[h]===undefined?'':next[h])));
   invalidate(name);
   return next;
  }

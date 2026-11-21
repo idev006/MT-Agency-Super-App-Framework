@@ -46,7 +46,7 @@ function environment({password=PASSWORD,permission=true,approved=true,backup=tru
    getValues(){return tables[name].slice(r-1,r-1+h).map(items=>items.slice(c-1,c-1+w));},
    setValues(values){
     if(name===failOnTable)throw Error('SIMULATED_WRITE_FAILURE');
-    for(let i=0;i<h;i++)for(let j=0;j<w;j++)tables[name][r-1+i][c-1+j]=values[i][j];
+    for(let i=0;i<h;i++){const target=tables[name][r-1+i]??(tables[name][r-1+i]=Array(tables[name][0].length).fill(''));for(let j=0;j<w;j++)target[c-1+j]=values[i][j];}
    }
   };},
   appendRow(row){tables[name].push([...row]);}
