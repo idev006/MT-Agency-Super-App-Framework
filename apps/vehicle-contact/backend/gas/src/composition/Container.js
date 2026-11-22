@@ -1,6 +1,6 @@
 import {createOperationController} from '../api/controllers/OperationController.js';
 import {createSessionService} from '../application/security/SessionService.js';
-import {createSheetStore} from '../infrastructure/persistence/sheets/SheetStore.js';
+import {createStoreForBackend} from './StoreSelector.js';
 import {createGasSecurity} from '../infrastructure/security/GasSecurity.js';
 import {createDrivePhotos} from '../infrastructure/media/DrivePhotos.js';
 import { createAdditiveMigration } from "../infrastructure/migrations/ExecuteAdditiveMigration.js";
@@ -23,8 +23,8 @@ export function createApplication(deps={}) {
     const s=services(),props=s.propertiesService.getScriptProperties();
     if(props.getProperty('VEHICLE_API_ENABLED')!=='true')throw new Error('FEATURE_DISABLED');
     const spreadsheetId=props.getProperty('VEHICLE_SHEET_ID');
-    const store=createSheetStore({spreadsheetApp:s.spreadsheetApp,spreadsheetId,lockService:s.lockService});
     const clock=()=>new Date().toISOString();
+    const store=createStoreForBackend({backend:props.getProperty('VEHICLE_PERSISTENCE_BACKEND'),props,services:s,clock});
     const security=createGasSecurity({utilities:s.utilities,urlFetchApp:s.urlFetchApp,propertiesService:s.propertiesService,clock});
     const sessions=createSessionService({store,security});
     const folderId=props.getProperty('VEHICLE_PHOTOS_FOLDER_ID');

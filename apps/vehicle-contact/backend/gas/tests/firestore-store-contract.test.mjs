@@ -1,7 +1,8 @@
 // F2 offline proof: the Firestore adapter is a drop-in for the SAME store-port contract
 // the Sheets adapter passes (D-E1 Option 2). Runs against an in-memory fake of the
 // Firestore document gateway — no live GCP project, credentials or network needed.
-// The real REST + service-account-OAuth gateway (UrlFetchApp) is F4.
+// The real REST + service-account-OAuth gateway (UrlFetchApp) is F3a
+// (FirestoreRestGateway.js), proven offline in firestore-store-rest-contract.test.mjs.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {DATABASE_SCHEMA} from '../src/domain/ports/SchemaRepository.js';

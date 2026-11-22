@@ -6,10 +6,11 @@ import {DATABASE_SCHEMA} from '../../../domain/ports/SchemaRepository.js';
 // row order, so ordering is stored, not held in adapter memory). sequence() runs a REAL
 // Firestore transaction (the ACID seam Sheets lacks); withLock is a no-op because every
 // write is already atomic via its own transaction.
-// The Firestore gateway is injected: a REST + service-account-OAuth client in production
-// (F4, via UrlFetchApp), an in-memory fake in the offline contract test. This module uses
-// no GAS- or Node-specific API, so it bundles unchanged into the GAS artifact and is not
-// wired into the composition root until F3 (default backend stays Sheets).
+// The Firestore gateway is injected: the real REST + service-account-OAuth client
+// (FirestoreRestGateway.js, F3a) in production, an in-memory fake in the offline contract
+// test. This module uses no GAS- or Node-specific API, so it bundles unchanged into the
+// GAS artifact; the composition root selects it only when VEHICLE_PERSISTENCE_BACKEND
+// =firestore (default stays Sheets).
 const SEQ_COLLECTION='__p6vc_seq';
 const SEQ_FIELD='_seq';
 const MAX_LIMIT=5000;
