@@ -1,11 +1,14 @@
 <script setup>
-import { computed, inject, onUnmounted, ref } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { qrResolveRepositoryKey } from '../application/vehicles/qr-resolve-port.js'
+import { qrScannerKey } from '../application/scanner/qr-scanner-port.js'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import VehicleSearchResult from '../features/vehicle-search/components/VehicleSearchResult.vue'
 import { useQrResolve } from '../features/vehicle-search/useQrResolve.js'
+import QrScannerPanel from '../features/qr-scanner/components/QrScannerPanel.vue'
+import { useQrScanner } from '../features/qr-scanner/useQrScanner.js'
 import { useSessionStore } from '../stores/session.js'
 
 const auth = useSessionStore()
@@ -13,6 +16,8 @@ const { roles, permissions, session, transport } = storeToRefs(auth)
 const work = useQrResolve({ repository: inject(qrResolveRepositoryKey), permissions })
 const token = ref('')
 const permissionSet = computed(() => new Set(permissions.value))
+const readerId = 'p6vc-qr-reader'
+const scanner = useQrScanner({ scanner: inject(qrScannerKey), elementId: readerId, onDecoded: work.resolve })
 
 async function submit() {
   const candidate = token.value
@@ -20,7 +25,8 @@ async function submit() {
   await work.resolve(candidate)
 }
 
-onUnmounted(work.clearSensitive)
+onMounted(scanner.bindLifecycle)
+onBeforeUnmount(() => { work.clearSensitive(); scanner.destroy() })
 </script>
 
 <template>
@@ -28,6 +34,8 @@ onUnmounted(work.clearSensitive)
     <template #breadcrumbs><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">ตรวจสอบ QR</span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
     <template #toolbar>
+      <QrScannerPanel class="mb-5" :reader-id="readerId" :phase="scanner.phase.value" :failure-code="scanner.failure.value?.code" :devices="scanner.devices.value" :selected-device-id="scanner.selectedDeviceId.value" :facing-mode="scanner.facingMode.value" :active-facing-mode="scanner.activeFacingMode.value" :active="scanner.active.value" :busy="scanner.busy.value" @start="scanner.start" @stop="scanner.stop" @switch="scanner.switchCamera" @select-device="scanner.selectDevice" @scan-file="scanner.scanFile" />
+      <div class="mb-5 flex justify-end"><RouterLink class="btn btn-ghost" :to="{ name: 'vehicle-search' }">ค้นหาด้วยเลขทะเบียนแทน</RouterLink></div>
       <form class="card card-border bg-base-100 shadow-none" autocomplete="off" @submit.prevent="submit">
         <fieldset class="card-body gap-4 p-5 sm:p-6" :disabled="work.phase.value === 'loading'">
           <legend class="fieldset-legend text-lg font-medium">QR token</legend>
@@ -35,7 +43,7 @@ onUnmounted(work.clearSensitive)
             <label class="field-stack">
               <span class="label font-medium">Token 64 ตัวอักษร</span>
               <input v-model.trim="token" class="input input-bordered min-h-11 w-full font-mono" type="password" inputmode="text" minlength="64" maxlength="64" pattern="[A-Fa-f0-9]{64}" autocomplete="off" autocapitalize="none" spellcheck="false" required aria-describedby="qr-token-help">
-              <span id="qr-token-help" class="text-sm text-base-content/65">ระบบใช้ token ในหน่วยความจำระหว่างคำขอเท่านั้น และไม่บันทึกลง URL หรือ browser storage</span>
+              <span id="qr-token-help" class="text-sm text-base-content/65">ใช้เป็นทางเลือกเมื่อสแกนไม่ได้ ระบบใช้ token ในหน่วยความจำระหว่างคำขอเท่านั้น และไม่บันทึกลง URL หรือ browser storage</span>
             </label>
             <button class="btn btn-primary min-h-11 md:mt-8" type="submit" :disabled="token.length !== 64 || work.phase.value === 'loading'">
               <span v-if="work.phase.value === 'loading'" class="loading loading-spinner loading-sm" aria-hidden="true"></span>
@@ -56,6 +64,6 @@ onUnmounted(work.clearSensitive)
       <div v-else-if="work.phase.value === 'recoverable-error' || work.phase.value === 'error'" class="alert alert-error items-start"><div><h2 class="font-medium">ตรวจสอบ QR ไม่สำเร็จ</h2><p class="mt-1">{{ work.phase.value === 'recoverable-error' ? 'การเชื่อมต่อขัดข้อง สามารถลองคำขอเดิมอีกครั้งได้' : 'ระบบปฏิเสธคำขอโดยไม่เปิดเผยข้อมูลยานพาหนะ' }}</p><button v-if="work.phase.value === 'recoverable-error'" class="btn btn-sm mt-3" type="button" @click="work.retry">ลองอีกครั้ง</button><details v-if="work.failure.value?.requestId" class="collapse collapse-arrow mt-3 bg-base-100 text-base-content"><summary class="collapse-title font-medium">รายละเอียดสำหรับเจ้าหน้าที่สนับสนุน</summary><div class="collapse-content break-all font-mono text-sm">{{ work.failure.value.requestId }}</div></details></div></div>
       <VehicleSearchResult v-else-if="work.phase.value === 'success'" :result="work.result.value" :can-read-contacts="permissionSet.has('vehicle.contact.read')" :can-read-photos="permissionSet.has('vehicle.photos.read')" :can-read-history="permissionSet.has('vehicle.history.read')" />
     </section>
-    <template #footer><p class="text-sm text-base-content/70">GAS ตรวจสอบ session, permission, สถานะ QR และบันทึกการค้นหาทุกครั้ง กล้องสแกนจะเพิ่มใน slice ถัดไป</p></template>
+    <template #footer><p class="text-sm text-base-content/70">GAS ตรวจสอบ session, permission, สถานะ QR และบันทึกการค้นหาทุกครั้ง ระบบปิดกล้องเมื่ออ่านสำเร็จ ออกจากหน้า หรือซ่อนหน้าเว็บ</p></template>
   </PageTemplateComponent>
 </template>

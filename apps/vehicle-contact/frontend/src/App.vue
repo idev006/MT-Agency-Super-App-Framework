@@ -18,6 +18,7 @@ import { myVehiclesRepositoryKey } from './application/vehicles/my-vehicles-port
 import { vehicleRegistryRepositoryKey } from './application/vehicles/vehicle-registry-port.js'
 import { vehicleMaintenanceRepositoryKey } from './application/vehicles/vehicle-maintenance-port.js'
 import { qrResolveRepositoryKey } from './application/vehicles/qr-resolve-port.js'
+import { qrScannerKey } from './application/scanner/qr-scanner-port.js'
 import { userDirectoryRepositoryKey } from './application/users/user-directory-port.js'
 import { createGasVehicleSearchRepository } from './infrastructure/vehicles/gas-vehicle-search-repository.js'
 import { createGasVehicleDetailRepository } from './infrastructure/vehicles/gas-vehicle-detail-repository.js'
@@ -26,6 +27,7 @@ import { createGasMyVehiclesRepository } from './infrastructure/vehicles/gas-my-
 import { createGasVehicleRegistryRepository } from './infrastructure/vehicles/gas-vehicle-registry-repository.js'
 import { createGasVehicleMaintenanceRepository } from './infrastructure/vehicles/gas-vehicle-maintenance-repository.js'
 import { createGasQrResolveRepository } from './infrastructure/vehicles/gas-qr-resolve-repository.js'
+import { createHtml5QrCodeScannerAdapter } from './infrastructure/scanner/html5-qrcode-scanner-adapter.js'
 import { createGasUserDirectoryRepository } from './infrastructure/users/gas-user-directory-repository.js'
 import { createGasAccountSecurityRepository } from './infrastructure/auth/gas-account-security-repository.js'
 import { createGasAuditRepository } from './infrastructure/audit/gas-audit-repository.js'
@@ -66,6 +68,7 @@ provide(vehicleMaintenanceRepositoryKey, createGasVehicleMaintenanceRepository({
 provide(qrResolveRepositoryKey, createGasQrResolveRepository({
   callOperation: session.callProtected,
 }))
+provide(qrScannerKey, createHtml5QrCodeScannerAdapter())
 provide(userDirectoryRepositoryKey, createGasUserDirectoryRepository({
   callOperation: session.callProtected,
 }))
