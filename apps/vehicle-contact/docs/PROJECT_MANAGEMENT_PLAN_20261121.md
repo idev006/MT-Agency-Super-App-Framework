@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Project Management / Delivery Execution Plan
 
-**Document:** P6VC-PM-PLAN-001 | **Opened:** 2026-11-21 | **Last verified:** 2026-11-22 08:23 Asia/Bangkok
-**Baseline:** PR **#110**, merged `main` @ **`bf3553d`**; published GAS **V48 / 0.9.1**, Frontend **0.8.0**, 56 operations, 25 Sheets
+**Document:** P6VC-PM-PLAN-001 | **Opened:** 2026-11-21 | **Last verified:** 2026-11-22 09:17 Asia/Bangkok
+**Baseline:** handoff PR **#111**, merged `main` @ **`ad7630e`**; implementation/content PR **#110** @ **`bf3553d`**; published GAS **V48 / 0.9.1**, Frontend **0.8.0**, 56 operations, 25 Sheets
 **Status:** ACTIVE slice/gate SSOT. Resume from [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); release gates are detailed in [PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md).
 
 ## 1. Objective and definition of done
@@ -48,7 +48,7 @@ See [live automation and reset evidence](LIVE_API_AUTOMATION.md).
 | C4 | **DONE — engineering** | [OWNER journey](C4_MY_VEHICLES_SCREEN_EVIDENCE_20261121.md); browser/business acceptance OPEN. |
 | C5 | **BLOCKED — not in progress** | Requires **D5 + B3** before RETENTION_WORKER console implementation or destructive rehearsal. |
 | C6 | **DONE — engineering/live** | [Admin registry evidence](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md); VC-ADR-017 and browser/business acceptance OPEN. |
-| QR camera | **WIP / recovery** | Protected local stash, adapter-cleanup tests and physical Android/iOS acceptance remain; not accepted as merged camera integration. |
+| QR camera | **DONE — engineering source (PR #112)** | Protected stash recovered against remote `main`; focused 16/16, Frontend 192/192, build/audit and direct adapter cleanup pass. [Evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md). Physical Android/iOS and browser/business acceptance remain OPEN. |
 | D-E1 | **OPEN — human decision** | [E1 design](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) complete; bounded Sheets versus indexed-store decision not ratified. |
 | D3 | **OPEN — human decision** | Phase priority/sequencing ratification. |
 | D5 | **OPEN — human decision** | Destructive-retention enable mechanism/runbook; no enablement approved. |
@@ -69,9 +69,9 @@ VC-ADR-014, VC-ADR-015 and VC-ADR-017 remain **OPEN for security/PDPA ratificati
 | M1 — Backend hardened and live-proven | **CLOSED for B1/B2/B4 scope** | B2b is an explicit follow-up, not silently included. |
 | M2 — REGADMIN + OWNER frontend | **CLOSED — engineering** | Browser/business acceptance OPEN. C6 extends this scope. |
 | M3 — Worker execution gated and rehearsed | **BLOCKED** | Human D5 + B3, then C5 and synthetic-only rehearsal. |
-| M4 — Production readiness | **OPEN** | QR/B2b, C5 dependency, acceptance, decisions, credential rotation and all release sign-offs. |
+| M4 — Production readiness | **OPEN** | QR device acceptance, B2b, C5 dependency, decisions, credential rotation and all release sign-offs. |
 
-**Parallel engineering paths:** QR camera recovery/device evidence and B2b durable journaling can proceed independently.
+**Remaining engineering path:** B2b durable journaling is the next separate source slice. QR physical-device evidence is a human/device gate, not an engineering substitute.
 **Blocked path:** **D5 + B3 → C5 → synthetic retention rehearsal**. C5 must not be reported in progress while its decisions are open.
 **Release-critical human path:** browser/business acceptance + D-E1/D3 + VC-ADR-014/015/017 + credential rotation + PDPA/security/UAT/release approvals. None may be self-approved by an assistant.
 

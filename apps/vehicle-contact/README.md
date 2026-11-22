@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — App 001
 
 **Application:** `apps/vehicle-contact/`
-**Current verified baseline:** PR **#110**, merged `main` @ **`bf3553d`**; 2026-11-22 08:23 Asia/Bangkok
+**Current verified baseline:** handoff PR **#111**, merged `main` @ **`ad7630e`**; implementation/content baseline PR **#110** @ **`bf3553d`**; 2026-11-22 09:17 Asia/Bangkok
 **Status:** DEV engineering verified; **not production-ready or release-approved**.
 
 P6 Vehicle Contact lets authorized personnel register a vehicle and responsible contact, issue an opaque QR, resolve a vehicle by QR or plate/province search, view permitted details and initiate contact. QR references do not contain names or telephone numbers; possession of an identifier does not grant access to personal data.
@@ -25,7 +25,7 @@ Older dated documents are evidence for their recorded scope, not current status.
 - **API:** **56 operations** across five roles and 20 use cases. See the [use-case and sequence SSOT](docs/use-cases/README.md), [API specification](docs/GAS_API_SPEC.md) and [canonical schema](schema/database.schema.json).
 - **Verification:** offline GAS check PASS; live DEV automation **97/97**, 56/56 operations, all five roles and cleanup 7/7. The authenticated 72-case stage is direct-GAS; the Worker has separate live fail-closed coverage.
 
-Completed slices include A1–A3, B1/B2/B4, C1–C4, C6, E2, display repair and live automation. QR camera recovery/device acceptance and B2b remain engineering follow-ups; C5 is BLOCKED on D5+B3. PDPA/security/UAT/release, browser/business acceptance, applicable decisions/ADRs and credential rotation remain OPEN.
+Completed engineering source includes A1–A3, B1/B2/B4, C1–C4, C6, E2, display repair, live automation and QR camera recovery (PR #112). QR physical Android/iOS acceptance and B2b remain open; C5 is BLOCKED on D5+B3. PDPA/security/UAT/release, browser/business acceptance, applicable decisions/ADRs and credential rotation remain OPEN.
 
 ## Local setup
 

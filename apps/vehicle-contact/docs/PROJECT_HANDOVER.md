@@ -1,18 +1,19 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified:** 2026-11-22 08:23 Asia/Bangkok
+**Last verified:** 2026-11-22 09:17 Asia/Bangkok
+**Handoff baseline:** PR **#111**, merged `main` @ **`ad7630e`**
 **Source/content baseline:** PR **#110**, merged `main` @ **`bf3553d`**
 **Purpose:** concise continuation brief. Start with [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); this handover supplies precedence, safety, exact next actions and a ready-to-paste prompt.
 
 ## 1. Ready-to-paste next-AI prompt
 
 ```text
-Take over P6 Vehicle Contact in idev006/MT-Agency-Super-App-Framework. Read apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md first, then PROJECT_MANAGEMENT_PLAN_20261121.md and PRODUCTION_READINESS_PLAN_20261121.md. Use last verified 2026-11-22 08:23 Asia/Bangkok and PR #110 merged main bf3553d as the documented baseline, but inspect current git status, fetch and verify the remote main SHA, and inspect Issues and CI before changing anything.
+Take over P6 Vehicle Contact in idev006/MT-Agency-Super-App-Framework. Read apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md first, then PROJECT_MANAGEMENT_PLAN_20261121.md and PRODUCTION_READINESS_PLAN_20261121.md. Use handoff PR #111 merged main ad7630e and implementation/content baseline PR #110 bf3553d as the last verified baseline, but inspect current git status, fetch and verify the remote main SHA, and inspect Issues and CI before changing anything. QR camera engineering source is delivered in PR #112 from d92e08c; physical Android/iOS acceptance remains open. Continue B2b as a separate PR.
 
 Verified snapshot: published GAS Web App V48 backend 0.9.1; frontend 0.8.0; Worker version 20180237-7441-481a-9540-e7ca2c9c79eb; offline GAS npm check PASS. Live DEV automation passed 97/97 = 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated direct-GAS, covering 56/56 operations and all five roles with cleanup 7/7. Do not describe the authenticated stage as all-through-Worker. DEV reset logically retired 11 and created 10 ACTIVE vehicles, each with 1 contact/5 photos/QR MATCH, cleanup 2/2; post-seed audit passed 25/25 Sheets with zero visible errors and zero repairs. Display-error follow-up maintenance source is GAS HEAD only; published API remains V48. Live report sourceCommit f14458d is not the merge/content baseline.
 
-Completed engineering slices: A1-A3, B1/B2/B4, C1-C4, C6, E2, display repair and live automation. Continue either (1) QR camera recovery from the documented protected stash, integrating current main and adding direct adapter-cleanup tests before physical Android/iOS acceptance, or (2) B2b durable journaling/compensation for registrationReview and assignRoles with fault/restart tests. C5 RETENTION_WORKER console is BLOCKED on human D5+B3 decisions and is not in progress; do not implement or enable destructive retention while blocked.
+Completed engineering slices: A1-A3, B1/B2/B4, C1-C4, C6, E2, display repair, live automation and QR camera source recovery (PR #112 / d92e08c; focused QR/resolve 16/16, Frontend 192/192). Physical Android/iOS QR acceptance remains OPEN. Continue with B2b durable journaling/compensation for registrationReview and assignRoles with fault/restart tests as a separate PR. C5 RETENTION_WORKER console is BLOCKED on human D5+B3 decisions and is not in progress; do not implement or enable destructive retention while blocked.
 
 Keep PDPA/security/UAT/release, browser/business/device acceptance, D-E1/D3/D5/B3, VC-ADR-014/015/017 and credential rotation OPEN unless a named human supplies actual approval evidence. Optional protected GitHub P6VC_TEST_USERNAME/P6VC_TEST_PASSWORD secrets are only for future manual full-suite runs, not a blocker for the completed local run.
 
@@ -70,7 +71,7 @@ GAS remains the authorization authority; frontend permissions are navigation/UX 
 ```mermaid
 flowchart TD
   DONE[Done: A1-A3, B1/B2/B4, C1-C4, C6, E2, repairs, automation] --> BA[Browser/business acceptance OPEN]
-  QR[QR camera WIP/recovery] --> DEV[Android/iOS acceptance OPEN]
+  QR[QR camera engineering source PR 112] --> DEV[Android/iOS acceptance OPEN]
   B2B[B2b durable journaling TODO] --> RC[Engineering release scope OPEN]
   BA --> RC
   DEV --> RC
@@ -84,29 +85,17 @@ flowchart TD
 ## 6. Exact next actions
 
 1. **Reconcile before editing:** inspect current branch/status, fetch and verify the remote `main` SHA, then inspect the relevant Issue and checks. Treat the snapshot above as last-verified, not a substitute for current inspection.
-2. **QR path:** verify and recover the stash using §7; integrate latest `main`, inspect the diff, add direct adapter-cleanup tests, run focused/offline suites, then obtain physical Android/iOS acceptance. Do not drop the stash prematurely.
-3. **B2b path:** add durable PREPARED/recovery semantics for `registrationReview` and `assignRoles`, prove restart/fault idempotency, and update the [recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) and evidence.
+2. **QR path:** engineering source is delivered in PR #112; obtain named-human physical Android/iOS acceptance after reviewed Pages publication and keep it separate from offline evidence.
+3. **B2b path:** add durable PREPARED/recovery semantics for `registrationReview` and `assignRoles` in a separate PR, prove restart/fault idempotency, and update the [recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) and evidence.
 4. **C5:** leave **BLOCKED** until D5+B3 are explicitly ratified. Only then build the permission-gated console and perform synthetic two-person/`legal_hold` rehearsal; never enable real-data destructive retention.
 5. **Acceptance:** arrange named-human browser/business review of gallery/copy, C1–C4 and C6 plus QR device review. API automation is not UAT.
 6. **Release:** resolve D-E1/D3/D5/B3 and VC-ADR-014/015/017 as applicable, rotate credentials, complete PDPA/security/UAT review, then follow the [release sequence](PRODUCTION_READINESS_PLAN_20261121.md#4-release-sequence--no-date-commitment). Final release approval remains OPEN.
 
-## 7. QR protected-stash recovery
+## 7. QR recovery outcome
 
-The documented local WIP reference is:
+The protected stash was verified and recovered onto freshly fetched remote `main` @ `ad7630e`. Historical package conflicts were resolved by retaining Frontend **0.8.0** and the exact `html5-qrcode 2.3.8` pin. Recovered source was committed at `d92e08c` and pushed in PR **#112**; focused QR/resolve tests pass 16/16, direct adapter cleanup is covered, Frontend passes 192/192, and build/audit pass. See [QR camera recovery evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md).
 
-```text
-stash@{0}: On codex/p6vc-qr-camera-scanner-20261120: wip: qr camera scanner before reference catalog
-```
-
-Verify the stash still exists. Use the `FETCH_HEAD` written by the immediately preceding fetch; do not substitute a potentially stale local `origin/main`. Then:
-
-```powershell
-git fetch origin main
-git switch -c codex/p6vc-qr-camera-scanner-resume FETCH_HEAD
-git stash apply 'stash@{0}'
-```
-
-Resolve against Frontend **0.8.0 or later**. Do not drop the stash until recovered changes are safely committed and pushed. Earlier WIP had pinned `html5-qrcode 2.3.8`, 12/12 focused tests, build and dependency audit PASS; direct cleanup tests and physical device acceptance were not thereby completed.
+Do not reapply the historical stash over this delivery. Physical Android/iOS camera acceptance remains OPEN.
 
 ## 8. Safety rules
 
