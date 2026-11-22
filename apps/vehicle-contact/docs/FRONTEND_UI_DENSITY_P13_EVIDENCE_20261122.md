@@ -153,6 +153,8 @@ Token values (corporate): `--color-success: oklch(62% 0.194 149.214)` (= #00a43b
 
 The correct unit of fix is the **theme token**, applied once so all 16 files stay consistent — not a page-local override buried in a density PR. Because it is an app-wide visual design-token change, it is surfaced as an **owner decision** (§6 item 6) and deferred to a dedicated accessibility slice. This slice did **not** alter the global theme and did **not** make the registry inconsistent. Honest status: registry density/touch/typography are fixed and verified; the page is **not** certified WCAG AA until the success-token contrast defect is resolved.
 
+> **RESOLVED (2026-11-22, Owner "อนุมัติทั้งหมด"):** the dedicated slice landed on branch `codex/p6vc-a11y-contrast-touch-20261122`. A 35-theme audit found the defect is broader than success (error 8, primary 5, success 3, neutral 2, warning 2 themes). Fixed systemically with `contrast-color()` on all 8 semantic `*-content` tokens + a coarse-pointer ≥44px `.btn` touch policy. Verified: 280 theme×token combos 0 fail (min 4.65:1), authoritative axe corporate badge-success 6.37:1 PASS. See [P6VC-FE-QA-003](FRONTEND_A11Y_CONTRAST_TOUCH_EVIDENCE_20261122.md). Visual acceptance + real-device touch remain Owner follow-ups.
+
 ### 8.5 Best practice recorded
 
 - **"axe 0 violations" ≠ contrast-safe.** DaisyUI noise/gradient `background-image` makes axe report `incomplete`, masking real failures. Always re-probe colored badges/buttons in isolation with the texture stripped (or compute oklch→luminance) before claiming AA. This is the UI analogue of the owner's "API said OK but the real data may not be OK" read-back rule.
