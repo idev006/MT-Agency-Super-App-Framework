@@ -1,6 +1,6 @@
-# Phase 1 Google Sheets Data Model — Candidate Schema
+# Sheets physical projection (DERIVED) — Phase 1 candidate snapshot
 
-> **Canonical machine-readable SSOT:** [database.schema.json](../schema/database.schema.json). This is only a human-readable reference snapshot. Field type/required/key definitions in canonical JSON are **provisional** pending data-owner review. See [Data Dictionary Workflow](GAS_DATA_DICTIONARY.md) and [Schema Sync](SCHEMA_SYNC_IMPLEMENTATION.md).
+> **DB-agnostic logical SSOT:** [database.schema.json](../schema/database.schema.json) (25 entities) + [ER diagram](DATA_MODEL_ER_DIAGRAM_20261122.md) are authoritative and **engine-independent**. This page is the **derived Google Sheets physical projection** (one tab = one entity, columns = declared headers) — a partial/historical candidate snapshot, **not** a competing field list and **not** authoritative. The full current entity/column list lives in the canonical JSON. Field type/required/key definitions are **provisional** pending data-owner review. See [Data Dictionary Workflow](GAS_DATA_DICTIONARY.md), [Schema Sync](SCHEMA_SYNC_IMPLEMENTATION.md), and the sibling [Firestore physical projection](FIRESTORE_PHYSICAL_MAPPING_20261122.md).
 
 **Status:** Working technical schema, NOT approved final business/PDPA schema.  
 **Storage:** A single private spreadsheet in the user-specified `p6-vehicle-contact` Google Drive folder. One tab = one logical table. Exact file ID is supplied to the GAS runtime through the `VEHICLE_SHEET_ID` Script Property; do not hardcode secrets/IDs in committed source. See [Phase 1 architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).

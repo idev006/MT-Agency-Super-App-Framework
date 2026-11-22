@@ -2,7 +2,8 @@
   "schemaId": "p6-vehicle-contact/phase1",
   "schemaVersion": "0.3.0-draft",
   "status": "PROPOSED_NOT_BUSINESS_APPROVED",
-  "storage": "google-sheets",
+  "storage": "db-agnostic-logical",
+  "modelNote": "DB-agnostic LOGICAL SSOT: the 25 entities (tables), attributes (columns), logical types, keys and relationships stay constant across engines. Physical mappings are DERIVED projections, not authoritative: google-sheets (one worksheet per table, columns = declared headers) and firestore (one collection per table, document id = primary key, persisted _seq ordering). Logical relationship view: docs/DATA_MODEL_ER_DIAGRAM_20261122.md; Firestore physical projection: docs/FIRESTORE_PHYSICAL_MAPPING_20261122.md. schemaId/schemaVersion are consumed by migration + reference-seed checksums and must not change without a versioned migration.",
   "policy": {
     "oneWorksheetPerTable": true,
     "fieldOrder": "declared",

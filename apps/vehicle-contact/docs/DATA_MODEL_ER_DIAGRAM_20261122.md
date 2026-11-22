@@ -1,18 +1,28 @@
-# P6 Vehicle Contact — Data Model ER Diagram (25 Logical Sheets)
+# P6 Vehicle Contact — Logical Data Model ER Diagram (DB-agnostic SSOT)
 
-**Document ID:** P6VC-ER-001 | **Date:** 2026-11-22 | **Classification:** CURRENT DATA-MODEL REFERENCE, not production/schema approval.
-**Authority:** [database.schema.json](../schema/database.schema.json) (`schemaVersion 0.3.0-draft`, `PROPOSED_NOT_BUSINESS_APPROVED`), [Phase 1 Sheets architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md), [Code Map](CODE_MAP_20261121.md).
-**Companion:** [World-Class Test Suite Plan](WORLD_CLASS_TEST_SUITE_PLAN_20261122.md).
+**Document ID:** P6VC-ER-001 | **Date:** 2026-11-22 (refreshed) | **Classification:** **DB-AGNOSTIC LOGICAL DATA-MODEL SSOT** (relationship view) — not production/schema approval.
+**Authority:** [database.schema.json](../schema/database.schema.json) is the machine-readable logical SSOT (`schemaVersion 0.3.0-draft`, `PROPOSED_NOT_BUSINESS_APPROVED`); this ER diagram is its logical relationship view. The 25 entities, attributes, keys and relationships below are **constant across engines** (Sheets / Firestore). [Architecture SSOT](ARCHITECTURE_SSOT.md) · [Code Map](CODE_MAP_20261121.md).
+**Derived physical projections (NOT authoritative):** [Sheets tab/column mapping](GAS_DATA_MODEL.md) · [Firestore collection/document/index mapping](FIRESTORE_PHYSICAL_MAPPING_20261122.md). Both adapters implement this same logical model behind the [8-method store port](ARCHITECTURE_SSOT.md).
+**Companion:** [World-Class Test Suite Plan](WORLD_CLASS_TEST_SUITE_PLAN_20261122.md) · [Phase 1 Sheets architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).
 
-## 1. Reading rules — Sheets is not an RDBMS
+## 1. Logical model rules (DB-agnostic)
 
-- One Spreadsheet file = one logical database; **one worksheet/tab = one logical table**. There are **25 `vc_*` tables** in the canonical schema.
-- Relationships below are **logical foreign keys enforced in GAS application code** (existence + status + ownership checks before write). Google Sheets has **no FK constraints, no transactions, no joins**.
-- **Owner directive: avoid cross-sheet joins.** Runtime reads use a **single bounded per-sheet snapshot** (`SheetStore.list`) plus in-memory filtering. Detail is fetched on demand by ID. The ER diagram expresses *meaning*, not a query plan.
+- There are **25 `vc_*` logical entities** in the canonical schema. Each entity has attributes (columns), a primary key, and logical relationships. These are **engine-independent**: the same logical model is projected onto Sheets tabs and Firestore collections.
+- Relationships below are **logical foreign keys enforced in application code** (existence + status + ownership checks before write). Neither Sheets nor Firestore enforces FK constraints; the ER diagram expresses *meaning*, not a query plan.
+- **Owner directive: avoid cross-store joins.** Runtime reads use a **single bounded snapshot/query** plus in-memory filtering/assembly; detail is fetched on demand by ID. This holds for both adapters behind the store port.
 - `entity_id` in `vc_change_audit` and `vc_operation_journal` is **polymorphic** (vehicle/user/organization/request/job, discriminated by `entity_type`/`operation`); it is intentionally **not** drawn as a strict FK.
 - `actor_id`/`submitted_by`/`approved_by`/`owner_user_id` reference `vc_users.user_id` but may be empty for system/anonymous or legacy rows; code validates on new writes.
-- Photo binaries live in **Google Drive**, never in cells. `vc_photo_staging` rows are **promoted** to `vc_vehicle_photos` on registration approval (same `photo_id`, `STAGED → CLAIMED`); this is a lifecycle transition, not a join.
+- Photo binaries live in **object storage (Google Drive today)**, never in the datastore. `vc_photo_staging` rows are **promoted** to `vc_vehicle_photos` on registration approval (same `photo_id`, `STAGED → CLAIMED`); this is a lifecycle transition, not a join.
 - Schema status is `PROPOSED_NOT_BUSINESS_APPROVED`; additive forward-only migrations are journaled in `vc_migration_journal`. Column rename/type-change/removal requires manual approval.
+
+### 1b. Physical projections (DERIVED, not authoritative)
+
+| Engine | Projection | Engine-specific reading rules |
+| --- | --- | --- |
+| **Google Sheets** (runtime today) | one worksheet/tab = one entity; columns = declared headers; [mapping](GAS_DATA_MODEL.md) | not an RDBMS: no FK/transactions/joins; bounded per-sheet snapshot (`SheetStore.list`); `withLock` critical sections; journal + compensation for multi-row recovery (B2/B2b) |
+| **Firestore** (F2 offline, F4 live) | one collection = one entity; document id = primary key; persisted `_seq` ordering; [mapping](FIRESTORE_PHYSICAL_MAPPING_20261122.md) | indexed `where` queries; `sequence` = real ACID transaction; composite indexes for multi-field/ordered queries (F4) |
+
+Both adapters satisfy the identical [store-port contract](../backend/gas/tests/store-port-contract.test.mjs); the logical model above never changes when the engine changes.
 
 ## 2. ER diagram (Mermaid)
 

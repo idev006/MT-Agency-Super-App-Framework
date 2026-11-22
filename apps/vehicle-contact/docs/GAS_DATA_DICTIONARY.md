@@ -1,12 +1,12 @@
-# P6 Vehicle Contact — Data Dictionary / Schema SSOT
+# P6 Vehicle Contact — Data Dictionary / Schema SSOT (DB-agnostic logical)
 **Status:** DRAFT TECHNICAL CONTRACT — NOT FINAL DATA-OWNER/PDPA APPROVAL  
-**Date:** 2026-11-17  
-**Canonical source:** [database.schema.json](../schema/database.schema.json) — **only source of field definitions**. This page describes workflow; it is not a competing field list.
+**Date:** 2026-11-17 (DB-agnostic framing 2026-11-22)  
+**Canonical source:** [database.schema.json](../schema/database.schema.json) — **only source of field definitions**, a **DB-agnostic logical model** (25 entities) constant across Sheets/Firestore. This page describes workflow; it is not a competing field list. Logical relationship view: [ER diagram](DATA_MODEL_ER_DIAGRAM_20261122.md). Derived physical projections: [Sheets](GAS_DATA_MODEL.md) · [Firestore](FIRESTORE_PHYSICAL_MAPPING_20261122.md).
 
 ## Source ownership and projection
 1. GitHub `schema/database.schema.json` is canonical; schemas change only through reviewed PRs and versioned migrations. Table and column descriptors contain name, logical type, required flag, logical key, classification and provisional notes.
 2. GAS `SchemaRepository.js` imports canonical JSON at source/build time; the V8 bundle embeds it as a read-only runtime projection. Existing Google Sheets are operational data, not a canonical schema.
-3. Phase 1 has six candidate Worksheets in the private project Spreadsheet. No user, role or password table has been approved for storage.
+3. The logical model has **25 entities**, projected one-to-one onto Sheets tabs in the private project Spreadsheet (and onto Firestore collections in the F2/F4 projection). The schema remains `PROPOSED_NOT_BUSINESS_APPROVED`; storage of identity/credential attributes is governed by the pending data-owner/PDPA review, not by this technical dictionary.
 4. Types and constraints are **candidate design metadata**. Google Sheets does not enforce JSON types/PK/FK, and no production business validation may be assumed to exist yet.
 5. For prospective fields, do not infer datatype, privacy classification, default, semantics or permission from header alone. Capture a pending proposal and seek data steward/security review.
 
