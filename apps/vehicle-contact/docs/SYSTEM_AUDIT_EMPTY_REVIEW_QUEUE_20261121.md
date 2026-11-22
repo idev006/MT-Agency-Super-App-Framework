@@ -43,10 +43,30 @@ The synthetic approval E2E (A2) approved the 8 pending requests `ฑฆ9903`–`
 3. **Prove the positive path separately.** Empty-state correctness needs two proofs: (a) live data has no matching rows (done), and (b) the UI renders rows when they exist (unit tests). A **live positive control** (create a pending row → see it appear) is the strongest proof but requires write credentials.
 4. **Audit credential-free first.** Health + edge fail-closed + full test suites give a system-wide health snapshot without secrets; reserve authenticated probes for the owner-gated `.env`.
 
-## Residual / owner gate (positive control)
+## Positive control — EXECUTED 2026-11-22 (residual gate closed)
 
-To **see the queue populate live** (full reassurance), create a fresh synthetic `PENDING_APPROVAL` request and confirm it appears, then approve/reject it. This requires:
-- the gitignored DEV `.env` credentials (or one-phrase authorization to bootstrap a DEV test admin), **and**
-- a new campaign (the current campaign quota 10/10 is consumed).
+Owner re-reported the same empty queue on 2026-11-22 (Registration Review, SYSTEM_ADMIN + REGISTRATION_ADMIN, **direct GAS**, Service v0.9.2). Re-verified against live data and then **executed the positive control** under the owner-authorized synthetic DEV write guard (`P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV`, gitignored `.env`). No real data, no `ENFORCED`, no destructive retention.
 
-This is the only audit step not executable credential-free. It is a verification convenience, not a defect — the empty queue is already proven correct from live data + code + tests.
+**Baseline re-read (read-only gviz, owner session):** `vc_registration_requests` = **37 rows, 37 `APPROVED`, 0 `PENDING_APPROVAL`** → correct-empty again (the full live suite approves its synthetic submissions; seeded fixtures are `APPROVED`).
+
+**Positive control (one synthetic request, left PENDING for the owner):**
+
+| Step | Result |
+| --- | --- |
+| `organizations.create` + `campaigns.create` (maxSubmissions 3) + `photos.upload` ×5 | synthetic org/campaign/5 staged photos |
+| `registrations.submit` (plate **ฑฆ9999**, TH-10) | `status:PENDING_APPROVAL`, requestId `ac6f103b…`, vehicleId `68991afc…` |
+| `registrations.listPending` (REGISTRATION_ADMIN) | **total 1**, new requestId present ✓ |
+| `registrations.detail` | `PENDING_APPROVAL`, 5 photos ✓ |
+| **Independent sheet read-back (gviz)** | **38 rows = 37 APPROVED + 1 PENDING_APPROVAL**; persisted `request_id`/`vehicle_id`/`plate`/`province` match the API; `reviewed_by`/`reviewed_at` empty ✓ |
+
+**API ↔ persisted data consistent** (verification directive honored: every call checked against the actual sheet, not just the response). The owner can now refresh the Review screen and approve/reject **ฑฆ9999**; afterwards `npm run reset:dev` retires the synthetic org/campaign/request.
+
+### RBAC nuance confirmed (not a bug)
+
+`registrations.listPending` requires `vehicle.registration.approve`, which **only `REGISTRATION_ADMIN` holds** — `SYSTEM_ADMIN` alone does **not** ([SessionService.js](../backend/gas/src/application/security/SessionService.js) `ROLE_PERMISSIONS`). The owner's account holds **both** roles, so the screen loads. A pure `SYSTEM_ADMIN` account would get `FORBIDDEN` on the review queue (by design, least privilege). The automation admin also holds both roles, so no temp user was needed.
+
+### Best practice reinforced
+
+- **Correct-empty vs broken-empty:** always tally the live filter field (`status`) before assuming a defect. 37/37 `APPROVED` → empty is correct.
+- **Prove the positive path live:** create a matching row → confirm it appears in the API **and** in the persisted store (read-back). This is the strongest proof and is now executed, not just unit-tested.
+- **Empty-state UX is a separate concern:** the queue intentionally lists only `PENDING_APPROVAL`. If reviewers find "no pending" confusing when the sheet has approved rows, a future UX hint ("all N requests already reviewed — submit a new registration to test") could help; that is a product decision, not a defect.

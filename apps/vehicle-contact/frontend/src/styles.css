@@ -116,7 +116,7 @@ textarea {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .page-template__actions {
@@ -125,7 +125,25 @@ textarea {
 
 .page-template__footer {
   border-top: 1px solid var(--color-base-300);
-  padding-top: 1rem;
+  padding-top: 0.75rem;
+}
+
+/* P13 compact operational context strip: reduce stat whitespace, keep readable tokens. */
+.operational-context .stat {
+  padding: 0.5rem 0.85rem;
+}
+
+.operational-context .stat-title {
+  font-size: 0.875rem;
+}
+
+.operational-context .stat-value {
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.operational-context .stat-desc {
+  font-size: 0.875rem;
 }
 
 .p6-brand-mark {
