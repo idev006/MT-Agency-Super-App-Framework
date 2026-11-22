@@ -39,7 +39,7 @@ See [live automation and reset evidence](LIVE_API_AUTOMATION.md).
 | A3 | **DONE** | Historical 70/70, 55/55; current automation supersedes coverage with 72 authenticated cases and 56/56 operations. |
 | B1 | **DONE** | Org ancestor cycle check; [evidence](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md). |
 | B2 | **DONE** | Submit reconciliation, failure tests and [manual recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md). Does not close B2b. |
-| B2b | **DONE — engineering source** | Durable journaling/compensation + restart convergence + idempotent replay for `registrationReview` and `assignRoles`; 6 injected-failure/restart tests, GAS check 164/164, `backendVersion` 0.9.2; [B2b evidence](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md). Source ≠ published. |
+| B2b | **DONE — engineering + published/live** | Durable journaling/compensation + restart convergence + idempotent replay for `registrationReview` and `assignRoles`; 6 injected-failure/restart tests, GAS check 164/164, `backendVersion` 0.9.2; **published V49**, live suite 97/97 + Sheets audit 0 errors + journals APPLIED; [B2b evidence](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md). |
 | B3 | **BLOCKED — owner mapping** | Retention scheduler/notification business mapping not ratified. Blocks C5 with D5. |
 | B4 | **DONE** | Login constant-work negative path; [evidence](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md). |
 | C1 | **DONE — engineering** | [Change review](C1_CHANGE_REVIEW_SCREEN_EVIDENCE_20261121.md); browser/business acceptance OPEN. |
@@ -69,9 +69,9 @@ VC-ADR-014, VC-ADR-015 and VC-ADR-017 remain **OPEN for security/PDPA ratificati
 | M1 — Backend hardened and live-proven | **CLOSED for B1/B2/B4 scope** | B2b is an explicit follow-up, not silently included. |
 | M2 — REGADMIN + OWNER frontend | **CLOSED — engineering** | Browser/business acceptance OPEN. C6 extends this scope. |
 | M3 — Worker execution gated and rehearsed | **BLOCKED** | Human D5 + B3, then C5 and synthetic-only rehearsal. |
-| M4 — Production readiness | **OPEN** | QR device acceptance, B2b, C5 dependency, decisions, credential rotation and all release sign-offs. |
+| M4 — Production readiness | **OPEN** | QR device acceptance, C5 dependency, decisions, credential rotation and all release sign-offs. B2b delivered + published. |
 
-**Remaining engineering path:** B2b durable journaling is **delivered in source** (164/164, `backendVersion` 0.9.2); next is owner-authorized clasp publication + live re-verification. QR physical-device evidence is a human/device gate, not an engineering substitute.
+**Remaining engineering path:** B2b durable journaling is **delivered AND published/live-verified** (GAS check 164/164, `backendVersion` 0.9.2; live V49, suite 97/97, Sheets audit 0 errors, journals all APPLIED — [evidence §9](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md)). No further B2b engineering remains. QR physical-device evidence is a human/device gate, not an engineering substitute.
 **Blocked path:** **D5 + B3 → C5 → synthetic retention rehearsal**. C5 must not be reported in progress while its decisions are open.
 **Release-critical human path:** browser/business acceptance + D-E1/D3 + VC-ADR-014/015/017 + credential rotation + PDPA/security/UAT/release approvals. None may be self-approved by an assistant.
 
