@@ -87,7 +87,7 @@ Source root `apps/vehicle-contact/backend/gas/src/`; each `.js` mirrors one flat
 3. **Error catalog:** `contracts/error-catalog.v1.json` canonical codes (fail-closed).
 4. **Pagination:** `contracts/list-pagination.v1.json` — `page`/`pageSize` envelope, server-capped (legacy `limit` array tolerated).
 5. **RBAC:** `contracts/api-permissions.v1.json` + `OPERATION_PERMISSIONS` + `ROLE_PERMISSIONS`; 5 roles × 50 protected ops = **250** matrix checks.
-6. **Data dictionary:** `schema/database.schema.json` — the **DB-agnostic logical model** (25 tables, canonical columns, primary keys, classification); physical Sheets tabs and Firestore collections both project from it.
+6. **Data dictionary:** `schema/database.schema.json` — the **DB-agnostic logical model** (25 entities, canonical columns, primary keys, classification); physical Sheets tabs and Firestore collections both project from it. Logical relationship view: [ER diagram](DATA_MODEL_ER_DIAGRAM_20261122.md); derived physical projections: [Sheets](GAS_DATA_MODEL.md) · [Firestore](FIRESTORE_PHYSICAL_MAPPING_20261122.md).
 7. **Synchronized count gates** (must move together when adding an op): `GroupRoutes` ↔ `DTO_SCHEMAS` ↔ `OperationController` count gate ↔ `api-inventory` (56) ↔ `api-permissions` ↔ `ApiInventoryGate` (56) ↔ `validate-usecase-ssot.mjs` (56, 20 UCs) ↔ Worker allowlist ↔ count-based tests.
 
 ## 6. Persistence black-box architecture (Sheets + Firestore)
