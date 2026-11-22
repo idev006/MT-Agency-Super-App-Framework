@@ -69,7 +69,7 @@ VC-ADR-014, VC-ADR-015 and VC-ADR-017 remain **OPEN for security/PDPA ratificati
 | M1 — Backend hardened and live-proven | **CLOSED for B1/B2/B4 scope** | B2b is an explicit follow-up, not silently included. |
 | M2 — REGADMIN + OWNER frontend | **CLOSED — engineering** | Browser/business acceptance OPEN. C6 extends this scope. |
 | M3 — Worker execution gated and rehearsed | **BLOCKED** | Human D5 + B3, then C5 and synthetic-only rehearsal. |
-| M4 — Production readiness | **OPEN** | QR/B2b, C5 dependency, acceptance, decisions, credential rotation and all release sign-offs. |
+| M4 — Production readiness | **OPEN** | QR device acceptance, B2b, C5 dependency, decisions, credential rotation and all release sign-offs. |
 
 **Remaining engineering path:** B2b durable journaling is the next separate source slice. QR physical-device evidence is a human/device gate, not an engineering substitute.
 **Blocked path:** **D5 + B3 → C5 → synthetic retention rehearsal**. C5 must not be reported in progress while its decisions are open.

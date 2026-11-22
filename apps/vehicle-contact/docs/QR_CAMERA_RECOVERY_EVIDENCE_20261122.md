@@ -1,8 +1,11 @@
 # P6 Vehicle Contact — QR Camera Recovery Evidence
 
-**Date:** 2026-11-22 (Asia/Bangkok)  
-**Remote base:** `main` @ `ad7630e` (PR #111)  
-**Delivery:** PR **#112**, source commit **`d92e08c`**  
+**Date:** 2026-11-22 (Asia/Bangkok)
+
+**Remote base:** `main` @ `ad7630e` (PR #111)
+
+**Delivery:** PR **#112**, source commit **`d92e08c`**
+
 **Scope:** Vue QR-camera adapter, lifecycle cleanup and offline engineering evidence only
 
 ## 1. Recovery and implementation
