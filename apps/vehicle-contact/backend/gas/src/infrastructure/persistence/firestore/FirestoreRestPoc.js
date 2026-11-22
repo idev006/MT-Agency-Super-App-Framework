@@ -50,6 +50,10 @@ export function runFirestoreRestPoc({utilities,urlFetchApp,clientEmail,privateKe
 
   const base='https://firestore.googleapis.com/v1/projects/'+projectId+'/databases/'+(databaseId||'(default)')+'/documents';
   const docName=(coll,id)=>base+'/'+coll+'/'+id;
+  // Write.update.name / query document.name are RELATIVE resource names, not request URLs.
+  const relName=(coll,id)=>'projects/'+projectId+'/databases/'+(databaseId||'(default)')+'/documents/'+coll+'/'+id;
+  // Firestore returns map keys in nondeterministic order; deep-equal must ignore key order.
+  const canon=v=>Array.isArray(v)?v.map(canon):(v&&typeof v==='object'?Object.keys(v).sort().reduce((o,k)=>(o[k]=canon(v[k]),o),{}):v);
   function call(url,method,token,body){
     const opts={method,headers:{Authorization:'Bearer '+token},muteHttpExceptions:true};
     if(body!==undefined){opts.contentType='application/json';opts.payload=JSON.stringify(body);}
@@ -104,16 +108,16 @@ export function runFirestoreRestPoc({utilities,urlFetchApp,clientEmail,privateKe
   step('POC-04.READ_BACK',()=>{
     const body=ok(call(docName(POC_COLLECTION,docId),'get',token),'READ');
     const data=decodeFields(body.fields);
-    if(JSON.stringify(data)!==JSON.stringify(synthetic))throw new Error('READ_BACK_MISMATCH');
-    return {note:'independent read-back deep-equal OK'};
+    if(JSON.stringify(canon(data))!==JSON.stringify(canon(synthetic)))throw new Error('READ_BACK_MISMATCH');
+    return {note:'independent read-back deep-equal OK (key-order independent)'};
   });
   step('POC-05.QUERY',()=>{
-    const body=ok(call(base+'/'+POC_COLLECTION+':runQuery','post',token,{structuredQuery:{
+    const body=ok(call(base+':runQuery','post',token,{structuredQuery:{
       from:[{collectionId:POC_COLLECTION}],
       where:{fieldFilter:{field:{fieldPath:'marker'},op:'EQUAL',value:{stringValue:MARKER}}},
       limit:50}}),'QUERY');
     const rows=Array.isArray(body)?body:[];
-    const found=rows.some(r=>r.document&&r.document.name===docName(POC_COLLECTION,docId));
+    const found=rows.some(r=>r.document&&r.document.name===relName(POC_COLLECTION,docId));
     if(!found)throw new Error('QUERY_DID_NOT_RETURN_DOC');
     return {note:'runQuery equality returned '+rows.length+' row(s)'};
   });
@@ -121,7 +125,7 @@ export function runFirestoreRestPoc({utilities,urlFetchApp,clientEmail,privateKe
     const begin=ok(call(base+':beginTransaction','post',token,{options:{readWrite:{}}}),'BEGIN_TX');
     if(!begin.transaction)throw new Error('NO_TRANSACTION_ID');
     ok(call(base+':commit','post',token,{transaction:begin.transaction,
-      writes:[{update:{name:docName(POC_COLLECTION,docId),fields:encodeFields({...synthetic,seq:2})}}]}),'COMMIT');
+      writes:[{update:{name:relName(POC_COLLECTION,docId),fields:encodeFields({...synthetic,seq:2})}}]}),'COMMIT');
     const data=decodeFields(ok(call(docName(POC_COLLECTION,docId),'get',token),'TX_READ').fields);
     if(data.seq!==2)throw new Error('TX_WRITE_NOT_PERSISTED');
     return {note:'beginTransaction->commit->read-back seq=2 OK'};
