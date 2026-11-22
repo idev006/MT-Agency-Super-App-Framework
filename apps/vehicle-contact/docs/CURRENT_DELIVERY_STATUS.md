@@ -85,6 +85,7 @@ Do not recreate or reapply the historical stash over PR #112. Physical Android/i
 
 ## 7. Evidence index
 
+- [World-class test suite plan](WORLD_CLASS_TEST_SUITE_PLAN_20261122.md) · [Data model ER diagram (25 Sheets)](DATA_MODEL_ER_DIAGRAM_20261122.md)
 - [Current live automation, reset and audit](LIVE_API_AUTOMATION.md)
 - [A2/A3 historical live DEV evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md)
 - [QR camera recovery engineering evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md)
