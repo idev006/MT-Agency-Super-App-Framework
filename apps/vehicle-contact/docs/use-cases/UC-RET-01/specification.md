@@ -1,5 +1,5 @@
 # UC-RET-01 — Cancel vehicle and list retention work due
-**Status:** DESIGN_BASELINED_FROM_SOURCE; LIVE_GAS_ACCEPTANCE_PENDING
+**Status:** LIVE_DEV_API_SCOPE_VERIFIED; BROWSER_UAT_AND_PRODUCTION_GATES_OPEN
 **Actor:** REGISTRATION_ADMIN (cancel) / SYSTEM_ADMIN (due list)
 
 ## 1. Authority and scope
@@ -27,8 +27,8 @@ Unauthorized cancel, missing policy, already inactive vehicle, legal hold or not
 ## 6. Acceptance trace
 - Test case IDs: `ACTOR-06`, `EDGE-07`, `GAS-FLOW.CANCEL`.
 - Executable evidence references: `backend/gas/tests/actor-usecase-acceptance.test.mjs`, `backend/gas/tests/acceptance-failures.test.mjs`.
-- Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **NOT_WIRED**; design must align Vue 3, Pinia, Router and API adapter per Master Web Blueprint.
+- Aggregate PR #110 / bf3553d live DEV evidence covers 56/56 API operations (97/97 checks); it does not prove every business branch, external provider/device behavior, destructive retention execution, browser/business UAT or production approval.
+- FE status: **C3_CANCEL_WIRED / LIVE_API_VERIFIED / BROWSER_UAT_OPEN**; retention scheduling/notification and business acceptance are not delivered by that wiring.
 
 ## 7. Development notes / explicit gaps
 Baseline envisions DELETION_PENDING_APPROVAL + notification trigger; current implementation creates WAITING_RETENTION and lists due jobs but does not implement the notification scheduler. Explicit gap.
@@ -37,7 +37,7 @@ Baseline envisions DELETION_PENDING_APPROVAL + notification trigger; current imp
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
 
 
-**Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+**Evidence classification:** Source-reviewed implementation model plus scoped live DEV API evidence (GAS V48, backend 0.9.1). It is NOT browser/business UAT, destructive retention execution, real OIDC-provider or physical-QR acceptance, PDPA/security signoff, or production release approval. Runtime discrepancies require decision-log disposition and PR review.
 
 ## 9. GitHub Mermaid Preview
 

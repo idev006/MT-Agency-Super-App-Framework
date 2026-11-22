@@ -17,6 +17,15 @@ sequenceDiagram
   API->>Reg: Validate DTO and business fields
   Reg->>DB: Acquire ScriptLock
   Reg->>DB: Check campaign, digest and idempotency
+  opt Retry finds timed-out partial submit without idempotency result
+    Reg->>DB: State-driven reconciliation: remove orphan request and restore CLAIMED photos
+    Reg->>DB: Mark journal RECOVERY_REQUIRED with recovery evidence and quotaCheck MANUAL
+    alt Reconciliation cleanup fails
+      Reg-->>FE: OPERATION_RECOVERY_REQUIRED; use manual recovery runbook
+    else Cleanup completes; retry may continue
+      Note over Reg,DB: Ambiguous campaign quota still requires manual runbook verification
+    end
+  end
   alt Completed identical submission
     DB-->>Reg: Stored result
     Reg-->>FE: Same requestId and vehicleId
@@ -37,4 +46,4 @@ sequenceDiagram
     Reg-->>FE: Safe error
   end
   Reg->>DB: Release lock and flush
-  Note over Reg,DB: Abrupt GAS timeout may leave PREPARED journal; manual reconciliation still required
+  Note over Reg,DB: B2 automates retry state cleanup; quota/ambiguous recovery remains manual, not atomic rollback

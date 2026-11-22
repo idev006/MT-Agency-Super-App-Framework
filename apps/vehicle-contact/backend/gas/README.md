@@ -1,6 +1,10 @@
 # P6 Vehicle Contact — GAS Backend source
 
-**Current source state (2026-11-17):** All **51 logical v1 operations** are represented by source handlers/health route. **No new build, execution, end-to-end test, Apps Script deployment or production release is claimed.** Protected operations remain **disabled by default** via server-side `VEHICLE_API_ENABLED` Script Property.
+> **CURRENT OPERATIONAL HANDOFF (2026-11-22):** **56 operations, 25 Sheets, GAS Web App V48 / Backend 0.9.1.** Start with [Current Delivery Status](../../docs/CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](../../docs/PROJECT_MANAGEMENT_PLAN_20261121.md), and [Code Map](../../docs/CODE_MAP_20261121.md). Current commands: run [`npm run check`](package.json) from `apps/vehicle-contact/backend/gas/`; use [Live API Automation](../../docs/LIVE_API_AUTOMATION.md) for live commands and the later **97/97 PASS** evidence.
+>
+> **Everything below is a historical 2026-11-17 source note.** Its 51-operation, unverified-GAS, branch/deployment and release-blocker statements must not be used as current status.
+
+**Historical source state (2026-11-17):** All **51 logical v1 operations** are represented by source handlers/health route. **No new build, execution, end-to-end test, Apps Script deployment or production release is claimed.** Protected operations remain **disabled by default** via server-side `VEHICLE_API_ENABLED` Script Property.
 
 ## Architecture
 

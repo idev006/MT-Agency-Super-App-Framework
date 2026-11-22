@@ -1,5 +1,7 @@
 # Vehicle Contact — Phase 1 Google Sheets Data Architecture
 
+> **CURRENT HANDOFF (2026-11-22) — ARCHITECTURE/DESIGN REFERENCE.** The owner-approved Phase 1 Sheets direction and constraints below remain design decisions; “not implemented,” candidate tabs, planned API groups and old gates describe 2026-11-17, not current runtime. Current implementation/status is governed by [Current Delivery Status](CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](PROJECT_MANAGEMENT_PLAN_20261121.md), [Live API Automation](LIVE_API_AUTOMATION.md), and [Code Map](CODE_MAP_20261121.md) (currently **25 Sheets**); do not treat this design reference as an implementation backlog.
+
 **Status:** PHASE-1 ARCHITECTURE DIRECTION APPROVED BY OWNER, IMPLEMENTATION NOT YET VERIFIED  
 **Date:** 2026-11-17  
 **Scope:** `apps/vehicle-contact/` Phase 1 only  

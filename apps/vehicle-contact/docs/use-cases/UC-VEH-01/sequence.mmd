@@ -1,10 +1,18 @@
 sequenceDiagram
   autonumber
   actor Staff
-  participant FE as Vue Vehicle Search
+  actor Admin as SYSTEM_ADMIN / REGISTRATION_ADMIN
+  participant FE as Vue Search + Registry
   participant API as GAS API / Session RBAC
   participant Search as VehicleOperations
   participant DB as Sheets
+  opt C6 approved-vehicle admin registry
+    Admin->>FE: Browse ACTIVE vehicle registry
+    FE->>API: vehicles.list(session,page,pageSize)
+    API->>API: Require vehicle.list; reject status/ownerUserId spoof filters
+    Search->>DB: Single bounded vc_vehicles snapshot; ACTIVE only; no join
+    API-->>FE: Paginated minimal non-PII DTO; no contacts or owner id
+  end
   Staff->>FE: Enter plate and province
   FE->>API: vehicles.lookup(session,plate,province)
   API->>API: Validate session + vehicle.lookup

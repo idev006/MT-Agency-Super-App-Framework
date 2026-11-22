@@ -1,8 +1,9 @@
 # GAS Sheets number-format display corruption — root cause, every-sheet repair & build-wrapper drift
 
 **Date:** 2026-11-21 (Asia/Bangkok)
+**Handoff:** 2026-11-22 08:23 Asia/Bangkok; PR **#110** merged the source baseline to `main` @ **`bf3553d`**.
 **Severity:** original DEV data-display corruption across **21 sheets / 6,659 cells** (grid showed comma-repeat custom formats and `#VALUE!`). In that original incident, **stored cell VALUES were not changed** — display formats only; the later numeric-backed legacy-value case is documented separately below.
-**Status:** RESOLVED — the original format incident was repaired idempotently (25 sheets, `valuesUntouched:true`). A follow-up audit on the same day found and resolved **9 numeric-backed legacy `province_code` values** plus a blank `vc_vehicles!A1`; final all-sheet display audit: `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`. Published API remains Version 48 / `0.9.1`; the editor-only follow-up repair is in GAS HEAD.
+**Status:** RESOLVED — the original format incident was repaired idempotently (25 sheets, `valuesUntouched:true`). A follow-up audit on the same day found and resolved **9 numeric-backed legacy `province_code` values** plus a blank `vc_vehicles!A1`; final all-sheet display audit: `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`. Published API remains Version 48 / `0.9.1`; the editor-only follow-up repair is in GAS HEAD and is not part of the published V48 runtime.
 **Source fixes:** `SheetStore.js` (plural `setNumberFormats`), `scripts/build.mjs` (derive GAS wrappers from exports), `NumberFormatRepair.js` (format-only repair + numeric-General equivalence), `DisplayErrorRepair.js` (all-sheet error audit + narrowly matched legacy value restoration), `WebApp.js` (editor entrypoints). Branches `codex/p6vc-numberformat-rootcause-20261121`, `codex/p6vc-sheet-error-repair-20261121`.
 **Related SSOT:** `SHEETSTORE_COERCION_FIX_AND_SHEETS_BEST_PRACTICES_20261121.md`, `REFERENCE_SEED_COERCION_INCIDENT_20261121.md`, `GAS_CLASP_WEBAPP_MANIFEST_INCIDENT_20261121.md`.
 
@@ -20,7 +21,7 @@ Resolution:
 6. Regression coverage `display-error-repair.test.mjs`: matched restoration + idempotency, formula/unmatched-source protection, unrelated-sheet reporting without writes, and schema-drift fail-closed behavior. GAS-VM-03 requires both maintenance entrypoints and callable wrappers for every export; it no longer asserts a brittle fixed wrapper count.
 7. Post-seed live audit at **22:23:39 Asia/Bangkok**, after cancelling 11 old synthetic vehicles and creating 10 replacements through the real API lifecycle: `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`. All ten numeric-looking province codes were written as strings without recreating visible errors.
 
-This follow-up was pushed to **GAS HEAD only** for editor maintenance. It did not create a new anonymous Web App version; live API publication remains separately controlled.
+This follow-up was pushed to **GAS HEAD only** for editor maintenance. It did not create a new anonymous Web App version; live API publication remains separately controlled at **V48 / `0.9.1`**.
 
 ## Symptom (owner report)
 
@@ -128,12 +129,14 @@ All 25 schema sheets now carry correct display formats; no values touched; re-ru
 
 **Display-vs-storage verification:** the formula bar showed clean stored values throughout (timestamps/text intact); only the grid format was wrong. `valuesUntouched:true` on every pass confirms the repair never read or wrote values.
 
-## Deploy reconciliation (this incident)
+## Historical V47 deploy evidence (superseded by published V48)
 
-- Live Web App deployment `AKfycby15c-…` repointed to **Version 47** (final source: plural fix + wrapper derivation + numeric-General equivalence + repair entrypoint; **webapp-only manifest**, `executeAs:USER_DEPLOYING` / `access:ANYONE_ANONYMOUS` intact).
+These dated results are retained as incident evidence, not as the current deployment state:
+
+- Live Web App deployment `AKfycby15c-…` was repointed to **Version 47** (final source at that time: plural fix + wrapper derivation + numeric-General equivalence + repair entrypoint; **webapp-only manifest**, `executeAs:USER_DEPLOYING` / `access:ANYONE_ANONYMOUS` intact).
 - A speculative owner-only `executionApi` deployment (`AKfycbwlU6Z…` @46) created while exploring `clasp run` was **deleted** — `clasp run` requires the GCP Apps Script API enabled in the script's Cloud project (owner action), so the surface was unused. Manifest reverted to webapp-only; `.clasp.json` restored to `scriptId`+`rootDir`.
-- Health verified: direct `/exec` GET → `200 {"ok":true,…,"status":"ready","backendVersion":"0.9.0"}`.
-- Full GAS suite **134/134 PASS** (incl. GAS-VM-03 wrapper guard + 3 number-format-repair tests).
+- Historical V47 health verified: direct `/exec` GET → `200 {"ok":true,…,"status":"ready","backendVersion":"0.9.0"}`. The handoff publication is **V48 / `0.9.1`**; subsequent editor-only repair source is in **GAS HEAD**, not V48.
+- Historical full GAS suite **134/134 PASS** (incl. GAS-VM-03 wrapper guard + 3 number-format-repair tests). Later counts are recorded in the C6 and live-automation evidence rather than rewriting this result.
 
 ## Best practices (team SSOT)
 
@@ -164,7 +167,8 @@ For visible spreadsheet error values, run `repairVehicleDisplayErrorsFromEditor`
 
 ## Residual / owner gates
 
-- Authenticated live E2E (negative probes, approval flow) still requires the gitignored DEV `.env` secrets — owner action.
-- Production sign-offs (PDPA / security / UAT / release) and decision ratifications (D-E1/D3/D5/B3, ADR-014/015) remain owner gates; the assistant never self-approves them.
-- C5 RETENTION_WORKER console is gated on D5+B3.
-- This fix is merged to `main` so future CI pushes and assistant self-deploys carry the plural-format fix, the wrapper-derivation guard, and the idempotent repair tool automatically.
+- The authenticated full-inventory API gap is closed for this handoff: **97/97 PASS** (11 public direct-GAS + 14 Worker + 72 authenticated direct-GAS), **56/56 coverage**, cleanup **7/7**, against published V48. This does not close browser/UAT or any human approval.
+- Production sign-offs (PDPA / security / UAT / release), physical QR-camera acceptance, decisions D-E1/D3/D5/B3, and decision ratifications VC-ADR-014/015/017 remain owner gates; the assistant never self-approves them.
+- Browser acceptance, credential rotation, and B2b durable journaling for `registrationReview`/`assignRoles` remain open.
+- C5 RETENTION_WORKER console remains gated on D5+B3.
+- This fix is merged to `main` at PR #110 / `bf3553d`, so future CI pushes and assistant self-deploys carry the plural-format fix, the wrapper-derivation guard, and the idempotent repair tool automatically. Publishing a new anonymous Web App version remains a separate controlled action.

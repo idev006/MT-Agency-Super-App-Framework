@@ -11,6 +11,7 @@ sequenceDiagram
   GAS->>API: Version + DTO validation / feature gate
   API->>Auth: login()
   Auth->>DB: Read recent failures and vc_users
+  Auth->>Auth: B4 select real or equal-cost dummy PBKDF2 hash; always verify password
   alt User active and password valid; under rate limit
     Auth->>DB: Record SUCCESS security event
     Auth->>DB: Insert vc_sessions with token digest
@@ -28,4 +29,5 @@ sequenceDiagram
     Auth->>DB: Record FAILED security event where allowed
     Auth-->>FE: INVALID_CREDENTIALS / LOGIN_RATE_LIMIT
   end
-  Note over FE,GAS: Browser tokens are not trusted roles; test direct GAS URL bypass before release
+  Note over Auth,DB: B4 constant-work negative path delivered; production security signoff remains open
+  Note over FE,GAS: Browser tokens are not trusted roles; live DEV API scope is not browser/production acceptance

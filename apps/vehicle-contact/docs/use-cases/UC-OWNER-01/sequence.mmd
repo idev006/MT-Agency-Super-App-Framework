@@ -6,6 +6,11 @@ sequenceDiagram
   participant API as GAS API
   participant Changes as VehicleOperations
   participant DB as Sheets
+  Owner->>FE: Open my vehicles and request history
+  FE->>API: vehicles.listMine / changes.listMine(session,page,pageSize)
+  API->>API: Require vehicle.own.read; derive owner/submitter from session
+  Changes->>DB: Bounded snapshots filtered by owner_user_id / submitted_by
+  API-->>FE: Minimal own ACTIVE vehicles and own change requests
   Owner->>FE: Propose vehicle/contact correction
   FE->>API: changes.submit(session,vehicleId,delta)
   API->>Changes: Check ACTIVE vehicle and owner_user_id
@@ -15,10 +20,13 @@ sequenceDiagram
   else Owner not verified or invalid
     API-->>FE: OWNERSHIP_NOT_VERIFIED / validation error
   end
-  Admin->>API: changes.listPending(session)
+  Admin->>FE: Open change-review queue
+  FE->>API: changes.listPending(session)
   API->>API: Require vehicle.change.approve
   API->>DB: Read pending requests
-  Admin->>API: changes.review(requestId,APPROVE/REJECT)
+  API-->>FE: Paginated queue including proposedDelta
+  Admin->>FE: Inspect proposed delta diff then approve or reject
+  FE->>API: changes.review(requestId,APPROVE/REJECT)
   Changes->>DB: Lock and reread request
   alt APPROVE
     Changes->>DB: Update vehicle and/or primary contact, increment version

@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — Primary Workflow Delivery Plan
 
+> **CURRENT HANDOFF (2026-11-22) — DATED DELIVERY PLAN.** The journey and acceptance criteria remain design references, but the 2026-11-20 baseline and partial/pending gates below are not the current work queue. Later delivery includes **56 operations, 25 Sheets, GAS V48 / Backend 0.9.1** and live **97/97** automation evidence. Resume from [Current Delivery Status](CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](PROJECT_MANAGEMENT_PLAN_20261121.md), [Live API Automation](LIVE_API_AUTOMATION.md), and [Code Map](CODE_MAP_20261121.md); do not restart completed slices from this older plan.
+
 **Document ID:** P6VC-PLAN-E2E-001  
 **Version:** 1.0.0 | **Baseline date:** 2026-11-20  
 **Status:** ACTIVE DEVELOPMENT PLAN / DEVELOPMENT ENVIRONMENT ONLY  

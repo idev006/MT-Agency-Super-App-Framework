@@ -12,12 +12,13 @@ sequenceDiagram
   Admin->>FE: Create, update or disable organization
   FE->>API: organizations.create / update / disable
   API->>API: Require organizations.manage
+  API->>Orgs: Validate type, parent and complete ancestor chain (B1)
   alt Valid POLICE hierarchy or flat EXTERNAL
-    API->>Orgs: Validate type and direct parent; full ancestor-cycle guard missing
     Orgs->>DB: Insert or update vc_organizations
     Orgs->>DB: Append change audit
     API-->>FE: Organization ID / success
-  else Invalid type, parent or permission
-    API-->>FE: INVALID_ORG_TYPE / PARENT_NOT_FOUND / FORBIDDEN
+  else Invalid type, missing parent or direct/indirect cycle
+    Orgs-->>API: INVALID_ORG_TYPE / PARENT_NOT_FOUND / INVALID_ORG_PARENT
+    API-->>FE: Safe validation error / FORBIDDEN
   end
-  Note over Orgs,DB: Arbitrary hierarchy cycles are not currently detected: design gap
+  Note over Orgs,DB: B1 ancestor-cycle guard delivered with negative tests; production approval remains open

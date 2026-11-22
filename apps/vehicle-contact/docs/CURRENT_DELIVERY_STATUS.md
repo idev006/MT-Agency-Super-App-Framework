@@ -1,78 +1,81 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
-**Last verified:** 2026-11-21 (Asia/Bangkok)
-**Implementation/runtime evidence baseline:** `main` @ `b2f8a6a` (B1 #93 + B4 #94 + B2 #96 merged; Backend source `0.9.0`). Live DEV E2E **A2 10/10 + A3 70/70 (55/55 ops) PASS** — see [LIVE_DEV_E2E_EVIDENCE_20261121.md](LIVE_DEV_E2E_EVIDENCE_20261121.md).
+**Last verified:** 2026-11-22 08:23 Asia/Bangkok
+**Source/content baseline:** PR **#110**, merged `main` @ **`bf3553d`**
+**Status:** DEV engineering evidence is strong; **production readiness and all human sign-offs remain OPEN**.
 
-**Purpose:** compact continuation SSOT. Read this page first, then open only the linked evidence or active Issue needed for the next change. For the current source structure / module / operation map see [CODE_MAP_20261121.md](CODE_MAP_20261121.md). For the delivery execution plan (WBS, milestones, gates, risk, slice board) see [PROJECT_MANAGEMENT_PLAN_20261121.md](PROJECT_MANAGEMENT_PLAN_20261121.md).
+Read this page first. The [PM plan](PROJECT_MANAGEMENT_PLAN_20261121.md) owns slice state and dependencies; the [production readiness plan](PRODUCTION_READINESS_PLAN_20261121.md) owns release gates; [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) contains the next-AI prompt, precedence and diagrams. Dated evidence documents retain the versions and counts measured on their dates.
 
-## Runtime baseline
+## 1. Verified runtime and source boundary
 
-| Component | Verified development version | Evidence / endpoint |
+| Component | Current verified state |
+|---|---|
+| GAS Backend API | Published Web App **Version 48**, `backendVersion` **0.9.1**, `status:ready`; **56 operations** over **25 logical Sheets**. |
+| Frontend | **0.8.0**, deployed on GitHub Pages; C6 approved-vehicle registry is present. |
+| Cloudflare Worker | Version **`20180237-7441-481a-9540-e7ca2c9c79eb`**; live fail-closed probes passed. |
+| GAS HEAD maintenance source | The follow-up display-error repair is in **GAS HEAD only**. The published anonymous Web App remains **V48 / 0.9.1**; editor maintenance and Web App publication are different states. |
+
+`f14458d` is the `sourceCommit` recorded in the executed live report while harness changes were still uncommitted. It is **not** the merge/content baseline; use **`bf3553d` / PR #110** for source reconciliation. Runtime endpoints, credentials and session material are intentionally not reproduced here.
+
+These are DEV facts, not PDPA, security, UAT or production-release approval.
+
+## 2. Current verification evidence
+
+| Layer | Verified result | Scope boundary |
 |---|---|---|
-| Frontend | `0.8.0` | [GitHub Pages](https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/); Pages run [44910792210](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44910792210) (C6, main `cef47e7`); deployed bundle `index-CfsuYp98.js` verified to contain `vehicle-registry` + `vehicles.list` + photo gallery |
-| Cloudflare Worker | assistant self-deployed via `wrangler deploy` (Version `20180237-7441-481a-9540-e7ca2c9c79eb`, C6) | `p6vc-api-test-console.thaipoliceregion6.workers.dev`; `system.health` PASS through Worker → `backendVersion:0.9.1` (GAS v48); Origin-locked, correct envelope `{apiVersion,group,action,payload,requestId}`; `vehicles.list` allowlist now live (anonymous → `INVALID_SESSION_PAYLOAD`, spoofed `status` → `INVALID_OPERATION_PAYLOAD`); bindings verified == toml (3 plain vars, no secrets/KV) |
-| GAS Backend API | Live published Web App **Version 48** (assistant self-deployed via clasp `-u p6vc`, 2026-11-21) — `system.health` **verified `0.9.1` `status:ready` via direct `/exec` + Worker**; edge fail-closed **14/14 PASS**. Live source carries **C6 `vehicles.list` admin registry** plus **B1 org-cycle + B4 login constant-work + B2 submit reconciliation + C1 `changePending.proposedDelta`**, the **number-format root-cause fix** (`SheetStore` plural `setNumberFormats`), **build wrapper-derivation guard** (GAS-VM-03), and the **idempotent every-sheet format repair** (`NumberFormatRepair`). A v40 publish briefly 404'd (clasp push wiped anonymous-access config); fixed permanently by `webapp:{executeAs:USER_DEPLOYING,access:ANYONE_ANONYMOUS}` in `appsscript.json`. **Display-corruption incident RESOLVED:** 21 sheets / 6,659 cells had comma-repeat/`#VALUE!` *display formats* (stored VALUES never corrupted); repaired live, final pass `totalMismatched:0,totalApplied:0,valuesUntouched:true` (25 sheets, idempotent). See [number-format incident](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md) + [clasp webapp manifest incident](GAS_CLASP_WEBAPP_MANIFEST_INCIDENT_20261121.md) | health probe `backendVersion:0.9.1,status:ready` via direct exec + Worker; `verify-live-worker-failclosed.mjs` 14/14; clasp version 48; GAS suite 139/139 |
+| Offline GAS | `npm --prefix apps/vehicle-contact/backend/gas run check` **PASS** | Build, contracts, RBAC, compiled-GAS and repair regressions; see the automation runbook for the executed inventory. |
+| Live automation | **97/97 PASS**, **56/56 operations**, cleanup **7/7**, all five roles | 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated **direct-GAS** cases. The 72 authenticated cases are **not** an all-through-Worker claim. |
+| DEV fixture reset | 11 vehicles logically retired; 10 new `ACTIVE`; each has 1 contact, 5 photos and QR `MATCH`; cleanup **2/2** | Domain lifecycle preserved related records and audit history; no physical table clear. |
+| Post-seed Sheets audit | **25/25 sheets**, zero visible errors before/after, zero repairs, no incomplete sheets | Confirms the reset did not recreate display corruption. |
 
-These are development facts, not production security, PDPA, UAT or release approval.
+Canonical evidence and commands: [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md). Reports are sanitized and gitignored. Optional protected GitHub secrets `P6VC_TEST_USERNAME` / `P6VC_TEST_PASSWORD` are needed only for a **future manual GitHub Actions full-suite run**; they are **not** a blocker for the completed local 97/97 run.
 
-**Reference seed is APPLIED (2026-11-21 07:56):** after the coercion incident and two gated fixes (PRs #78, #80), recovery cleared 645 dirty rows and the checksum-approved reapply wrote 645 verified plain-text rows; post-apply preview returned `ALREADY_APPLIED`. Catalog mode is `ADVISORY`; `ENFORCED` remains separately gated. See [seed coercion incident evidence](REFERENCE_SEED_COERCION_INCIDENT_20261121.md) and [SheetStore coercion fix & Sheets best practices](SHEETSTORE_COERCION_FIX_AND_SHEETS_BEST_PRACTICES_20261121.md). The former `0.8.0` runtime gap is closed; the runtime table above is authoritative for the current V48 / `0.9.1` deployment.
-
-## Current delivery state
+## 3. Delivery state
 
 ### DONE-EVIDENCED
 
-- Shared Vue shell, persisted session/transport settings, permission-driven navigation and STAFF read-only vehicle search.
-- SYSTEM_ADMIN administration slices plus assisted registration intake and registration review.
-- Primary-journey plan and strict QR/vehicle read contracts through the Worker; manual authenticated QR resolver is delivered.
-- Protected registration reference-catalog contract: GAS `references.registration` -> Worker allowlist -> frontend Pinia/session cache -> assisted intake.
-- Unit/contract/build/audit, desktop/mobile, corporate/dark and accessibility evidence for Frontend `0.6.0`; see [FE reference evidence](FRONTEND_FE_REFERENCE_CATALOG_01_EVIDENCE_20261120.md).
-- Reference seed APPLIED (645 rows, `ADVISORY`) after gated coercion-incident recovery; live catalog served 77/524/16/17 via Worker.
-- Owner-authorized synthetic API E2E: admin login -> campaign create -> 50 photo uploads -> **10/10 registrations `PENDING_APPROVAL`** with canonical codes + referenceVersion, idempotent replay and listPending verified; see [synthetic E2E evidence](SYNTHETIC_REGISTRATION_E2E_20261121.md).
-- **Sheets number-format display corruption — ROOT-CAUSE FIXED + EVERY-SHEET REPAIR DONE-EVIDENCED (2026-11-21):** owner reported comma-repeat/`#VALUE!` across many sheets. Root cause #1: `SheetStore.writeRow` passed a per-column format **array** to singular `setNumberFormat` → Sheets comma-joined it into a custom format (display only; **stored values never corrupted**). Fixed to plural `setNumberFormats([[…]])`. Root cause #2: `build.mjs` hardcoded entrypoint list hid the new repair function from the GAS Editor → now derives wrappers from exports + **GAS-VM-03** guard. Root cause #3: Sheets reports numeric General as `0.###############` → equivalence predicate prevents perpetual false mismatches. Live repair: pass 1 fixed **6,659 cells / 21 sheets** (`valuesUntouched:true`); final pass **`totalMismatched:0,totalApplied:0`** (25 sheets, idempotent). Live Web App **v47**; GAS suite **134/134**. See [incident SSOT + runbook](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md).
-- **System audit — empty registration-review queue = CORRECT-EMPTY (2026-11-21):** owner saw no pending registrations; live read of `vc_registration_requests` shows **14/14 `APPROVED`, 0 `PENDING_APPROVAL`** → empty queue is correct, not a bug. Read path (GAS exact-match filter → Worker allowlist → FE paginated contract), permissions, data integrity and system health all verified; edge fail-closed **14/14**. Only a live positive-control (create a pending row → see it appear) remains, gated on DEV `.env` + a new campaign. See [audit SSOT](SYSTEM_AUDIT_EMPTY_REVIEW_QUEUE_20261121.md).
-- **C6 — SYSTEM_ADMIN approved-vehicle registry DONE-EVIDENCED + DEPLOYED LIVE (2026-11-21):** owner asked "System Admin should see the list of approved vehicles." New admin-only op `vehicles.list` (permission `vehicle.list`, granted to SYSTEM_ADMIN + REGISTRATION_ADMIN only) browses all `ACTIVE` vehicles with **minimal non-PII fields** (no owner id, no contacts), single bounded `vc_vehicles` snapshot, paginated, **no cross-sheet join**; DTO rejects client `status`/`ownerUserId` spoof. FE registry route/menu/page gated `vehicle.list`, drill-down conditional on `vehicle.lookup`. **GAS 139/139** (REG-01..05 + RBAC 5×50=250), **FE 180/180**, **Worker 31/31**, FE build OK. **Live: GAS Web App Version 48 `backendVersion 0.9.1`** (direct + Worker health), Worker Version `20180237-…`, edge fail-closed **14/14**, `vehicles.list` gated live (anonymous/spoof denied). At the C6 live positive-control, `vc_vehicles` had **11 ACTIVE / 3 INACTIVE** → registry showed the 11 approved-active vehicles; the later DEV fixture reset below supersedes that data count. [VC-ADR-017](DECISION_LOG.md) PDPA/security ratification pending; authenticated admin probe + browser UX acceptance gated on DEV `.env`. **Merged PR #108 → main `cef47e7`; FE live on Pages (bundle `index-CfsuYp98.js`).** See [C6 evidence](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md).
+- **A1–A3:** primary journey and live DEV verification; the earlier 10/10 approval and 70/70, 55-operation results remain dated history, superseded for current coverage by 97/97 and 56/56 above.
+- **B1 / B2 / B4:** organization-cycle rejection, submit reconciliation plus tested manual recovery, and login constant-work hardening; published in V48.
+- **C1–C4:** change review, unified vehicle detail, maintenance with version-conflict UX, and OWNER `my-vehicles`; source/tests delivered. Browser/business acceptance is still OPEN.
+- **C6:** admin approved-vehicle registry using least-privilege `vehicles.list`, minimal non-PII projection and server-side `ACTIVE` filtering; [C6 evidence](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md). VC-ADR-017 ratification remains OPEN.
+- **E2:** cross-role authorization regression and live Worker fail-closed verification; [E2 evidence](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md).
+- **Display repair:** root-cause fixes and narrow, idempotent editor repair completed; final and post-seed audits cover 25/25 sheets with zero visible errors. [Incident and runbook](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md).
+- **Live automation and DEV reset:** canonical workflow, sanitized reports, fail-closed gates and lifecycle-based fixtures completed as measured above.
+- **E1/E3 preparation:** [datastore decision packet](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) and [sign-off dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md) are prepared; neither is an approval.
 
-- **Sheets visible-error follow-up — RESOLVED + FINAL 25/25 LIVE AUDIT (2026-11-21):** after the format-only repair, nine numeric-backed legacy `vc_vehicles.province_code` cells still rendered `#VALUE!`; `vc_vehicles!A1` was also blank and caused fail-closed schema drift. Restored the canonical header, then `DisplayErrorRepair` restored exactly nine provinces from unique `APPROVED` registration snapshots only when `vehicle_id` + normalized plate matched; no `IFERROR`, formula overwrite, unrelated-sheet write or cross-sheet join. First value pass 9 repaired / 0 remaining; second pass idempotent. Strengthened reporting returns `AUDIT_INCOMPLETE` for any skipped sheet instead of false `OK`. Final live editor audit **21:56:45 Asia/Bangkok:** `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`. Display repair 4/4, wrapper guard and full `npm run check` PASS; maintenance source is GAS HEAD only, published API stays V48/0.9.1. See [incident + runbook](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md).
+### ENGINEERING FOLLOW-UPS
 
-- **Full automated live API workflow — 97/97 PASS (2026-11-21):** one-command `npm --prefix apps/vehicle-contact/backend/gas run test:live:full` orchestrates direct-GAS public smoke, Worker fail-closed probes and guarded authenticated inventory regression. Live run **22:01:34–22:10:30 Asia/Bangkok:** 11/11 public + 14/14 Worker + 72/72 authenticated = **97/97 PASS**, **56/56 operations, 0 missing**, all five roles, cleanup **7/7 PASS**, sanitized aggregate `secretsExposed:false`. Earlier credential-free evidence remains honestly `PASS_PUBLIC_ONLY` (25/25; authenticated skipped), superseded by this full run. Added sanitized JSON reports, Step Summary, fail-closed preflight/credential/write gates, guaranteed synthetic-vehicle cancellation before other cleanup, and owner-only/main-only manual GitHub Actions mode `full-api-suite` with exact confirmation + protected secrets. Offline full `npm run check` PASS (RBAC 250, compiled GAS AUTH 19/19, lifecycle 21/21, display repair 4/4). See [canonical test design + executed evidence](LIVE_API_AUTOMATION.md). This is DEV synthetic verification, not production sign-off.
+| Work | State | Next boundary |
+|---|---|---|
+| QR camera | **WIP / recovery** | Recover the protected stash, integrate current `main`, add direct adapter-cleanup tests, then obtain physical Android/iOS acceptance. Not merged or deployed as accepted camera integration. |
+| B2b durable journaling | **TODO** | Add durable journaling/compensation for `registrationReview` and `assignRoles`; retain the [manual recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) until replacement evidence exists. |
+| C5 RETENTION_WORKER console | **BLOCKED — not in progress** | Wait for human **D5 + B3** decisions. Destructive retention remains disabled; no real-data rehearsal. |
 
-- **DEV vehicle fixtures reinitialized through API — PASS (2026-11-21):** followed the canonical 25-table schema and domain lifecycle instead of physically clearing `vc_vehicles`, which would orphan dependent sheets and audit history. Retired **11** old synthetic vehicles via `vehicles.cancel`; created **10** new ACTIVE vehicles through campaign → five-photo upload → registration → approval. Every new vehicle passed lookup, **1 contact / 5 photos / QR MATCH**, and the admin registry matched the new synthetic set. Seed cleanup **2/2 PASS**; new organization and vehicles intentionally remain ACTIVE as DEV fixtures. Post-seed editor audit **22:23:39 Asia/Bangkok:** `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`; no visible spreadsheet errors recreated. See [seed + audit evidence](LIVE_API_AUTOMATION.md#dev-vehicle-reinitialization-evidence--2026-11-21).
+### HUMAN GATES — ALL OPEN
 
-### IN-PROGRESS
+- PDPA, security, UAT and production-release sign-offs.
+- Browser/business acceptance of the delivered journeys, including gallery/copy, C1–C4 and C6, plus physical QR-device acceptance.
+- Decisions/ratifications **D-E1, D3, D5, B3** and **VC-ADR-014 / 015 / 017**.
+- Credential rotation and confirmation of the approved release-credential handling process.
+- Catalog `ENFORCED` mode remains separately gated; current catalog mode is `ADVISORY`.
 
-- **Delivery execution now governed by [PROJECT_MANAGEMENT_PLAN_20261121.md](PROJECT_MANAGEMENT_PLAN_20261121.md)** (WBS A–E, milestones M0–M4, risk register, slice board). **Live DEV E2E PASSED (2026-11-21):** A2 approval journey **10/10** (8 pending `ฑฆ9903`–`9910` approved + 2 pre-fix `9901`/`9902` verified; lookup + fresh QR resolve MATCH; negatives `INVALID_REQUEST_STATE`/`PHOTO_NOT_FOUND`) and A3 full regression **70/70 tests, 55/55 ops, 0 missing, 0 cleanup failed** — all 5 roles + the 3 scoped ops (`vehicles.listMine`, `changes.listMine`, `retention.listExecutable`) + FORBIDDEN negatives, against Web App V37 (functional 0.9.0). See [LIVE_DEV_E2E_EVIDENCE_20261121.md](LIVE_DEV_E2E_EVIDENCE_20261121.md). Backend `0.9.0` scoped ops merged (#90), Worker-deployed; health-marker drift fix (`backendVersion` 0.8.1→0.9.0 + permanent contract guard) merged (#91), **published as Version 39 — `system.health` `0.9.0` verified via Worker (A1 DONE → M0 CLOSED)**. **B1 org ancestor cycle check merged (#93)** and **B4 login constant-work merged (#94)**; full GAS suite **123/123**. **B2 partial-write/deletion reconciliation + recovery — merged (#96), 7/7 journal-recovery cases + full suite green:** automatic state-driven `registrations.submit` reconciliation (D-SEQ-05), injected-failure tests proving the `assignRoles`/`registrationReview`/`executeDeletion` partial-write gaps + manual [recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) (D-SEQ-09), [VC-ADR-016](DECISION_LOG.md); B2b durable journaling for review/assignRoles deferred. See [journal recovery evidence](BACKEND_JOURNAL_RECOVERY_EVIDENCE_20261121.md). Decisions [VC-ADR-014/015](DECISION_LOG.md) security ratification pending. Outstanding owner gates: **re-push `main` @ `647c463` (B1/B4/B2 hardening) via `PUSH_VEHICLE_GAS` + publish — live V39 source (`3646e39`) predates them, so the 3 fixes are NOT live**; fill gitignored `.env` secrets once; browser gallery acceptance; decisions D3–D5 + PDPA/security/UAT/release sign-offs (48h production target). Frontend change-review (**C1**) is now **SOURCE COMPLETE + TEST GREEN** (FE 149/149, GAS `npm run check` EXIT 0): route `change-review` + menu gated `vehicle.change.approve`, queue→delta-diff→APPROVE/REJECT, shared `vehicles.detail` repository; backend `changePending` now returns `proposedDelta` (approver was previously blind). **C1 live verification joins the re-push batch** — see [C1 evidence](C1_CHANGE_REVIEW_SCREEN_EVIDENCE_20261121.md). OWNER `my-vehicles` (**C4**) is now **SOURCE COMPLETE + TEST GREEN + FE BUILD GREEN** (FE 157/157, `npm run build` 137 modules): route `my-vehicles` + routed menu, `vehicles.listMine` → `changes.submit` → `changes.listMine` track; **live-verifiable now** (ops already live on V39, no re-push needed) — see [C4 evidence](C4_MY_VEHICLES_SCREEN_EVIDENCE_20261121.md). Unified vehicle detail (**C2**) is now **SOURCE COMPLETE + TEST GREEN + FE BUILD GREEN** (FE 163/163): deep-link route `vehicle-detail` (`vehicles/detail/:vehicleId`) reusing `VehicleSearchResult`, `vehicles.detail` + permission-gated `vehicles.history`; **live-verifiable now** (no re-push) — see [C2 evidence](C2_VEHICLE_DETAIL_SCREEN_EVIDENCE_20261121.md). Vehicle maintenance edit (**C3**) is now **SOURCE COMPLETE + TEST GREEN + FE BUILD GREEN** (FE 172/172): route `vehicle-maintenance` gated `vehicle.update`, `vehicles.update` (expectedVersion conflict UX) + `contacts.update` + `photos.replace` + destructive `vehicles.cancel`; **live-verifiable now** (no re-push) — see [C3 evidence](C3_VEHICLE_MAINTENANCE_SCREEN_EVIDENCE_20261121.md). **M2 FE slices C1+C2+C3+C4 are all source-complete + test-green**; live/browser acceptance awaits DEV secrets + the C1 re-push batch. Only the RETENTION_WORKER execution console (**C5**) remains NOT_WIRED, gated on owner decisions D5+B3. **E2 production hardening — DONE-EVIDENCED (no owner action, credential-free):** cross-role RBAC regression `actor-rbac-matrix` **5/5, 245 checks** (5 roles × 49 ops; 78 allowed / 167 denied; anonymous denied at 49 with zero writes; client-role rejected) + Worker gateway contract **31/31** (new regression for the 3 scoped reads `vehicles.listMine`/`changes.listMine`/`retention.listExecutable`) + **LIVE edge fail-closed 14/14 PASS** against the deployed Worker (`verify-live-worker-failclosed.mjs`: origin/allowlist/DTO/session/size/method/version denials all fire before GAS; public `system.health` → **ready**, confirming V39/0.9.0 live through the gateway). See [E2 evidence](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md).
+## 4. Exact next actions
 
-- [#61 Primary journey epic](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/61): registration -> approval -> QR/plate verification.
-- Review-detail photo gallery slice MERGED (PR #84) and live (Frontend `0.8.0` on Pages; Worker redeployed by assistant with `registrations.photo` allowlist): truncated requestId + copy-full, hero FRONT image + 4 thumbnails via gated `registrations.photo` (permission `vehicle.registration.approve`, snapshot ownership check + access audit, memory-only rendering). Runtime write-coercion fix MERGED (PRs #86, #87, Backend `0.8.1`). **Approval E2E DONE — live 10/10 through the Worker** (8 pending approved + 2 pre-fix verified via tolerant lookup; no destructive repair needed; fresh QR via `qr.replace`); negatives PASS; see [LIVE_DEV_E2E_EVIDENCE_20261121.md](LIVE_DEV_E2E_EVIDENCE_20261121.md). Remaining gates: owner publishes Web App **Version 38** (health → `0.9.0`); **browser gallery acceptance still NOT RUN**.
-- [#17 Operator screens](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/17): remaining unified detail/QR/device journey.
-- [#18 QR camera integration](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/18): local WIP exists but is **not merged or deployed**.
+1. **Resume QR safely** using the recovery below; run focused cleanup tests and offline checks before any device acceptance. Record Android/iOS evidence separately from automated tests.
+2. **Implement B2b as a small backend slice** with injected-failure/restart tests, idempotent recovery and updated runbook/evidence. Do not enable destructive retention.
+3. **Keep C5 blocked** until the owner ratifies D5 and B3; only then implement the permission-gated console and synthetic two-person/`legal_hold` rehearsal.
+4. **Arrange human browser/business acceptance** for the delivered screens and journeys. Capture sanitized evidence; do not convert API automation into UAT approval.
+5. **Resolve release decisions and rotate credentials** through the owner/security process, then use the [production readiness plan](PRODUCTION_READINESS_PLAN_20261121.md) for any release-candidate deployment and final sign-off.
 
-### BLOCKED / HUMAN INPUT
+## 5. QR WIP recovery
 
-- The 2026-11-20 20:59 guarded DEV apply returned schema `0.3.0-draft`, `status:APPLIED`, `backupCreated:true`. The 21:00 post-apply dry-run returned `steps:[]`, `blocked:[]`; schema migration and verification gates PASS.
-- The Project Owner confirmed the one-time migration approval property was disabled after use; no further schema write is authorized.
-- `vc_reference_values` now holds 645 verified seed rows (`ADVISORY`). The 07:06 coercion-dirty rows were cleared by the gated 07:52 recovery; both Drive backups remain. `ENFORCED` mode and production security/PDPA/UAT/release approval remain separate and open.
-- Production security/PDPA/UAT/release approval remains separate and open.
-
-## Exact next actions
-
-1. ~~Re-push hardening + publish~~ — **DONE: assistant self-deployed via clasp (`-u p6vc`, owner-authorized "clasp login บัญชีคุณ" path). Live Web App Version 41 from hardened `main` @ `ab83384` (B1/B4/B2/C1). `system.health` `0.9.0 ready` verified via direct `/exec` + Worker; edge fail-closed 14/14 PASS.** A v40 publish 404'd because clasp push wiped the editor-managed anonymous-access config; fixed permanently by adding `webapp:{executeAs:USER_DEPLOYING,access:ANYONE_ANONYMOUS}` to `appsscript.json` (merged to `main`) → v41. See [incident SSOT](GAS_CLASP_WEBAPP_MANIFEST_INCIDENT_20261121.md). **Residual:** authenticated B1/B4/B2 negative probes + C1 `proposedDelta` acceptance await gitignored DEV `.env` secrets (owner-action); hardened source is live and health/edge verified credential-free.
-2. ~~Owner redeploys the Cloudflare Worker~~ — DONE: assistant self-deployed via `wrangler deploy` (commit `b08737d9`); `registrations.photo` allowlist live, health PASS through Worker.
-3. ~~Run the owner-approved synthetic approval E2E through the Worker~~ — **DONE (2026-11-21): live 10/10 PASS.** Reusable harness committed at `apps/vehicle-contact/backend/gas/scripts/run-live-approval-e2e.mjs` (owner-dev write guard; credentials ONLY via env `P6VC_ADMIN_USER`/`P6VC_ADMIN_PASS`, never persisted). The two pre-fix vehicles (`ฑฆ9901`/`9902`) needed **no destructive repair** — tolerant `vehicles.lookup` resolves the coerced `province_code`, and `qr.replace` minted fresh tokens for verification. Remaining 8 (`9903`–`9910`) approved → lookup → QR resolve MATCH → negatives (`INVALID_REQUEST_STATE`, `PHOTO_NOT_FOUND`) → logout. Evidence: [LIVE_DEV_E2E_EVIDENCE_20261121.md](LIVE_DEV_E2E_EVIDENCE_20261121.md). `.tmp/` scratch deleted; `test-results/` gitignored.
-4. Owner signs in to the frontend and accepts the gallery/copy UX on the synthetic requests; capture sanitized browser evidence.
-5. Resume QR camera integration from the protected local stash, integrate current `main`, add direct adapter-cleanup tests, then run Android/iOS camera acceptance.
-
-Catalog review and QR engineering may proceed independently; real catalog enforcement must wait for approved values and seed evidence.
-
-## QR WIP recovery
-
-The only current copy is local:
+The protected local WIP reference is:
 
 ```text
 stash@{0}: On codex/p6vc-qr-camera-scanner-20261120: wip: qr camera scanner before reference catalog
 ```
 
-Safe continuation:
+Verify the stash still exists before applying it. Safe continuation:
 
 ```powershell
 git fetch origin main
@@ -80,18 +83,21 @@ git switch -c codex/p6vc-qr-camera-scanner-resume origin/main
 git stash apply 'stash@{0}'
 ```
 
-Resolve against current Frontend `0.6.1` or later, verify the diff, and do not drop the stash until the resumed changes are committed and pushed. Prior WIP evidence: pinned `html5-qrcode 2.3.8`, 12/12 focused tests, build and dependency audit passed; direct cleanup tests and physical Android/iOS evidence remain NOT RUN.
+Resolve against current Frontend **0.8.0 or later**, inspect the diff, and **do not drop the stash until the recovered work is safely committed and pushed**. Prior WIP evidence: pinned `html5-qrcode 2.3.8`, 12/12 focused tests, build and dependency audit passed. Direct adapter-cleanup tests and physical Android/iOS acceptance remain required.
 
-## Credential and deployment guardrails
+## 6. Safety and deployment rules
 
-- A Project Owner-managed DEV administrator credential exists out-of-band. Never copy its value into source, documentation, Issues, comments, logs or evidence.
-- Do not run a privileged login workflow without its explicit workflow confirmation. Do not publish credential-bearing output.
-- GAS source push still requires the exact owner phrase `PUSH_VEHICLE_GAS`; source version creation is not Web App publication.
-- Frontend authorization is never inferred from role names; navigation uses permissions returned by GAS, while GAS remains the authorization authority.
+- GitHub source is canonical; generated `.gs` and deployed artifacts are not a second source tree.
+- Every GAS source push requires the owner’s exact per-push phrase **`PUSH_VEHICLE_GAS`**. The owner-authorized assistant `clasp` path exists, but it does not remove this gate.
+- Source push and source-version creation are **not** Web App publication. Record push, created version, publication/deployment and health verification as separate facts.
+- Never expose credentials, session tokens, private endpoints, raw PII or secret-bearing logs. Live authenticated tests require their documented synthetic-DEV write guard and cleanup.
+- Frontend permissions are UX only; GAS is the authorization authority. Never infer access from a client-supplied role.
+- No schema mutation, destructive retention, production `ENFORCED` mode or production release without explicit authorization.
 
-## Resume checklist
+## 7. Evidence index
 
-- Confirm `git status`, `origin/main` and the live Issue labels before work.
-- Use [#61](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/61) as the primary-journey epic and [Agile Kanban](AGILE_KANBAN.md) for live lane filters.
-- Open detailed evidence only for the slice being changed; do not re-read the full historical handover unless reconciling an old decision.
-- Record exact component versions, commit/PR, tests, deployment and residual blockers after every delivered slice.
+- [Current live automation, reset and audit](LIVE_API_AUTOMATION.md)
+- [A2/A3 historical live DEV evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md)
+- [B1 org cycle](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md) · [B2 journal recovery](BACKEND_JOURNAL_RECOVERY_EVIDENCE_20261121.md) · [B4 login hardening](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md)
+- [C1 change review](C1_CHANGE_REVIEW_SCREEN_EVIDENCE_20261121.md) · [C2 detail](C2_VEHICLE_DETAIL_SCREEN_EVIDENCE_20261121.md) · [C3 maintenance](C3_VEHICLE_MAINTENANCE_SCREEN_EVIDENCE_20261121.md) · [C4 my vehicles](C4_MY_VEHICLES_SCREEN_EVIDENCE_20261121.md)
+- [Decision log](DECISION_LOG.md) · [Code map](CODE_MAP_20261121.md) · [Use-case SSOT](use-cases/README.md)
