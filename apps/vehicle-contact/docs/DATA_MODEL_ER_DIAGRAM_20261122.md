@@ -235,3 +235,9 @@ erDiagram
 ## 5. Authority and exclusions
 
 This diagram reflects the canonical schema and current code relationships. It does **not** approve the schema for production, decide D-E1 (bounded Sheets vs indexed store), or ratify PDPA/security. Schema changes remain additive forward-only with manual approval and a migration journal entry.
+
+### 5.1 Role/permission authority is CODE, not the role sheets
+
+The Mermaid FKs `vc_roles ||--o{ vc_user_roles` and `vc_roles ||--o{ vc_role_permissions` depict the **declared schema**, but at runtime `vc_roles` and `vc_role_permissions` are **not populated and never read**. The authoritative role→permission policy is the frozen code catalog `ROLE_PERMISSIONS` in [`SessionService.js`](../backend/gas/src/application/security/SessionService.js) (comment: *"immutable role-to-permission policy"*). `permissionsFor()` resolves permissions from `ROLE_PERMISSIONS[role_id]`, where `vc_user_roles.role_id` stores the **role NAME** (`SYSTEM_ADMIN`, `REGISTRATION_ADMIN`, `STAFF`, `OWNER`, `RETENTION_WORKER`) — exactly the catalog keys. `assignRoles` ([`IdentityOperations.js`](../backend/gas/src/application/use-cases/IdentityOperations.js)) validates against `ROLE_PERMISSIONS` and writes only `vc_user_roles`; no code writes `vc_roles`/`vc_role_permissions`. `vc_user_permissions` is a legitimate optional per-user override table (empty = no overrides).
+
+**Therefore empty `vc_roles`/`vc_role_permissions` sheets alongside populated `vc_user_roles` is BY DESIGN, not corruption.** Do not "repair" or seed them expecting runtime effect. Confirmed by the independent raw-cell audit ([SHEETS_DATA_AUDIT_EVIDENCE_20261122.md](SHEETS_DATA_AUDIT_EVIDENCE_20261122.md) §5): 27 role assignments, all 5 names match the code catalog, RBAC 250 checks pass.
