@@ -24,10 +24,13 @@
 | `VEHICLE_PERSISTENCE_BACKEND` | `VEHICLE_FIRESTORE_DUALWRITE` | Result |
 |---|---|---|
 | unset / `sheets` | unset / not `true` | Plain SheetStore — **live default, zero REST traffic** |
-| unset / `sheets` | `true` + SA key | DualWriteStore(Sheets primary, Firestore shadow, journal→`vc_operation_journal`) |
+| unset / `sheets` | `true` + SA key | DualWriteStore(Sheets primary, Firestore shadow, journal→primary `vc_operation_journal`) |
 | unset / `sheets` | `true`, **no SA key** | **Fail-closed `STORAGE_NOT_CONFIGURED`** (never silently skips the shadow) |
-| `firestore` | any | Plain FirestoreStore — **flag retired at cutover** (DW-10 proves Sheets is not opened) |
+| `firestore` | `true` | **Reverse dual-write** (F3b-2 correction): Firestore primary + Sheets shadow kept warm for the rollback window (E1 §5.5); journal→primary |
+| `firestore` | unset / not `true` | Plain FirestoreStore — mirroring retired |
 | unknown | any | `UNKNOWN_PERSISTENCE_BACKEND:<v>` (unchanged from F3a) |
+
+> **Correction (F3b-2, same source tree):** the original F3b-1 selector retired the flag at `backend=firestore`. That would stop Sheets writes at cutover and lose data on rollback, contradicting E1 §5.5 ("keep Sheets writes for rollback window"). The flag now means "mirror to the standby engine"; direction follows the primary. DW-10 updated (cleared flag retires mirroring) and DW-12 added (reverse dual-write warms Sheets; reverse divergence journals to the Firestore primary). See [F3b-2 evidence](BACKEND_FIRESTORE_BACKFILL_F3B2_EVIDENCE_20261122.md) and the [cutover/rollback runbook](FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md).
 
 Only the runtime dispatch store is wrapped; schema/migration/seed maintenance paths stay Sheets-bound.
 
@@ -49,7 +52,7 @@ Only the runtime dispatch store is wrapped; schema/migration/seed maintenance pa
 | DW-07 | Journal failure swallowed; SoR write unaffected (audit backstop) |
 | DW-08 | Sheets-primary `sequence` (no tx arg) captures + replays (B1 regression) |
 | DW-09 | Selector dual-write mode writes BOTH stores; divergence lands in `vc_operation_journal` sheet (SYSTEM actor, event_id); missing key fail-closed; flag unset → zero REST |
-| DW-10 | **Container dispatch** (`auth.login`) in dual-write mode reaches both stores (failed-attempt event in Sheets AND mirrored doc); `backend=firestore` retires the flag (Sheets opens frozen) |
+| DW-10 | **Container dispatch** (`auth.login`) in dual-write mode reaches both stores (failed-attempt event in Sheets AND mirrored doc); cleared flag at `backend=firestore` retires mirroring (Sheets opens frozen) |
 | DW-11 | Wrapper passes the **identical F1 store-port contract** (`runStorePortContract`) with a healthy shadow — drop-in guarantee preserved |
 
 **Full GAS `npm run check`: EXIT 0** — 213/213 node-test assertions, 0 failures across all suites; bundle **61 .gs modules** (+1 DualWriteStore); GAS-VM-00…03 editor-VM probes PASS; api-wiring guard extended with `createDualWriteStore` + `VEHICLE_FIRESTORE_DUALWRITE`.

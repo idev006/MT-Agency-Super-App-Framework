@@ -210,7 +210,7 @@ test('DW-09 selector dual-write mode: both stores written; divergence journaled 
   assert.equal(plainFake.state.tokenCount,0,'flag unset must keep zero REST traffic');
 });
 
-test('DW-10 Container dispatch in dual-write mode reaches BOTH stores; flag retired at firestore cutover',()=>{
+test('DW-10 Container dispatch in dual-write mode reaches BOTH stores; cleared flag retires mirroring at cutover',()=>{
   const login={apiVersion:'v1',group:'auth',action:'login',payload:{username:'nobody',password:'wrong-pass'}};
   const baseProps={VEHICLE_API_ENABLED:'true',VEHICLE_SHEET_ID:'s',VEHICLE_AUTH_PEPPER:'unit-test-pepper-0123456789abcdef',
     VEHICLE_FIRESTORE_DUALWRITE:'true',VEHICLE_FIRESTORE_SA_KEY:KEY_JSON};
@@ -225,10 +225,35 @@ test('DW-10 Container dispatch in dual-write mode reaches BOTH stores; flag reti
   assert.ok(sheetRows(sheets.tables,'vc_security_events').length>=1,'failed-attempt event lost from SoR');
   assert.ok(fake.state.plain('vc_security_events',sheetRows(sheets.tables,'vc_security_events')[0].event_id),'failed-attempt event not mirrored');
   const opensBefore=sheets.state.opens;
-  const cut=createApplication({...deps,propertiesService:{getScriptProperties:()=>makeProps({...baseProps,VEHICLE_PERSISTENCE_BACKEND:'firestore'})}});
+  const cut=createApplication({...deps,propertiesService:{getScriptProperties:()=>makeProps({...baseProps,
+    VEHICLE_PERSISTENCE_BACKEND:'firestore',VEHICLE_FIRESTORE_DUALWRITE:'false'})}});
   const r2=cut.dispatch(login,'POST');
   assert.equal(r2.ok,false);
-  assert.equal(sheets.state.opens,opensBefore,'dual-write flag must be retired once backend=firestore');
+  assert.equal(sheets.state.opens,opensBefore,'cleared flag must retire mirroring once backend=firestore');
+});
+
+test('DW-12 reverse dual-write after cutover keeps Sheets warm for rollback (E1 §5.5)',()=>{
+  const login={apiVersion:'v1',group:'auth',action:'login',payload:{username:'nobody',password:'wrong-pass'}};
+  const props=makeProps({VEHICLE_API_ENABLED:'true',VEHICLE_SHEET_ID:'s',VEHICLE_AUTH_PEPPER:'unit-test-pepper-0123456789abcdef',
+    VEHICLE_PERSISTENCE_BACKEND:'firestore',VEHICLE_FIRESTORE_DUALWRITE:'true',VEHICLE_FIRESTORE_SA_KEY:KEY_JSON});
+  const sheets=makeSheets(['vc_users','vc_security_events','vc_operation_journal']);
+  const fake=createFakeFirestoreRest();
+  const deps={spreadsheetApp:sheets.spreadsheetApp,lockService:sheets.lockService,utilities:makeFakeUtilities(),urlFetchApp:fake,driveApp:null};
+  const app=createApplication({...deps,propertiesService:{getScriptProperties:()=>props}});
+  const r=app.dispatch(login,'POST');
+  assert.equal(r.ok,false);
+  const events=sheetRows(sheets.tables,'vc_security_events');
+  assert.ok(events.length>=1,'Sheets shadow not warmed after cutover (rollback would lose writes)');
+  assert.ok(fake.state.plain('vc_security_events',events[0].event_id),'primary Firestore event missing');
+  const brokenSheets={spreadsheetApp:{openById(){throw new Error('SHEETS_DOWN');},flush(){}},
+    lockService:sheets.lockService,utilities:makeFakeUtilities(),urlFetchApp:fake};
+  const store=createStoreForBackend({backend:'firestore',props,services:brokenSheets,clock:CLOCK});
+  store.insert('vc_users',rec('r1'));
+  assert.equal(fake.state.plain('vc_users','r1').user_id,'r1','primary write must survive shadow outage');
+  const divergence=store.list('vc_operation_journal',{operation:'dualwrite.divergence'});
+  assert.equal(divergence.length,1,'reverse divergence not journaled to the PRIMARY store');
+  assert.equal(divergence[0].entity_id,'vc_users:r1');
+  assert.equal(divergence[0].actor_id,'SYSTEM');
 });
 
 test('DW-11 dual-write wrapper satisfies the identical F1 store-port contract',()=>{
