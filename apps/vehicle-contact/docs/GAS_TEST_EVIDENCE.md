@@ -1,6 +1,17 @@
 # Vehicle Contact GAS — Test Evidence & Deployment Status
 
-> **Historical 2026-11-17 snapshot:** the implementation/deployment states below are evidence for that date only. Use [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) and [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md) for the current V48/0.9.1, 56-operation and 97/97 live-DEV scope.
+> **Dated evidence log (newest sections first).** The 2026-11-17 scaffold/deployment states below are evidence for their recorded dates only. For the current runtime/evidence scope use [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) and [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md) — live **V49/0.9.2**, 56 operations, 97/97. Source push, version creation and Web App publication are distinct facts.
+
+## GAS source push — VERIFIED 2026-11-22 (Version 50, NOT published)
+
+- **Authorization:** owner typed the exact per-push phrase `PUSH_VEHICLE_GAS`; CI workflow `deploy-vehicle-gas.yml` dispatched on `main`.
+- **Workflow run:** [45010301788](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/45010301788), conclusion **success** (1m3s), source commit **`8fd9d3a`** (PR #125).
+- **Pre-push gate:** `npm run check` PASS in CI (build + full contract chain incl. `store-port-contract`, `firestore-store-contract`, `gas-staging-editor-vm`); artifact step **Verified 57 generated GAS modules** (56 sources + schema) + manifest, each `.gs` ≤800 lines, `runtimeVersion:V8`.
+- **Push:** `clasp push --force` uploaded the 57-module bundle incl. `INFRASTRUCTURE$persistence$firestore$FirestoreStore.gs` (122 lines, **bundled but NOT wired** — `Container.js` still injects `createSheetStore`) and `SCHEMA$database.schema.gs` (DB-agnostic metadata relabel; `schemaId`/`schemaVersion`/tables unchanged).
+- **Version:** `clasp create-version` recorded **Created version 50** tagged `P6VC GitHub commit 8fd9d3a`. **This is source traceability, NOT a Web App deployment.**
+- **Live verification (read-back, not just API OK):** the Worker-facing **pinned** `/exec` deployment health was probed twice (credential-free `system.health`, POST→302→GET echo): `{"ok":true,"data":{"status":"ready","backendVersion":"0.9.2","releaseChannel":"development"}}` — **UNCHANGED**. The push did **not** publish; the published Web App remains **V49 / 0.9.2**.
+- **Runtime impact:** none. Version 50 source is runtime-identical to V49 (F2 adapter unwired; schema change is metadata only; `backendVersion` still 0.9.2). The secondary **@HEAD** deployment auto-follows source but requires Google login (POST 401 / GET 302→ServiceLogin), so it is not anonymously probeable and is **not** the Worker-facing path.
+- **Publication remains the owner's separate action.** No ENFORCED mode, no real data, no schema mutation, no destructive retention. Endpoints/credentials are not reproduced here.
 
 **Date:** 2026-11-17  
 **State:** ES Modules built and contract-tested; first authenticated `clasp push` to supplied GAS Script ID **SUCCESS** (run 44033187307), browser integration and security/PDPA gate **NOT DONE**.

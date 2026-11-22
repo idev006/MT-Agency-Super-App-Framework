@@ -2,7 +2,7 @@
 
 **Document ID:** P6VC-DEPLOY-001  
 **Date:** 2026-11-17  
-**State:** FIRST AUTHENTICATED SOURCE PUSH VERIFIED — [run 44033187307](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44033187307), commit `75c26b39`, 2 files pushed, GAS version 3 created. NOT A WEB APP DEPLOYMENT; editor verification remains open.  
+**State:** LATEST SOURCE PUSH VERIFIED 2026-11-22 — [run 45010301788](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/45010301788), commit `8fd9d3a`, **57 modules** pushed, GAS **version 50** created. NOT A WEB APP DEPLOYMENT; the published Web App remains **V49 / 0.9.2** (publication is a separate owner action). Full read-back evidence: [GAS Test Evidence — Version 50](GAS_TEST_EVIDENCE.md). First authenticated push: run 44033187307 (2026-11-17, commit `75c26b39`, version 3).
 **GitHub SSOT:** [deploy-vehicle-gas.yml](../../../.github/workflows/deploy-vehicle-gas.yml)  
 **Target GAS Script ID (provided by owner):** `1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX`  
 **Script editor:** https://script.google.com/d/1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX/edit
@@ -12,8 +12,8 @@ GitHub source is the SSOT; GAS is only a deployed runtime artifact. The GitHub A
 
 On a correctly configured runner, the workflow:
 1. Checks out main with read-only repo permissions.
-2. Installs Node 22, dependencies, builds `dist/Code.gs`/`dist/appsscript.json` and runs contract tests.
-3. Validates that only two expected deployment files exist.
+2. Installs Node 22, dependencies, builds the flattened multi-file bundle `dist/*.gs` + `dist/appsscript.json` and runs contract tests (`npm run check`).
+3. Validates the generated artifact **dynamically**: one `.gs` per source `.js` plus one schema `.gs` (currently **57** = 56 sources + schema) and the manifest; every `.gs` non-empty and ≤800 lines; key entrypoints present; manifest `runtimeVersion:V8`.
 4. Installs pinned `@google/clasp@3.4.1`.
 5. Creates local `.clasp.json` with provided Script ID and rootDir `dist`; securely restores auth from a protected GitHub secret.
 6. Runs `clasp push --force` (overwrites **all** source files in the target Apps Script Project).
@@ -53,7 +53,7 @@ E. Confirm that GAS Script Property `VEHICLE_SHEET_ID` is set to the existing in
 2. Select **Run workflow**, branch **main**.
 3. Enter exactly `PUSH_VEHICLE_GAS` in the confirmation field.
 4. Run and inspect steps; note the exact commit SHA and GAS version created.
-5. Verify Apps Script Editor source matches the bundle (five GAS global entrypoints) and invoke admin-only schema inspection with an authorized Google identity.
+5. Verify Apps Script Editor source matches the bundle (global entrypoints live at the bottom of `ENTRYPOINTS$WebApp.gs`; the editor does **not** auto-refresh after `clasp push` — press F5 first) and invoke admin-only schema inspection with an authorized Google identity.
 6. Add actual evidence/commit/run ID and test results to [GAS Test Evidence](GAS_TEST_EVIDENCE.md) and the appropriate Agile Issue.
 
 **First manual dispatch has succeeded according to GitHub Actions logs (2026-11-17); the following remains the safety checklist for future dispatches.** Before another run, check the destination project's backup and expected source. A missing `P6VC_CLASPRC_JSON` secret fails the workflow **before** `clasp push`.
