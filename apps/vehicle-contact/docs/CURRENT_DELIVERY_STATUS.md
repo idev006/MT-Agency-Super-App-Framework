@@ -56,6 +56,8 @@ Canonical evidence and commands: [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md
 
 ### HUMAN GATES — ALL OPEN
 
+**Single decision sheet:** [Owner decision briefing](OWNER_DECISION_BRIEFING_20261122.md) collects D-E1/D3/D5/B3, VC-ADR-014/015/017, the four sign-offs and the human acceptance actions into one actionable page (options + recommendations + consequence map). It presents choices; it approves nothing.
+
 - PDPA, security, UAT and production-release sign-offs.
 - Browser/business acceptance of the delivered journeys, including gallery/copy, C1–C4 and C6, plus physical QR-device acceptance.
 - Decisions/ratifications **D-E1, D3, D5, B3** and **VC-ADR-014 / 015 / 017**.
@@ -87,6 +89,7 @@ Do not recreate or reapply the historical stash over PR #112. Physical Android/i
 
 ## 7. Evidence index
 
+- [Owner decision briefing (one sitting)](OWNER_DECISION_BRIEFING_20261122.md) · [QR physical device acceptance plan](QR_DEVICE_ACCEPTANCE_PLAN_20261122.md)
 - [World-class test suite plan](WORLD_CLASS_TEST_SUITE_PLAN_20261122.md) · [Data model ER diagram (25 Sheets)](DATA_MODEL_ER_DIAGRAM_20261122.md)
 - [DEV clean-init reset evidence (Mode A-full executed + Mode B source)](DEV_CLEAN_RESET_EVIDENCE_20261122.md)
 - [Independent Sheets SSOT data audit (raw-cell, read-only)](SHEETS_DATA_AUDIT_EVIDENCE_20261122.md)
