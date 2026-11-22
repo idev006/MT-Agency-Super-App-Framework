@@ -130,6 +130,15 @@ async function auditSheetsData() {
   });
   const referencedRoles = [...new Set(col('vc_user_roles','role_id'))];
   const rolesSheetRows = S.vc_roles.data.length;
+  // B2b durable-journal health: every review/assignRoles/submit journal should reach a
+  // terminal state. Stuck PREPARED / RECOVERY_REQUIRED rows flag a partial needing recovery.
+  const journal = S.vc_operation_journal.data;
+  const jByOp = {};
+  for (const r of journal) {
+    const op = r[idx('vc_operation_journal','operation')], st = r[idx('vc_operation_journal','status')];
+    jByOp[op] = jByOp[op] || {}; jByOp[op][st] = (jByOp[op][st] || 0) + 1;
+  }
+  const stuckJournals = journal.filter(r => ['PREPARED','RECOVERY_REQUIRED'].includes(r[idx('vc_operation_journal','status')])).length;
   return {
     auditedAt: new Date().toISOString(),
     auditedSheets: perSheet.length,
@@ -146,6 +155,7 @@ async function auditSheetsData() {
       userPermRows: S.vc_user_permissions.data.length,
       rolesCodeCatalogLikely: rolesSheetRows === 0 && referencedRoles.length > 0
     },
+    operationJournal: { totalRows: journal.length, byOperationStatus: jByOp, stuckPreparedOrRecovery: stuckJournals },
     perSheet
   };
 }

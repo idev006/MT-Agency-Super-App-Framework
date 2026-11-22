@@ -47,7 +47,7 @@ Server-authoritative RBAC unchanged; `SELF_DEMOTION_DENIED` / `SELF_ROLE_EXPANSI
 
 ## 7. Boundary
 
-Source delivered and offline-green; **not published** to the live Web App (stays V48 until a separate owner-authorized clasp/push). Publication, production security/PDPA/UAT/release sign-offs, credential rotation and physical-device acceptance remain separate OPEN human gates. B2b is engineering hardening and does not self-approve any of them.
+Source delivered, offline-green, and **published to the DEV Web App via the owner-authorized clasp self-deploy path** (§9). Publication to DEV is distinct from production release: production security/PDPA/UAT/release sign-offs, credential rotation and physical-device acceptance remain separate OPEN human gates. B2b is engineering hardening and does not self-approve any of them. Destructive retention stays disabled.
 
 ## 8. Reproduce
 
@@ -55,3 +55,20 @@ Source delivered and offline-green; **not published** to the live Web App (stays
 npm --prefix apps/vehicle-contact/backend/gas run check
 node --test apps/vehicle-contact/backend/gas/tests/journal-recovery.test.mjs
 ```
+
+## 9. Live publication + re-verification (2026-11-22, owner-authorized clasp + browser + `.env`)
+
+Recorded as separate facts (source push ≠ version ≠ publication ≠ health):
+
+| Step | Result |
+|---|---|
+| Build | `npm run build` → 56 `.gs` + manifest; `webapp:{executeAs:USER_DEPLOYING,access:ANYONE_ANONYMOUS}` verified (no 404 risk) |
+| Source push | `clasp -u p6vc push --force` → GAS project source updated |
+| Version | `create-version` → immutable **Version 49** |
+| Publication | `update-deployment AKfycby15c-… -V 49` → live `/exec` redeployed **@49**; `list-deployments` confirms pin `@49 - B2b durable journaling 0.9.2` (second deployment `AKfycbyHGNhn…` stays @HEAD) |
+| Health probe | direct `/exec` → `status:ready`, `apiVersion:v1`, **`backendVersion:0.9.2`** |
+| **Full live API suite** | `run-live-api-suite.mjs --require-authenticated` (synthetic-DEV write guard + cleanup) → **97/97 PASS, 0 fail** = 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated direct-GAS; **56/56 operations, missing 0, cleanupFailed 0**; all 3 stages PASS |
+| **Independent Sheets data audit** | read-only gviz CSV via logged-in browser, post-suite → **25/25 sheets, 0 display errors, 0 header fails, 0 fetch fails**; **10/10 ACTIVE ฑฆ1000–1009 fixtures complete** (1 contact / 5 photos / 1 QR / 1 APPROVED reg); 12 clean FK checks (7 `NO_MATCH` sentinels excluded; 31 `vc_user_roles.role_id` "orphans" = BY DESIGN code catalog); ACTIVE 10 / INACTIVE 27 |
+| **B2b journal health (live)** | `vc_operation_journal` 42 rows, **all terminal APPLIED**: `registrations.review` APPLIED 1, `users.assignRoles` APPLIED 4, `registrations.submit` APPLIED 37; **0 stuck PREPARED / RECOVERY_REQUIRED** — durable journaling commits cleanly live, no partial state left by the suite |
+
+The audit tool ([sheets-data-audit.browser.js](../backend/gas/scripts/sheets-data-audit.browser.js)) now also returns an `operationJournal` summary (`byOperationStatus`, `stuckPreparedOrRecovery`) so future full tests verify B2b journal health, not just display errors. **API OK (97/97) and data OK (0 errors, journals APPLIED) are both confirmed independently.** Rollback if needed = re-pin the live deployment to V48 (`update-deployment … -V 48`).

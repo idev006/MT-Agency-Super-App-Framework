@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
-**Last verified:** 2026-11-22 11:45 Asia/Bangkok
-**Current main:** PR **#114** merged @ **`9269be2`** (gated synthetic DEV clean-init reset). Full test now includes an **independent read-only Sheets SSOT data audit** (25/25 sheets, 0 display errors, 10/10 fixtures, clean FK) — an API `OK` is not treated as data proof.
+**Last verified:** 2026-11-22 12:30 Asia/Bangkok
+**Current main:** PR **#117** merged @ **`14a61a5`** (B2b durable journaling). **Live GAS Web App V49 / `backendVersion` 0.9.2** (B2b published via owner-authorized clasp; live suite 97/97 + independent Sheets audit 0 errors re-verified). Prior: #116 owner decision briefing + QR device plan @ `4daf25b`; #115 independent Sheets SSOT data audit @ `45fdf7c`; #114 gated synthetic DEV clean-init reset @ `9269be2`. Full test includes an **independent read-only Sheets SSOT data audit** (25/25 sheets, 0 display errors, 10/10 fixtures, clean FK, B2b journals APPLIED) — an API `OK` is not treated as data proof.
 **Handoff baseline:** PR **#111**, merged `main` @ **`ad7630e`**
 **Source/content baseline:** PR **#110**, merged `main` @ **`bf3553d`**
 **Status:** DEV engineering evidence is strong; **production readiness and all human sign-offs remain OPEN**.
@@ -12,10 +12,10 @@ Read this page first. The [PM plan](PROJECT_MANAGEMENT_PLAN_20261121.md) owns sl
 
 | Component | Current verified state |
 |---|---|
-| GAS Backend API | Published Web App **Version 48**, `backendVersion` **0.9.1**, `status:ready`; **56 operations** over **25 logical Sheets**. |
+| GAS Backend API | Published Web App **Version 49**, `backendVersion` **0.9.2**, `status:ready`; **56 operations** over **25 logical Sheets**. Includes **B2b durable journaling** (published via owner-authorized clasp self-deploy 2026-11-22; live suite 97/97 + Sheets audit 0 errors re-verified). |
 | Frontend | **0.8.0**, deployed on GitHub Pages; C6 approved-vehicle registry is present. |
 | Cloudflare Worker | Version **`20180237-7441-481a-9540-e7ca2c9c79eb`**; live fail-closed probes passed. |
-| GAS HEAD maintenance source | The display-error repair and **B2b durable journaling** (`backendVersion` **0.9.2**) are in **source/HEAD only**. The published anonymous Web App remains **V48 / 0.9.1**; editor/source maintenance and Web App publication are different states. |
+| GAS HEAD maintenance source | The display-error repair and **B2b durable journaling** (`backendVersion` **0.9.2**) are now **published in V49**; source/HEAD and the live Web App are aligned. Editor/source maintenance and Web App publication remain distinct facts — any future HEAD-only change is not live until published. |
 
 `f14458d` is the `sourceCommit` recorded in the executed live report while harness changes were still uncommitted. It is **not** the merge/content baseline; use **`bf3553d` / PR #110** for source reconciliation. Runtime endpoints, credentials and session material are intentionally not reproduced here.
 
@@ -51,7 +51,7 @@ Canonical evidence and commands: [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md
 | Work | State | Next boundary |
 |---|---|---|
 | QR camera | **DONE — engineering source (PR #112)** | Protected WIP recovered onto remote `main` base, direct adapter-cleanup tests pass, and source is delivered in PR #112. Physical Android/iOS and browser/business acceptance remain OPEN; source delivery is not device acceptance or deployment approval. |
-| B2b durable journaling | **DONE — engineering source** | Durable PREPARED→APPLIED/ROLLED_BACK/RECOVERY_REQUIRED journal + compensation + automatic restart convergence + idempotent replay for `registrationReview` and `assignRoles`; deterministic derived QR token; 6 injected-failure/restart tests; GAS check **164/164 EXIT 0**; `backendVersion` 0.9.1→0.9.2. [B2b evidence](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md). Source delivered ≠ published (live Web App stays V48/0.9.1 until separate authorized publish); [runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) §3.3/§3.5 manual steps retained only for `RECOVERY_REQUIRED`. Destructive retention stays disabled. |
+| B2b durable journaling | **DONE — engineering + published/live-verified** | Durable PREPARED→APPLIED/ROLLED_BACK/RECOVERY_REQUIRED journal + compensation + automatic restart convergence + idempotent replay for `registrationReview` and `assignRoles`; deterministic derived QR token; 6 injected-failure/restart tests; GAS check **164/164 EXIT 0**; `backendVersion` 0.9.1→0.9.2. **Published V49** via owner-authorized clasp; live suite **97/97**, Sheets audit **0 errors**, journals all **APPLIED** (0 stuck). [B2b evidence §9](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md). [Runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) §3.3/§3.5 manual steps retained only for `RECOVERY_REQUIRED`. Destructive retention stays disabled. |
 | C5 RETENTION_WORKER console | **BLOCKED — not in progress** | Wait for human **D5 + B3** decisions. Destructive retention remains disabled; no real-data rehearsal. |
 
 ### HUMAN GATES — ALL OPEN
@@ -67,7 +67,7 @@ Canonical evidence and commands: [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md
 ## 4. Exact next actions
 
 1. **Obtain QR device acceptance** after reviewed Pages publication using named Android/iOS devices; record camera permission, switching, decode and cleanup evidence separately from the [offline engineering evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md).
-2. **B2b durable journaling is delivered in source** (164/164 GAS check, 6 injected-failure/restart tests, runbook/evidence updated, `backendVersion` 0.9.2). Next: owner-authorized clasp publication of the hardened source to the DEV Web App + live re-verification (full suite + Sheets audit). Do not enable destructive retention.
+2. **B2b durable journaling is delivered AND published** (V49 / 0.9.2 live; GAS check 164/164, live suite 97/97, Sheets audit 0 errors, journals all APPLIED). Remaining engineering is essentially complete; the critical path is the owner human gates in the [decision briefing](OWNER_DECISION_BRIEFING_20261122.md). Do not enable destructive retention.
 3. **Keep C5 blocked** until the owner ratifies D5 and B3; only then implement the permission-gated console and synthetic two-person/`legal_hold` rehearsal.
 4. **Arrange human browser/business acceptance** for the delivered screens and journeys. Capture sanitized evidence; do not convert API automation into UAT approval.
 5. **Resolve release decisions and rotate credentials** through the owner/security process, then use the [production readiness plan](PRODUCTION_READINESS_PLAN_20261121.md) for any release-candidate deployment and final sign-off.
