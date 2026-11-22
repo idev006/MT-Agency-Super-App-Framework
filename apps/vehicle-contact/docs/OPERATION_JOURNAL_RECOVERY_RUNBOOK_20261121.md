@@ -2,6 +2,7 @@
 
 **Date:** 2026-11-21 | **Owner:** SYSTEM_ADMIN (on-call) | **Scope:** DEV/staging synthetic data first; production only under the separate security/PDPA/UAT gate.
 **Why this exists:** Google Sheets is not an RDBMS. Multi-step writes have no ACID rollback. A caught exception is compensated in-process, but an **abrupt Apps Script timeout/restart** (6-minute execution limit, quota, deploy) kills the process mid-sequence and the `catch` never runs. This runbook + the automatic reconciliation in `registrationSubmit` close that gap. See [journal recovery evidence](BACKEND_JOURNAL_RECOVERY_EVIDENCE_20261121.md).
+**B2b update (2026-11-22):** `registrations.review` and `users.assignRoles` now write a durable `PREPARED` journal with in-process compensation **and automatic restart convergence + idempotent replay** ([B2b evidence](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md)). The manual procedures in §3.3 / §3.5 are retained **only** as the `RECOVERY_REQUIRED` fallback (compensation itself failed). They are no longer the primary recovery path for those two ops.
 
 ## 1. Operation journal states (`vc_operation_journal`)
 
@@ -40,22 +41,20 @@ On every submit, before creating a new application, `reconcileSubmitTimeout(idem
 2. Remove any leftover `vc_registration_requests` row for `detail_json.requestId`.
 3. Re-run §3.1 for quota. Mark the journal `ROLLED_BACK`; audit the intervention.
 
-### 3.3 `assignRoles` partial (D-SEQ-09 — **no journal, no compensation**)
-Failure between removing existing roles and inserting new ones leaves the user with **zero roles** (locked out).
-1. Detect: `vc_user_roles` has no `ACTIVE` row for the `user_id`, but `vc_change_audit` shows a `ROLES_CHANGED` intent or an admin reports a failed assignment.
-2. Recover: re-issue `users.assignRoles` with the intended role set (it is a full replace, so it is safe to re-run). Confirm `SELF_DEMOTION_DENIED` / `SELF_ROLE_EXPANSION_DENIED` guards still apply.
-3. `sessions.revokeUser` already ran or will run on the successful re-assign; the user re-authenticates.
+### 3.3 `assignRoles` partial (D-SEQ-09 — **B2b: durable journal + automatic recovery**)
+`users.assignRoles` now writes a `PREPARED` journal (`{beforeRoles, desiredRoles, auditId}`), replaces roles, writes a deterministic `ROLES_CHANGED` audit and marks `APPLIED`. A caught failure restores `beforeRoles` and journals `ROLLED_BACK`. **On restart it auto-converges a `PREPARED`/`RECOVERY_REQUIRED` partial to the desired set and replay is idempotent** (no duplicate journal/audit); self-demotion/expansion guards compare against the journal `beforeRoles` baseline so recovery cannot bypass them.
+1. **Primary recovery = re-issue `users.assignRoles` with the intended role set.** It converges the partial and is safe to re-run (full replace + idempotent replay). Guards still apply.
+2. **Fallback only if it returns `OPERATION_RECOVERY_REQUIRED`** (compensation failed, `recovery.errors` non-empty): inspect `vc_user_roles` for the `user_id`; if zero `ACTIVE` rows remain, manually re-insert the intended `ACTIVE` role rows, then re-issue the op. Confirm `SELF_DEMOTION_DENIED` / `SELF_ROLE_EXPANSION_DENIED` still apply.
+3. `sessions.revokeUser` runs on the successful (re-)assign; the user re-authenticates. Audit any manual intervention in `vc_change_audit`.
 
 ### 3.4 Inert `PREPARED` journal with no application row
 A timeout between the journal insert and the application insert. No business state changed. Mark the journal `ROLLED_BACK` and audit. (A future admin reconcile op can sweep these; until then they are inert and harmless.)
 
-### 3.5 `registrationReview` partial (D-SEQ-09 — **no journal, no compensation**)
-Failure after inserting `vc_vehicles` but before contacts/photos/QR leaves an **orphan ACTIVE vehicle** and the request still `PENDING_APPROVAL`.
-1. Detect: a `vc_vehicles` row whose `vehicle_id` equals a `PENDING_APPROVAL` request's `vehicle_id`, with missing contacts/QR.
-2. Recover (choose one, two-person):
-   - **Complete:** insert the missing primary contact, the five `vc_vehicle_photos`, and a `vc_qr_tokens` row, then advance the request to `APPROVED` — or
-   - **Reverse:** remove the orphan `vc_vehicles` (and any partial contacts/photos/QR for that `vehicle_id`), leave the request `PENDING_APPROVAL`, and re-run `registrations.review` (it re-checks `DUPLICATE_VEHICLE`, so the orphan must be gone first).
-3. Audit the intervention. `registrations.review` is **not** idempotent; never re-run it while the orphan vehicle exists.
+### 3.5 `registrationReview` partial (D-SEQ-09 — **B2b: durable journal + automatic recovery**)
+`registrations.review` now writes a `PREPARED` journal (`{decision, contactId, qrId, auditId}`) and a **deterministic** QR token derived from the journal `event_id` + `request_id`, so a restart replays the **same** token (no second QR). `completeReviewState` verifies vehicle `ACTIVE` + one primary contact + the exact five photos + QR digest before finalizing; `rollbackReviewPartial` removes only this attempt's orphan rows and resets the request to `PENDING_APPROVAL`.
+1. **Primary recovery = re-run `registrations.review` with the SAME decision.** It is now **idempotent**: it auto-cleans an orphan partial, converges a `PREPARED` marker (even one left after terminal writes), replays the same derived token, and fails closed (`OPERATION_RECOVERY_REQUIRED`) on a mismatched decision. `DUPLICATE_VEHICLE` excludes the request's own vehicle on re-apply, so the orphan no longer blocks retry.
+2. **Fallback only if it returns `OPERATION_RECOVERY_REQUIRED`** (compilation/compensation failed, `recovery.errors` non-empty): inspect `vc_vehicles` / `vc_vehicle_contacts` / `vc_vehicle_photos` / `vc_qr_tokens` for the request's `vehicle_id`; remove leftover orphan rows (two-person), leave the request `PENDING_APPROVAL`, then re-run the op with the same decision.
+3. Audit any manual intervention. Never change the decision between retries of the same journal — a conflicting intent fails closed by design.
 
 ### 3.6 `executeDeletion` partial (D-SEQ-09 — job-tracked, retry-safe)
 Failure mid-deletion marks the job `DELETION_FAILED` with `last_error`. Some rows/photos are already gone.
@@ -70,5 +69,5 @@ Failure mid-deletion marks the job `DELETION_FAILED` with `last_error`. Some row
 - **Audit every intervention** in `vc_change_audit`.
 - **Synthetic rehearsal first.** Validate these procedures on DEV synthetic data before any production use.
 
-## 5. Remaining hardening (follow-up slice B2b)
-`registrationReview` and `assignRoles` still write no journal. B2b should add PREPARED-journal + compensation (or an admin `system.reconcile` op that sweeps `PREPARED`/`RECOVERY_REQUIRED` journals) so recovery is durable without manual sheet edits. `executeDeletion` is already job-tracked and retry-safe. This slice (B2) delivers automatic submit reconciliation + injected-failure/restart tests + this runbook.
+## 5. Durable journaling status (B2b — DELIVERED 2026-11-22)
+`registrationReview` and `assignRoles` now write a `PREPARED` journal + in-process compensation **and** automatic restart convergence + idempotent replay (B2b). Recovery for those two ops is durable without manual sheet edits in the common case; §3.3 / §3.5 manual steps remain only for `RECOVERY_REQUIRED` (compensation itself failed). `executeDeletion` is already job-tracked and retry-safe. An admin `system.reconcile` sweep op for inert `PREPARED` markers remains an optional future enhancement, not a recovery dependency. See [B2b evidence](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md). B2 delivered automatic submit reconciliation + injected-failure/restart tests + this runbook; B2b extends durable journaling to review/assignRoles with 6 injected-failure/restart tests (GAS check 164/164).

@@ -9,6 +9,10 @@ export function createGasSecurity({utilities,urlFetchApp,propertiesService,clock
  function sha256(value){return hex(utilities.computeDigest(utilities.DigestAlgorithm.SHA_256,String(value),utilities.Charset.UTF_8));}
  function mac(value,key){return utilities.computeHmacSha256Signature(value,key);}
  function secretToken(){return hex(mac(utilities.getUuid()+':'+utilities.getUuid()+':'+clock(),pepper));}
+ function deriveSecret(purpose){
+  if(typeof purpose!=='string'||!purpose||purpose.length>500)throw new Error('INVALID_SECRET_PURPOSE');
+  return hex(mac('derived:'+purpose,pepper));
+ }
  function fixedEqual(a,b) {
   if(typeof a!=='string'||typeof b!=='string'||a.length!==b.length)return false;
   let difference=0;for(let i=0;i<a.length;i++)difference|=a.charCodeAt(i)^b.charCodeAt(i);
@@ -46,5 +50,5 @@ export function createGasSecurity({utilities,urlFetchApp,propertiesService,clock
    throw new Error('INVALID_GOOGLE_TOKEN');
   return {sub:String(claims.sub)};
  }
- return Object.freeze({sha256,secretToken,hashPassword,verifyPassword,verifyGoogle,fixedEqual,now:clock});
+ return Object.freeze({sha256,secretToken,deriveSecret,hashPassword,verifyPassword,verifyGoogle,fixedEqual,now:clock});
 }

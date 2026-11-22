@@ -4,10 +4,82 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
  const phone=v=>{if(typeof v!=='string'||!/^\+[1-9][0-9]{6,14}$/.test(v))throw new Error('INVALID_PHONE_E164');return v;};
- const audit=(actor,kind,entity,action)=>store.insert('vc_change_audit',{
-  audit_id:id(),actor_id:actor&&actor.userId||'PUBLIC_CAMPAIGN',entity_type:kind,entity_id:entity,
-  action,redacted_summary:action,correlation_id:id().slice(0,16),created_at:now()
+ const audit=(actor,kind,entity,action,identity={})=>store.insert('vc_change_audit',{
+  audit_id:identity.auditId||id(),actor_id:actor&&actor.userId||'PUBLIC_CAMPAIGN',entity_type:kind,entity_id:entity,
+  action,redacted_summary:action,correlation_id:identity.correlationId||id().slice(0,16),created_at:now()
  });
+ const latestJournal=(operation,entityId)=>store.listNewest('vc_operation_journal',{operation,entity_id:entityId},20).at(-1)||null;
+ const parseJournal=row=>{try{return JSON.parse(row?.detail_json||'{}');}catch{return {};}};
+ const reviewStatus=decision=>decision==='APPROVE'?'APPROVED':'REJECTED';
+ const reviewAction=decision=>decision==='APPROVE'?'REGISTRATION_APPROVED':'REGISTRATION_REJECTED';
+ const reviewToken=(eventId,requestId)=>security.deriveSecret('registration-review:'+eventId+':'+requestId);
+ function ensureReviewAudit(detail){
+  if(!store.one('vc_change_audit',{audit_id:detail.auditId}))audit({userId:detail.actorId},'registration',detail.requestId,
+   reviewAction(detail.decision),{auditId:detail.auditId,correlationId:detail.correlationId});
+ }
+ function reviewResult(request,journal,detail){
+  const result={requestId:request.request_id,vehicleId:request.vehicle_id,status:reviewStatus(detail.decision)};
+  if(detail.decision==='APPROVE'){
+   const token=reviewToken(journal.event_id,request.request_id),qr=store.one('vc_qr_tokens',{qr_id:detail.qrId});
+   if(!qr||qr.vehicle_id!==request.vehicle_id||qr.status!=='ACTIVE'||qr.token_digest!==security.sha256(token))throw new Error('OPERATION_RECOVERY_REQUIRED');
+   result.qrToken=token;result.qrId=detail.qrId;
+  }
+  return result;
+ }
+ function completeReviewState(request,app,journal,detail){
+  if(request.status!==reviewStatus(detail.decision))return false;
+  if(detail.decision==='REJECT')return true;
+  const vehicle=store.one('vc_vehicles',{vehicle_id:request.vehicle_id});
+  const contacts=store.list('vc_vehicle_contacts',{vehicle_id:request.vehicle_id},10).filter(x=>x.status==='ACTIVE');
+  const photos=store.list('vc_vehicle_photos',{vehicle_id:request.vehicle_id},10).filter(x=>x.status==='ACTIVE');
+  const qr=store.one('vc_qr_tokens',{qr_id:detail.qrId}),token=reviewToken(journal.event_id,request.request_id);
+  const expectedPhotos=(app.photos||[]).map(x=>x.photoId).sort(),actualPhotos=photos.map(x=>x.photo_id).sort();
+  return !!vehicle&&vehicle.status==='ACTIVE'&&contacts.length===1
+   &&JSON.stringify(expectedPhotos)===JSON.stringify(actualPhotos)
+   &&!!qr&&qr.vehicle_id===request.vehicle_id&&qr.status==='ACTIVE'&&qr.token_digest===security.sha256(token);
+ }
+ function rollbackReviewPartial(request){
+  const errors=[],attempt=fn=>{try{fn();}catch(error){errors.push(String(error?.message||'COMPENSATION_FAILED').slice(0,64));}};
+  for(const row of store.list('vc_qr_tokens',{vehicle_id:request.vehicle_id},10))attempt(()=>store.remove('vc_qr_tokens',{qr_id:row.qr_id}));
+  for(const row of store.list('vc_vehicle_photos',{vehicle_id:request.vehicle_id},10))attempt(()=>store.remove('vc_vehicle_photos',{photo_id:row.photo_id}));
+  for(const row of store.list('vc_vehicle_contacts',{vehicle_id:request.vehicle_id},10))attempt(()=>store.remove('vc_vehicle_contacts',{contact_id:row.contact_id}));
+  if(store.one('vc_vehicles',{vehicle_id:request.vehicle_id}))attempt(()=>store.remove('vc_vehicles',{vehicle_id:request.vehicle_id}));
+  const current=store.one('vc_registration_requests',{request_id:request.request_id});
+  if(current&&current.status!=='PENDING_APPROVAL')attempt(()=>store.update('vc_registration_requests',{request_id:request.request_id},{status:'PENDING_APPROVAL',reviewed_by:'',reviewed_at:''}));
+  return errors;
+ }
+ function applyReview(journal,detail,request,app){
+  let terminalApplied=false;
+  try{
+   if(detail.decision==='APPROVE'){
+    if(store.list('vc_vehicles').some(v=>v.vehicle_id!==request.vehicle_id&&v.plate_normalized===app.plate_normalized&&v.province_code===app.province_code&&v.status==='ACTIVE'))throw new Error('DUPLICATE_VEHICLE');
+    store.insert('vc_vehicles',{vehicle_id:request.vehicle_id,plate_normalized:app.plate_normalized,province_code:app.province_code,
+     vehicle_type:app.vehicle_type,make:app.make,model:app.model,color:app.color,status:'ACTIVE',version:1,
+     created_at:now(),updated_at:now(),created_by:detail.actorId,updated_by:detail.actorId,plate_type:app.plate_type,organization_id:app.organization_id});
+    store.insert('vc_vehicle_contacts',{contact_id:detail.contactId,vehicle_id:request.vehicle_id,display_name:app.contactName,phone_e164:app.contactPhone,
+     relationship:app.relationship,is_primary:true,status:'ACTIVE',verified_at:now(),created_at:now(),updated_at:now()});
+    for(const f of app.photos)store.insert('vc_vehicle_photos',{photo_id:f.photoId,vehicle_id:request.vehicle_id,
+     slot:f.slot,storage_ref:f.storageRef,mime_type:f.mimeType,size_bytes:f.sizeBytes,status:'ACTIVE',version:1,created_at:now()});
+    const token=reviewToken(journal.event_id,request.request_id);
+    store.insert('vc_qr_tokens',{qr_id:detail.qrId,vehicle_id:request.vehicle_id,token_digest:security.sha256(token),
+     issued_at:now(),revoked_at:'',issued_by:detail.actorId,reason:'REGISTRATION_APPROVED',status:'ACTIVE'});
+   }
+   store.update('vc_registration_requests',{request_id:request.request_id},{status:reviewStatus(detail.decision),reviewed_by:detail.actorId,reviewed_at:now()});
+   terminalApplied=true;ensureReviewAudit(detail);
+   store.update('vc_operation_journal',{event_id:journal.event_id},{status:'APPLIED'});
+   return reviewResult(store.one('vc_registration_requests',{request_id:request.request_id}),journal,detail);
+  }catch(error){
+   if(terminalApplied){
+    try{store.update('vc_operation_journal',{event_id:journal.event_id},{status:'RECOVERY_REQUIRED',detail_json:JSON.stringify({...detail,recovery:{stage:'TERMINAL_STATE_APPLIED'}})});}catch{}
+    throw new Error('OPERATION_RECOVERY_REQUIRED');
+   }
+   const errors=rollbackReviewPartial(request);
+   try{store.update('vc_operation_journal',{event_id:journal.event_id},{status:errors.length?'RECOVERY_REQUIRED':'ROLLED_BACK',
+    detail_json:JSON.stringify({...detail,recovery:{stage:'REVIEW_WRITES',errors}})});}catch{errors.push('JOURNAL_UPDATE_FAILED');}
+   if(errors.length)throw new Error('OPERATION_RECOVERY_REQUIRED');
+   throw error;
+  }
+ }
  function lookupAudit(actor,vehicleId,source,result){
   store.sequence(()=>store.insert('vc_lookup_audit',{audit_id:id(),actor_id:actor.userId,vehicle_id:vehicleId,
    lookup_source:source,result,correlation_id:id().slice(0,16),created_at:now()}));
@@ -137,28 +209,36 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   const requestId=need(p.requestId,'REQUEST_ID');
   if(!['APPROVE','REJECT'].includes(p.decision))throw new Error('INVALID_DECISION');
   return store.withLock(()=>{
-   const r=store.one('vc_registration_requests',{request_id:requestId});
-   if(!r||r.status!=='PENDING_APPROVAL')throw new Error('INVALID_REQUEST_STATE');
-   const app=JSON.parse(r.application_json),decision=p.decision;
-   let qrToken=null,qrId=null;
-   if(decision==='APPROVE'){
-    if(p.platePhotoVerified!==true)throw new Error('PLATE_PHOTO_NOT_VERIFIED');
-    if(store.list('vc_vehicles').some(v=>v.plate_normalized===app.plate_normalized&&v.province_code===app.province_code&&v.status==='ACTIVE'))throw new Error('DUPLICATE_VEHICLE');
-    store.insert('vc_vehicles',{vehicle_id:r.vehicle_id,plate_normalized:app.plate_normalized,province_code:app.province_code,
-     vehicle_type:app.vehicle_type,make:app.make,model:app.model,color:app.color,status:'ACTIVE',version:1,
-     created_at:now(),updated_at:now(),created_by:a.userId,updated_by:a.userId,plate_type:app.plate_type,organization_id:app.organization_id});
-    store.insert('vc_vehicle_contacts',{contact_id:id(),vehicle_id:r.vehicle_id,display_name:app.contactName,phone_e164:app.contactPhone,
-     relationship:app.relationship,is_primary:true,status:'ACTIVE',verified_at:now(),created_at:now(),updated_at:now()});
-    for(const f of app.photos)store.insert('vc_vehicle_photos',{photo_id:f.photoId,vehicle_id:r.vehicle_id,
-     slot:f.slot,storage_ref:f.storageRef,mime_type:f.mimeType,size_bytes:f.sizeBytes,status:'ACTIVE',version:1,created_at:now()});
-    qrToken=id();qrId=id();
-    store.insert('vc_qr_tokens',{qr_id:qrId,vehicle_id:r.vehicle_id,token_digest:security.sha256(qrToken),
-     issued_at:now(),revoked_at:'',issued_by:a.userId,reason:'REGISTRATION_APPROVED',status:'ACTIVE'});
+   let r=store.one('vc_registration_requests',{request_id:requestId});
+   if(!r)throw new Error('INVALID_REQUEST_STATE');
+   const app=JSON.parse(r.application_json),decision=p.decision,previous=latestJournal('registrations.review',requestId),prior=parseJournal(previous);
+   if(decision==='APPROVE'&&p.platePhotoVerified!==true)throw new Error('PLATE_PHOTO_NOT_VERIFIED');
+   if(previous&&['PREPARED','RECOVERY_REQUIRED'].includes(previous.status)){
+    if(prior.decision!==decision)throw new Error('OPERATION_RECOVERY_REQUIRED');
+    if(completeReviewState(r,app,previous,prior)){
+     ensureReviewAudit(prior);store.update('vc_operation_journal',{event_id:previous.event_id},{status:'APPLIED'});
+     return reviewResult(r,previous,prior);
+    }
+    const errors=rollbackReviewPartial(r);
+    if(errors.length){
+     try{store.update('vc_operation_journal',{event_id:previous.event_id},{status:'RECOVERY_REQUIRED',detail_json:JSON.stringify({...prior,recovery:{stage:'RESTART_CLEANUP',errors}})});}catch{}
+     throw new Error('OPERATION_RECOVERY_REQUIRED');
+    }
+    r=store.one('vc_registration_requests',{request_id:requestId});
+    if(!r||r.status!=='PENDING_APPROVAL')throw new Error('OPERATION_RECOVERY_REQUIRED');
+    return applyReview(previous,prior,r,app);
    }
-   store.update('vc_registration_requests',{request_id:requestId},{status:decision==='APPROVE'?'APPROVED':'REJECTED',reviewed_by:a.userId,reviewed_at:now()});
-   audit(a,'registration',requestId,decision==='APPROVE'?'REGISTRATION_APPROVED':'REGISTRATION_REJECTED');
-   return {requestId,vehicleId:r.vehicle_id,status:decision==='APPROVE'?'APPROVED':'REJECTED',
-    ...(qrToken?{qrToken,qrId}:{})};
+   if(previous&&previous.status==='APPLIED'&&prior.decision===decision){
+    if(!completeReviewState(r,app,previous,prior))throw new Error('OPERATION_RECOVERY_REQUIRED');
+    ensureReviewAudit(prior);return reviewResult(r,previous,prior);
+   }
+   if(r.status!=='PENDING_APPROVAL')throw new Error('INVALID_REQUEST_STATE');
+   const eventId=id(),detail={operation:'registrations.review',requestId,vehicleId:r.vehicle_id,decision,actorId:a.userId,
+    contactId:id(),qrId:decision==='APPROVE'?id():'',auditId:id(),correlationId:id().slice(0,16)};
+   const journal={event_id:eventId,operation:'registrations.review',entity_id:requestId,actor_id:a.userId,
+    status:'PREPARED',detail_json:JSON.stringify(detail),created_at:now()};
+   store.insert('vc_operation_journal',journal);
+   return applyReview(journal,detail,r,app);
   });
  }
  function vehicleView(v,actor,source) {

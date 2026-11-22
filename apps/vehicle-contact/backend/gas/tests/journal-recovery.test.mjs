@@ -23,7 +23,7 @@ function seedPartialSubmit(h,ctx,{requestId,vehicleId,eventId,claimPhotos,quota}
  if(claimPhotos)for(const p of ctx.photos)h.store.update('vc_photo_staging',{photo_id:p.photoId},{status:'CLAIMED',used_at:h.now()});
  if(quota)h.store.update('vc_campaigns',{campaign_id:ctx.campaign.campaignId},{submitted_count:1});
 }
-const journalOf=(h,requestId)=>h.read('vc_operation_journal').find(j=>j.entity_id===requestId);
+const journalOf=(h,entityId,operation='registrations.submit')=>h.read('vc_operation_journal').find(j=>j.entity_id===entityId&&j.operation===operation);
 
 test('RECOVERY-01 timeout after request+photos+quota (no idempotency commit) reconciles on retry',()=>{
  const h=createAcceptanceHarness(),ctx=submitContext(h);
@@ -82,26 +82,88 @@ test('RECOVERY-04 aborted attempt before any business write (PREPARED, no orphan
  assert.equal(journalOf(h,'req-abort-04').status,'PREPARED','inert aborted journal flagged for runbook cleanup');
 });
 
-test('DSEQ09-01 assignRoles partial write (remove succeeds, insert fails) loses roles — no journal/compensation',()=>{
+test('B2B-ROLE-01 assignRoles caught partial write restores prior roles and journals ROLLED_BACK',()=>{
  const h=createAcceptanceHarness();
  assert.ok(h.read('vc_user_roles').some(r=>r.user_id==='u-staff'&&r.role_id==='STAFF'),'precondition: staff has a role');
- const w=h.io.writes;h.setWriteFailAfter(w+2); // +1 session last_seen touch, +1 existing-role remove, then fail the first insert
+ const w=h.io.writes;h.setWriteFailAfterOnce(w+3); // session touch + PREPARED journal + existing-role remove, then fail first insert once
  assertError(assert,h.as('sys','users.assignRoles',{userId:'u-staff',roles:['STAFF','OWNER']}),'OPERATION_FAILED','injected insert failure');
- h.setWriteFailAfter(null);
- assert.equal(h.read('vc_user_roles').filter(r=>r.user_id==='u-staff').length,0,'GAP: roles removed but not re-inserted; manual recovery required (runbook)');
- assert.equal(h.read('vc_operation_journal').filter(j=>j.operation==='users.assignRoles').length,0,'assignRoles writes no journal');
+ assert.deepEqual(h.read('vc_user_roles').filter(r=>r.user_id==='u-staff'&&r.status==='ACTIVE').map(r=>r.role_id),['STAFF']);
+ const journal=h.read('vc_operation_journal').filter(j=>j.operation==='users.assignRoles').at(-1);
+ assert.equal(journal.status,'ROLLED_BACK');
+ assert.equal(h.read('vc_change_audit').filter(a=>a.action==='ROLES_CHANGED'&&a.entity_id==='u-staff').length,0);
 });
 
-test('DSEQ09-02 registrationReview partial write leaves orphan ACTIVE vehicle, request still PENDING — no compensation',()=>{
+test('B2B-ROLE-02 assignRoles restart converges a PREPARED partial and replay stays idempotent',()=>{
+ const h=createAcceptanceHarness(),eventId='evt-role-restart',auditId='audit-role-restart';
+ const old=h.read('vc_user_roles').find(r=>r.user_id==='u-staff');
+ h.store.remove('vc_user_roles',{assignment_id:old.assignment_id});
+ h.seed('vc_user_roles',[{assignment_id:'partial-owner-role',user_id:'u-staff',role_id:'OWNER',status:'ACTIVE'}]);
+ h.seed('vc_operation_journal',[{event_id:eventId,operation:'users.assignRoles',entity_id:'u-staff',actor_id:'u-sys',status:'PREPARED',created_at:h.now(),
+  detail_json:JSON.stringify({operation:'users.assignRoles',userId:'u-staff',actorId:'u-sys',beforeRoles:['STAFF'],desiredRoles:['OWNER','STAFF'],auditId,correlationId:'role-restart'})}]);
+ const recovered=assertOk(assert,h.as('sys','users.assignRoles',{userId:'u-staff',roles:['STAFF','OWNER']}),'restart recovery');
+ assert.deepEqual(recovered.roles,['STAFF','OWNER']);
+ assert.deepEqual(h.read('vc_user_roles').filter(r=>r.user_id==='u-staff'&&r.status==='ACTIVE').map(r=>r.role_id).sort(),['OWNER','STAFF']);
+ assert.equal(journalOf(h,'u-staff','users.assignRoles').status,'APPLIED');
+ assert.equal(h.read('vc_change_audit').filter(a=>a.audit_id===auditId).length,1);
+ const journalCount=h.read('vc_operation_journal').filter(j=>j.operation==='users.assignRoles'&&j.entity_id==='u-staff').length;
+ assertOk(assert,h.as('sys','users.assignRoles',{userId:'u-staff',roles:['STAFF','OWNER']}),'idempotent replay');
+ assert.equal(h.read('vc_operation_journal').filter(j=>j.operation==='users.assignRoles'&&j.entity_id==='u-staff').length,journalCount);
+ assert.equal(h.read('vc_change_audit').filter(a=>a.audit_id===auditId).length,1);
+});
+
+test('B2B-REVIEW-01 registrationReview caught partial write removes orphan state and journals ROLLED_BACK',()=>{
  const h=createAcceptanceHarness(),ctx=submitContext(h);
  const sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
  h.setWriteFailure('vc_vehicle_contacts'); // vehicle insert succeeds, contact insert fails
  assertError(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'OPERATION_FAILED','injected contact failure');
  h.setWriteFailure(null);
- assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,1,'GAP: orphan vehicle inserted');
- assert.equal(h.read('vc_registration_requests').find(r=>r.request_id===sub.requestId).status,'PENDING_APPROVAL','GAP: request not advanced');
+ assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,0,'orphan vehicle compensated');
+ assert.equal(h.read('vc_registration_requests').find(r=>r.request_id===sub.requestId).status,'PENDING_APPROVAL');
  assert.equal(h.read('vc_vehicle_contacts').filter(c=>c.vehicle_id===sub.vehicleId).length,0,'no contact written');
  assert.equal(h.read('vc_qr_tokens').filter(q=>q.vehicle_id===sub.vehicleId).length,0,'no QR issued');
+ assert.equal(h.read('vc_operation_journal').filter(j=>j.operation==='registrations.review'&&j.entity_id===sub.requestId).at(-1).status,'ROLLED_BACK');
+});
+
+test('B2B-REVIEW-02 registrationReview restart cleans a PREPARED partial and replays the same derived token',()=>{
+ const h=createAcceptanceHarness(),ctx=submitContext(h),sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
+ const request=h.read('vc_registration_requests').find(r=>r.request_id===sub.requestId),app=JSON.parse(request.application_json);
+ const eventId='evt-review-restart',auditId='audit-review-restart',qrId='qr-review-restart';
+ const detail={operation:'registrations.review',requestId:sub.requestId,vehicleId:sub.vehicleId,decision:'APPROVE',actorId:'u-reg',
+  contactId:'contact-review-restart',qrId,auditId,correlationId:'review-restart'};
+ h.seed('vc_operation_journal',[{event_id:eventId,operation:'registrations.review',entity_id:sub.requestId,actor_id:'u-reg',status:'PREPARED',created_at:h.now(),detail_json:JSON.stringify(detail)}]);
+ h.seed('vc_vehicles',[{vehicle_id:sub.vehicleId,plate_normalized:app.plate_normalized,province_code:app.province_code,vehicle_type:app.vehicle_type,
+  make:app.make,model:app.model,color:app.color,status:'ACTIVE',version:1,created_at:h.now(),updated_at:h.now(),created_by:'u-reg',updated_by:'u-reg',
+  plate_type:app.plate_type,organization_id:app.organization_id}]);
+ const recovered=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'restart review recovery');
+ assert.match(recovered.qrToken,/^[a-f0-9]{64}$/);assert.equal(recovered.qrId,qrId);
+ assert.equal(h.read('vc_operation_journal').find(j=>j.event_id===eventId).status,'APPLIED');
+ assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,1);
+ assert.equal(h.read('vc_vehicle_contacts').filter(c=>c.vehicle_id===sub.vehicleId).length,1);
+ assert.equal(h.read('vc_vehicle_photos').filter(p=>p.vehicle_id===sub.vehicleId).length,5);
+ assert.equal(h.read('vc_qr_tokens').find(q=>q.qr_id===qrId).token_digest,h.security.sha256(recovered.qrToken));
+ const replay=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'review replay');
+ assert.equal(replay.qrToken,recovered.qrToken);assert.equal(h.read('vc_change_audit').filter(a=>a.audit_id===auditId).length,1);
+ assert.equal(h.read('vc_qr_tokens').filter(q=>q.vehicle_id===sub.vehicleId).length,1);
+});
+
+test('B2B-REVIEW-03 stale PREPARED marker after terminal writes finalizes without duplicates',()=>{
+ const h=createAcceptanceHarness(),ctx=submitContext(h),sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
+ const first=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const journal=h.read('vc_operation_journal').filter(j=>j.operation==='registrations.review'&&j.entity_id===sub.requestId).at(-1);
+ h.store.update('vc_operation_journal',{event_id:journal.event_id},{status:'PREPARED'});
+ const replay=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'restart after terminal writes');
+ assert.equal(replay.qrToken,first.qrToken);assert.equal(journalOf(h,sub.requestId,'registrations.review').status,'APPLIED');
+ assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,1);
+ assert.equal(h.read('vc_qr_tokens').filter(q=>q.vehicle_id===sub.vehicleId).length,1);
+});
+
+test('B2B-REVIEW-04 mismatched retry intent fails closed without changing the pending request',()=>{
+ const h=createAcceptanceHarness(),ctx=submitContext(h),sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
+ h.seed('vc_operation_journal',[{event_id:'evt-review-mismatch',operation:'registrations.review',entity_id:sub.requestId,actor_id:'u-reg',status:'PREPARED',created_at:h.now(),
+  detail_json:JSON.stringify({operation:'registrations.review',requestId:sub.requestId,vehicleId:sub.vehicleId,decision:'APPROVE',actorId:'u-reg',contactId:'c',qrId:'q',auditId:'a',correlationId:'x'})}]);
+ assertError(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'REJECT'}),'OPERATION_RECOVERY_REQUIRED','conflicting restart intent');
+ assert.equal(h.read('vc_registration_requests').find(r=>r.request_id===sub.requestId).status,'PENDING_APPROVAL');
+ assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,0);
 });
 
 test('DSEQ09-03 executeDeletion partial write removes photos but leaves contacts/vehicle; job DELETION_FAILED (retry required)',()=>{
