@@ -26,7 +26,7 @@ Vue 3 + Vite SPA สำหรับพิสูจน์การเชื่อ
 - Dashboard และ sidebar สร้างเมนูจาก permission ที่ `auth.session` คืนมา โดย GAS เป็น SSOT ของสิทธิ์
 - แสดง logical error และ request ID สำหรับวิเคราะห์ปัญหา
 
-POC นี้ยังไม่มี vehicle search หรือ QR scanner ใน SPA เมนูเหล่านั้นแสดงเป็นงานลำดับถัดไป
+SPA มี vehicle search และ QR resolver แล้ว โดย QR camera adapter เริ่มใช้งานกล้องเมื่อผู้ใช้กดเท่านั้น รองรับสลับ/เลือกกล้องและอ่านไฟล์ภาพแบบจำกัดชนิด/ขนาด พร้อมปิด decoder และ media tracks เมื่ออ่านสำเร็จ ล้มเหลว ซ่อนหน้า หรือออกจากหน้า การรองรับจริงบน Android/iOS ยังคงต้องมีหลักฐาน physical-device acceptance แยกจาก automated tests
 
 ## ผล browser integration ล่าสุด
 

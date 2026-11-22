@@ -1,6 +1,7 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
-**Last verified:** 2026-11-22 08:23 Asia/Bangkok
+**Last verified:** 2026-11-22 09:17 Asia/Bangkok
+**Handoff baseline:** PR **#111**, merged `main` @ **`ad7630e`**
 **Source/content baseline:** PR **#110**, merged `main` @ **`bf3553d`**
 **Status:** DEV engineering evidence is strong; **production readiness and all human sign-offs remain OPEN**.
 
@@ -47,7 +48,7 @@ Canonical evidence and commands: [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md
 
 | Work | State | Next boundary |
 |---|---|---|
-| QR camera | **WIP / recovery** | Recover the protected stash, integrate current `main`, add direct adapter-cleanup tests, then obtain physical Android/iOS acceptance. Not merged or deployed as accepted camera integration. |
+| QR camera | **DONE — engineering source (PR #112)** | Protected WIP recovered onto remote `main` base, direct adapter-cleanup tests pass, and source is delivered in PR #112. Physical Android/iOS and browser/business acceptance remain OPEN; source delivery is not device acceptance or deployment approval. |
 | B2b durable journaling | **TODO** | Add durable journaling/compensation for `registrationReview` and `assignRoles`; retain the [manual recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) until replacement evidence exists. |
 | C5 RETENTION_WORKER console | **BLOCKED — not in progress** | Wait for human **D5 + B3** decisions. Destructive retention remains disabled; no real-data rehearsal. |
 
@@ -61,29 +62,17 @@ Canonical evidence and commands: [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md
 
 ## 4. Exact next actions
 
-1. **Resume QR safely** using the recovery below; run focused cleanup tests and offline checks before any device acceptance. Record Android/iOS evidence separately from automated tests.
-2. **Implement B2b as a small backend slice** with injected-failure/restart tests, idempotent recovery and updated runbook/evidence. Do not enable destructive retention.
+1. **Obtain QR device acceptance** after reviewed Pages publication using named Android/iOS devices; record camera permission, switching, decode and cleanup evidence separately from the [offline engineering evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md).
+2. **Implement B2b as a separate backend PR** with injected-failure/restart tests, idempotent recovery and updated runbook/evidence. Do not enable destructive retention.
 3. **Keep C5 blocked** until the owner ratifies D5 and B3; only then implement the permission-gated console and synthetic two-person/`legal_hold` rehearsal.
 4. **Arrange human browser/business acceptance** for the delivered screens and journeys. Capture sanitized evidence; do not convert API automation into UAT approval.
 5. **Resolve release decisions and rotate credentials** through the owner/security process, then use the [production readiness plan](PRODUCTION_READINESS_PLAN_20261121.md) for any release-candidate deployment and final sign-off.
 
-## 5. QR WIP recovery
+## 5. QR recovery result
 
-The protected local WIP reference is:
+The protected WIP was recovered from the documented stash onto remote `main` @ `ad7630e`, resolved against Frontend **0.8.0**, committed at `d92e08c` and pushed as PR **#112**. Focused QR/resolve tests pass **16/16**, the Frontend suite passes **192/192**, build and dependency audit pass, and direct adapter-cleanup paths are covered. See [QR camera recovery evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md).
 
-```text
-stash@{0}: On codex/p6vc-qr-camera-scanner-20261120: wip: qr camera scanner before reference catalog
-```
-
-Verify the stash still exists before applying it. Use the `FETCH_HEAD` written by the immediately preceding fetch; do not substitute a potentially stale local `origin/main`. Safe continuation:
-
-```powershell
-git fetch origin main
-git switch -c codex/p6vc-qr-camera-scanner-resume FETCH_HEAD
-git stash apply 'stash@{0}'
-```
-
-Resolve against current Frontend **0.8.0 or later**, inspect the diff, and **do not drop the stash until the recovered work is safely committed and pushed**. Prior WIP evidence: pinned `html5-qrcode 2.3.8`, 12/12 focused tests, build and dependency audit passed. Direct adapter-cleanup tests and physical Android/iOS acceptance remain required.
+Do not recreate or reapply the historical stash over PR #112. Physical Android/iOS acceptance remains required and must not be inferred from offline tests.
 
 ## 6. Safety and deployment rules
 
@@ -98,6 +87,7 @@ Resolve against current Frontend **0.8.0 or later**, inspect the diff, and **do 
 
 - [Current live automation, reset and audit](LIVE_API_AUTOMATION.md)
 - [A2/A3 historical live DEV evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md)
+- [QR camera recovery engineering evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md)
 - [B1 org cycle](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md) · [B2 journal recovery](BACKEND_JOURNAL_RECOVERY_EVIDENCE_20261121.md) · [B4 login hardening](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md)
 - [C1 change review](C1_CHANGE_REVIEW_SCREEN_EVIDENCE_20261121.md) · [C2 detail](C2_VEHICLE_DETAIL_SCREEN_EVIDENCE_20261121.md) · [C3 maintenance](C3_VEHICLE_MAINTENANCE_SCREEN_EVIDENCE_20261121.md) · [C4 my vehicles](C4_MY_VEHICLES_SCREEN_EVIDENCE_20261121.md)
 - [Decision log](DECISION_LOG.md) · [Code map](CODE_MAP_20261121.md) · [Use-case SSOT](use-cases/README.md)

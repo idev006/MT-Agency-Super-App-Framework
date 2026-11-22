@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Production Readiness Plan
 
-**Document:** P6VC-PROD-PLAN-001 | **Opened:** 2026-11-21 | **Last verified:** 2026-11-22 08:23 Asia/Bangkok
-**Baseline:** PR **#110**, merged `main` @ **`bf3553d`**
+**Document:** P6VC-PROD-PLAN-001 | **Opened:** 2026-11-21 | **Last verified:** 2026-11-22 09:17 Asia/Bangkok
+**Baseline:** handoff PR **#111**, merged `main` @ **`ad7630e`**; implementation/content PR **#110** @ **`bf3553d`**
 **Status:** ACTIVE GATE TRACKER — **NOT PRODUCTION-READY AND NOT RELEASE-APPROVED**. The original 48-hour target is historical, not a remaining schedule or approval.
 
 Companions: [current status](CURRENT_DELIVERY_STATUS.md), [PM slice board](PROJECT_MANAGEMENT_PLAN_20261121.md), [E1 datastore decision packet](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md), and [E3 sign-off dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md).
@@ -39,7 +39,7 @@ Evidence: [live automation](LIVE_API_AUTOMATION.md), [C6](C6_ADMIN_VEHICLE_REGIS
 
 | Item | Owner/state | Required closure evidence |
 |---|---|---|
-| QR camera recovery | Engineering **WIP** | Integrate stash with current `main`; direct adapter-cleanup tests; no stash drop until recovery is safe. |
+| QR camera recovery | Engineering source **DONE — PR #112** | Recovered against remote `main`; direct adapter-cleanup and offline suites pass. [Evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md). This does not close device acceptance. |
 | Physical QR acceptance | Human/device **OPEN** | Android/iOS camera, decoding and switching evidence; automated tests cannot substitute. |
 | B2b durable journaling | Engineering **TODO** | Durable `registrationReview`/`assignRoles` recovery, fault/restart tests and runbook update. |
 | C5 console | **BLOCKED, not in progress** | Human D5 + B3 first; then gated UI and synthetic two-person/`legal_hold` rehearsal. Destructive retention stays disabled. |
@@ -55,7 +55,7 @@ Protected GitHub secrets `P6VC_TEST_USERNAME` / `P6VC_TEST_PASSWORD` are optiona
 
 ## 4. Release sequence — no date commitment
 
-1. Finish QR engineering and B2b; preserve C5 as blocked unless D5 and B3 are actually ratified.
+1. Finish B2b engineering and complete QR Android/iOS acceptance; preserve C5 as blocked unless D5 and B3 are actually ratified.
 2. Run relevant offline checks. Use the [live automation runbook](LIVE_API_AUTOMATION.md) only for authorized synthetic DEV verification, with exact transport and cleanup results reported.
 3. Complete human browser/business and physical-device acceptance; rotate credentials through the approved security process.
 4. Resolve D-E1/D3/D5/B3 and VC-ADR-014/015/017 as applicable; complete PDPA/security/UAT review.
