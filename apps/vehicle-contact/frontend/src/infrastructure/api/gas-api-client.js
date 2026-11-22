@@ -1,5 +1,7 @@
 const GAS_EXEC_URL = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/
 const WORKER_GATEWAY_URL = /^https:\/\/[A-Za-z0-9.-]+\/api\/frontend$/
+// Dev-only: local Firestore bridge for E2E without a GAS push. Never accepted in prod builds.
+const DEV_LOCAL_BRIDGE_URL = /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/api\/frontend$/
 
 export class GasApiError extends Error {
   constructor(message, { code = 'CLIENT_ERROR', requestId = '', cause } = {}) {
@@ -125,5 +127,6 @@ export function isValidWorkerEndpoint(endpoint) {
 }
 
 export function isValidApiEndpoint(endpoint, transport = 'direct') {
+  if (import.meta.env?.DEV && DEV_LOCAL_BRIDGE_URL.test(String(endpoint || '').trim())) return true
   return transport === 'worker' ? isValidWorkerEndpoint(endpoint) : isValidGasEndpoint(endpoint)
 }
