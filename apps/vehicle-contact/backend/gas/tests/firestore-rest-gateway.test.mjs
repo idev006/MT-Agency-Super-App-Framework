@@ -159,3 +159,19 @@ test('GW-10 token-exchange failure stops before Firestore; secrets never leak',(
   try{gw2.runTransaction(tx=>tx.update('vc_users','absent',{}));}catch(e){message=e.message;}
   assert.ok(!message.includes(fake2.state.issuedToken)&&!message.includes('BEGIN PRIVATE KEY'),'secret in error message');
 });
+
+// Live POC #2 lesson: :runQuery reports a missing composite index as HTTP 400 with a
+// STREAM-ARRAY body [{error:{status:'FAILED_PRECONDITION'}}]. The gateway must normalize
+// that shape to e.code so callers (index provisioner / retry seams) can react.
+test('GW-11 runQuery missing-index error arrives as stream array and surfaces FAILED_PRECONDITION code',()=>{
+  const {gw,fake}=run({strictIndexes:true});
+  fake.state.seed('vc_users','u1',{user_id:'u1',status:'ACTIVE',_seq:1});
+  assert.throws(()=>gw.query('vc_users',{where:[{field:'status',value:'ACTIVE'}],orderBy:{field:'_seq',direction:'asc'}}),
+    e=>e.code==='FAILED_PRECONDITION'&&e.httpStatus===400);
+  // equality-only (auto-merge) and single-field orderBy (automatic) need no composite
+  assert.equal(gw.query('vc_users',{where:[{field:'status',value:'ACTIVE'}]}).length,1);
+  assert.equal(gw.query('vc_users',{orderBy:{field:'_seq',direction:'asc'}}).length,1);
+  fake.state.addIndex('vc_users',[{fieldPath:'status',order:'ASCENDING'},{fieldPath:'_seq',order:'ASCENDING'}]);
+  const rows=gw.query('vc_users',{where:[{field:'status',value:'ACTIVE'}],orderBy:{field:'_seq',direction:'asc'}});
+  assert.deepEqual(rows.map(r=>r.id),['u1'],'query succeeds once the composite index exists');
+});
