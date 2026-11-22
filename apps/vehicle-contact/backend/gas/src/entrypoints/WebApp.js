@@ -1,6 +1,7 @@
 import {runStagingAuthAcceptance,runStagingLifecycleAcceptance} from '../infrastructure/testing/StagingAcceptanceProbe.js';
 import {normalizeNumberFormats} from '../infrastructure/persistence/sheets/NumberFormatRepair.js';
 import {repairDisplayErrors} from '../infrastructure/persistence/sheets/DisplayErrorRepair.js';
+import {resetDevData} from '../infrastructure/persistence/sheets/DevDataReset.js';
 import {benchmarkStagingPasswordHash} from '../infrastructure/security/HashDiagnostics.js';
 import {createOneTimeAdminPasswordReset} from '../infrastructure/security/AdminPasswordReset.js';
 import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
@@ -153,5 +154,20 @@ export function repairVehicleDisplayErrorsFromEditor() {
  const spreadsheetId=PropertiesService.getScriptProperties().getProperty('VEHICLE_SHEET_ID');
  const result=repairDisplayErrors({spreadsheetApp:SpreadsheetApp,spreadsheetId,lockService:LockService});
  Logger.log(JSON.stringify(result));
+ return result;
+}
+
+// Trusted GAS Editor ONLY. Synthetic DEV clean-slate truncate (Mode B). Requires an exact
+// script-property approval gate; clears transactional data rows only, preserves headers and
+// identity/config/reference tables, and captures a full backup before mutation. Never over HTTP.
+export function resetDevDataFromEditor() {
+ const props=PropertiesService.getScriptProperties();
+ if(props.getProperty('VEHICLE_DEV_RESET_APPROVED')!=='RUN_SYNTHETIC_DEV_RESET')
+  throw new Error('EXPLICIT_DEV_RESET_APPROVAL_REQUIRED');
+ const spreadsheetId=props.getProperty('VEHICLE_SHEET_ID');
+ const result=resetDevData({spreadsheetApp:SpreadsheetApp,spreadsheetId,lockService:LockService});
+ Logger.log(JSON.stringify({status:result.status,totalRowsCleared:result.totalRowsCleared,
+  backupRows:result.backupRows,clearedTables:result.clearedTables,preservedTables:result.preservedTables,
+  drift:result.drift||[],failedTable:result.failedTable||null})); // Counters only; no row values/PII.
  return result;
 }

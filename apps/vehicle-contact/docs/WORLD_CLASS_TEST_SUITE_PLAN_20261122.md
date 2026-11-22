@@ -104,22 +104,16 @@ Legend: **Now** = current evidence; **Add** = world-class expansion required (PR
 - **Idempotent + cleanup.** Re-running init converges to the same fixture set; `finally` cleanup revokes/suspends/logs out; cleanup failure fails the run.
 - **Restricted columns never logged.** Reports carry `secretsExposed:false`; no raw responses/PII/tokens.
 
-### 6.2 Mode A — lifecycle-safe reset (DELIVERED, preferred)
-Existing `.tmp/seed-dev-vehicles.mjs` (gitignored) runs **through the Worker**: retire synthetic vehicles via `vehicles.cancel`, revoke campaign, create N ACTIVE (1 contact / 5 photos / QR MATCH), verify lookup + registry, cleanup 2/2. Gate `RUN_SYNTHETIC_OWNER_DEV`, creds `P6VC_ADMIN_USER`/`P6VC_ADMIN_PASS`, `P6VC_SEED_COUNT` 1–20. Preserves relations; this is the default for re-initializing DEV.
+### 6.2 Mode A-full — bot-executable lifecycle clean init (DELIVERED)
+`backend/gas/scripts/reset-dev-data.mjs` (`npm run reset:dev -- --count=N`, N 1–20) runs **through the GAS API** under exact gate **`P6VC_ALLOW_DEV_RESET=RUN_SYNTHETIC_DEV_RESET`** + `P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV` + admin creds + exec-URL allowlist. It paginates the full inventory, takes a sanitized **backup snapshot before mutation**, retires only allowlisted synthetic ACTIVE vehicles (`vehicles.cancel`), revokes synthetic campaigns, disables synthetic orgs, suspends synthetic non-admin users, then **re-seeds N fresh ACTIVE** (1 contact / 5 photos / QR MATCH) and verifies lookup + photo count + QR resolve. Fails closed on any non-synthetic ACTIVE vehicle, schema/health mismatch or missing gate; `finally` cleanup; exit codes 0/1/2/3. Offline tests `tests/dev-data-reset.test.mjs` (8). Preserves audit/relational integrity (no physical row delete). **Executed live 2026-11-22: PASS 52/52, retired 10 vehicles / 3 campaigns / 6 orgs / 21 users, seeded 10 ACTIVE, cleanup 2/2** — see [DEV_CLEAN_RESET_EVIDENCE_20261122.md](DEV_CLEAN_RESET_EVIDENCE_20261122.md).
 
-### 6.3 Mode B — full synthetic truncate for clean init (PROPOSED, owner-authorized scope)
-For a truly clean slate the Owner has authorized clearing Sheet data for test init. Design a bot-executable `reset-dev-data` that:
-1. Requires exact gate **`P6VC_ALLOW_DEV_RESET=RUN_SYNTHETIC_DEV_RESET`** + admin creds + confirmed DEV spreadsheet ID.
-2. Takes a **backup snapshot** (export) and writes a `vc_operation_journal` / `vc_migration_journal` recovery record before mutation.
-3. Clears **only allowlisted synthetic rows** across the 25 tables (or full data rows in a confirmed disposable DEV sheet), **preserving headers/schema**; never touches `vc_migration_journal` history irreversibly without backup.
-4. Re-seeds reference catalog + synthetic admin/fixtures via API (Mode A) so the system is immediately testable.
-5. Runs the **25/25 Sheets display audit** (zero `#VALUE!`, zero repairs) and emits a sanitized JSON report.
-6. Fails closed on any non-synthetic row, schema mismatch, or missing gate; aborts on SIGINT/SIGTERM with persisted evidence.
+### 6.3 Mode B — physical synthetic truncate (SOURCE DELIVERED, execution gated)
+For a physically empty DEV sheet, `backend/gas/src/infrastructure/persistence/sheets/DevDataReset.js` + editor wrapper `resetDevDataFromEditor()` (`WebApp.js`) clear **data rows only** on 15 transactional tables, **preserving headers/schema** and 10 identity/config/reference/migration-history tables (`vc_users`, `vc_user_identities`, `vc_roles`, `vc_user_roles`, `vc_role_permissions`, `vc_user_permissions`, `vc_organizations`, `vc_settings`, `vc_reference_values`, `vc_migration_journal`). It captures a **full row backup before any clear**, fails closed on schema drift/missing table, and returns `PARTIAL_FAILURE` with the complete backup if a clear throws mid-way. Wrapper gate: script property **`VEHICLE_DEV_RESET_APPROVED=RUN_SYNTHETIC_DEV_RESET`** + `VEHICLE_SHEET_ID`; editor-only, never over HTTP. Offline injected-failure tests `tests/dev-data-reset-editor.test.mjs` (7); GAS-VM-03 wrapper guard passes.
 
-> Mode B is **not yet implemented**. It must be delivered as a gated, reviewed slice with injected-failure tests before any bot runs it. Until then, bots use Mode A.
+> **Execution boundary:** `clasp run` is not enabled (needs the Apps Script API in the script's GCP project — a one-time Owner action). Until then Mode B runs via the **GAS Editor Run dropdown** (Owner) after setting the approval property, or via `clasp run` once enabled. After truncate, re-seed with Mode A-full so the system is immediately testable. Mode B is **not** a retention/deletion path and never runs against production/real data.
 
 ### 6.4 Execution boundary
-Clearing data is a **live mutation**. A bot may run Mode A under the existing synthetic-write gate. Mode B requires the new exact gate **and** per-run Owner authorization. Neither mode may run against production or real data. This plan records the authorization; it does not execute a destructive clear.
+Clearing data is a **live mutation**. A bot runs Mode A-full under the exact synthetic gates (executed 2026-11-22). Mode B source is delivered; its physical execution requires the Owner editor Run or one-time `clasp run` enablement plus the approval property. Neither mode may run against production or real data.
 
 ## 7. Bot-executable automation contract
 
@@ -139,6 +133,8 @@ Live DEV (gated, mutating, synthetic only):
 #      P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV
 npm --prefix apps/vehicle-contact/backend/gas run test:live        # public+worker; auth optional
 npm --prefix apps/vehicle-contact/backend/gas run test:live:full   # fails closed without creds/gate
+# clean init (Mode A-full); also requires P6VC_ALLOW_DEV_RESET=RUN_SYNTHETIC_DEV_RESET
+P6VC_ALLOW_DEV_RESET=RUN_SYNTHETIC_DEV_RESET npm --prefix apps/vehicle-contact/backend/gas run reset:dev -- --count=10
 ```
 
 ### 7.2 Unified runner (PROPOSED)
