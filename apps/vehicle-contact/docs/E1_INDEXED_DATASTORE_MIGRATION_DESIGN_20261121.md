@@ -56,11 +56,27 @@ Target: **Firestore** in the same GCP project as GAS; collections mirror tabs (`
 7. **Re-test:** full persistence contract suite + live E2E + RBAC matrix + fail-closed against the new store; retention/legal_hold re-verified.
 8. **Gates:** separate owner approval (data-scale D-E1 + PDPA for the new store + security review). NOT part of the 48h release.
 
-## 6. Owner decision packet (D-E1)
+## 6. Owner decision packet (D-E1) — RESOLVED
 
-- [ ] **Choose:** (1) bounded-volume Sheets initial production **or** (2) approve Firestore migration project (separate timeline).
-- [ ] **Ratify volume caps** + retention/archive cadence that keep active set under cap.
-- [ ] **Ratify monitoring threshold** (p95 latency / quota) that triggers migration review.
-- [ ] **Acknowledge** Sheets O(rows) ceiling is accepted for initial production under the caps.
+**Owner ratified Option 2 (Firestore migration) in chat on 2026-11-22**, overriding the assistant's Option-1 recommendation for the 48h target. Recorded as [VC-ADR-019](DECISION_LOG.md). The migration is a **separate project, not part of the 48h release**; the live Sheets backend (V49/0.9.2) stays the system of record until cutover.
 
-**Status:** design complete, recommendation = Option 1. **Awaiting owner D-E1.** Assistant does not self-approve the data-scale decision.
+- [x] **Choose:** (2) approve Firestore migration project (separate timeline).
+- [x] **Keep the Sheets adapter** (owner direction): each DB engine is a swappable "black box" behind one interface — Sheets adapter retained for production/rollback/maintenance, Firestore adapter added alongside.
+- [ ] **New-store PDPA + security review** (data residency: Bangkok `asia-southeast3` available) — separate human gate, PENDING.
+- [ ] **Infra provisioning** (owner): GCP project + billing + Firestore database + service-account credentials in gitignored `.env`.
+- [ ] **Volume/latency monitoring threshold** that triggers cutover review (carried over from Option 1 discipline).
+
+## 7. Black-box persistence-adapter architecture (owner direction, F1 delivered)
+
+The owner asked that the DB engine be a **black box**, one per store (Sheets / Firestore). The codebase already implements this seam:
+
+- **Port (the black-box interface):** the runtime API depends only on an 8-method store contract — `one(name,filter)`, `list(name,filter?,limit?)`, `listNewest(name,filter?,limit?)`, `insert(name,data)`, `update(name,filter,patch)`, `remove(name,filter)`, `withLock(fn)`, `sequence(fn)`. `name` = a logical table in `DATABASE_SCHEMA`; records = plain objects keyed by canonical column; `filter` = equality conjunction.
+- **Composition root:** [Container.js](../backend/gas/src/composition/Container.js) builds `store` and injects it into `createOperationController`; all 55 operations and `SessionService` use only the port. No use-case imports Sheets specifics (the only Sheets-coupled application file, `AdminOperations.js`, is legacy/editor-only and not in the runtime dispatch).
+- **Proof of store-agnosticism:** the acceptance harness ([acceptance-fixture.mjs](../backend/gas/tests/acceptance-fixture.mjs)) runs the FULL real Router/Controller/UseCases/SessionService on an **in-memory store**, not Sheets — all 55 ops pass unchanged.
+- **F1 — executable contract:** [store-port-contract.test.mjs](../backend/gas/tests/store-port-contract.test.mjs) defines an adapter-agnostic suite (read-back, copies, primary-key uniqueness, required fields, bounded windows + `INVALID_LIMIT`, equality filter, fail-closed `one`/`update`/`remove`, `withLock`/`sequence`, `UNKNOWN_TABLE`). **The Sheets adapter and an in-memory reference pass the identical suite.** The Firestore adapter MUST pass the same suite to be a drop-in.
+
+**Firestore adapter mapping (F2 design):** table→collection; record→document (doc id = primary key); `filter`→indexed `where('==')` (composite indexes for multi-field); `list`/`listNewest`→`orderBy` a monotonic insertion key + `limit` (Firestore has no implicit row order, so the adapter must persist an ordering field — the contract test enforces the window semantics); `insert`→create-if-absent (`DUPLICATE_KEY` on conflict); `update`/`remove`→exactly-one within a transaction; `withLock`→transaction/optimistic concurrency; **`sequence`→a REAL Firestore transaction** (upgrades the no-op Sheets seam to ACID). GAS reaches Firestore via the REST API + service-account OAuth (`UrlFetchApp`), since the client SDK is not GAS-native.
+
+**Cutover/rollback (F3):** a composition-root flag (`VEHICLE_PERSISTENCE_BACKEND=sheets|firestore`) selects the adapter; dual-write journal → checksum backfill → flag cutover → rollback window (§5). Because both adapters satisfy one port, the application/DTO/permission/Worker/frontend layers stay unchanged.
+
+**Verification directive (owner, binding):** every API call must be confirmed against the **actually-persisted data**, not just the API response. For Firestore this means an independent read-back audit of the documents (mirroring the read-only Sheets gviz audit) after each live suite — API `OK` ≠ data proof.
