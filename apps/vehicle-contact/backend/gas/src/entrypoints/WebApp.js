@@ -2,6 +2,7 @@ import {runStagingAuthAcceptance,runStagingLifecycleAcceptance} from '../infrast
 import {normalizeNumberFormats} from '../infrastructure/persistence/sheets/NumberFormatRepair.js';
 import {repairDisplayErrors} from '../infrastructure/persistence/sheets/DisplayErrorRepair.js';
 import {resetDevData} from '../infrastructure/persistence/sheets/DevDataReset.js';
+import {runFirestoreRestPoc} from '../infrastructure/persistence/firestore/FirestoreRestPoc.js';
 import {benchmarkStagingPasswordHash} from '../infrastructure/security/HashDiagnostics.js';
 import {createOneTimeAdminPasswordReset} from '../infrastructure/security/AdminPasswordReset.js';
 import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
@@ -169,5 +170,27 @@ export function resetDevDataFromEditor() {
  Logger.log(JSON.stringify({status:result.status,totalRowsCleared:result.totalRowsCleared,
   backupRows:result.backupRows,clearedTables:result.clearedTables,preservedTables:result.preservedTables,
   drift:result.drift||[],failedTable:result.failedTable||null})); // Counters only; no row values/PII.
+ return result;
+}
+
+// POC #1 (F3a de-risk). Trusted GAS Editor ONLY; synthetic DEV Firestore proof of the
+// production path the Node SDK probe did not cover: GAS V8 SA OAuth (RS256 JWT via
+// Utilities.computeRsaSha256Signature) -> UrlFetchApp token exchange -> Firestore REST
+// write/read-back/runQuery/transaction/delete. Requires an exact script-property approval
+// gate plus the service-account key stored as a Script Property (secret, never in source).
+// The private key and access token are NEVER logged. Not callable over doGet/doPost.
+export function pocFirestoreRestFromEditor() {
+ const props=PropertiesService.getScriptProperties();
+ if(props.getProperty('VEHICLE_FIRESTORE_POC_APPROVED')!=='RUN_SYNTHETIC_FIRESTORE_POC')
+  throw new Error('EXPLICIT_FIRESTORE_POC_APPROVAL_REQUIRED');
+ const rawKey=props.getProperty('VEHICLE_FIRESTORE_SA_KEY');
+ if(!rawKey)throw new Error('FIRESTORE_SA_KEY_NOT_CONFIGURED');
+ const key=JSON.parse(rawKey);
+ const result=runFirestoreRestPoc({utilities:Utilities,urlFetchApp:UrlFetchApp,
+  clientEmail:key.client_email,privateKey:key.private_key,
+  projectId:props.getProperty('VEHICLE_FIRESTORE_PROJECT_ID')||key.project_id,
+  databaseId:props.getProperty('VEHICLE_FIRESTORE_DATABASE_ID')||'(default)'});
+ Logger.log(JSON.stringify(result)); // Sanitized steps/counters ONLY; no key, token or PII.
+ if(result.status!=='PASS')throw new Error('FIRESTORE_REST_POC_FAILED:'+(result.reason||result.status));
  return result;
 }
