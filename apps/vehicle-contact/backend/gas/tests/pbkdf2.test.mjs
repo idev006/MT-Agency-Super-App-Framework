@@ -37,6 +37,11 @@ assert.equal(hash,pbkdf2Sync(password,Buffer.from(salt,'hex'),150000,32,'sha256'
 assert.equal(security.verifyPassword(password,stored),true);
 assert.equal(security.verifyPassword('wrong password',stored),false);
 assert.throws(()=>security.hashPassword('too-short'),/INVALID_PASSWORD/);
+const replaySecret=security.deriveSecret('registration-review:event-1');
+assert.match(replaySecret,/^[a-f0-9]{64}$/);
+assert.equal(security.deriveSecret('registration-review:event-1'),replaySecret);
+assert.notEqual(security.deriveSecret('registration-review:event-2'),replaySecret);
+assert.throws(()=>security.deriveSecret(''),/INVALID_SECRET_PURPOSE/);
 // Only the random salt/token uses the GAS Utilities bridge: no 150k service invocations.
-assert.ok(hmacCalls<=2,'Unexpected GAS Utilities HMAC calls: '+hmacCalls);
+assert.ok(hmacCalls<=6,'Unexpected GAS Utilities HMAC calls: '+hmacCalls);
 console.log('PBKDF2 standard vectors, GAS security hash compatibility, 150k rounds and bounded Utilities calls PASSED');
