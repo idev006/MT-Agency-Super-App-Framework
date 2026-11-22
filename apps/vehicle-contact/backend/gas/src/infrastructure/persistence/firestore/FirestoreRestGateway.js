@@ -73,7 +73,10 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     const code=resp.getResponseCode(),text=resp.getContentText();
     let parsed=null;try{parsed=text?JSON.parse(text):null;}catch(_){parsed=null;}
     if(code<200||code>=300){
-      const status=parsed&&parsed.error&&parsed.error.status;
+      // Live contract (POC #2): :runQuery streams errors as [{error:{...}}], while
+      // :commit/:batchGet/etc return {error:{...}}. Normalize both shapes.
+      const errRoot=Array.isArray(parsed)?parsed.find(x=>x&&x.error):parsed;
+      const status=errRoot&&errRoot.error&&errRoot.error.status;
       throw Object.assign(new Error('FIRESTORE_'+(status||'HTTP_'+code)),{code:status||'HTTP_'+code,httpStatus:code});
     }
     return parsed;

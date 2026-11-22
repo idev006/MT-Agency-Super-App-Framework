@@ -63,12 +63,14 @@ const matches=(fields,w)=>{
   throw new Error('bad where');
 };
 
-export function createFakeFirestoreRest({tokenFails=false}={}){
+export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={}){
   const docs=new Map();
   const txs=new Set();
+  const indexes=new Set();
   const state={requests:[],tokenCount:0,issuedToken:null,residue:()=>docs.size,
     seed(coll,id,plain){docs.set(BASE+'/'+coll+'/'+id,encodeFields(plain));},
-    plain(coll,id){const f=docs.get(BASE+'/'+coll+'/'+id);return f?decodeFields(f):null;}};
+    plain(coll,id){const f=docs.get(BASE+'/'+coll+'/'+id);return f?decodeFields(f):null;},
+    addIndex(coll,fields){indexes.add(coll+'|'+fields.map(f=>f.fieldPath+':'+(f.order||'ASCENDING')).join(','));}};
   const reply=(code,body)=>({getResponseCode:()=>code,getContentText:()=>body===undefined?'':JSON.stringify(body)});
   const err=(code,status,message)=>reply(code,{error:{code,status,message}});
   function fetch(url,opts={}){
@@ -126,6 +128,21 @@ export function createFakeFirestoreRest({tokenFails=false}={}){
       if(body.transaction&&!txs.has(body.transaction))return err(400,'INVALID_ARGUMENT','unknown transaction');
       const sq=body.structuredQuery||{};
       const coll=(sq.from&&sq.from[0]&&sq.from[0].collectionId)||'';
+      if(strictIndexes&&sq.orderBy){
+        // Live contract (POC #2): equality-only filters auto-merge and single-field
+        // orderBy is automatic, but where+orderBy needs a composite index — and the
+        // error arrives as a STREAM ARRAY [{error:{...}}], not a bare {error:{...}}.
+        const eq=[];const walk=w=>{if(!w)return;if(w.fieldFilter)eq.push(w.fieldFilter.field.fieldPath);
+          if(w.compositeFilter)(w.compositeFilter.filters||[]).forEach(walk);};
+        walk(sq.where);
+        const ob=sq.orderBy.map(o=>o.field.fieldPath);
+        if(eq.some(f=>!ob.includes(f))||ob.length>1){
+          const spec=coll+'|'+[...eq.map(f=>f+':ASCENDING'),
+            ...sq.orderBy.map(o=>o.field.fieldPath+':'+(o.direction||'ASCENDING'))].join(',');
+          if(!indexes.has(spec))
+            return reply(400,[{error:{code:400,status:'FAILED_PRECONDITION',message:'The query requires an index.'}}]);
+        }
+      }
       let rows=[...docs.entries()].filter(([name])=>name.startsWith(BASE+'/'+coll+'/'));
       if(sq.where)rows=rows.filter(([,fields])=>matches(fields,sq.where));
       if(sq.orderBy){
