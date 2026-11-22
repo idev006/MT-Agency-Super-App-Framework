@@ -2,7 +2,7 @@
 
 **Document ID:** P6VC-DEPLOY-001  
 **Date:** 2026-11-17  
-**State:** LATEST SOURCE PUSH VERIFIED 2026-11-22 — [run 45010301788](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/45010301788), commit `8fd9d3a`, **57 modules** pushed, GAS **version 50** created. NOT A WEB APP DEPLOYMENT; the published Web App remains **V49 / 0.9.2** (publication is a separate owner action). Full read-back evidence: [GAS Test Evidence — Version 50](GAS_TEST_EVIDENCE.md). First authenticated push: run 44033187307 (2026-11-17, commit `75c26b39`, version 3).
+**State:** LATEST SOURCE PUSH VERIFIED 2026-11-22 — [run 45010301788](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/45010301788), commit `8fd9d3a`, **57 modules** pushed, GAS **version 50** created. The CI workflow itself **never publishes**. Version 50 was **subsequently PUBLISHED** to the Worker-facing live deployment via the owner-authorized assistant clasp self-deploy path (owner `approve`); live is now **V50 / 0.9.2**, runtime-identical to V49 (F2 adapter unwired, schema metadata only), health re-verified `ready` direct (×2) + Worker→GAS end-to-end 200. Full read-back evidence: [GAS Test Evidence — Version 50 publication](GAS_TEST_EVIDENCE.md). First authenticated push: run 44033187307 (2026-11-17, commit `75c26b39`, version 3).
 **GitHub SSOT:** [deploy-vehicle-gas.yml](../../../.github/workflows/deploy-vehicle-gas.yml)  
 **Target GAS Script ID (provided by owner):** `1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX`  
 **Script editor:** https://script.google.com/d/1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX/edit
