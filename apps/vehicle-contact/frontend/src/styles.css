@@ -266,6 +266,25 @@ textarea {
   }
 }
 
+/* Auto black/white semantic text for WCAG AA on all 35 themes; DaisyUI noise texture hides these failures from axe. */
+:root[data-theme] {
+  --color-primary-content: contrast-color(var(--color-primary));
+  --color-secondary-content: contrast-color(var(--color-secondary));
+  --color-accent-content: contrast-color(var(--color-accent));
+  --color-neutral-content: contrast-color(var(--color-neutral));
+  --color-info-content: contrast-color(var(--color-info));
+  --color-success-content: contrast-color(var(--color-success));
+  --color-warning-content: contrast-color(var(--color-warning));
+  --color-error-content: contrast-color(var(--color-error));
+}
+
+/* >=44px touch on coarse pointers only; keeps desktop density and the native button/input sizing contract. */
+@media (pointer: coarse) {
+  .btn {
+    min-height: 2.75rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
