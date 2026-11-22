@@ -8,7 +8,7 @@
 
 **Code commit:** `63ac42f` (branch `codex/p6vc-ui-density-p13-20261122`)
 
-**Directive:** Owner 2026-11-22 — every page leads with a key message; minimize whole-page scroll; compact control/form footprint. Encoded as [P13](../FRONTEND_UI_UX_PRINCIPLES.md) and [G11](../FRONTEND_UI_COMPLIANCE_CHECKLIST.md).
+**Directive:** Owner 2026-11-22 — every page leads with a key message; minimize whole-page scroll; compact control/form footprint. Encoded as [P13](FRONTEND_UI_UX_PRINCIPLES.md) and [G11](FRONTEND_UI_COMPLIANCE_CHECKLIST.md).
 
 ## 1. Evidence header
 
@@ -69,7 +69,7 @@ Screenshots (950x570): [full page](evidence/ui-density-p13-20261122/review-detai
 
 - **Reduce whitespace, not accessibility.** Density must come from margin/padding/gap and internal panel scroll; never from shrinking body <16px, labels <14px, or touch <44px. Encode the constraint in the principle (P13) so future pages inherit it.
 - **Accessible name from content beats aria-label override** for buttons that already show a caption: an `sr-only` prefix keeps the name descriptive AND satisfies `label-content-name-mismatch`.
-- **Correct-empty vs broken-empty:** an empty queue is only a defect if persisted PENDING rows exist; always read back the store before "fixing" an empty state (see [system audit](../SYSTEM_AUDIT_EMPTY_REVIEW_QUEUE_20261121.md)).
+- **Correct-empty vs broken-empty:** an empty queue is only a defect if persisted PENDING rows exist; always read back the store before "fixing" an empty state (see [system audit](SYSTEM_AUDIT_EMPTY_REVIEW_QUEUE_20261121.md)).
 
 ## 6. Owner / QA follow-ups (not self-approved)
 
