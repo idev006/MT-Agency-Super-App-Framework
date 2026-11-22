@@ -14,11 +14,11 @@ const containerClass = computed(() => ({
   wide: 'max-w-7xl',
   full: 'max-w-none',
 }[props.size]))
-const contentClass = computed(() => slots.aside ? 'grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,.42fr)]' : '')
+const contentClass = computed(() => slots.aside ? 'grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(19rem,.42fr)]' : '')
 </script>
 
 <template>
-  <article class="page-template mx-auto w-full space-y-8 p-4 sm:p-6 lg:p-8" :class="containerClass">
+  <article class="page-template mx-auto w-full space-y-4 p-3 sm:p-4 lg:p-5" :class="containerClass">
     <nav v-if="$slots.breadcrumbs" class="text-sm text-base-content/75" aria-label="เส้นทางหน้าปัจจุบัน">
       <slot name="breadcrumbs" />
     </nav>
@@ -26,8 +26,8 @@ const contentClass = computed(() => slots.aside ? 'grid gap-6 lg:grid-cols-[minm
     <header class="page-template__header">
       <div class="min-w-0 flex-1">
         <p v-if="eyebrow" class="text-sm font-medium text-base-content/75">{{ eyebrow }}</p>
-        <h1 class="mt-1 text-[1.75rem] font-semibold leading-9 sm:text-3xl sm:leading-10">{{ title }}</h1>
-        <p v-if="description" class="mt-3 max-w-3xl leading-7 text-base-content/70">{{ description }}</p>
+        <h1 class="text-xl font-semibold leading-7 sm:text-2xl sm:leading-8">{{ title }}</h1>
+        <p v-if="description" class="mt-1 max-w-3xl text-base leading-6 text-base-content/80">{{ description }}</p>
       </div>
       <div v-if="$slots.actions" class="page-template__actions"><slot name="actions" /></div>
     </header>

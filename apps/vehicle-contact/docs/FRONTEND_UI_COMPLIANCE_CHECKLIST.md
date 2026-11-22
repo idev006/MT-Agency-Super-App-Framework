@@ -121,6 +121,14 @@ Known exclusions:
 - [ ] rollback path และ environment notice ถูกตรวจ
 - [ ] production/real-data approval แยกจาก technical deployment
 
+### G11 — Key message & viewport density (P13) — BLOCKING
+
+- [ ] ทุกหน้าขึ้นต้นด้วย key message กระชับ (วัตถุประสงค์ + ผลลัพธ์หลัก) เข้าใจงานได้ใน glance เดียว
+- [ ] งานหลักพอดี viewport เท่าที่เป็นไปได้; รายการ/รายละเอียดที่ยาว scroll ภายใน panel ที่จำกัดความสูง ไม่ใช่ยืดทั้งหน้า
+- [ ] control/form กระชับ (ลด margin/padding/gap, visual footprint เล็ก) โดยไม่ละเมิด G4 touch ≥44px, G5 body ≥16px/label ≥14px, G6 contrast/focus
+- [ ] ลด whitespace ไม่ใช่ accessibility; mobile คง touch target ที่เข้าถึงได้
+- [ ] spacing สม่ำเสมอรอบ token set ความหนาแน่นใหม่ ไม่ hardcode กระจัดกระจาย
+
 ## 4. Result template
 
 | Gate | Result | Evidence | Owner | Follow-up |
@@ -135,7 +143,8 @@ Known exclusions:
 | G8 Engineering | NOT RUN |  |  |  |
 | G9 Visual review | NOT RUN |  |  |  |
 | G10 Release | NOT RUN |  |  |  |
+| G11 Key message/density | NOT RUN |  |  |  |
 
 ## 5. Definition of Done
 
-Frontend work is `DONE-EVIDENCED` only when G1–G9 are PASS for source review and G10 is PASS for the target environment ผู้พัฒนาหน้าไม่ควรเป็นผู้อนุมัติ visual/accessibility review เพียงคนเดียว และ security/privacy approval สำหรับข้อมูลจริงต้องมาจากผู้มีอำนาจที่ได้รับแต่งตั้ง
+Frontend work is `DONE-EVIDENCED` only when G1–G9 และ G11 เป็น PASS สำหรับ source review และ G10 เป็น PASS สำหรับ target environment ผู้พัฒนาหน้าไม่ควรเป็นผู้อนุมัติ visual/accessibility review เพียงคนเดียว และ security/privacy approval สำหรับข้อมูลจริงต้องมาจากผู้มีอำนาจที่ได้รับแต่งตั้ง

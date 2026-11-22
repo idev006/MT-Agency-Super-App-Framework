@@ -19,20 +19,20 @@ const expiryLabel = computed(() => {
 </script>
 
 <template>
-  <section class="stats stats-vertical w-full border border-base-300 bg-base-100 shadow-none md:stats-horizontal" aria-label="บริบทการปฏิบัติงาน">
+  <section class="operational-context stats stats-vertical w-full border border-base-300 bg-base-100 shadow-none md:stats-horizontal" aria-label="บริบทการปฏิบัติงาน">
     <div class="stat min-w-0">
       <div class="stat-title">หน้าที่ปัจจุบัน</div>
-      <div class="stat-value truncate text-lg font-semibold" :title="presentedRoles">{{ presentedRoles }}</div>
+      <div class="stat-value truncate text-base font-semibold" :title="presentedRoles">{{ presentedRoles }}</div>
       <div class="stat-desc sr-only">รหัสบทบาท {{ roles.join(', ') }}</div>
     </div>
     <div class="stat min-w-0">
       <div class="stat-title">เส้นทางเชื่อมต่อ</div>
-      <div class="stat-value text-lg font-semibold">{{ connectionLabel }}</div>
+      <div class="stat-value text-base font-semibold">{{ connectionLabel }}</div>
       <div class="stat-desc flex items-center gap-2"><span class="status status-success" aria-hidden="true"></span>พร้อมใช้งาน</div>
     </div>
     <div class="stat min-w-0">
       <div class="stat-title">เซสชันสิ้นสุด</div>
-      <div class="stat-value text-lg font-semibold">{{ expiryLabel }}</div>
+      <div class="stat-value text-base font-semibold">{{ expiryLabel }}</div>
       <div class="stat-desc">เวลาไทย (Asia/Bangkok)</div>
     </div>
   </section>

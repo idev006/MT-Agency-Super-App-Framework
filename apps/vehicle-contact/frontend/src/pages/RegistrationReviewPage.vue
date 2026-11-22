@@ -60,59 +60,59 @@ async function confirmDecision() {
     <template #breadcrumbs><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span> / ตรวจสอบการลงทะเบียน</span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
 
-    <div v-if="work.oneTimeQr.value" class="alert alert-success mb-5 items-start" role="status">
+    <div v-if="work.oneTimeQr.value" class="alert alert-success mb-3 items-start py-2" role="status">
       <div class="min-w-0"><strong>อนุมัติแล้ว — บันทึก QR token ตอนนี้</strong><p class="mt-1 break-all font-mono text-sm">{{ work.oneTimeQr.value.token }}</p><p class="mt-1 text-sm">ระบบจะแสดงค่านี้ครั้งเดียว และไม่บันทึกไว้ใน browser</p></div>
       <button class="btn btn-sm" type="button" @click="work.clearOneTimeQr">ปิด</button>
     </div>
 
-    <div v-if="work.phase.value === 'loading'" class="flex min-h-32 items-center justify-center" role="status"><span class="loading loading-spinner"></span><span class="sr-only">กำลังโหลดรายการ</span></div>
-    <div v-else-if="work.phase.value === 'forbidden'" class="alert alert-warning">เซสชันนี้ไม่มีสิทธิ์ตรวจสอบการลงทะเบียน</div>
-    <div v-else-if="work.phase.value === 'unauthenticated'" class="alert alert-warning">เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง</div>
-    <div v-else-if="work.phase.value === 'error'" class="alert alert-error"><span>โหลดรายการไม่สำเร็จ ({{ work.failure.value?.code }})</span><button class="btn btn-sm" type="button" @click="work.load">ลองอีกครั้ง</button></div>
-    <div v-else-if="work.phase.value === 'empty'" class="alert alert-info">ไม่มีคำขอลงทะเบียนที่รอตรวจสอบ</div>
+    <div v-if="work.phase.value === 'loading'" class="flex min-h-24 items-center justify-center" role="status"><span class="loading loading-spinner"></span><span class="sr-only">กำลังโหลดรายการ</span></div>
+    <div v-else-if="work.phase.value === 'forbidden'" class="alert alert-warning py-2">เซสชันนี้ไม่มีสิทธิ์ตรวจสอบการลงทะเบียน</div>
+    <div v-else-if="work.phase.value === 'unauthenticated'" class="alert alert-warning py-2">เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง</div>
+    <div v-else-if="work.phase.value === 'error'" class="alert alert-error py-2"><span>โหลดรายการไม่สำเร็จ ({{ work.failure.value?.code }})</span><button class="btn btn-sm" type="button" @click="work.load">ลองอีกครั้ง</button></div>
+    <div v-else-if="work.phase.value === 'empty'" class="alert alert-info py-2">ไม่มีคำขอลงทะเบียนที่รอตรวจสอบ — คิวนี้แสดงเฉพาะคำขอสถานะ “รอตรวจ” คำขอที่อนุมัติหรือปฏิเสธแล้วจะไม่ปรากฏที่นี่</div>
 
     <template v-else>
-      <div class="grid gap-5 xl:grid-cols-[minmax(18rem,0.9fr)_minmax(0,1.4fr)]">
+      <div class="grid gap-3 xl:grid-cols-[minmax(16rem,0.8fr)_minmax(0,1.5fr)]">
         <section aria-labelledby="registration-queue-title">
-          <h2 id="registration-queue-title" class="mb-3 text-xl font-semibold">รายการรอตรวจสอบ</h2>
-          <ul class="list rounded-box border border-base-300 bg-base-100">
-            <li v-for="item in work.registrations.value" :key="item.requestId" class="list-row grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-              <div class="min-w-0"><strong class="block truncate">คำขอ <span class="font-mono" :title="item.requestId">{{ shortId(item.requestId) }}</span></strong><p class="mt-1 text-sm text-base-content/65">ส่งเมื่อ {{ formatBangkokDateTime(item.submittedAt, '-') }}</p></div>
+          <h2 id="registration-queue-title" class="mb-2 text-base font-semibold">รายการรอตรวจสอบ</h2>
+          <ul class="list rounded-box border border-base-300 bg-base-100 [&>li]:py-2">
+            <li v-for="item in work.registrations.value" :key="item.requestId" class="list-row grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+              <div class="min-w-0"><strong class="block truncate">คำขอ <span class="font-mono" :title="item.requestId">{{ shortId(item.requestId) }}</span></strong><p class="mt-0.5 text-sm text-base-content/65">ส่งเมื่อ {{ formatBangkokDateTime(item.submittedAt, '-') }}</p></div>
               <button class="btn btn-sm" type="button" @click="work.inspect(item.requestId)">ตรวจรายละเอียด</button>
             </li>
           </ul>
-          <PaginationControl class="mt-4" :page="work.page.value" :page-size="work.pageSize.value" :total-items="work.pagination.value.total" :disabled="work.phase.value === 'loading'" label="แบ่งหน้าคำขอลงทะเบียน" @update:page="work.changePage" @update:page-size="work.changePageSize" />
+          <PaginationControl class="mt-3" :page="work.page.value" :page-size="work.pageSize.value" :total-items="work.pagination.value.total" :disabled="work.phase.value === 'loading'" label="แบ่งหน้าคำขอลงทะเบียน" @update:page="work.changePage" @update:page-size="work.changePageSize" />
         </section>
 
-        <section class="rounded-box border border-base-300 bg-base-100 p-5 sm:p-6" aria-labelledby="registration-detail-title">
-          <div v-if="work.phase.value === 'loading-detail'" class="flex min-h-48 items-center justify-center" role="status"><span class="loading loading-spinner"></span><span class="sr-only">กำลังโหลดรายละเอียด</span></div>
-          <div v-else-if="!work.selected.value" class="grid min-h-48 place-items-center text-center text-base-content/65"><p>เลือกรายการเพื่อดูข้อมูลและหลักฐานก่อนตัดสินใจ</p></div>
+        <section class="rounded-box border border-base-300 bg-base-100 p-3 sm:p-4 xl:max-h-[calc(100vh-13rem)] xl:overflow-y-auto" aria-labelledby="registration-detail-title">
+          <div v-if="work.phase.value === 'loading-detail'" class="flex min-h-32 items-center justify-center" role="status"><span class="loading loading-spinner"></span><span class="sr-only">กำลังโหลดรายละเอียด</span></div>
+          <div v-else-if="!work.selected.value" class="grid min-h-32 place-items-center text-center text-base text-base-content/65"><p>เลือกรายการเพื่อดูข้อมูลและหลักฐานก่อนตัดสินใจ</p></div>
           <template v-else>
-            <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="flex flex-wrap items-start justify-between gap-2">
               <div class="min-w-0">
-                <p class="flex flex-wrap items-center gap-2 text-sm text-base-content/60">
+                <p class="flex flex-wrap items-center gap-1.5 text-sm text-base-content/60">
                   <span>คำขอ <span class="font-mono" :title="work.selected.value.requestId">{{ shortId(work.selected.value.requestId) }}</span></span>
                   <button class="btn btn-ghost btn-sm" type="button" @click="copyRequestId">{{ copied ? 'คัดลอกแล้ว' : 'คัดลอกเลขเต็ม' }}</button>
-                  <span class="badge badge-warning">{{ work.selected.value.status }}</span>
+                  <span class="badge badge-warning badge-sm">{{ work.selected.value.status }}</span>
                 </p>
-                <h2 id="registration-detail-title" class="mt-1 text-2xl font-semibold">{{ work.selected.value.application.plate }} · {{ work.selected.value.application.province }}</h2>
-                <p class="mt-1 text-sm text-base-content/60">ส่งเมื่อ {{ formatBangkokDateTime(work.selected.value.submittedAt, '-') }}</p>
+                <h2 id="registration-detail-title" class="mt-0.5 text-lg font-semibold">{{ work.selected.value.application.plate }} · {{ work.selected.value.application.province }}</h2>
+                <p class="mt-0.5 text-sm text-base-content/60">ส่งเมื่อ {{ formatBangkokDateTime(work.selected.value.submittedAt, '-') }}</p>
               </div>
               <button class="btn btn-ghost btn-sm" type="button" @click="work.clearSelection">ปิดรายละเอียด</button>
             </div>
-            <dl class="mt-5 grid gap-4 sm:grid-cols-2">
+            <dl class="mt-3 grid gap-2 sm:grid-cols-2">
               <div><dt class="text-sm text-base-content/60">ยานพาหนะ</dt><dd class="font-medium">{{ work.selected.value.application.brand }} {{ work.selected.value.application.model }} · {{ work.selected.value.application.color }}</dd></div>
               <div><dt class="text-sm text-base-content/60">ประเภท</dt><dd class="font-medium">{{ work.selected.value.application.vehicleType }} / {{ work.selected.value.application.plateType }}</dd></div>
               <div><dt class="text-sm text-base-content/60">ผู้ประสานงาน</dt><dd class="font-medium">{{ work.selected.value.application.contactName }} · {{ work.selected.value.application.contactPhone }}</dd></div>
               <div><dt class="text-sm text-base-content/60">ความสัมพันธ์</dt><dd class="font-medium">{{ work.selected.value.application.relationship }}</dd></div>
             </dl>
-            <div class="mt-5">
+            <div class="mt-3">
               <div class="flex flex-wrap items-center justify-between gap-2">
-                <h3 class="font-semibold">หลักฐานภาพ {{ detailPhotos.length }} รายการ</h3>
-                <span v-if="activeSlot" class="badge badge-ghost">{{ slotLabel(activeSlot) }}</span>
+                <h3 class="text-sm font-semibold">หลักฐานภาพ {{ detailPhotos.length }} รายการ</h3>
+                <span v-if="activeSlot" class="badge badge-ghost badge-sm">{{ slotLabel(activeSlot) }}</span>
               </div>
-              <div class="mt-3 overflow-hidden rounded-box border border-base-300 bg-base-200">
-                <div class="relative aspect-[4/3] w-full">
+              <div class="mt-2 overflow-hidden rounded-box border border-base-300 bg-base-200">
+                <div class="relative aspect-[4/3] w-full max-h-64">
                   <img v-if="activePhotoState?.status === 'ready'" :src="activePhotoState.dataUrl" :alt="`ภาพหลักฐานยานพาหนะ ${slotLabel(activeSlot)}`" class="absolute inset-0 h-full w-full object-contain" />
                   <div v-else-if="activePhotoState?.status === 'error'" class="absolute inset-0 grid place-items-center p-4 text-center">
                     <div>
@@ -123,12 +123,13 @@ async function confirmDecision() {
                   <div v-else class="absolute inset-0 grid place-items-center" role="status"><span class="loading loading-spinner loading-lg"></span><span class="sr-only">กำลังโหลดภาพหลักฐาน</span></div>
                 </div>
               </div>
-              <ul class="mt-3 grid grid-cols-5 gap-2">
+              <ul class="mt-2 grid grid-cols-5 gap-1.5">
                 <li v-for="photo in detailPhotos" :key="photo.photoId">
                   <button type="button" class="block w-full overflow-hidden rounded-box border-2 bg-base-200"
                     :class="photo.photoId === work.activePhotoId.value ? 'border-primary' : 'border-transparent hover:border-base-300'"
-                    :aria-pressed="photo.photoId === work.activePhotoId.value" :aria-label="`ดูภาพ${slotLabel(photo.slot)}`"
+                    :aria-pressed="photo.photoId === work.activePhotoId.value"
                     @click="work.selectPhoto(photo.photoId)">
+                    <span class="sr-only">ดูภาพ</span>
                     <span class="relative block aspect-square w-full">
                       <img v-if="work.photoStates.value[photo.photoId]?.status === 'ready'" :src="work.photoStates.value[photo.photoId].dataUrl" alt="" class="absolute inset-0 h-full w-full object-cover" />
                       <span v-else-if="work.photoStates.value[photo.photoId]?.status === 'error'" class="absolute inset-0 grid place-items-center text-xs text-error">ผิดพลาด</span>
@@ -138,17 +139,17 @@ async function confirmDecision() {
                   </button>
                 </li>
               </ul>
-              <p class="mt-2 text-xs text-base-content/60">ภาพแสดงในหน่วยความจำเท่านั้น ไม่บันทึกลงเครื่อง และการเปิดภาพแต่ละครั้งถูกบันทึก audit</p>
+              <p class="mt-2 text-sm text-base-content/60">ภาพแสดงในหน่วยความจำเท่านั้น ไม่บันทึกลงเครื่อง และการเปิดภาพแต่ละครั้งถูกบันทึก audit</p>
             </div>
-            <label class="mt-5 flex min-h-11 cursor-pointer items-start gap-3 rounded-box border border-base-300 p-4"><input v-model="platePhotoVerified" class="checkbox checkbox-primary mt-0.5" type="checkbox" /><span><strong class="block">ตรวจสอบภาพป้ายทะเบียนแล้ว</strong><small class="text-base-content/65">ต้องยืนยันก่อนอนุมัติ ระบบจะสร้างยานพาหนะ ผู้ประสานงาน และ QR</small></span></label>
-            <div class="sticky bottom-0 z-10 mt-5 flex flex-col-reverse gap-3 border-t border-base-300 bg-base-100 py-3 sm:static sm:flex-row sm:justify-end sm:border-0 sm:py-0"><button class="btn" type="button" @click="requestDecision('REJECT')">ปฏิเสธคำขอ</button><button class="btn btn-primary" type="button" :disabled="!platePhotoVerified" @click="requestDecision('APPROVE')">อนุมัติการลงทะเบียน</button></div>
+            <label class="mt-3 flex min-h-11 cursor-pointer items-start gap-2 rounded-box border border-base-300 p-3"><input v-model="platePhotoVerified" class="checkbox checkbox-primary mt-0.5" type="checkbox" /><span><strong class="block">ตรวจสอบภาพป้ายทะเบียนแล้ว</strong><small class="text-base-content/65">ต้องยืนยันก่อนอนุมัติ ระบบจะสร้างยานพาหนะ ผู้ประสานงาน และ QR</small></span></label>
+            <div class="sticky bottom-0 z-10 mt-3 flex flex-col-reverse gap-2 border-t border-base-300 bg-base-100 py-2 sm:static sm:flex-row sm:justify-end sm:border-0 sm:py-0"><button class="btn" type="button" @click="requestDecision('REJECT')">ปฏิเสธคำขอ</button><button class="btn btn-primary" type="button" :disabled="!platePhotoVerified" @click="requestDecision('APPROVE')">อนุมัติการลงทะเบียน</button></div>
           </template>
         </section>
       </div>
     </template>
 
-    <div v-if="work.actionPhase.value === 'uncertain'" class="alert alert-warning mt-5">ไม่ทราบผลการตัดสินใจแน่ชัด ห้ามกดซ้ำ ให้โหลดรายการใหม่และตรวจสถานะก่อน</div>
-    <div v-else-if="work.actionPhase.value === 'error'" class="alert alert-error mt-5">บันทึกผลไม่สำเร็จ ({{ work.failure.value?.code }})</div>
+    <div v-if="work.actionPhase.value === 'uncertain'" class="alert alert-warning mt-3">ไม่ทราบผลการตัดสินใจแน่ชัด ห้ามกดซ้ำ ให้โหลดรายการใหม่และตรวจสถานะก่อน</div>
+    <div v-else-if="work.actionPhase.value === 'error'" class="alert alert-error mt-3">บันทึกผลไม่สำเร็จ ({{ work.failure.value?.code }})</div>
     <template #footer><p class="text-sm text-base-content/70">สิทธิ์บนหน้าจอช่วยนำทางเท่านั้น GAS จะตรวจสิทธิ์และสถานะคำขออีกครั้งก่อนบันทึกผล</p></template>
   </PageTemplateComponent>
 
