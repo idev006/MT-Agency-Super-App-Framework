@@ -27,6 +27,8 @@ Full automation details and merge/report provenance: [LIVE_API_AUTOMATION](LIVE_
 
 ## 2. Open human gates (the real critical path) — ALL OPEN
 
+**Decision sheet companion:** [Owner decision briefing](OWNER_DECISION_BRIEFING_20261122.md) lays out D-E1/D3/D5/B3 and VC-ADR-014/015/017 as explicit options with recommendations and a consequence map. This dossier remains the sign-off *record* (§4); the briefing is the *choice* sheet. Neither self-approves any gate.
+
 ### 2.1 PDPA
 - [ ] Lawful basis + consent + rights + retention + ROPA + notices + review checklist sign-off. Pack: [PDPA_GOVERNANCE_PACK](PDPA_GOVERNANCE_PACK.md), [PDPA_LAWFUL_BASIS_DECISION](PDPA_LAWFUL_BASIS_DECISION.md), [PDPA_CONSENT_AND_RIGHTS](PDPA_CONSENT_AND_RIGHTS.md), [PDPA_DATA_RETENTION_AND_RELEASE_GATE](PDPA_DATA_RETENTION_AND_RELEASE_GATE.md), [PDPA_ROPA_REGISTER](PDPA_ROPA_REGISTER.md), [PDPA_PRIVACY_NOTICES](PDPA_PRIVACY_NOTICES.md), [PDPA_REVIEW_CHECKLIST](PDPA_REVIEW_CHECKLIST.md).
 - [ ] Destructive-retention enable (D5) + business mapping (B3) before C5 console goes live; synthetic rehearsal only, two-person, legal_hold. C5 remains blocked and is not approved by this dossier.
