@@ -16,6 +16,7 @@ const TOKEN_URL='https://oauth2.googleapis.com/token';
 const PROJECT='mt-iam-core-2026';
 const DATABASE='(default)';
 const BASE='https://firestore.googleapis.com/v1/projects/'+PROJECT+'/databases/'+DATABASE+'/documents';
+const API_ROOT='https://firestore.googleapis.com/v1/';
 const CLIENT_EMAIL='p6vc-firestore-dev@'+PROJECT+'.iam.gserviceaccount.com';
 const MARKER='SYNTHETIC_DEV_REST_POC';
 const COLL='__p6vc_rest_poc';
@@ -46,12 +47,14 @@ const decodeValue=v=>{
   throw new Error('bad value');
 };
 const decodeFields=f=>{const o={};for(const k of Object.keys(f||{}))o[k]=decodeValue(f[k]);return o;};
+// Real Firestore returns map keys in nondeterministic order; mirror that (reverse-sorted, recursive).
+const reorder=f=>{const o={};for(const k of Object.keys(f||{}).sort().reverse()){const v=f[k];o[k]=v.mapValue?{mapValue:{fields:reorder(v.mapValue.fields)}}:v;}return o;};
 
 // In-memory Firestore REST server + a token endpoint that REALLY verifies the RS256 JWT.
 function makeFakeUrlFetch({tokenFails=false,corruptRead=false,commitFails=false}={}){
   const docs=new Map(); // name -> encoded fields
   const txs=new Set();
-  const state={jwtVerified:false,jwtClaims:null,issuedToken:null,requests:[],residue:()=>docs.size};
+  const state={jwtVerified:false,jwtClaims:null,issuedToken:null,requests:[],readKeyOrders:[],residue:()=>docs.size};
   const reply=(code,body)=>({getResponseCode:()=>code,getContentText:()=>body===undefined?'':JSON.stringify(body)});
   function fetch(url,opts={}){
     const method=(opts.method||'get').toLowerCase();
@@ -82,19 +85,24 @@ function makeFakeUrlFetch({tokenFails=false,corruptRead=false,commitFails=false}
       if(body.transaction){if(!txs.has(body.transaction))return reply(400,{error:{code:400,status:'INVALID_ARGUMENT'}});txs.delete(body.transaction);}
       const writeResults=[];
       for(const w of body.writes||[]){
-        if(w.update){docs.set(w.update.name,w.update.fields);writeResults.push({updateTime:CLOCK()});}
-        else if(w.delete){docs.delete(w.delete);writeResults.push({});}
+        const rel=w.update?w.update.name:w.delete;
+        if(typeof rel!=='string'||!rel.startsWith('projects/'))return reply(400,{error:{code:400,status:'INVALID_ARGUMENT',message:'Document name "'+rel+'" lacks "projects" at index 0.'}});
+        const full=API_ROOT+rel;
+        if(w.update){docs.set(full,w.update.fields);writeResults.push({updateTime:CLOCK()});}
+        else{docs.delete(full);writeResults.push({});}
       }
       return reply(200,{writeResults,commitTime:CLOCK()});
     }
     if(rest.endsWith(':runQuery')){
-      const coll=rest.slice(0,-':runQuery'.length);
+      if(rest!==':runQuery')return reply(400,{error:{code:400,status:'INVALID_ARGUMENT',message:'Invalid JSON payload received. Unknown name "structuredQuery" at \'document\': Cannot find field.'}});
       const sq=body.structuredQuery||{};
+      const coll=(sq.from&&sq.from[0]&&sq.from[0].collectionId)||'';
       const ff=sq.where&&sq.where.fieldFilter;
       let rows=[...docs.entries()].filter(([name])=>name.startsWith(BASE+'/'+coll+'/'));
       if(ff)rows=rows.filter(([,fields])=>decodeValue(fields[ff.field.fieldPath])===decodeValue(ff.value));
-      if(sq.limit)rows=rows.slice(0,sq.limit);
-      return reply(200,rows.map(([name,fields])=>({document:{name,fields,createTime:CLOCK(),updateTime:CLOCK()},readTime:CLOCK()})));
+      const lim=sq.limit&&typeof sq.limit==='object'?sq.limit.value:sq.limit;
+      if(lim)rows=rows.slice(0,lim);
+      return reply(200,rows.map(([name,fields])=>({document:{name:name.slice(API_ROOT.length),fields,createTime:CLOCK(),updateTime:CLOCK()},readTime:CLOCK()})));
     }
     const [coll,docId]=rest.split('/');
     const name=BASE+'/'+coll+'/'+docId;
@@ -103,7 +111,9 @@ function makeFakeUrlFetch({tokenFails=false,corruptRead=false,commitFails=false}
       if(!docs.has(name))return reply(404,{error:{code:404,status:'NOT_FOUND',message:'Document not found'}});
       let fields=docs.get(name);
       if(corruptRead){fields={...fields,seq:{integerValue:'999'}};}
-      return reply(200,{name,fields,createTime:CLOCK(),updateTime:CLOCK()});
+      const returned=reorder(fields);
+      state.readKeyOrders.push(Object.keys(returned));
+      return reply(200,{name,fields:returned,createTime:CLOCK(),updateTime:CLOCK()});
     }
     if(method==='delete'){docs.delete(name);return reply(200,{});}
     return reply(405,{error:{code:405,status:'METHOD_NOT_ALLOWED'}});
@@ -139,6 +149,10 @@ test('POC-OFFLINE-02 full REST path passes with independent read-backs (8/8)',()
   assert.ok(verbs.includes('get'),'read-back used GET');
   assert.ok(verbs.includes('post'),'runQuery/transaction used POST');
   assert.ok(verbs.includes('delete'),'delete used DELETE');
+  const query=fake.state.requests.find(r=>r.url.endsWith(':runQuery'));
+  assert.equal(query.url,BASE+':runQuery','runQuery must target the documents parent (collection-suffixed URL is routed to createDocument by the real API)');
+  const commitReq=fake.state.requests.find(r=>r.url.endsWith(':commit'));
+  assert.ok(JSON.parse(commitReq.payload).writes[0].update.name.startsWith('projects/'),'commit update.name must be a relative resource name, not a URL');
 });
 
 test('POC-OFFLINE-03 typed-value codec round-trips string/int/bool/nested/array',()=>{
@@ -196,4 +210,13 @@ test('POC-OFFLINE-09 config gate rejects a bad key before any network call',()=>
   assert.equal(result.status,'FAIL');
   assert.equal(result.steps.find(s=>s.id==='POC-01.CONFIG').ok,false);
   assert.equal(fake.state.requests.length,0,'network called despite invalid config');
+});
+
+test('POC-OFFLINE-10 read-back deep-equal survives Firestore key reordering (top-level + nested)',()=>{
+  const {result,fake}=run();
+  const write=fake.state.requests.find(r=>r.method==='patch');
+  const written=Object.keys(JSON.parse(write.payload).fields);
+  assert.notDeepEqual(fake.state.readKeyOrders[0],written,'fake GET must reorder keys to mirror real Firestore');
+  assert.equal(result.steps.find(s=>s.id==='POC-04.READ_BACK').ok,true);
+  assert.equal(result.status,'PASS');
 });
