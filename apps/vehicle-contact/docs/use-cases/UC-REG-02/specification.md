@@ -1,5 +1,5 @@
 # UC-REG-02 — Administrator review, approval or rejection of vehicle registration
-**Status:** DESIGN_BASELINED_FROM_SOURCE; LIVE_GAS_ACCEPTANCE_PENDING
+**Status:** LIVE_DEV_API_SCOPE_VERIFIED; BROWSER_UAT_AND_PRODUCTION_GATES_OPEN
 **Actor:** REGISTRATION_ADMIN
 
 ## 1. Authority and scope
@@ -28,17 +28,17 @@ Insufficient approval permission, unreadable plate, duplicate active vehicle, al
 ## 6. Acceptance trace
 - Test case IDs: `ACTOR-03`, `EDGE-02`, `GAS-FLOW.APPROVE`.
 - Executable evidence references: `backend/gas/tests/actor-usecase-acceptance.test.mjs`.
-- Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **WIRED_IN_SOURCE / LIVE_ACCEPTANCE_PENDING**; route, queue, detail, pagination, explicit approve/reject confirmation and Cloudflare DTO allowlist are recorded in [FE-REGISTRATION-ADMIN-01 evidence](../../FRONTEND_FE_REGISTRATION_ADMIN_01_EVIDENCE_20261120.md).
+- Aggregate PR #110 / bf3553d live DEV evidence covers 56/56 API operations (97/97 checks); it does not prove every business branch, external provider/device behavior, destructive retention execution, browser/business UAT or production approval.
+- FE status: **WIRED_IN_SOURCE / LIVE_API_VERIFIED / BROWSER_UAT_OPEN**; route, queue, detail, pagination, explicit approve/reject confirmation and Cloudflare DTO allowlist are recorded in [FE-REGISTRATION-ADMIN-01 evidence](../../FRONTEND_FE_REGISTRATION_ADMIN_01_EVIDENCE_20261120.md).
 
 ## 7. Development notes / explicit gaps
-The backend checks platePhotoVerified boolean supplied by admin session; actual human visual verification is outside code and requires UAT. Current approve path performs multiple Sheets writes without full durable compensation. Photo evidence is fetched one image at a time via `registrations.photo` (request-snapshot ownership check plus access audit); the frontend renders bytes in memory only and never caches them in browser storage.
+The backend checks the `platePhotoVerified` boolean supplied by the admin session; actual human visual verification requires business UAT. **Residual B2b:** registration approval (and `users.assignRoles`) still performs multiple Sheets writes without durable journaling/automatic recovery; preserve the manual recovery runbook and do not claim B2 closed this gap. Photo evidence is fetched one image at a time via `registrations.photo` (request-snapshot ownership check plus access audit); the frontend renders bytes in memory only and never caches them in browser storage.
 
 ## 8. Approval conditions
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
 
 
-**Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+**Evidence classification:** Source-reviewed implementation model plus scoped live DEV API evidence (GAS V48, backend 0.9.1). It is NOT browser/business UAT, destructive retention execution, real OIDC-provider or physical-QR acceptance, PDPA/security signoff, or production release approval. Runtime discrepancies require decision-log disposition and PR review.
 
 ## 9. GitHub Mermaid Preview
 

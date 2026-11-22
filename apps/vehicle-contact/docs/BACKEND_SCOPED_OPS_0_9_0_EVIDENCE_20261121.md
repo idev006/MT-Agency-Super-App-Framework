@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — Backend 0.9.0 scoped operations evidence
 
+> **Historical snapshot:** this records the initial scoped-operations source state. For current V48/0.9.1, 56-operation and 97/97 live evidence, use [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) and [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md); do not resume its old `PENDING_REAL_GAS` gate as current work.
+
 **Date:** 2026-11-21 | **Scope:** GAS backend + API v1 contract only (no frontend wiring, no live GAS push).
 **Classification:** SOURCE + SYNTHETIC CI EVIDENCE. Not live authenticated GAS HTTP acceptance, not production release.
 

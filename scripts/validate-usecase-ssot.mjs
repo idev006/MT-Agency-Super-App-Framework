@@ -14,11 +14,12 @@ const policy=JSON.parse(txt(app+'contracts/api-permissions.v1.json'));
 const schema=JSON.parse(txt(app+'schema/database.schema.json'));
 const ops=inventory.operations.map(o=>o.group+'.'+o.action);
 const known=new Set(ops),seen=new Map(),ids=new Set();
-assert(catalog.cases.length===20,'Phase-1 sequence catalog must contain 20 use cases');
+assert(catalog.cases.length===20,'Sequence catalog must contain 20 use cases');
 assert(ops.length===56,'Phase-1 API inventory unexpectedly changed from 56 operations (update agreed coverage mapping)');
 assert(new Set(ops).size===ops.length,'Duplicate API inventory operation');
-assert(policy.operations.length===ops.length,'Permission contract inventory length drift');
+assert(policy.operations.length===ops.length,'Permission contract/inventory length drift');
 assert(policy.operations.every(p=>known.has(p.operation)),'Unknown permission-contract operation');
+assert(catalog.liveEvidence?.sessionProtectedOperations===50&&catalog.liveEvidence?.rbacChecks===250,'Live evidence must retain 50 protected operations / 250 RBAC checks');
 const indexDoc=txt(index+'README.md'),matrix=txt(app+'docs/traceability-matrix.md');
 function lintDiagram(source,id){
  const lines=source.trim().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
@@ -46,7 +47,7 @@ for(const uc of catalog.cases){
  assert(!ids.has(id),id+': duplicate UC ID');ids.add(id);
  assert(Array.isArray(uc.ops)&&uc.ops.length,id+': API operations missing');
  assert(uc.actor&&uc.pre&&uc.success&&uc.failure,id+': actor/pre/success/failure incomplete');
- assert(uc.status==='DESIGNED_PENDING_GAS_EDITOR_AND_AUTH_HTTP',id+': evidence status changed without explicit gate');
+ assert(uc.status==='LIVE_DEV_API_SCOPE_VERIFIED_UAT_AND_RELEASE_OPEN',id+': status must distinguish scoped live DEV API evidence from open UAT/release gates');
  assert(Array.isArray(uc.tables)&&uc.tables.every(t=>Object.prototype.hasOwnProperty.call(schema.tables,t)),id+': unknown physical table');
  assert(Array.isArray(uc.tests)&&uc.tests.length,id+': no Test Case IDs');
  const spec=index+id+'/specification.md',diagram=index+id+'/sequence.mmd';
@@ -55,6 +56,7 @@ for(const uc of catalog.cases){
  if(!existsSync(file(spec))||!existsSync(file(diagram)))continue;
  const text=txt(spec),source=txt(diagram).trim();
  lintDiagram(source,id);
+ assert(text.includes('**Status:** LIVE_DEV_API_SCOPE_VERIFIED; BROWSER_UAT_AND_PRODUCTION_GATES_OPEN'),id+': spec/catalog evidence status drift');
  assert(text.includes('## 2. Preconditions')&&text.includes('## 3. Successful outcome')&&text.includes('## 4. Failure')&&text.includes('## 5. Persistence')&&text.includes('## 6. Acceptance')&&text.includes('## 7. Development'),id+': missing mandatory spec section');
  const match=text.match(/## 9\. GitHub Mermaid Preview\s*```mermaid\s*([\s\S]*?)\s*```/);
  assert(Boolean(match),id+': Mermaid rendered preview not embedded');
@@ -77,6 +79,7 @@ for(const op of ops){
  assert(matrix.includes('`'+op+'`'),op+': missing traceability matrix row');
 }
 assert(seen.size===ops.length,'Unexpected API mapping count');
+assert(!matrix.includes('PENDING_REAL_GAS'),'Traceability matrix retains blanket pre-live status');
 assert(txt('blueprint/MASTER_WEB_APP_BLUEPRINT.md').includes('USE_CASE_SEQUENCE_STANDARD.md'),'Web Blueprint must link UML standard');
 assert(txt('blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md').includes('USE_CASE_SEQUENCE_STANDARD.md'),'GAS Blueprint must link UML standard');
 for(const e of fails)console.error('FAIL: '+e);

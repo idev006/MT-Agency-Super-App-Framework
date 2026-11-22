@@ -1,9 +1,10 @@
 # C6 — SYSTEM_ADMIN approved-vehicle registry (`vehicles.list`)
 
 **Date:** 2026-11-21 (Asia/Bangkok)
+**Handoff:** 2026-11-22 08:23 Asia/Bangkok; source merge baseline `main` @ **`bf3553d`** (PR **#110**).
 **Slice:** WS-C / C6 (PM plan [PROJECT_MANAGEMENT_PLAN_20261121.md](PROJECT_MANAGEMENT_PLAN_20261121.md))
 **Decision:** [VC-ADR-017](DECISION_LOG.md) — IMPLEMENTED IN SOURCE; SECURITY/PDPA RATIFICATION PENDING
-**Status:** SOURCE COMPLETE + TEST GREEN + **DEPLOYED LIVE (GAS Web App Version 48, `backendVersion 0.9.1`) + credential-free live verification PASS**. Authenticated positive probe (admin sees the 11 ACTIVE rows) + browser UX acceptance pending DEV credentials in gitignored `.env`.
+**Status:** SOURCE COMPLETE + TEST GREEN + **DEPLOYED LIVE (GAS Web App Version 48, `backendVersion 0.9.1`) + full authenticated API verification PASS**. Browser UX acceptance and VC-ADR-017 security/PDPA ratification remain open human gates.
 **Trigger:** Project Owner — "System Admin ก้ควรดูรายการรถที่ได้รับการอนุมัติได้สิ" (System Admin should be able to see the list of approved vehicles).
 
 ## Problem
@@ -52,7 +53,7 @@ The owner could search only because their account also holds REGISTRATION_ADMIN.
 - **Frontend build:** `npx vite build` → **147 modules transformed, built OK** (daisyUI 5.8.1).
 - **Worker:** `node --test worker.test.mjs` → **31/31 PASS** (new `vehicles.list` positive `{page,pageSize}` + negative spoofed `status` cases).
 
-## Live deployment + credential-free verification (2026-11-21)
+## Live deployment + verification (2026-11-21)
 
 Assistant self-deployed via the owner-authorized clasp/wrangler path (no secret values in repo/logs/docs):
 
@@ -63,15 +64,14 @@ Assistant self-deployed via the owner-authorized clasp/wrangler path (no secret 
    - `verify-live-worker-failclosed.mjs`: **14/14 PASS**.
    - `vehicles.list` anonymous (no session) → **`INVALID_SESSION_PAYLOAD`** (Worker fails closed; op recognized as protected).
    - `vehicles.list` spoofed `{status:"INACTIVE"}` → **`INVALID_OPERATION_PAYLOAD`** (Worker allowlist rejects non-DTO field).
-3. **Live data positive-control (gviz CSV, owner browser session, no creds):** `vc_vehicles` = **14 rows → `ACTIVE` 11 / `INACTIVE` 3**. The registry's server-side `ACTIVE` filter will return the **11** approved-and-active vehicles; the 3 cancelled/inactive are correctly excluded. (Read via plain `out:csv` with owner cookies; `out:json`/`tq` require OAuth → ACCESS_DENIED, per the documented gviz quirk.)
-4. **Source merged + frontend live:** PR **#108** merged to `main` @ **`cef47e7`** (CI `Validate P6 Vehicle Contact` all steps green: SSOT validators 56/56 ops, FE 180/180 + build, Worker 31/31, GAS `npm run check` + artifact 54 `.gs`). `deploy-pages-ssot` run **44910792210** success → live Pages bundle `assets/index-CfsuYp98.js` contains `vehicle-registry` (route/menu), `vehicles.list` (op) and "ทะเบียนยานพาหนะ" (page title). The registry screen is now reachable on GitHub Pages for an authenticated SYSTEM_ADMIN.
+3. **Historical pre-reseed live data positive-control (gviz CSV, owner browser session, no creds):** at that observation, `vc_vehicles` = **14 rows → `ACTIVE` 11 / `INACTIVE` 3**. The registry's server-side `ACTIVE` filter would return those **11** approved-and-active vehicles; the 3 cancelled/inactive were correctly excluded. (Read via plain `out:csv` with owner cookies; `out:json`/`tq` require OAuth → ACCESS_DENIED, per the documented gviz quirk.) The later reseed below supersedes this row count, not the historical observation.
+4. **Source merged + frontend live:** PR **#108** merged to `main` @ **`cef47e7`** (CI `Validate P6 Vehicle Contact` all steps green: SSOT validators 56/56 ops, FE 180/180 + build, Worker 31/31, GAS `npm run check` + artifact 54 `.gs`). `deploy-pages-ssot` run **44910792210** success → live Pages bundle `assets/index-CfsuYp98.js` contains `vehicle-registry` (route/menu), `vehicles.list` (op) and "ทะเบียนยานพาหนะ" (page title). The registry screen is reachable on GitHub Pages for an authenticated SYSTEM_ADMIN. PR #110 subsequently established the handoff source merge baseline at `bf3553d`.
+5. **Full authenticated API verification:** the 2026-11-21 22:01:34–22:10:30 run passed **97/97** (11 public direct-GAS + 14 Worker + 72 authenticated direct-GAS), covered **56/56 operations**, and passed cleanup **7/7**. The authenticated stage exercised `vehicles.list` positive and forbidden RBAC paths, completing the C6 authenticated API probe. This does not close browser acceptance or human ratification. See [LIVE_API_AUTOMATION](LIVE_API_AUTOMATION.md).
+6. **DEV reseed after the historical 11-ACTIVE observation:** 11 old synthetic vehicles were retired through `vehicles.cancel`; 10 new `ACTIVE` vehicles were created, each verified with exactly **1 contact / 5 photos / QR MATCH**. Seed cleanup passed **2/2**. The post-seed GAS editor audit checked **25/25 sheets with zero errors**. The current intentional DEV fixture set is therefore 10 ACTIVE vehicles.
 
-## Live gate (owner action)
+## Remaining live gates (owner action)
 
-The authenticated positive probe + browser UX acceptance need DEV credentials:
-1. Owner fills the gitignored `.env` DEV secrets once (`P6VC_ADMIN_PASS`, etc.).
-2. Assistant runs `run-live-owner-dev-regression.mjs` (guard `P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV`) — now includes `VEHICLES.LIST` (sys sees the approved vehicle) + `VEHICLES.LIST.FORBIDDEN` (staff denied); synthetic only, never real data / `ENFORCED`.
-3. Owner browser acceptance: sign in as SYSTEM_ADMIN → menu "ทะเบียนยานพาหนะ" → see the 11 ACTIVE vehicles, paginate, drill into detail (combined admin role).
-4. **PDPA/security ratification of [VC-ADR-017](DECISION_LOG.md)** (admin-only bulk vehicle read) — production sign-off remains separate and open.
+1. **Browser acceptance:** sign in as SYSTEM_ADMIN → menu "ทะเบียนยานพาหนะ" → see the current 10 ACTIVE synthetic DEV vehicles, paginate, and drill into detail (combined admin role). This remains open even though API verification passed.
+2. **PDPA/security ratification of [VC-ADR-017](DECISION_LOG.md)** (admin-only bulk vehicle read) — production sign-off remains separate and open.
 
-Credentials live solely in the gitignored `.env`, never committed/pushed/logged/pasted into docs/issues/chat.
+Credentials live solely in the gitignored `.env` or protected optional CI secrets, never committed/pushed/logged/pasted into docs/issues/chat. Credential rotation remains an open security gate.

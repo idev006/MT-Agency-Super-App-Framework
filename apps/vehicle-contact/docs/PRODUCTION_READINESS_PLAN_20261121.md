@@ -1,91 +1,85 @@
-# P6 Vehicle Contact — 48-Hour Production Readiness Plan
+# P6 Vehicle Contact — Production Readiness Plan
 
-**Document:** P6VC-PROD-PLAN-001 | **Date:** 2026-11-21 | **Baseline:** `main` @ `647c463`, Backend source `0.9.0`, live Web App **V39** (health `0.9.0`)
-**Status:** ACTIVE — compressed production push. Companion to [PM execution plan](PROJECT_MANAGEMENT_PLAN_20261121.md) (WBS SSOT) and [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) (resume).
-**Owner directive (2026-11-21):** production-ready within **48 hours**; DEV credentials may be stored in a **gitignored** local file; do not waste time.
+**Document:** P6VC-PROD-PLAN-001 | **Opened:** 2026-11-21 | **Last verified:** 2026-11-22 08:23 Asia/Bangkok
+**Baseline:** PR **#110**, merged `main` @ **`bf3553d`**
+**Status:** ACTIVE GATE TRACKER — **NOT PRODUCTION-READY AND NOT RELEASE-APPROVED**. The original 48-hour target is historical, not a remaining schedule or approval.
 
-## 1. Definition of "production-ready" (honest)
+Companions: [current status](CURRENT_DELIVERY_STATUS.md), [PM slice board](PROJECT_MANAGEMENT_PLAN_20261121.md), [E1 datastore decision packet](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md), and [E3 sign-off dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md).
 
-A release candidate is production-ready only when ALL of:
-1. **Functional completeness live:** 5 roles × 20 use cases wired end-to-end (FE C1–C5) and live-verified through the Worker.
-2. **Hardening live:** B1 (org cycle) + B4 (login constant-work) + B2 (submit reconciliation) **pushed, published, and probed live** — not just merged.
-3. **Authorization proven:** E2 cross-role × operation matrix + Worker fail-closed (Origin/allowlist/public-op) negatives green live.
-4. **Data-scale decision ratified:** E1 — Sheets is O(rows) DEV-scale; owner accepts bounded-volume initial production OR approves an indexed-store migration.
-5. **Human sign-offs (cannot be automated):** PDPA / security / UAT / release approval (E3); destructive-retention enable (D5) with synthetic rehearsal; decisions D3–D5 + VC-ADR-014/015 ratification.
+## 1. Release-candidate definition
 
-**Engineering can reach release-candidate in 48h. Items 4–5 are human/owner gates — they set the real critical path.** This plan parallelizes everything automatable so owner decisions are the only wait.
+Production readiness requires all applicable items below, with evidence and named human approval:
 
-## 2. Current truth (verified 2026-11-21)
+1. Delivered engineering scope is merged and tested, including QR recovery/device evidence and B2b durable recovery.
+2. C5 is either explicitly excluded by an approved scope decision or unblocked by **D5 + B3**, implemented and rehearsed synthetically. The assistant must not make that scope decision.
+3. Live deployment provenance is exact: reviewed source SHA, GAS source version, published Web App version, Worker version and Pages build are recorded separately.
+4. Authorization and recovery regressions pass, including Worker fail-closed evidence and clearly labelled direct-GAS versus through-Worker coverage.
+5. Browser/business UAT and physical Android/iOS QR acceptance are signed off.
+6. **D-E1, D3, D5, B3** and **VC-ADR-014/015/017** are resolved as applicable.
+7. Credentials are rotated and release-secret handling is approved.
+8. PDPA, security, UAT and final release sign-offs are explicitly approved. None is inferred from tests or elapsed time.
 
-| Fact | State |
+## 2. Completed engineering evidence — current
+
+| Area | Verified result | What it does not prove |
+|---|---|---|
+| Runtime | GAS Web App **V48 / 0.9.1**; Frontend **0.8.0**; Worker **`20180237-7441-481a-9540-e7ca2c9c79eb`** | Production approval or immutable future deployment state. |
+| Offline | GAS `npm run check` **PASS**; C6 evidence GAS 139/139, FE 180/180, Worker 31/31 | Browser/business/device acceptance. |
+| Live automation | **97/97 PASS**, **56/56 operations**, all five roles, cleanup **7/7** | The 72 authenticated cases are direct-GAS, not all-through-Worker; no production sign-off. |
+| DEV data | 11 logically retired, 10 new ACTIVE with 1 contact/5 photos/QR MATCH; cleanup 2/2 | Real-data migration or production UAT. |
+| Sheets | Post-seed audit **25/25**, zero visible errors and zero repairs | Production-scale acceptance or permission to mutate schema. |
+| Delivery slices | A1–A3, B1/B2/B4, C1–C4, C6, E2, display repair and live automation complete | B2b, QR acceptance and blocked C5 are not included. |
+| E1/E3 preparation | Datastore design and sign-off dossier prepared | D-E1 or any PDPA/security/UAT/release decision. |
+
+Evidence: [live automation](LIVE_API_AUTOMATION.md), [C6](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md), [E2](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md), and [Sheets repair](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md).
+
+**Deployment boundary:** follow-up display-error maintenance source is in **GAS HEAD only**; the published API remains V48. A future release must reconcile reviewed source HEAD, source-version creation and actual Web App publication rather than assuming they are identical.
+
+## 3. Remaining work and gates
+
+| Item | Owner/state | Required closure evidence |
+|---|---|---|
+| QR camera recovery | Engineering **WIP** | Integrate stash with current `main`; direct adapter-cleanup tests; no stash drop until recovery is safe. |
+| Physical QR acceptance | Human/device **OPEN** | Android/iOS camera, decoding and switching evidence; automated tests cannot substitute. |
+| B2b durable journaling | Engineering **TODO** | Durable `registrationReview`/`assignRoles` recovery, fault/restart tests and runbook update. |
+| C5 console | **BLOCKED, not in progress** | Human D5 + B3 first; then gated UI and synthetic two-person/`legal_hold` rehearsal. Destructive retention stays disabled. |
+| Browser/business acceptance | Human **OPEN** | Delivered journeys including gallery/copy, C1–C4 and C6, with sanitized reviewer evidence. |
+| D-E1 data-scale decision | Human **OPEN** | Ratify bounded-volume Sheets with caps/monitoring or approve a separate indexed-store migration. |
+| D3 sequencing | Human **OPEN** | Approved remaining scope/order. |
+| D5 + B3 retention | Human **OPEN** | Enable mechanism/runbook and scheduler/notification mapping; no real-data destructive test. |
+| VC-ADR-014/015/017 | Human **OPEN** | Security/PDPA ratification of owner-scoped reads, worker-scoped reads and admin registry. |
+| Credential rotation | Owner/security **OPEN** | Rotation completed without exposing old/new values; release profiles and protected secrets reviewed. |
+| PDPA/security/UAT/release | Named humans **OPEN** | Signed decisions in the E3 record or equivalent approved system. |
+
+Protected GitHub secrets `P6VC_TEST_USERNAME` / `P6VC_TEST_PASSWORD` are optional for future manual full-suite Actions runs. They are **not** a blocker for the already completed local 97/97 run and must not be requested merely to validate that historical result.
+
+## 4. Release sequence — no date commitment
+
+1. Finish QR engineering and B2b; preserve C5 as blocked unless D5 and B3 are actually ratified.
+2. Run relevant offline checks. Use the [live automation runbook](LIVE_API_AUTOMATION.md) only for authorized synthetic DEV verification, with exact transport and cleanup results reported.
+3. Complete human browser/business and physical-device acceptance; rotate credentials through the approved security process.
+4. Resolve D-E1/D3/D5/B3 and VC-ADR-014/015/017 as applicable; complete PDPA/security/UAT review.
+5. Build the release candidate from a reviewed SHA. The GitHub Actions GAS source-push workflow requires exact per-push **`PUSH_VEHICLE_GAS`** authorization. A separately owner-authorized assistant `clasp` self-deploy path may be used only within its approved scope.
+6. Record source push, created GAS source version, Web App publication, Worker deployment and Pages deployment independently; verify health and regression scope after publication.
+7. Obtain final human release approval. Until then, the system remains a DEV release candidate at most.
+
+## 5. Production risks and controls
+
+| Risk | Control / residual gate |
 |---|---|
-| `system.health` via Worker | **`0.9.0`, ready** — A1 DONE, **M0 CLOSED** (A1+A2) |
-| Live GAS source provenance | last push `3646e39` (PR #91 marker fix) — **predates B1/B4/B2** → hardening **NOT live** |
-| Backend source | B1 #93 + B4 #94 + B2 #96 merged; full suite + build green |
-| Live E2E | A2 10/10 + A3 70/70 (55/55 ops) PASS (against functional 0.9.0) |
-| Frontend | C1–C5 NOT_WIRED (REGADMIN change-approval, unified detail, maintenance edit, OWNER my-vehicles, WORKER console) |
-| Credentials | gitignored `.env` + `scripts/load-env.mjs` auto-loader wired into both live runners; **3 secret blanks await owner fill-once** |
+| Sheets O(rows) behavior at production volume | D-E1 decision, explicit caps/monitoring or separate indexed-store project; DEV success is not scale approval. |
+| Partial writes without ACID | B2 reconciliation/runbook remains available; close B2b before claiming durable review/role-assignment recovery. |
+| Destructive retention on real data | D5 + B3, default-disabled flag, two-person control, `legal_hold`, synthetic rehearsal only. |
+| Camera/device behavior differs from tests | Physical Android/iOS acceptance remains OPEN. |
+| Deployment marker/provenance drift | Record source/version/publication separately; probe health and behavior after each publication. GAS HEAD repair is not silently treated as published. |
+| Credential exposure or stale credentials | Environment/profile-only handling, protected Actions secrets when needed, rotation and sanitized evidence. |
+| Automation mistaken for business/security approval | Keep transport scope explicit and all human sign-offs OPEN until named approval exists. |
 
-## 3. Parallel lanes
+## 6. Sign-off state
 
-### Lane A — Assistant autonomous (no owner gate)
-| ID | Work | Output |
+| Gate | State | Approver/evidence |
 |---|---|---|
-| A-FE1 | **C1** REGADMIN change-approval screen (list → delta diff → APPROVE/REJECT), gated `vehicle.change.approve` | route+menu+FE tests+evidence |
-| A-FE2 | **C2** unified vehicle detail read (contacts/photos/history), STAFF/REGADMIN | a11y/mobile evidence |
-| A-FE3 | **C3** vehicle maintenance edit (update/link/contact/photo replace/cancel), `expectedVersion` conflict UX | REGADMIN-gated |
-| A-FE4 | **C4** OWNER `my-vehicles` (list → submit change → track), server-scoped reads | owner journey E2E |
-| A-FE5 | **C5** WORKER execution console (list executable → execute → status/retry), gated destructive UX | two-person + legal_hold |
-| A-E2 | Cross-role authorization regression + Worker fail-closed probes (synthetic CI + live) | role×op matrix evidence |
-| A-E1 | Indexed-datastore migration **design doc** (Sheets O(rows) analysis, options, recommendation) | design + owner decision packet |
-| A-E3 | PDPA / security / UAT / release **gate checklist + evidence pack** (prepared, NOT self-approved) | sign-off-ready dossier |
-| A-REL | Release-candidate build + Pages deploy + Worker redeploy (allowlist if ops change) | deployed RC |
-
-### Lane B — Owner gates (the real critical path)
-| ID | Action | Why it blocks production |
-|---|---|---|
-| B-CRED | Fill 3 secret blanks in gitignored `.env` **once** (`P6VC_ADMIN_PASS`, `P6VC_TEST_USERNAME`, `P6VC_TEST_PASSWORD`) | unblocks all live authenticated probes/runners |
-| B-PUSH | Type **`PUSH_VEHICLE_GAS`** → assistant pushes `main` @ `647c463` → **owner publishes new version** | makes B1/B4/B2 hardening LIVE (security requirement) |
-| B-D3 | Ratify phase priority / sequencing | locks scope |
-| B-D4 | Google identity timing + `VEHICLE_GOOGLE_CLIENT_ID` (recommend defer; local auth suffices for launch) | G5 |
-| B-D5 | Destructive-retention enable mechanism + runbook (flag-gated, two-person, synthetic rehearsal only) | G4 / 3C |
-| B-ADR | Ratify **VC-ADR-014/015** (OWNER scoped read, worker-scoped retention) | permission policy |
-| B-B3 | Approve retention scheduler/notification **business mapping** | D-SEQ-06 |
-| B-E1 | Decide Sheets bounded-volume initial production **vs** indexed-store migration | data-scale |
-| B-E3 | **PDPA / security / UAT / release sign-offs** (human/legal) | compliance — cannot be automated |
-
-## 4. Compressed 48h schedule
-
-| Window | Assistant (Lane A) | Owner (Lane B) |
-|---|---|---|
-| **0–6h** | C1 + C2 FE wiring + tests; E2 synthetic matrix; E1 design doc | B-CRED fill `.env`; B-PUSH `PUSH_VEHICLE_GAS` + publish; B-ADR ratify |
-| **6–18h** | C3 + C4 FE; live hardening probe (B1/B4/B2) after publish; E2 live fail-closed | B-D3/D4/D5 decisions; B-B3 mapping; review E1 design |
-| **18–30h** | C5 FE (gated destructive UX); A-E3 sign-off dossier; RC build + Pages + Worker | B-E1 data-scale decision; begin PDPA/security/UAT review |
-| **30–42h** | Full live regression (55/55) on RC; synthetic destructive-retention rehearsal; fix-forward | B-E3 sign-offs; D5 enable decision after rehearsal |
-| **42–48h** | Release-candidate freeze; evidence pack final; production deploy (owner-gated) | **Final release approval** |
-
-**Critical path:** B-PUSH (hardening live) → live probes → C1–C5 FE → E2 live → B-E3 sign-offs → release. **B-E3 (PDPA/UAT/security) is the longest human pole — start it at hour 0, not hour 30.**
-
-## 5. Production risk register (48h-specific)
-
-| Risk | Impact | Mitigation |
-|---|---|---|
-| Live V39 lacks B1/B4/B2 (timing oracle open) | **critical** | B-PUSH re-push + publish + probe BEFORE release |
-| Sheets O(rows) at production volume | high | B-E1 decision; bounded snapshots now; migration design ready |
-| PDPA/UAT/security sign-off not achievable in 48h | **critical** | start review hour 0; dossier prepared; owner owns legal approval |
-| Destructive retention on real data | critical | D5 flag-gated, two-person, legal_hold, **synthetic rehearsal only** |
-| FE C1–C5 scope too large for 48h | high | slice small; C1/C4 first (operational+owner); C5 gated last |
-| Credential leakage via `.env` | critical | `.env` gitignored (verified `git check-ignore`); never committed/logged; loader skips blanks |
-| Marker drift (health ≠ code) | medium | contract guard `backendVersion === package.json` (#91); probe after each publish |
-
-## 6. Credential handling (owner-authorized change)
-
-- Owner authorized (2026-11-21) storing DEV credentials in a **gitignored local file**: repo-root `.env` (covered by `.gitignore` `.env` / `.env.*`).
-- `scripts/load-env.mjs` auto-loads `.env` into `process.env` (existing env wins; blanks skipped); wired into `run-live-approval-e2e.mjs` + `run-live-owner-dev-regression.mjs`.
-- **Verified:** `git check-ignore .env` → ignored; `.env` absent from `git status`. **Never commit, push, log, or paste `.env` contents.** Reports remain sanitized (`secretsExposed:false`).
-- Non-secret endpoints/config pre-filled; owner fills 3 secret blanks once.
-
-## 7. Tracking
-
-- Slice status → [PM plan board](PROJECT_MANAGEMENT_PLAN_20261121.md). Resume → [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md). Decisions → [DECISION_LOG.md](DECISION_LOG.md).
-- Each Lane-A slice → code + tests + evidence doc + PR (CI green) + merge. Lane-B gates tracked here; assistant reports owner action list every turn.
+| PDPA | **OPEN** | Named legal/PDPA approval required. |
+| Security | **OPEN** | Named security approval and applicable ADR ratifications required. |
+| UAT / browser / business / device | **OPEN** | Named reviewer and sanitized acceptance evidence required. |
+| Production release | **OPEN** | Named release approval after all applicable gates. |

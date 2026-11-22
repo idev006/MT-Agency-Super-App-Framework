@@ -1,127 +1,107 @@
 # P6 Vehicle Contact — Project Management / Delivery Execution Plan
 
-**Document:** P6VC-PM-PLAN-001 | **Date:** 2026-11-21 | **Baseline:** `main` @ `bd60a62`, Backend `0.9.0`
-**Status:** ACTIVE EXECUTION PLAN (SSOT). Companion to [Full role × use-case plan](FULL_ROLE_USECASE_IMPLEMENTATION_PLAN_20261121.md) (gap analysis) and [Code map](CODE_MAP_20261121.md) (structure). Resume point: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
+**Document:** P6VC-PM-PLAN-001 | **Opened:** 2026-11-21 | **Last verified:** 2026-11-22 08:23 Asia/Bangkok
+**Baseline:** PR **#110**, merged `main` @ **`bf3553d`**; published GAS **V48 / 0.9.1**, Frontend **0.8.0**, 56 operations, 25 Sheets
+**Status:** ACTIVE slice/gate SSOT. Resume from [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); release gates are detailed in [PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md).
 
-## 1. Objective & definition of done
+## 1. Objective and definition of done
 
-**Objective:** deliver a backend + API + frontend that is complete for all 5 roles and all 20 use cases, **live-verified**, hardened, and production-gated.
+Deliver all five roles and 20 use cases with server-authoritative authorization, recoverable persistence, verified frontend journeys and explicit production approval.
 
-**"Done" is NOT source-complete.** A workstream is done only when:
-1. Source + contract + tests merged to `main` (CI green).
-2. Deployed (GAS push gated on owner `PUSH_VEHICLE_GAS`; publication owner action; Worker assistant-deployed).
-3. **Live-proven** through the Worker (health marker + functional/authenticated probe), evidence doc linked to SHA.
-4. Business/security decisions ratified by a human where required (PDPA, destructive retention, permission policy).
+A slice is not done merely because source exists. Record separately:
 
-## 2. Current state (honest baseline)
+1. Source/contracts/tests merged with CI green.
+2. Exact deployment state: GAS source HEAD, created source version, published Web App version, Worker version and Pages state are not interchangeable.
+3. Live evidence with its transport stated. The current authenticated 72-case stage is direct-GAS; Worker behavior is proven independently, not by claiming every operation passed through the Worker.
+4. Browser/device/business acceptance where applicable.
+5. Human policy, PDPA, security, UAT and release decisions where required.
 
-| Dimension | State |
+## 2. Current verified baseline
+
+| Dimension | Current state |
 |---|---|
-| Operations | **55/55** source-complete (54 DTO + health), 20 UCs, 5 roles |
-| CI | RBAC 245 checks, SSOT 55/55, full suite, Worker 28/28 — **green** |
-| Live | 0.9.0 **functionally live in V37**; marker-fix **V38 pushed, publication pending** |
-| Live authenticated E2E | **NOT done** — awaits owner transient DEV credential; traceability all `PENDING_REAL_GAS` |
-| Business completeness | gaps open: D-SEQ-05/06/08/09/11, G1 anonymous claim, G5 Google OIDC |
-| Frontend | several role pages NOT_WIRED (G2/G3/G4 FE, `my-vehicles`) |
+| Operations/data | **56/56 operations** live-verified; **25/25 Sheets** audited after seed with zero visible errors and zero repairs. |
+| Offline engineering | GAS `npm run check` **PASS**; C6 evidence includes GAS 139/139, FE 180/180 and Worker 31/31. |
+| Live automation | **97/97 PASS** = 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated direct-GAS; all five roles; cleanup 7/7. |
+| DEV fixtures | 11 retired logically, 10 new ACTIVE; each 1 contact/5 photos/QR MATCH; cleanup 2/2. |
+| Runtime | GAS Web App V48 / 0.9.1; Frontend 0.8.0; Worker `20180237-7441-481a-9540-e7ca2c9c79eb`. |
+| Source nuance | Display-error maintenance repair is in GAS HEAD only; published API remains V48. Live report `f14458d` is not the merge/content baseline. |
+| Production | **NOT production-ready / not released.** Human acceptance, decisions, credential rotation and sign-offs remain OPEN. |
 
-## 3. Workstreams & WBS
+See [live automation and reset evidence](LIVE_API_AUTOMATION.md).
 
-Owner-gate legend: 🔑 = needs owner action/credential/decision; 🤖 = assistant autonomous (source→CI→merge→Worker).
+## 3. Current slice board
 
-### WS-A — Live verification (close the proof gap) — 🔑
-| ID | Slice | Depends | Gate | DoD |
-|---|---|---|---|---|
-| A1 | Publish V38 + probe health = `0.9.0` | — | 🔑 publish | health marker verified via Worker |
-| A2 | Approval E2E: repair dirty 9901/9902 + approve 8 → **10/10** + negatives (`INVALID_REQUEST_STATE`, `PHOTO_NOT_FOUND`) | A1 | 🔑 DEV credential | evidence doc + PR + #61 comment; `.tmp/` scratch deleted |
-| A3 | Live authenticated E2E of 3 scoped ops (`vehicles.listMine`, `changes.listMine`, `retention.listExecutable`) + RBAC negatives | A1 | 🔑 DEV credential + owner/worker accounts | `run-live-owner-dev-regression.mjs` coverage 55/55 PASS |
-
-### WS-B — Backend hardening (production-safety gaps) — 🤖 (GAS push batched 🔑)
-| ID | Slice | Ref | Depends | DoD |
-|---|---|---|---|---|
-| **B1** | **Org ancestor cycle check** + negative tests | D-SEQ-08 | — | cycle rejected `INVALID_ORG_PARENT`; bounded single-table walk; tests green; evidence + PR |
-| B2 | Partial-write / deletion **reconciliation + recovery** runbook + failure/restart tests | D-SEQ-05/09 | — | injected-failure tests; durable recovery or documented manual runbook |
-| B3 | Retention **scheduler / notification** + status mapping | D-SEQ-06 | 🔑 business mapping approval | owner-approved mapping; scheduler tests |
-| B4 | Login **constant-work negative path** (timing side-channel) | D-SEQ-11 | — | unknown-user path does same hash work; timing test |
-
-### WS-C — Frontend wiring (use-case completeness) — 🤖
-| ID | Slice | Ref | Depends | DoD |
-|---|---|---|---|---|
-| C1 | REGADMIN **change-approval** screen (list → delta diff → APPROVE/REJECT) | G2 | A2 | route+menu gated `vehicle.change.approve`; FE tests + evidence |
-| C2 | Unified **vehicle detail read** (contacts/photos/history) | G3 read | A2 | STAFF/REGADMIN read; a11y/mobile evidence |
-| C3 | **Vehicle maintenance edit** (update/link owner/contact/photo replace/cancel) | G3 edit | C2 | `expectedVersion` conflict UX; REGADMIN gated |
-| C4 | OWNER **`my-vehicles`** (list → submit change → track) | G1 FE / 2B | B1+A3 | server-scoped reads wired; owner journey E2E |
-| C5 | RETENTION_WORKER **execution console** (list executable → execute → status/retry) | G4 FE / 3B | D5+B3 | gated destructive UX; two-person; legal_hold |
-| C6 | SYSTEM_ADMIN **approved-vehicle registry** (`vehicles.list` browse all ACTIVE, non-PII) | G3 admin read | — | admin-only `vehicle.list`; minimal fields; no join; PDPA ratification (VC-ADR-017) |
-
-### WS-D — Decisions & security ratification — 🔑
-| ID | Decision | Ref | Recommended default |
-|---|---|---|---|
-| D-R1 | Ratify `vehicle.own.read` (OWNER scoped read) | VC-ADR-014 | approve least-privilege |
-| D-R2 | Ratify worker-scoped `retention.listExecutable` | VC-ADR-015 | approve (no `retention.read` to worker) |
-| D3 | Phase priority / sequencing | plan §6 | A → B1/B2/B4 → C1 → C4 → C5 |
-| D4 | Google identity timing + configure `VEHICLE_GOOGLE_CLIENT_ID` | G5 | defer to Phase 4; prefer local JWT verification |
-| D5 | Destructive-retention enable mechanism + runbook | G4 / 3C | flag-gated, two-person, synthetic rehearsal only |
-
-### WS-E — Production readiness — 🤖 plan / 🔑 approval
-| ID | Slice | DoD |
+| Slice | Current status | Evidence / remaining boundary |
 |---|---|---|
-| E1 | Indexed datastore plan (Sheets O(rows) = DEV-scale, no-join directive) | migration design doc + owner decision |
-| E2 | Cross-role authorization regression + Worker fail-closed probes | every role × op matrix; Origin/allowlist negatives |
-| E3 | PDPA / security / UAT / release gates | human sign-offs (separate, open) |
+| A1 | **DONE** | Published health is now V48 / 0.9.1. Initial V39 closure is historical; see §5. |
+| A2 | **DONE** | Approval journey 10/10 plus negatives; [dated evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md). |
+| A3 | **DONE** | Historical 70/70, 55/55; current automation supersedes coverage with 72 authenticated cases and 56/56 operations. |
+| B1 | **DONE** | Org ancestor cycle check; [evidence](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md). |
+| B2 | **DONE** | Submit reconciliation, failure tests and [manual recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md). Does not close B2b. |
+| B2b | **TODO — engineering** | Durable journaling/compensation for `registrationReview` and `assignRoles`, with restart/fault evidence. |
+| B3 | **BLOCKED — owner mapping** | Retention scheduler/notification business mapping not ratified. Blocks C5 with D5. |
+| B4 | **DONE** | Login constant-work negative path; [evidence](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md). |
+| C1 | **DONE — engineering** | [Change review](C1_CHANGE_REVIEW_SCREEN_EVIDENCE_20261121.md); browser/business acceptance OPEN. |
+| C2 | **DONE — engineering** | [Unified detail](C2_VEHICLE_DETAIL_SCREEN_EVIDENCE_20261121.md); browser/business acceptance OPEN. |
+| C3 | **DONE — engineering** | [Maintenance/conflict UX](C3_VEHICLE_MAINTENANCE_SCREEN_EVIDENCE_20261121.md); browser/business acceptance OPEN. |
+| C4 | **DONE — engineering** | [OWNER journey](C4_MY_VEHICLES_SCREEN_EVIDENCE_20261121.md); browser/business acceptance OPEN. |
+| C5 | **BLOCKED — not in progress** | Requires **D5 + B3** before RETENTION_WORKER console implementation or destructive rehearsal. |
+| C6 | **DONE — engineering/live** | [Admin registry evidence](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md); VC-ADR-017 and browser/business acceptance OPEN. |
+| QR camera | **WIP / recovery** | Protected local stash, adapter-cleanup tests and physical Android/iOS acceptance remain; not accepted as merged camera integration. |
+| D-E1 | **OPEN — human decision** | [E1 design](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) complete; bounded Sheets versus indexed-store decision not ratified. |
+| D3 | **OPEN — human decision** | Phase priority/sequencing ratification. |
+| D5 | **OPEN — human decision** | Destructive-retention enable mechanism/runbook; no enablement approved. |
+| E1 | **DESIGN COMPLETE** | Engineering packet delivered; D-E1 remains OPEN. |
+| E2 | **DONE** | Cross-role RBAC and live Worker fail-closed; [evidence](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md). Current C6 matrix is 250 checks. |
+| E3 | **DOSSIER PREPARED — SIGN-OFFS OPEN** | [Dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md) is not PDPA/security/UAT/release approval. |
+| Display repair | **DONE** | Root cause and narrow repair; [25-sheet incident/runbook](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md). Follow-up source is GAS HEAD only. |
+| Live automation | **DONE** | [97/97, 56/56, cleanup and reports](LIVE_API_AUTOMATION.md); future protected GitHub secrets are optional, not a retrospective blocker. |
+| DEV reset/audit | **DONE** | 11 retired/10 ACTIVE, cleanup 2/2; post-seed audit 25/25, zero errors/repairs. |
 
-## 4. Milestones & critical path
+VC-ADR-014, VC-ADR-015 and VC-ADR-017 remain **OPEN for security/PDPA ratification** even though their engineering slices are delivered. See [DECISION_LOG.md](DECISION_LOG.md).
 
-| Milestone | Criteria | Unlocks |
+## 4. Milestones and critical path
+
+| Milestone | Current assessment | Remaining unlock |
 |---|---|---|
-| **M0 — Primary journey live-verified** | A1 + A2 | epic #61 acceptance; build-on-top confidence |
-| **M1 — Backend hardened + 0.9.0 proven** | B1 + B2 + B4 + A3 | safe foundation for FE |
-| **M2 — REGADMIN + OWNER FE complete** | C1 + C2 + C3 + C4 | operational + owner journeys |
-| **M3 — Worker execution gated + rehearsed** | C5 + D5 + B3 | destructive retention (synthetic only) |
-| **M4 — Production readiness** | E1 + E2 + E3 + D4 | release candidacy |
+| M0 — Primary journey live-verified | **CLOSED — engineering** | Human browser/business acceptance remains separate. |
+| M1 — Backend hardened and live-proven | **CLOSED for B1/B2/B4 scope** | B2b is an explicit follow-up, not silently included. |
+| M2 — REGADMIN + OWNER frontend | **CLOSED — engineering** | Browser/business acceptance OPEN. C6 extends this scope. |
+| M3 — Worker execution gated and rehearsed | **BLOCKED** | Human D5 + B3, then C5 and synthetic-only rehearsal. |
+| M4 — Production readiness | **OPEN** | QR/B2b, C5 dependency, acceptance, decisions, credential rotation and all release sign-offs. |
 
-**Critical path:** ~~A2 (🔑 credential)~~ **DONE — live 10/10**. ~~A1~~ **DONE — V39 published, health `0.9.0` verified via Worker → M0 CLOSED.** FE C1–C5 unblocked. **M1** source-complete (B1+B4+A3+B2 merged); **M1 live-proof now requires a re-push** — live V39 source `3646e39` predates B1/B4/B2, so owner `PUSH_VEHICLE_GAS` of `main` @ `647c463` + publish + authenticated hardening probe is the production gate. **48h production target:** see [PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md).
+**Parallel engineering paths:** QR camera recovery/device evidence and B2b durable journaling can proceed independently.
+**Blocked path:** **D5 + B3 → C5 → synthetic retention rehearsal**. C5 must not be reported in progress while its decisions are open.
+**Release-critical human path:** browser/business acceptance + D-E1/D3 + VC-ADR-014/015/017 + credential rotation + PDPA/security/UAT/release approvals. None may be self-approved by an assistant.
 
-## 5. Execution rules (every slice)
+## 5. Dated historical results — retained as history
 
-- Small slice contract: **code + DTO/permission/inventory/count gate (if op changes) + Worker allowlist (if op changes) + tests + evidence doc + DECISION_LOG (if policy) + PR**.
-- 🤖 assistant: implement → CI green → merge → Worker redeploy (if allowlist changed).
-- 🔑 GAS source push: **only after owner types `PUSH_VEHICLE_GAS`** (per-push, not carry-over). Batch B-slices into one push where possible.
-- 🔑 Web App publication: **owner manual**; assistant verifies by health + functional probe.
-- 🔑 credentials: transient DEV via env `P6VC_ADMIN_USER`/`P6VC_ADMIN_PASS` only — **never** persisted to repo/files/logs/docs/issues.
-- Sheets: single bounded snapshot, **no cross-sheet join**; text-preserving writes; fakes emulate USER_ENTERED coercion.
-- Security invariants: server-side identity/ownership; two-person retention; `legal_hold`; self-demotion/expansion guards; default-deny.
+These results remain useful evidence but do not replace the current baseline above.
 
-## 6. Risk register
-
-| Risk | Impact | Mitigation |
+| Date | Historical result | Current interpretation |
 |---|---|---|
-| Live proof skipped → "source-complete" mistaken for done | high | M0 gate mandatory before FE build-on-top |
-| Partial Sheets writes / GAS timeout leave inconsistent state | high | B2 reconciliation + failure tests before destructive enable |
-| Destructive retention on real data | critical | D5 gate, synthetic rehearsal only, two-person, legal_hold |
-| Sheets O(rows) scan at production volume | high | E1 indexed store plan; bounded snapshots now |
-| Permission policy drift / client-supplied identity | critical | immutable ROLE_PERMISSIONS, RBAC matrix, server-side filters |
-| Marker drift (health ≠ deployed code) | medium | contract guard `backendVersion === package.json` (added #91) |
-| Credential leakage | critical | env-only transient creds; never persisted; scratch deleted |
+| 2026-11-21 | A1 initially closed on Web App V39 / 0.9.0; later hardening published at V41 | Superseded by current V48 / 0.9.1. |
+| 2026-11-21 | A2 approval E2E 10/10; lookup/QR MATCH and negative cases PASS | Completed journey evidence; not current operation count. |
+| 2026-11-21 | A3 70/70 tests, 55/55 operations, all five roles | Superseded for current inventory by 72 authenticated cases and 56/56 operations. |
+| 2026-11-21 | B1 7/7; B2 journal recovery 7/7; B4 5/5; then-full GAS suite 123/123 | Slice evidence remains valid; current offline suite is measured by `npm run check`. |
+| 2026-11-21 | C1–C4 source/test/build evidence, ending at FE 172/172 before C6 | Browser acceptance was and remains a human gate; C6 later measured FE 180/180. |
+| 2026-11-21 | E2 original RBAC matrix 245 checks over 49 protected operations; Worker 31/31 and live 14/14 | C6 adds one protected operation; current RBAC matrix is 250 checks. |
+| 2026-11-21 | Original number-format repair fixed 6,659 display-format cells across 21 sheets | Follow-up legacy-value/header repair and post-seed audit are the final current evidence. |
+
+## 6. Execution and safety rules
+
+- Small slices include source, DTO/permission/inventory gates, Worker allowlist when applicable, tests, evidence and decision-log updates when policy changes.
+- The GitHub Actions GAS source-push workflow requires the exact owner phrase **`PUSH_VEHICLE_GAS`**. A separately owner-authorized assistant `clasp` self-deploy path may be used within its approved scope; source push/version creation remains separate from Web App publication.
+- Credentials are environment/profile based and never committed, logged or pasted into documentation. Rotate credentials through the owner/security process.
+- Live writes are synthetic DEV only under the documented guard; preserve cleanup failures as failures. Never run enabled destructive retention against real data.
+- Sheets access stays bounded, text-preserving and without cross-sheet joins. Preserve schema fail-closed behavior and idempotent repair evidence.
+- Frontend permission gates never replace GAS authorization. No client-supplied identity or role is authoritative.
+- Do not mark C5 unblocked, QR device acceptance complete, or any human gate approved without actual evidence and approver identity.
 
 ## 7. Tracking
 
-- Tasks tracked in-session (TaskCreate/Update); each slice → evidence doc + PR + issue comment.
-- Decisions → [DECISION_LOG.md](DECISION_LOG.md). Resume → [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
-- This plan is the PM SSOT; update slice status here as work lands.
-
-## 8. Slice status board
-
-| Slice | Status | Evidence / PR |
-|---|---|---|
-| A1 | ✅ DONE — live Web App **V47** (assistant clasp self-deploy), health `0.9.0 ready` via direct exec; hardening B1/B4/B2/C1 + NF-1 number-format fix LIVE; webapp-manifest 404 incident fixed (#104) | M0 closed. [Manifest incident](GAS_CLASP_WEBAPP_MANIFEST_INCIDENT_20261121.md) + [number-format incident](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md). Residual: authenticated B1/B4/B2 probes await `.env` |
-| A2 | ✅ LIVE PASS **10/10** + negatives | [Live DEV E2E evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md) — 8 approved + 2 pre-fix, lookup+QR MATCH, `INVALID_REQUEST_STATE`/`PHOTO_NOT_FOUND` |
-| A3 | ✅ LIVE PASS **70/70**, **55/55** ops | [Live DEV E2E evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md) — all 5 roles, 3 scoped ops + FORBIDDEN negatives, cleanup PASS |
-| B1 | ✅ MERGED (#93) | [Org cycle evidence](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md) — 7/7 |
-| B2 | ✅ MERGED (#96) — 7/7 + full suite | [Journal recovery evidence](BACKEND_JOURNAL_RECOVERY_EVIDENCE_20261121.md) + [runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) — auto submit reconciliation (D-SEQ-05); failure tests + manual runbook (D-SEQ-09); B2b durable journaling deferred |
-| B3 | 🔑 WAITING business mapping | — |
-| B4 | ✅ MERGED (#94) | [Login constant-work evidence](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md) — 5/5 + suite 123/123 |
-| C1–C4 | ✅ SOURCE COMPLETE + TEST GREEN (FE 172/172, build green) | C1 change-review, C2 vehicle-detail, C3 maintenance, C4 my-vehicles; live/browser acceptance pending `.env` + owner sign-in. **C5** ⬜ gated D5+B3 |
-| C6 | ✅ DEPLOYED LIVE — GAS **V48 `0.9.1`**, Worker `20180237-…`; GAS 139/139, FE 180/180, Worker 31/31, edge 14/14 | [C6 evidence](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md) — admin-only `vehicles.list` (11 ACTIVE live); [VC-ADR-017](DECISION_LOG.md) PDPA ratification + authenticated probe/browser acceptance pending `.env` |
-| D-R1/D-R2/D3/D4/D5 | 🔑 WAITING owner | VC-ADR-014/015 recorded |
-| E1–E3 | E1 design + E3 dossier ✅ PREPARED (await owner); E2 ✅ DONE | [E1 migration design](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) (D-E1 decision), [E3 sign-off dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md) (4 human gates OPEN), [E2 evidence](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md) |
-| NF-1 | ✅ ROOT-CAUSE FIXED + LIVE REPAIR DONE — Web App **V47**, GAS suite **134/134** | [Number-format display-corruption incident](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md) — singular→plural `setNumberFormats` (root cause #1), build wrapper-derivation + GAS-VM-03 guard (#2), numeric-General `0.###############` equivalence (#3). Every-sheet repair: 6,659 cells / 21 sheets fixed, **values never touched**; final pass `totalMismatched:0,totalApplied:0` (25 sheets, idempotent) |
+- Current facts and next actions: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
+- Release evidence/gates: [PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md) and [E3 dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md).
+- Decisions: [DECISION_LOG.md](DECISION_LOG.md). Live work: [Agile Kanban](AGILE_KANBAN.md) and repository Issues.
+- After each slice, record exact source PR/SHA, component versions, test transport/scope, deployment state and residual human gates.

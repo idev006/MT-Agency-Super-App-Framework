@@ -1,5 +1,5 @@
 # UC-ADMIN-02 — Police hierarchy and external organization master
-**Status:** DESIGN_BASELINED_FROM_SOURCE; LIVE_GAS_ACCEPTANCE_PENDING
+**Status:** LIVE_DEV_API_SCOPE_VERIFIED; BROWSER_UAT_AND_PRODUCTION_GATES_OPEN
 **Actor:** SYSTEM_ADMIN (write) / STAFF or REGISTRATION_ADMIN (read)
 
 ## 1. Authority and scope
@@ -15,7 +15,7 @@ Authenticated reader has organizations.read; writes require organizations.manage
 List active/disabled organizations; create POLICE or EXTERNAL records; update allowed fields; disable rather than silently delete.
 
 ## 4. Failure and alternate paths
-Invalid org_type, missing parent, self-parent and unauthorized writes are rejected.
+Invalid org_type, missing parent, self-parent, any multi-level ancestor cycle and unauthorized writes are rejected with `INVALID_ORG_PARENT` / `PARENT_NOT_FOUND` / `FORBIDDEN` as applicable.
 
 ## 5. Persistence / external side effects
 - `vc_organizations`
@@ -24,17 +24,17 @@ Invalid org_type, missing parent, self-parent and unauthorized writes are reject
 ## 6. Acceptance trace
 - Test case IDs: `ACTOR-01`, `MATRIX-02`.
 - Executable evidence references: `backend/gas/tests/actor-usecase-acceptance.test.mjs`.
-- Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **NOT_WIRED**; design must align Vue 3, Pinia, Router and API adapter per Master Web Blueprint.
+- Aggregate PR #110 / bf3553d live DEV evidence covers 56/56 API operations (97/97 checks); it does not prove every business branch, external provider/device behavior, destructive retention execution, browser/business UAT or production approval.
+- FE status: **WIRED_IN_SOURCE / LIVE_API_VERIFIED / BROWSER_UAT_OPEN** for the System Admin organization screens; this is not business acceptance.
 
 ## 7. Development notes / explicit gaps
-Source checks a direct self-parent but not arbitrary multi-level cycles; cyclic hierarchy prevention is a design-review gap.
+**B1 delivered:** update traverses the proposed parent's complete ancestor chain with a visited set, rejects direct and indirect cycles, and has negative tests. Live DEV API scope is verified; production security and business acceptance remain separate open gates.
 
 ## 8. Approval conditions
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
 
 
-**Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+**Evidence classification:** Source-reviewed implementation model plus scoped live DEV API evidence (GAS V48, backend 0.9.1). It is NOT browser/business UAT, destructive retention execution, real OIDC-provider or physical-QR acceptance, PDPA/security signoff, or production release approval. Runtime discrepancies require decision-log disposition and PR review.
 
 ## 9. GitHub Mermaid Preview
 
@@ -53,13 +53,14 @@ sequenceDiagram
   Admin->>FE: Create, update or disable organization
   FE->>API: organizations.create / update / disable
   API->>API: Require organizations.manage
+  API->>Orgs: Validate type, parent and complete ancestor chain (B1)
   alt Valid POLICE hierarchy or flat EXTERNAL
-    API->>Orgs: Validate type and direct parent; full ancestor-cycle guard missing
     Orgs->>DB: Insert or update vc_organizations
     Orgs->>DB: Append change audit
     API-->>FE: Organization ID / success
-  else Invalid type, parent or permission
-    API-->>FE: INVALID_ORG_TYPE / PARENT_NOT_FOUND / FORBIDDEN
+  else Invalid type, missing parent or direct/indirect cycle
+    Orgs-->>API: INVALID_ORG_TYPE / PARENT_NOT_FOUND / INVALID_ORG_PARENT
+    API-->>FE: Safe validation error / FORBIDDEN
   end
-  Note over Orgs,DB: Arbitrary hierarchy cycles are not currently detected: design gap
+  Note over Orgs,DB: B1 ancestor-cycle guard delivered with negative tests; production approval remains open
 ```

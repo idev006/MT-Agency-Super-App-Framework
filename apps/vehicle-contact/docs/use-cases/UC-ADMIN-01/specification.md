@@ -1,5 +1,5 @@
 # UC-ADMIN-01 — User provisioning, maintenance, suspension and role assignment
-**Status:** DESIGN_BASELINED_FROM_SOURCE; LIVE_GAS_ACCEPTANCE_PENDING
+**Status:** LIVE_DEV_API_SCOPE_VERIFIED; BROWSER_UAT_AND_PRODUCTION_GATES_OPEN
 **Actor:** SYSTEM_ADMIN
 
 ## 1. Authority and scope
@@ -26,8 +26,8 @@ Duplicate username, invalid roles, self-suspend, self-demotion and lack of users
 ## 6. Acceptance trace
 - Test case IDs: `ACTOR-01`, `TC-RBAC-03`, `MATRIX-02`.
 - Executable evidence references: `backend/gas/tests/actor-usecase-acceptance.test.mjs`.
-- Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **NOT_WIRED**; design must align Vue 3, Pinia, Router and API adapter per Master Web Blueprint.
+- Aggregate PR #110 / bf3553d live DEV evidence covers 56/56 API operations (97/97 checks); it does not prove every business branch, external provider/device behavior, destructive retention execution, browser/business UAT or production approval.
+- FE status: **WIRED_IN_SOURCE / LIVE_API_VERIFIED / BROWSER_UAT_OPEN** for delivered System Admin user/role screens; residual B2b role-assignment journaling remains open.
 
 ## 7. Development notes / explicit gaps
 Role assignment removes existing assignments then reinserts requested roles under a Sheets lock; mid-write interruption may leave a partial assignment and needs recovery plan.
@@ -36,7 +36,7 @@ Role assignment removes existing assignments then reinserts requested roles unde
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
 
 
-**Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+**Evidence classification:** Source-reviewed implementation model plus scoped live DEV API evidence (GAS V48, backend 0.9.1). It is NOT browser/business UAT, destructive retention execution, real OIDC-provider or physical-QR acceptance, PDPA/security signoff, or production release approval. Runtime discrepancies require decision-log disposition and PR review.
 
 ## 9. GitHub Mermaid Preview
 

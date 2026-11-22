@@ -1,117 +1,130 @@
-# P6 Vehicle Contact — Project Handover / Chat Continuation
+# P6 Vehicle Contact — Project Handover / Next AI
 
-**Document ID:** P6VC-HANDOVER-001  
-**Prepared:** 2026-11-17; **last reconciled:** 2026-11-20 (Asia/Bangkok)
-**Implementation/runtime evidence baseline before the docs-only PM reconciliation:** `main` @ `7449309a96bb5717f04a922f11f6e699343aee99`
-**Purpose:** Restore project continuity when the original ChatGPT conversation cannot be opened. This is a **handover/index and evidence snapshot**, **not a replacement** for individual canonical design, requirements, decisions, live Issues or code. Refresh current commit/Issues/CI before making further changes.
+**Document ID:** P6VC-HANDOVER-001
+**Last verified:** 2026-11-22 08:23 Asia/Bangkok
+**Source/content baseline:** PR **#110**, merged `main` @ **`bf3553d`**
+**Purpose:** concise continuation brief. Start with [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); this handover supplies precedence, safety, exact next actions and a ready-to-paste prompt.
 
-> Start with [Current Delivery Status / Resume Here](CURRENT_DELIVERY_STATUS.md). It is the compact continuation SSOT for current versions, active work, blockers and exact next actions. The remaining handover preserves historical context.
-
-## 1. Project identity, purpose and active phase
-
-- **Repository SSOT:** https://github.com/idev006/MT-Agency-Super-App-Framework
-- **Application:** `apps/vehicle-contact/` — P6 Vehicle Contact, App 001.
-- **Purpose:** Register a vehicle and its reachable responsible contact, issue an opaque QR, resolve via authorized QR scan or manual plate/province search, show permitted vehicle/contact details and permit a deliberate tap-to-call.
-- **Current phase:** Phase 1. Visitor card/pass exchange and entry/exit lifecycle are **OFF** pending separate authorization. Parking entitlement functionality and vehicle-photo minimum have unresolved policy questions; do not silently resolve from older draft documents.
-- **Important:** QR references contain no name, telephone number or other personal information. Knowing an identifier never grants access to contact data.
-
-## 2. Directory responsibilities and source precedence
+## 1. Ready-to-paste next-AI prompt
 
 ```text
-blueprint/MASTER_WEB_APP_BLUEPRINT.md           All-app frontend/multi-layer standards
-blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md   All-app GAS backend standards
-blueprint/platform/                             Platform identity/SSO policy (separate)
-blueprint/decisions/                            Cross-app ADRs
-apps/vehicle-contact/README.md                  App entry point (check for historical/stale text)
-apps/vehicle-contact/docs/                      Vehicle-only SA, PRD, PDPA, evidence, ADR
-apps/vehicle-contact/schema/database.schema.json Canonical Sheets logical schema
-apps/vehicle-contact/backend/gas/src/           Canonical GAS JavaScript ES modules
-apps/vehicle-contact/backend/gas/scripts/       GAS build and smoke test source
-apps/vehicle-contact/backend/gas/tests/         Offline synthetic tests
-apps/vehicle-contact/poc/qr-scanner/index.html  Standalone HTML/JS camera POC
-portal/apps.json                                Portal application registry
-.github/workflows/                              Build/validation/source push/smoke CI
+Take over P6 Vehicle Contact in idev006/MT-Agency-Super-App-Framework. Read apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md first, then PROJECT_MANAGEMENT_PLAN_20261121.md and PRODUCTION_READINESS_PLAN_20261121.md. Use last verified 2026-11-22 08:23 Asia/Bangkok and PR #110 merged main bf3553d as the documented baseline, but inspect current git status, fetch and verify the remote main SHA, and inspect Issues and CI before changing anything.
+
+Verified snapshot: published GAS Web App V48 backend 0.9.1; frontend 0.8.0; Worker version 20180237-7441-481a-9540-e7ca2c9c79eb; offline GAS npm check PASS. Live DEV automation passed 97/97 = 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated direct-GAS, covering 56/56 operations and all five roles with cleanup 7/7. Do not describe the authenticated stage as all-through-Worker. DEV reset logically retired 11 and created 10 ACTIVE vehicles, each with 1 contact/5 photos/QR MATCH, cleanup 2/2; post-seed audit passed 25/25 Sheets with zero visible errors and zero repairs. Display-error follow-up maintenance source is GAS HEAD only; published API remains V48. Live report sourceCommit f14458d is not the merge/content baseline.
+
+Completed engineering slices: A1-A3, B1/B2/B4, C1-C4, C6, E2, display repair and live automation. Continue either (1) QR camera recovery from the documented protected stash, integrating current main and adding direct adapter-cleanup tests before physical Android/iOS acceptance, or (2) B2b durable journaling/compensation for registrationReview and assignRoles with fault/restart tests. C5 RETENTION_WORKER console is BLOCKED on human D5+B3 decisions and is not in progress; do not implement or enable destructive retention while blocked.
+
+Keep PDPA/security/UAT/release, browser/business/device acceptance, D-E1/D3/D5/B3, VC-ADR-014/015/017 and credential rotation OPEN unless a named human supplies actual approval evidence. Optional protected GitHub P6VC_TEST_USERNAME/P6VC_TEST_PASSWORD secrets are only for future manual full-suite runs, not a blocker for the completed local run.
+
+Follow all runbooks and scope your changes to the requested slice. Never expose endpoints, credentials, tokens or PII. The GitHub Actions GAS source-push workflow requires the exact per-push owner phrase PUSH_VEHICLE_GAS; a separately owner-authorized assistant clasp self-deploy path may be used within its approved scope. Source push/version creation is separate from Web App publication. Keep source, deployment, live test transport, human acceptance and production approval distinct in every report.
 ```
 
-Rules: code in GitHub is canonical; deployed GAS .gs files and `_site/` are generated artifacts. Do not manually maintain a second GAS source in the Apps Script Editor or duplicate QR scanner sources. Compatibility Markdown pointers are not duplicate authority. Per-app decisions stay under app docs; global patterns stay in `blueprint/`. For any conflict, record source, status, approver and ADR before changing requirements.
+## 2. Document precedence and conflict handling
 
-## 3. Phase-1 technical decisions vs open gates
+Use each authority for its own concern; do not let an old narrative override newer verified evidence.
 
-**Selected engineering direction:** Vue 3 + Vue Router + Pinia + Tailwind CSS + DaisyUI + Vite frontend, app-specific API adapter; Google Apps Script Backend API with layered ports/adapters and generated multi-file .gs scripts; one private Google Spreadsheet as logical app datastore, six candidate tabs (one worksheet = one logical table). Google Drive selected for private media root.
+1. **Current canonical code, explicit owner decisions and named approvals** govern implementation and authorization now. Fetch and verify the remote `main` SHA, then inspect Issues and CI before work.
+2. **[CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)** is the current verified runtime/evidence snapshot and resume point.
+3. **[PROJECT_MANAGEMENT_PLAN_20261121.md](PROJECT_MANAGEMENT_PLAN_20261121.md)** owns slice state/dependencies; **[PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md)** owns release gates.
+4. **Approved requirements, blueprints, canonical schema and [DECISION_LOG.md](DECISION_LOG.md)** govern business/architecture policy. An implemented engineering decision is not automatically a ratified security/PDPA decision.
+5. **Dated evidence and runbooks** prove only their recorded date, source, deployment and test scope. Current counts supersede old counts for the current board without erasing history.
+6. **This handover and [app README](../README.md)** are navigation aids, not competing requirements or deployment evidence.
 
-**Authentication direction:** Phase 1 Username/Password instead of waiting for MT-I-AM. This is **not** proof of a secure identity provider, credential storage, server session or direct-GAS-URL protection. Do not activate protected personal-data APIs until independent security/authorization tests pass. Older Supabase-first/React passages are historical drafts; resolve discrepancies using current approved blueprints and app decisions, not by bulk deleting documents.
+If sources conflict, record the conflict and request the required human decision; do not silently change business policy, schema or permissions. GitHub source is canonical; generated `.gs`, `_site/` and deployed artifacts are not parallel source trees.
 
-**Schema rule:** `schema/database.schema.json` is authoritative; modifications observed in Sheets are proposals for review, never automatic upstream GitHub updates or silent migrations.
+## 3. Current snapshot
 
-## 4. Confirmed progress and evidence scope
+| Area | Verified state |
+|---|---|
+| Runtime | GAS Web App **V48 / 0.9.1**; Frontend **0.8.0**; Worker **`20180237-7441-481a-9540-e7ca2c9c79eb`**. |
+| Inventory | **56 operations**, **25 Sheets**, five roles. |
+| Offline/live | Offline GAS check PASS; live **97/97**, **56/56**, cleanup 7/7. Authenticated 72 cases are direct-GAS; Worker has separate 14-case live fail-closed proof. |
+| DEV data | 11 retired logically, 10 new ACTIVE, each 1 contact/5 photos/QR MATCH; cleanup 2/2. |
+| Sheets audit | 25/25 complete, zero visible errors before/after and zero repairs after seed. |
+| Publication nuance | Display-error repair source is GAS HEAD only; published API remains V48. `f14458d` is report provenance, not baseline. |
+| Release | **Not production-ready. All human sign-offs are OPEN.** |
 
-### Current delivery snapshot — 2026-11-20
+Primary evidence: [live automation/reset/audit](LIVE_API_AUTOMATION.md), [C6 registry](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md), [E2 authorization](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md), [Sheets repair/runbook](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md), [E1 design](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md), and [E3 dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md).
 
-| Area | Gate | Current evidence / boundary |
-|---|---|---|
-| Shared frontend shell | PASS | PRs #44–#46; Vue 3, Pinia, Router, responsive AppShell/PageTemplate/OperationalContextStrip, corporate/dark and axe evidence |
-| STAFF vehicle search | PASS — source/integration | PR #47; permission-driven navigation, fail-closed adapter, refresh persistence and read-only search state coverage. Operational human UAT remains open. |
-| SYSTEM_ADMIN use cases | PASS — source/integration | PRs #48–#54; user, organization, campaign, QR, settings, retention, audit, pagination and responsive date/time input coverage |
-| Selected admin full human profile | PASS — development | PR #55 and live acceptance run 44574709121; exact server roles `SYSTEM_ADMIN` + `REGISTRATION_ADMIN`. This does not create an unrestricted super-role. |
-| GAS source/development Web App | PASS — development | Run 44573790557 created source Version 20 from `3cfcf0e`; owner reported Web App publication. Public health recheck returned ready / API v1 / backend 0.4.0. |
-| Production/security/PDPA release | BLOCKED | Named approvals, direct-ingress security proof, real-data authorization, UAT and release sign-off remain open. |
+## 4. Runtime handoff diagram
 
-### Historical evidence snapshot — 2026-11-17
+No endpoint, credential or session value is needed to understand the flow.
 
-| Area | Result | Evidence | What it does NOT prove |
-| --- | --- | --- | --- |
-| Source tree and architecture docs | PRESENT in GitHub | App README, blueprints, source tree | Business/production sign-off |
-| Spreadsheet structure | Six tabs with headers reported verified via connected Drive | `docs/GAS_TEST_EVIDENCE.md` | Live editor-to-Sheets verification of deployed functions |
-| GAS CI bootstrap contract/build | PASS | [Run 44022203757](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44022203757) | Live GAS behavior |
-| First authenticated GAS source push | PASS; source version 3 | [Run 44033187307](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44033187307) | Published Web App or completed auth |
-| Source-mirrored GAS modules | 14 .gs modules + manifest pushed; GAS source Version 5 created | [Run 44035053861](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44035053861), `docs/GAS_MODULE_MAPPING.md` | That /exec points at Version 5 |
-| Live GAS HTTPS smoke | **7/7 PASS**, real GET/POST with synthetic requests | [Run 44036525176](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44036525176), `docs/GAS_LIVE_API_TEST_EVIDENCE.md` | Working vehicles/contacts/QR CRUD; authenticated access; real Sheet reads/writes |
-| Additional API/domain tests | **10/10 PASS** (synthetic Node tests); build yields **17 generated .gs modules + manifest** | [Run 44037490677](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44037490677), `docs/API_TEST_SUITE_PHASE1.md`, roadmap | Push/deploy of the newer 17-module build; operational QR issuance, uploads, session/RBAC |
-| QR camera prototype | Standalone HTML/JS v7 source; camera access Android/iOS user-reported | `poc/qr-scanner/index.html`, `docs/POC_QR_SCANNER.md` | Independently evidenced decoding/front-rear/device matrix |
-| CI/Pages | Earlier GitHub Actions billing lock was later reported resolved; Pages documentation indicates subsequent passing runs | `docs/DOCUMENT_CONSISTENCY_QC_2026-11-17.md`, `portal/DEPLOYMENT_STATUS.md` | New commit deployments or production readiness |
+```mermaid
+flowchart LR
+  U[Five roles] --> FE[Vue frontend 0.8.0]
+  FE -->|Permission-gated UX| W[Cloudflare Worker]
+  W -->|Allowlisted validated requests| G[Published GAS V48 / 0.9.1]
+  G --> S[25 logical Sheets]
+  G --> D[Drive media]
+  A[Live automation 97/97] -->|11 public| G
+  A -->|14 fail-closed| W
+  A -->|72 authenticated direct-GAS| G
+  H[GAS HEAD display repair] -. Editor maintenance only .-> S
+```
 
-**Critical distinction:** Apps Script `clasp push` + `clasp create-version` are source/version operations, **not** a versioned Web App deployment. Version 20 source push and the owner-reported Web App publication are now recorded separately. A successful public health endpoint proves routing and reported release metadata, not production authorization or protected-operation acceptance.
+GAS remains the authorization authority; frontend permissions are navigation/UX only. The diagram does not imply that all authenticated automation passed through the Worker.
 
-## 5. Operational APIs and security gates
+## 5. Work and gate state diagram
 
-The live smoke test confirmed GET/POST `system.health`, invalid-version rejection, unknown-group rejection, and fail-closed responses for `vehicles.lookup`, `contacts.read` and `qr.resolve`. The protected groups were intentionally disabled. GAS ContentService may answer HTTP 200 with `ok:false` logical errors in the JSON response; do not mistake HTTP status for authorization.
+```mermaid
+flowchart TD
+  DONE[Done: A1-A3, B1/B2/B4, C1-C4, C6, E2, repairs, automation] --> BA[Browser/business acceptance OPEN]
+  QR[QR camera WIP/recovery] --> DEV[Android/iOS acceptance OPEN]
+  B2B[B2b durable journaling TODO] --> RC[Engineering release scope OPEN]
+  BA --> RC
+  DEV --> RC
+  DEC[D5 + B3 decisions OPEN] --> C5[C5 console BLOCKED]
+  C5 --> RC
+  RC --> SIGN[PDPA/security/UAT/release sign-offs OPEN]
+  OTHER[D-E1/D3 + ADR-014/015/017 + credential rotation OPEN] --> REL[Production release OPEN]
+  SIGN --> REL
+```
 
-**Blockers for any real personal data:**
-1. Named owner/data steward and final scope/business photo/parking/visitor policy decisions.
-2. Approved Username/Password provider, password reset/MFA decisions, safe session lifecycle.
-3. Non-bypassable GAS ingress and per-action/resource authorization proved with adversarial direct-/exec tests.
-4. Authorized GAS Script Property `VEHICLE_SHEET_ID` and non-destructive real Sheet schema verification.
-5. Sheets persistence contract and integration with synthetic records; locking/versioning, logging and rollback.
-6. Private Drive media access checks; explicit photo-minimum decision.
-7. PDPA controller/DPO, lawful basis, notices, retention and field/UAT/device evidence.
+## 6. Exact next actions
 
-## 6. Delivery order (reconcile live Kanban first)
+1. **Reconcile before editing:** inspect current branch/status, fetch and verify the remote `main` SHA, then inspect the relevant Issue and checks. Treat the snapshot above as last-verified, not a substitute for current inspection.
+2. **QR path:** verify and recover the stash using §7; integrate latest `main`, inspect the diff, add direct adapter-cleanup tests, run focused/offline suites, then obtain physical Android/iOS acceptance. Do not drop the stash prematurely.
+3. **B2b path:** add durable PREPARED/recovery semantics for `registrationReview` and `assignRoles`, prove restart/fault idempotency, and update the [recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) and evidence.
+4. **C5:** leave **BLOCKED** until D5+B3 are explicitly ratified. Only then build the permission-gated console and perform synthetic two-person/`legal_hold` rehearsal; never enable real-data destructive retention.
+5. **Acceptance:** arrange named-human browser/business review of gallery/copy, C1–C4 and C6 plus QR device review. API automation is not UAT.
+6. **Release:** resolve D-E1/D3/D5/B3 and VC-ADR-014/015/017 as applicable, rotate credentials, complete PDPA/security/UAT review, then follow the [release sequence](PRODUCTION_READINESS_PLAN_20261121.md#4-release-sequence--no-date-commitment). Final release approval remains OPEN.
 
-**Read first:**
-- [Roadmap](DEVELOPMENT_ROADMAP_PHASE1.md) and [Issue-backed Kanban](AGILE_KANBAN.md)
-- [System analyst baseline](SYSTEM_ANALYST_BASELINE_PHASE1.md), [Requirements traceability](REQUIREMENTS_TRACEABILITY.md), [Decision Log](DECISION_LOG.md)
-- [Phase-1 Sheets architecture](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md), [Canonical schema](../schema/database.schema.json)
-- [GAS API specification](GAS_API_SPEC.md), [API test suite](API_TEST_SUITE_PHASE1.md)
-- [GAS testing status](GAS_TEST_EVIDENCE.md), [Live smoke evidence](GAS_LIVE_API_TEST_EVIDENCE.md)
-- [Module mapping](GAS_MODULE_MAPPING.md), [GAS deployment runbook](GAS_GITHUB_ACTIONS_DEPLOYMENT.md)
-- [QR POC evidence](POC_QR_SCANNER.md), [Privacy reviews](PDPA_REVIEW_CHECKLIST.md)
-- [All-app GAS Blueprint](../../../blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md), [All-app Web Blueprint](../../../blueprint/MASTER_WEB_APP_BLUEPRINT.md)
+## 7. QR protected-stash recovery
 
-**Immediate safe continuation:**
-1. Inspect live `main`, GitHub Issues `VC-W*`, latest checks and actual GAS version/deployment configuration; distinguish documented snapshots from live status.
-2. Verify Script Editor module list and `VEHICLE_SHEET_ID` via authorized settings, run editor-only `verifyVehicleSchemaFromEditor()` / `inspectVehicleSchemaDriftFromEditor()` read-only and preserve sanitized output; never paste secrets into chat.
-3. Expand fake Sheets repository tests and Vue mock shell with synthetic data while security decisions remain blocked.
-4. Produce/review an explicit Phase-1 auth + non-bypassable GAS ingress ADR and test plan before opening protected business operations.
-5. After appropriate approvals, test staging vehicle/contact/QR integration, media and Android/iOS behavior, recording exact run SHA, deployment ID, test inputs without PII, expected/actual and reviewer.
+The documented local WIP reference is:
 
-**Workflow constraints:** GitHub Actions GAS deployment is manual-only with maintainer confirmation. No unattended push, live database mutation, public exposure of confidential vehicle/contact fields or implicit production release.
+```text
+stash@{0}: On codex/p6vc-qr-camera-scanner-20261120: wip: qr camera scanner before reference catalog
+```
 
-## 7. Reporting contract for the replacement chat
+Verify the stash still exists. Use the `FETCH_HEAD` written by the immediately preceding fetch; do not substitute a potentially stale local `origin/main`. Then:
 
-When continuing work, report a table or concise structured summary with: `Work ID`, canonical file/Issue, DONE-EVIDENCED / IN-PROGRESS / REVIEW / BLOCKED / TODO / DEFERRED, exact commit+CI evidence, test layer (unit/contract/live smoke/Security/E2E), blocker, next owner/action. Never convert docs/CI results to claims of business feature completion. Update Issues and the handover only after verifying the changes.
+```powershell
+git fetch origin main
+git switch -c codex/p6vc-qr-camera-scanner-resume FETCH_HEAD
+git stash apply 'stash@{0}'
+```
 
-## 8. Ready-to-paste first message in a new chat
+Resolve against Frontend **0.8.0 or later**. Do not drop the stash until recovered changes are safely committed and pushed. Earlier WIP had pinned `html5-qrcode 2.3.8`, 12/12 focused tests, build and dependency audit PASS; direct cleanup tests and physical device acceptance were not thereby completed.
 
-> รับช่วงโครงการ **P6 Vehicle Contact** จาก GitHub SSOT `idev006/MT-Agency-Super-App-Framework` โดยเริ่มจาก `apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md` แล้วตรวจ `main`, GitHub Issues และหลักฐานของ slice ที่จะทำ ไม่สร้างแผนแข่งขันกับ SSOT และไม่เปลี่ยนข้อกำหนดธุรกิจโดยพลการ รายงาน DONE-EVIDENCED / IN-PROGRESS / REVIEW / BLOCKED / TODO แยก source, deployment, live acceptance และ production approval ให้ชัด ปัจจุบัน baseline ที่ reconcile แล้วคือ `7449309`, GAS source Version 22, Backend API `0.5.0`, Frontend `0.6.0`; security/PDPA/UAT/release approval ยังเป็น gate แยกต่างหาก
+## 8. Safety rules
 
-**Historical-chat note:** The earlier conversation was reportedly titled `MT-พัฒนาระบบตรวจสอบสิทธิ์จอด`; the exact chat/message ID and original chat's complete history were not independently recovered. This handover is grounded in versioned GitHub evidence, not a verbatim transcript of that chat.
+- Keep endpoints, credentials, session tokens, raw responses with PII and secret-bearing logs out of chat, commits, Issues and evidence.
+- Obtain authorization before live mutation. Live automation is synthetic DEV only under its exact write guard; cleanup failures fail the run.
+- The GitHub Actions GAS source-push workflow requires exact per-push **`PUSH_VEHICLE_GAS`**. A separately owner-authorized assistant `clasp` self-deploy path may be used within its approved scope; both require authorization and evidence.
+- Record source push, GAS source-version creation, Web App publication, Worker deployment and Pages deployment separately; verify health/behavior after publication.
+- No unapproved schema migration, production catalog `ENFORCED` mode, destructive retention or production release.
+- Preserve least privilege, server-side identity/ownership, bounded Sheets reads, no cross-sheet joins and fail-closed DTO/Worker behavior.
+- Never self-approve PDPA/security/UAT/release, ADRs, business scope or device acceptance. Never relabel blocked C5 as in progress.
+- Optional GitHub protected test secrets are for future manual runs only; their absence does not invalidate the completed local evidence.
+
+## 9. Essential source and runbook map
+
+- [Code map](CODE_MAP_20261121.md) · [56-operation use-case SSOT](use-cases/README.md) · [canonical 25-Sheet schema](../schema/database.schema.json)
+- [Live API automation](LIVE_API_AUTOMATION.md) · [GAS deployment](GAS_GITHUB_ACTIONS_DEPLOYMENT.md) · [Web App manifest incident](GAS_CLASP_WEBAPP_MANIFEST_INCIDENT_20261121.md)
+- [Operation journal recovery](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) · [Sheets display repair](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md)
+- [A2/A3 historical live evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md) · [B2 journal evidence](BACKEND_JOURNAL_RECOVERY_EVIDENCE_20261121.md)
+- [Agile Kanban](AGILE_KANBAN.md) · [requirements traceability](REQUIREMENTS_TRACEABILITY.md)
+
+Report each next slice with exact PR/SHA, tests and transport, component/deployment versions, evidence link, residual blocker and named approver where applicable.

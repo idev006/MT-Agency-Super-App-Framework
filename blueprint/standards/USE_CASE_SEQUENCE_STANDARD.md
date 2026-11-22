@@ -38,4 +38,4 @@ Inside `apps/<app-id>/docs/use-cases/<UC-ID>/`:
 - **After execution:** attach GitHub Actions job URL, source SHA, GAS deployment version, real API URL and staging test evidence to the UC; record any mismatch in decision log and repair before claiming E2E PASS.
 - **Production:** security/PDPA/data retention approval and rollback plan are separate gates. A diagram or mock test cannot satisfy them.
 
-**Reference implementation:** [P6 Vehicle Contact Use Cases](../../apps/vehicle-contact/docs/use-cases/README.md). Its 20 diagrams and 50 API operations are **application-specific**, not a universal blueprint.
+**Reference implementation:** [P6 Vehicle Contact Use Cases](../../apps/vehicle-contact/docs/use-cases/README.md). Its 20 diagrams and 56 API operations are **application-specific**, not a universal blueprint.

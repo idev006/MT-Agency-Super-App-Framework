@@ -1,5 +1,7 @@
 # P6VC Dev Automated Test Bridge — Architecture and Deployment Gates
 
+> **CURRENT HANDOFF (2026-11-22) — HISTORICAL POC ONLY.** This job/console bridge is **not the current frontend architecture** or live-verification SSOT; its undeployed gates and 50-operation language are dated. Use [Current Delivery Status](../../apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](../../apps/vehicle-contact/docs/PROJECT_MANAGEMENT_PLAN_20261121.md), [Live API Automation](../../apps/vehicle-contact/docs/LIVE_API_AUTOMATION.md), and [Code Map](../../apps/vehicle-contact/docs/CODE_MAP_20261121.md). Keep the credential redaction/rotation and production-safety restrictions below; rotate any exposed bridge key or test credential.
+
 Status: IMPLEMENTED direct HTTPS Job Bridge on branch; **NOT deployed to Cloudflare**. This Codex environment can reach the Worker over HTTPS, so MCP and GitHub Issue Queue are not required for the primary path.
 
 ## Problem and direction

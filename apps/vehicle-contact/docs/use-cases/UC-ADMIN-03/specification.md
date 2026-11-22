@@ -1,5 +1,5 @@
 # UC-ADMIN-03 — System settings and public health check
-**Status:** DESIGN_BASELINED_FROM_SOURCE; LIVE_GAS_ACCEPTANCE_PENDING
+**Status:** LIVE_DEV_API_SCOPE_VERIFIED; BROWSER_UAT_AND_PRODUCTION_GATES_OPEN
 **Actor:** SYSTEM_ADMIN / anonymous monitor (health only)
 
 ## 1. Authority and scope
@@ -24,17 +24,17 @@ Unauthorized get/update, unsupported keys, invalid integer ranges are denied; he
 ## 6. Acceptance trace
 - Test case IDs: `LIVE-01`, `LIVE-02`, `ACTOR-01`, `MATRIX-00`.
 - Executable evidence references: `backend/gas/tests/actor-rbac-matrix.test.mjs`.
-- Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **NOT_WIRED**; design must align Vue 3, Pinia, Router and API adapter per Master Web Blueprint.
+- Aggregate PR #110 / bf3553d live DEV evidence covers 56/56 API operations (97/97 checks); it does not prove every business branch, external provider/device behavior, destructive retention execution, browser/business UAT or production approval.
+- FE status: **WIRED_IN_SOURCE / LIVE_API_VERIFIED / BROWSER_UAT_OPEN** for delivered System Admin settings screens; public health is also live-smoke verified.
 
 ## 7. Development notes / explicit gaps
-Health is special public route in Router, not one of 49 protected DTO handler operations.
+Health is a special public route in Router, not one of the 50 session-protected RBAC operations (5 roles × 50 = 250 checks).
 
 ## 8. Approval conditions
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
 
 
-**Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+**Evidence classification:** Source-reviewed implementation model plus scoped live DEV API evidence (GAS V48, backend 0.9.1). It is NOT browser/business UAT, destructive retention execution, real OIDC-provider or physical-QR acceptance, PDPA/security signoff, or production release approval. Runtime discrepancies require decision-log disposition and PR review.
 
 ## 9. GitHub Mermaid Preview
 

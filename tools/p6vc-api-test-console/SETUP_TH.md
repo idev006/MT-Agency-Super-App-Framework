@@ -1,5 +1,7 @@
 # P6VC API Test Console — POC ที่กรอกค่าทดสอบเองได้
 
+> **CURRENT HANDOFF (2026-11-22) — เอกสาร POC ย้อนหลังเท่านั้น** คำแนะนำ POC 3/4 ด้านล่างไม่ใช่สถาปัตยกรรม Frontend หรือขั้นตอน Deploy ปัจจุบัน และต้องไม่ใช้ Allowlist/สถานะเดิมเป็นงานค้างปัจจุบัน อ่าน [Current Delivery Status](../../apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](../../apps/vehicle-contact/docs/PROJECT_MANAGEMENT_PLAN_20261121.md), [Live API Automation](../../apps/vehicle-contact/docs/LIVE_API_AUTOMATION.md) และ [Code Map](../../apps/vehicle-contact/docs/CODE_MAP_20261121.md) ก่อนทำงานต่อ กติกาการหมุนเวียน Credential, การปกปิดข้อมูลลับ และความปลอดภัยก่อน Production ด้านล่างยังคงบังคับใช้
+
 > Version: POC 4 — เพิ่ม Frontend SPA Gateway โดย GAS Backend เดิมไม่เปลี่ยน
 
 ## เป้าหมาย

@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — Requirements traceability and reconciliation
 
+> **Historical 2026-11-17 audit:** implementation results below are frozen at that review and do not override later delivery. For current operation-to-UC/test mapping use [traceability-matrix.md](traceability-matrix.md); for current work and human gates use [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
+
 **Date:** 2026-11-17  
 **Status:** REVIEW REQUIRED — audit of existing material; NOT a new product specification  
 **Authority:** Existing approved instructions and app-specific decision records; do not silently choose between conflicting drafts.

@@ -2,6 +2,8 @@
 
 Status: canonical test design and executable workflow, 2026-11-21.
 
+**Handoff provenance — 2026-11-22 08:23 Asia/Bangkok:** PR **#110** merged the source baseline to `main` @ **`bf3553d`**. Published GAS Web App **V48** reports backend **`0.9.1`**; frontend **`0.8.0`** is on Pages. Later editor-only maintenance exists in **GAS HEAD** and is not a new published anonymous Web App version. The automation report's `sourceCommit` **`f14458d`** records its execution-time checkout and is distinct from the PR #110 merge baseline.
+
 ## One-command workflow
 
 From the repository root:
@@ -99,7 +101,7 @@ Run window **22:01:34–22:10:30 Asia/Bangkok** against published GAS V48 / `0.9
 | Operation coverage | **56/56, 0 missing** |
 | Cleanup | **7/7 PASS**: campaign revoked, organization disabled, four synthetic users suspended, automation admin logged out |
 
-Aggregate report: `test-results/p6vc-live-api-suite.json` (`secretsExposed:false`). The report's `sourceCommit` is `f14458d690662ce0908375a6e457b8e882158554`, the checked-out Git HEAD at execution; the new harness changes were still uncommitted in the working tree, so this field is not a claim that the report contains a clean-tree source hash.
+Aggregate report: `test-results/p6vc-live-api-suite.json` (`secretsExposed:false`). The report's `sourceCommit` is `f14458d690662ce0908375a6e457b8e882158554`, the checked-out Git HEAD at execution; the new harness changes were still uncommitted in the working tree, so this field is not a claim that the report contains a clean-tree source hash. PR #110 subsequently merged the harness and evidence at source merge baseline `bf3553d`; that later merge does not alter the historical report field.
 
 An earlier credential-free run at 21:48–21:49 correctly returned `PASS_PUBLIC_ONLY`, 25/25 with `AUTHENTICATED_FULL_INVENTORY:SKIPPED_CREDENTIALS`. The later full result above supersedes that skipped stage. Neither result is production security, PDPA, UAT or release approval.
 
@@ -120,10 +122,10 @@ Run window **22:10:43–22:22:37 Asia/Bangkok**, with the exact synthetic-write 
 
 Post-seed GAS editor audit at **22:23:28–22:23:39 Asia/Bangkok** returned `status:OK`, `auditedSheets:25`, `incompleteSheets:[]`, `totalErrorsBefore:0`, `totalErrorsAfter:0`, `totalRepaired:0`, with zero formula/source skips. This proves the new numeric-looking province strings did not recreate visible spreadsheet errors.
 
-## Manual GitHub Actions run
+## Optional manual GitHub Actions run
 
 Workflow: **P6VC Live Acceptance (manual only)** → mode `full-api-suite`.
 
-The run is owner-only and main-only, and requires confirmation `RUN_FULL_API_SUITE`. Configure protected secrets `P6VC_TEST_USERNAME` and `P6VC_TEST_PASSWORD`; never place their values in the repository, workflow logs, issue or documentation.
+This optional owner-only, main-only path requires confirmation `RUN_FULL_API_SUITE`. GitHub test secrets are **not required for the local executable workflow or for the validity of the local evidence above**. Only when the owner chooses to run this workflow in GitHub Actions, configure protected secrets `P6VC_TEST_USERNAME` and `P6VC_TEST_PASSWORD`; never place their values in the repository, workflow logs, issue or documentation. Missing GitHub secrets block only that optional Actions run and must fail closed, not be represented as a local-suite blocker.
 
-Offline validation remains separate and live-free. Exhaustive RBAC and fault injection stay in the offline suites. Browser UAT, physical QR-camera checks, PDPA/security review and production release approval remain human gates.
+Offline validation remains separate and live-free. Exhaustive RBAC and fault injection stay in the offline suites. Browser UAT, physical QR-camera checks, credential rotation, B2b `registrationReview`/`assignRoles` journaling, PDPA/security review and production release approval remain human gates.

@@ -1,4 +1,7 @@
 # P6 Vehicle Contact — GAS Staging Acceptance Operator Runbook
+
+> **CURRENT HANDOFF (2026-11-22) — HISTORICAL RUNBOOK AND EXECUTION RECORD.** Preserve the 2026-11-17 **19/19** and **21/21** sandbox outcomes below; its unverified-HTTP/deployment and NOT_RUN statements are not current. Later live automation evidence is **97/97 PASS** on the **56-operation, 25-Sheet, GAS V48 / Backend 0.9.1** baseline: [Live API Automation](LIVE_API_AUTOMATION.md). Resume via [Current Delivery Status](CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](PROJECT_MANAGEMENT_PLAN_20261121.md), and [Code Map](CODE_MAP_20261121.md).
+
 **Source:** isolated user-owned synthetic sandbox, not production.  
 **Test Spreadsheet:** [P6VC Backend Acceptance Test Sandbox](https://docs.google.com/spreadsheets/d/1kmUaBUC8slFICGLzxpNEUBsU87Sf-tnfe32AUs208As/edit)  
 **Target GAS project:** [P6VC Apps Script Editor](https://script.google.com/d/1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX/edit)

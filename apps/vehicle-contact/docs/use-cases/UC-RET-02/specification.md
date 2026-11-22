@@ -1,5 +1,5 @@
 # UC-RET-02 — Retention approval, worker deletion and job status
-**Status:** DESIGN_BASELINED_FROM_SOURCE; LIVE_GAS_ACCEPTANCE_PENDING
+**Status:** LIVE_DEV_API_SCOPE_VERIFIED; BROWSER_UAT_AND_PRODUCTION_GATES_OPEN
 **Actor:** SYSTEM_ADMIN (approve) / RETENTION_WORKER (execute)
 
 ## 1. Authority and scope
@@ -15,7 +15,7 @@ Retention job due; legal_hold false; System Admin approves; worker receives rete
 Approve status and audit; worker trashes Drive files, deletes related Sheets rows, keeps required change/lookup audit; job DELETION_COMPLETED.
 
 ## 4. Failure and alternate paths
-Not due, hold, missing approver, disabled worker flag, storage fault produces retry-required; partial deletion reconciliation and idempotent retries still incomplete.
+Not due, legal hold, missing approver or disabled worker flag denies execution. B2 provides job-tracked retry evidence: each attempt increments `attempts`, storage/write failure records `DELETION_FAILED` plus `last_error`, and `retention.jobStatus` / `retention.listExecutable` expose the retryable state. This does not permit or prove destructive execution.
 
 ## 5. Persistence / external side effects
 - `vc_retention_jobs`
@@ -29,17 +29,17 @@ Not due, hold, missing approver, disabled worker flag, storage fault produces re
 ## 6. Acceptance trace
 - Test case IDs: `ACTOR-06`, `EDGE-07`, `GAS-FLOW.WORKER_DELETE`.
 - Executable evidence references: `backend/gas/tests/acceptance-failures.test.mjs`.
-- Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **NOT_WIRED**; design must align Vue 3, Pinia, Router and API adapter per Master Web Blueprint.
+- Aggregate PR #110 / bf3553d live DEV evidence covers 56/56 API operations (97/97 checks); it does not prove every business branch, external provider/device behavior, destructive retention execution, browser/business UAT or production approval.
+- FE status: **NOT_WIRED — C5 BLOCKED ON D5+B3**; destructive execution remains disabled/gated regardless of future console wiring.
 
 ## 7. Development notes / explicit gaps
-Deletion first trashes Drive then mutates multiple Sheets tables; abrupt interruption and repeated file trash calls can leave DELETION_FAILED and need verified reconciliation. `retention.listExecutable` gives RETENTION_WORKER a least-privilege queue (permission `retention.worker`, not `retention.read`): a single bounded snapshot of `vc_retention_jobs` filtered to `DELETION_APPROVED`/`DELETION_FAILED`, due, non-hold, with an approver, so the worker can discover executable jobIds without broader retention visibility. No cross-sheet join.
+Deletion first trashes Drive then mutates multiple Sheets tables; B2 job status/attempt/`last_error` retry evidence is test-covered, but actual destructive Drive/Sheets execution remains **disabled/gated** and is not accepted by the 56-operation live API inventory run. `retention.listExecutable` gives RETENTION_WORKER a least-privilege queue (`retention.worker`, not `retention.read`): one bounded `vc_retention_jobs` snapshot filtered to due, non-hold, approved `DELETION_APPROVED` / `DELETION_FAILED` rows, with no cross-sheet join. C5 execution console remains blocked on D5+B3; PDPA/security/release approval remains open.
 
 ## 8. Approval conditions
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
 
 
-**Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+**Evidence classification:** Source-reviewed implementation model plus scoped live DEV API evidence (GAS V48, backend 0.9.1). It is NOT browser/business UAT, destructive retention execution, real OIDC-provider or physical-QR acceptance, PDPA/security signoff, or production release approval. Runtime discrepancies require decision-log disposition and PR review.
 
 ## 9. GitHub Mermaid Preview
 
@@ -58,21 +58,30 @@ sequenceDiagram
   alt Authorized approval
     Retention->>DB: Set DELETION_APPROVED and append audit
     API-->>Sys: approved true
-    Worker->>API: retention.execute(jobId)
-    API->>API: Require retention.worker and feature flag
-    Retention->>DB: Mark DELETION_IN_PROGRESS
-    Retention->>Drive: Trash all linked photo files
-    Retention->>DB: Delete vehicle/contact/QR/dependent rows
-    Retention->>DB: Mark DELETION_COMPLETED; preserve audit rows
-    API-->>Worker: DELETION_COMPLETED
-  else Hold, not due, no approval or error
-    API-->>Sys: RETENTION_NOT_APPROVABLE / safe error
-    opt Worker deletion fails after approval
-      Retention->>DB: Mark DELETION_FAILED and last_error
+  else Hold, not due or invalid state
+    API-->>Sys: RETENTION_NOT_APPROVABLE
+  end
+  Worker->>API: retention.listExecutable(session,page,pageSize)
+  API->>API: Require retention.worker
+  Retention->>DB: Bounded approved/failed, due, non-hold job snapshot
+  API-->>Worker: Job IDs, status, attempts and lastError
+  Worker->>API: retention.execute(jobId)
+  API->>API: Require retention.worker and destructive feature flag
+  alt Destructive execution disabled
+    API-->>Worker: RETENTION_EXECUTION_DISABLED; no Drive/Sheets deletion
+  else Explicitly enabled isolated staging execution
+    Retention->>DB: Mark DELETION_IN_PROGRESS and increment attempts
+    alt Deletion completes
+      Retention->>Drive: Trash all linked photo files
+      Retention->>DB: Delete dependent rows; preserve required audit
+      Retention->>DB: Mark DELETION_COMPLETED
+      API-->>Worker: DELETION_COMPLETED
+    else Storage or write failure
+      Retention->>DB: Mark DELETION_FAILED and persist last_error
       API-->>Worker: DELETION_RETRY_REQUIRED
     end
   end
-  Sys->>API: retention.jobStatus(jobId)
-  API-->>Sys: Current status and attempt count
-  Note over Retention,DB: Retry/recovery after abrupt GAS timeout still unverified
+  Worker->>API: retention.jobStatus(jobId)
+  API-->>Worker: Current status, attempts and lastError for job-tracked retry
+  Note over Retention,Drive: B2 retry evidence delivered; destructive execution remains disabled/gated and unaccepted
 ```

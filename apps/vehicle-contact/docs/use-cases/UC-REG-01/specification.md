@@ -1,5 +1,5 @@
 # UC-REG-01 — Vehicle application submission with five photos
-**Status:** DESIGN_BASELINED_FROM_SOURCE; LIVE_GAS_ACCEPTANCE_PENDING
+**Status:** LIVE_DEV_API_SCOPE_VERIFIED; BROWSER_UAT_AND_PRODUCTION_GATES_OPEN
 **Actor:** Registrant or assisted REGISTRATION_ADMIN with valid campaign
 
 ## 1. Authority and scope
@@ -16,7 +16,7 @@ Assisted intake may load canonical reference data with a verified session holdin
 Store PENDING_APPROVAL registration, claim media, increment quota once, persist idempotency response and operation journal.
 
 ## 4. Failure and alternate paths
-Duplicate plate+province, invalid campaign, staged photo mismatch, quota exhaustion or idempotency conflict denied; caught write errors compensated but abrupt timeout requires manual recovery.
+Duplicate plate+province, invalid campaign, staged photo mismatch, quota exhaustion or idempotency conflict are denied. On a retry without a completed idempotency record, **B2 automatic state-driven reconciliation** removes the orphaned request, restores CLAIMED photos to STAGED and marks the journal `RECOVERY_REQUIRED` with recovery evidence. Campaign quota cannot be proven from state alone; quota/ambiguous outcomes and any reconciliation error remain `OPERATION_RECOVERY_REQUIRED` manual-runbook cases.
 
 ## 5. Persistence / external side effects
 - `vc_campaigns`
@@ -31,17 +31,17 @@ Duplicate plate+province, invalid campaign, staged photo mismatch, quota exhaust
 ## 6. Acceptance trace
 - Test case IDs: `ACTOR-03`, `EDGE-01`, `EDGE-03`, `EDGE-04`, `EDGE-09`, `GAS-FLOW.REGISTRATION_SUBMIT`, `REF-CATALOG-01`.
 - Executable evidence references: `backend/gas/tests/actor-usecase-acceptance.test.mjs`, `backend/gas/tests/reference-data.test.mjs`.
-- Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **WIRED_IN_SOURCE / LIVE_ACCEPTANCE_PENDING**; assisted intake, campaign validation, five responsive photo inputs and idempotent submit are recorded in [FE-REGISTRATION-INTAKE-01 evidence](../../FRONTEND_FE_REGISTRATION_INTAKE_01_EVIDENCE_20261120.md).
+- Aggregate PR #110 / bf3553d live DEV evidence covers 56/56 API operations (97/97 checks); it does not prove every business branch, external provider/device behavior, destructive retention execution, browser/business UAT or production approval.
+- FE status: **WIRED_IN_SOURCE / LIVE_API_VERIFIED / BROWSER_UAT_OPEN**; assisted intake, campaign validation, five responsive photo inputs and idempotent submit are recorded in [FE-REGISTRATION-INTAKE-01 evidence](../../FRONTEND_FE_REGISTRATION_INTAKE_01_EVIDENCE_20261120.md).
 
 ## 7. Development notes / explicit gaps
-Exactly one primary contact is created only during approval. Sheets compensation is not atomic database rollback; journal PREPARED after crash is a release blocker.
+Exactly one primary contact is created only during approval. Sheets compensation is not atomic database rollback. B2 automatic reconciliation is delivered for retryable submit state, but manual quota/ambiguous recovery remains required and is not blanket business or production acceptance.
 
 ## 8. Approval conditions
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
 
 
-**Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+**Evidence classification:** Source-reviewed implementation model plus scoped live DEV API evidence (GAS V48, backend 0.9.1). It is NOT browser/business UAT, destructive retention execution, real OIDC-provider or physical-QR acceptance, PDPA/security signoff, or production release approval. Runtime discrepancies require decision-log disposition and PR review.
 
 ## 9. GitHub Mermaid Preview
 
@@ -65,6 +65,15 @@ sequenceDiagram
   API->>Reg: Validate DTO and business fields
   Reg->>DB: Acquire ScriptLock
   Reg->>DB: Check campaign, digest and idempotency
+  opt Retry finds timed-out partial submit without idempotency result
+    Reg->>DB: State-driven reconciliation: remove orphan request and restore CLAIMED photos
+    Reg->>DB: Mark journal RECOVERY_REQUIRED with recovery evidence and quotaCheck MANUAL
+    alt Reconciliation cleanup fails
+      Reg-->>FE: OPERATION_RECOVERY_REQUIRED; use manual recovery runbook
+    else Cleanup completes; retry may continue
+      Note over Reg,DB: Ambiguous campaign quota still requires manual runbook verification
+    end
+  end
   alt Completed identical submission
     DB-->>Reg: Stored result
     Reg-->>FE: Same requestId and vehicleId
@@ -85,5 +94,5 @@ sequenceDiagram
     Reg-->>FE: Safe error
   end
   Reg->>DB: Release lock and flush
-  Note over Reg,DB: Abrupt GAS timeout may leave PREPARED journal; manual reconciliation still required
+  Note over Reg,DB: B2 automates retry state cleanup; quota/ambiguous recovery remains manual, not atomic rollback
 ```

@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — Live DEV E2E evidence (A2 approval 10/10 + A3 full regression)
 
+> **CURRENT HANDOFF (2026-11-22) — DATED EVIDENCE, NOT A TODO LIST.** Preserve the V37-era **A2 10/10** and **A3 70/70 (55/55 operations)** outcomes below. Its remaining gates and NOT_WIRED notes are historical; the current baseline is **56 operations, 25 Sheets, GAS V48 / Backend 0.9.1**, with later live automation **97/97 PASS**. Resume from [Current Delivery Status](CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](PROJECT_MANAGEMENT_PLAN_20261121.md), [Live API Automation](LIVE_API_AUTOMATION.md), and [Code Map](CODE_MAP_20261121.md).
+
 **Date:** 2026-11-21 (Asia/Bangkok) | **Scope:** live authenticated DEV E2E through the Cloudflare Worker gateway → published GAS Web App.
 **Classification:** LIVE DEV SYNTHETIC EVIDENCE. Synthetic records only; **not** production security, PDPA, UAT or release approval. Credentials were supplied out-of-band by the Project Owner and used **only via environment variables** — never written to source, docs, Issues, logs or this report.
 

@@ -1,5 +1,5 @@
 # UC-AUTH-01 — Local login, session check and logout
-**Status:** DESIGN_BASELINED_FROM_SOURCE; LIVE_GAS_ACCEPTANCE_PENDING
+**Status:** LIVE_DEV_API_SCOPE_VERIFIED; BROWSER_UAT_AND_PRODUCTION_GATES_OPEN
 **Actor:** Pre-provisioned user (STAFF / REGISTRATION_ADMIN / SYSTEM_ADMIN / OWNER / RETENTION_WORKER)
 
 ## 1. Authority and scope
@@ -15,7 +15,7 @@ Account exists and ACTIVE; server-side pepper and idle-timeout setting are confi
 Issue only an opaque session token to client; store token digest in vc_sessions; validate role and session per protected call; revoke on logout.
 
 ## 4. Failure and alternate paths
-Unknown/suspended user, password mismatch, retry limit, expired/idle/revoked session return safe denial; username enumeration timing remains under review.
+Unknown/suspended user, password mismatch, retry limit, expired/idle/revoked session return safe denial. **B4 constant-work behavior is delivered:** unknown and inactive users use a static dummy PBKDF2 hash with the same 150,000-round cost, so password verification occurs unconditionally before `INVALID_CREDENTIALS`.
 
 ## 5. Persistence / external side effects
 - `vc_users`
@@ -28,17 +28,17 @@ Unknown/suspended user, password mismatch, retry limit, expired/idle/revoked ses
 ## 6. Acceptance trace
 - Test case IDs: `TC-AUTH-01`, `TC-AUTH-02`, `TC-AUTH-03`, `TC-SESS-01`, `TC-SESS-02`, `GAS-AUTH-LOGIN`, `GAS-AUTH.LOGOUT_REVOKE`.
 - Executable evidence references: `backend/gas/tests/auth-session-integration.test.mjs`.
-- Passing tests for source paths do not automatically prove all cases of this UC. Real GAS Editor and authenticated staging HTTP remain separate release gates.
-- FE status: **NOT_WIRED**; design must align Vue 3, Pinia, Router and API adapter per Master Web Blueprint.
+- Aggregate PR #110 / bf3553d live DEV evidence covers 56/56 API operations (97/97 checks); it does not prove every business branch, external provider/device behavior, destructive retention execution, browser/business UAT or production approval.
+- FE status: **WIRED_IN_SOURCE / LIVE_API_VERIFIED / BROWSER_UAT_OPEN** for the shared login/session shell; browser and production security acceptance remain open.
 
 ## 7. Development notes / explicit gaps
-Login reads vc_security_events for 15-minute failed-attempt limit (6 failures). The actual GAS implementation creates a server session, but protected public /exec remains gated.
+Login reads `vc_security_events` for the 15-minute failed-attempt limit (6 failures). B4 equal-cost negative-path verification is implemented and live DEV API scope is verified; it is not a formal timing analysis, production security signoff, real OIDC-provider acceptance or release approval.
 
 ## 8. Approval conditions
 Traceability check PASS; frontend API adapter request/response and errors match backend v1; auth/default-deny and negative tests demonstrated; staging execution evidence linked to SHA; remaining discrepancies dispositioned by ADR.
 
 
-**Evidence classification:** Diagram is a source-reviewed implementation model, NOT proof of successful real GAS HTTP integration or production release. Runtime discrepancies must be recorded in decision log and revised via PR.
+**Evidence classification:** Source-reviewed implementation model plus scoped live DEV API evidence (GAS V48, backend 0.9.1). It is NOT browser/business UAT, destructive retention execution, real OIDC-provider or physical-QR acceptance, PDPA/security signoff, or production release approval. Runtime discrepancies require decision-log disposition and PR review.
 
 ## 9. GitHub Mermaid Preview
 
@@ -56,6 +56,7 @@ sequenceDiagram
   GAS->>API: Version + DTO validation / feature gate
   API->>Auth: login()
   Auth->>DB: Read recent failures and vc_users
+  Auth->>Auth: B4 select real or equal-cost dummy PBKDF2 hash; always verify password
   alt User active and password valid; under rate limit
     Auth->>DB: Record SUCCESS security event
     Auth->>DB: Insert vc_sessions with token digest
@@ -73,5 +74,6 @@ sequenceDiagram
     Auth->>DB: Record FAILED security event where allowed
     Auth-->>FE: INVALID_CREDENTIALS / LOGIN_RATE_LIMIT
   end
-  Note over FE,GAS: Browser tokens are not trusted roles; test direct GAS URL bypass before release
+  Note over Auth,DB: B4 constant-work negative path delivered; production security signoff remains open
+  Note over FE,GAS: Browser tokens are not trusted roles; live DEV API scope is not browser/production acceptance
 ```

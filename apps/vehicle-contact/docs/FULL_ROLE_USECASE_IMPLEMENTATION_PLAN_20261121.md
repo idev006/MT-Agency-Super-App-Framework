@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — Full Role × Use-Case Implementation Plan
 
+> **CURRENT HANDOFF (2026-11-22) — HISTORICAL PLAN.** This captures the earlier V35/51-operation planning state and then-missing C1–C4 screens; do not resume those phases as pending work. The current baseline is **56 operations, 25 Sheets, GAS V48 / Backend 0.9.1**, with C1–C4 delivered. Read [Current Delivery Status](CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](PROJECT_MANAGEMENT_PLAN_20261121.md), [Live API Automation](LIVE_API_AUTOMATION.md), and [Code Map](CODE_MAP_20261121.md) before acting. Preserve the analysis below as dated history.
+
 **Date:** 2026-11-21 (Asia/Bangkok)
 **Scope:** complete implementation plan covering all 5 roles and all use cases; current coverage matrix, gap analysis, phased small-slice plan, and engineering recommendations
 **Runtime baseline:** `main` @ `fb0d626`; GAS Backend `0.8.1` live (Web App Version 35, health-probed via Worker); Worker self-deployed (`b08737d9`)

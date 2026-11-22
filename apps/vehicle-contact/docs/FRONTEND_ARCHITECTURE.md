@@ -1,5 +1,7 @@
 # P6 Vehicle Contact Frontend Architecture
 
+> **CURRENT HANDOFF (2026-11-22) — ARCHITECTURE/DESIGN REFERENCE.** The approved boundaries and composition guidance below are preserved; POC routes, allowlists and the 2026-11-18 acceptance section are historical, not the current runtime or frontend inventory. Defer current status and implementation structure to [Current Delivery Status](CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](PROJECT_MANAGEMENT_PLAN_20261121.md), [Live API Automation](LIVE_API_AUTOMATION.md), and [Code Map](CODE_MAP_20261121.md). Do not resume the old POC as missing work.
+
 Status: Vue SPA POC, Cloudflare `/api/frontend` and GitHub Pages deployment implemented and verified on 2026-11-18.
 
 UI governance for every subsequent page is defined by:

@@ -12,20 +12,29 @@ sequenceDiagram
   alt Authorized approval
     Retention->>DB: Set DELETION_APPROVED and append audit
     API-->>Sys: approved true
-    Worker->>API: retention.execute(jobId)
-    API->>API: Require retention.worker and feature flag
-    Retention->>DB: Mark DELETION_IN_PROGRESS
-    Retention->>Drive: Trash all linked photo files
-    Retention->>DB: Delete vehicle/contact/QR/dependent rows
-    Retention->>DB: Mark DELETION_COMPLETED; preserve audit rows
-    API-->>Worker: DELETION_COMPLETED
-  else Hold, not due, no approval or error
-    API-->>Sys: RETENTION_NOT_APPROVABLE / safe error
-    opt Worker deletion fails after approval
-      Retention->>DB: Mark DELETION_FAILED and last_error
+  else Hold, not due or invalid state
+    API-->>Sys: RETENTION_NOT_APPROVABLE
+  end
+  Worker->>API: retention.listExecutable(session,page,pageSize)
+  API->>API: Require retention.worker
+  Retention->>DB: Bounded approved/failed, due, non-hold job snapshot
+  API-->>Worker: Job IDs, status, attempts and lastError
+  Worker->>API: retention.execute(jobId)
+  API->>API: Require retention.worker and destructive feature flag
+  alt Destructive execution disabled
+    API-->>Worker: RETENTION_EXECUTION_DISABLED; no Drive/Sheets deletion
+  else Explicitly enabled isolated staging execution
+    Retention->>DB: Mark DELETION_IN_PROGRESS and increment attempts
+    alt Deletion completes
+      Retention->>Drive: Trash all linked photo files
+      Retention->>DB: Delete dependent rows; preserve required audit
+      Retention->>DB: Mark DELETION_COMPLETED
+      API-->>Worker: DELETION_COMPLETED
+    else Storage or write failure
+      Retention->>DB: Mark DELETION_FAILED and persist last_error
       API-->>Worker: DELETION_RETRY_REQUIRED
     end
   end
-  Sys->>API: retention.jobStatus(jobId)
-  API-->>Sys: Current status and attempt count
-  Note over Retention,DB: Retry/recovery after abrupt GAS timeout still unverified
+  Worker->>API: retention.jobStatus(jobId)
+  API-->>Worker: Current status, attempts and lastError for job-tracked retry
+  Note over Retention,Drive: B2 retry evidence delivered; destructive execution remains disabled/gated and unaccepted
