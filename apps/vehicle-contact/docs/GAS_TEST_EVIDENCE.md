@@ -1,17 +1,28 @@
 # Vehicle Contact GAS — Test Evidence & Deployment Status
 
-> **Dated evidence log (newest sections first).** The 2026-11-17 scaffold/deployment states below are evidence for their recorded dates only. For the current runtime/evidence scope use [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) and [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md) — live **V49/0.9.2**, 56 operations, 97/97. Source push, version creation and Web App publication are distinct facts.
+> **Dated evidence log (newest sections first).** The 2026-11-17 scaffold/deployment states below are evidence for their recorded dates only. For the current runtime/evidence scope use [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) and [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md) — live **V50/0.9.2** (runtime-identical to V49), 56 operations, 97/97. Source push, version creation and Web App publication are distinct facts.
 
-## GAS source push — VERIFIED 2026-11-22 (Version 50, NOT published)
+## GAS Web App publication — VERIFIED 2026-11-22 (Version 50 → live)
+
+- **Authorization:** owner explicitly approved the clasp publication (`approve`) — a separate authorization from the per-push `PUSH_VEHICLE_GAS` source phrase. Publication used the owner-authorized assistant clasp self-deploy path (`-u p6vc`, owner account), not the CI workflow (which never publishes).
+- **Command:** `clasp -u p6vc update-deployment <Worker-facing pinned deployment> -V 50 -d "v50: F2 adapter (unwired) + DB-agnostic schema metadata; runtime 0.9.2 (identical V49)"` → **`Redeployed … @50`**.
+- **Deployment read-back:** `clasp -u p6vc list-deployments` confirms **2 deployments** — the Worker-facing pinned deployment now **@50** (new description) and the secondary **@HEAD** (auto-follows source, requires Google login, not the Worker path).
+- **Live verification (read-back, not just API OK):**
+  - Worker-facing **pinned `/exec`** health probed **twice** (credential-free `system.health`, POST→302→GET echo): `{"ok":true,"data":{"status":"ready","backendVersion":"0.9.2","releaseChannel":"development"}}` — **stable, no 404** (manifest `webapp` anonymous access intact).
+  - **End-to-end frontend path** Worker → GAS(@50) with a valid envelope (`payload:{}` + `requestId`): **HTTP 200**, `ok:true`, `status:ready`, `backendVersion 0.9.2`, `requestId` echoed. (A first naive probe omitting `payload`/`requestId` was correctly rejected `403 INVALID_PAYLOAD` by the Worker's fail-closed `validFrontendEnvelope` — not a publication regression.)
+- **Runtime impact:** none. Version 50 is runtime-identical to V49 — F2 Firestore adapter **bundled but NOT wired** (`Container.js` still injects `createSheetStore`), schema change is metadata only, `backendVersion` still **0.9.2**. The live suite **97/97** + independent Sheets audit **0 errors** were verified at V49 and remain valid (identical runtime); health was re-verified at V50.
+- **Boundaries:** no ENFORCED mode, no real data, no schema mutation, no destructive retention. Endpoints/credentials are not reproduced here. Future GAS source pushes still require a NEW owner `PUSH_VEHICLE_GAS`; future publications require separate owner approval.
+
+## GAS source push — VERIFIED 2026-11-22 (Version 50 created; subsequently published — see above)
 
 - **Authorization:** owner typed the exact per-push phrase `PUSH_VEHICLE_GAS`; CI workflow `deploy-vehicle-gas.yml` dispatched on `main`.
 - **Workflow run:** [45010301788](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/45010301788), conclusion **success** (1m3s), source commit **`8fd9d3a`** (PR #125).
 - **Pre-push gate:** `npm run check` PASS in CI (build + full contract chain incl. `store-port-contract`, `firestore-store-contract`, `gas-staging-editor-vm`); artifact step **Verified 57 generated GAS modules** (56 sources + schema) + manifest, each `.gs` ≤800 lines, `runtimeVersion:V8`.
 - **Push:** `clasp push --force` uploaded the 57-module bundle incl. `INFRASTRUCTURE$persistence$firestore$FirestoreStore.gs` (122 lines, **bundled but NOT wired** — `Container.js` still injects `createSheetStore`) and `SCHEMA$database.schema.gs` (DB-agnostic metadata relabel; `schemaId`/`schemaVersion`/tables unchanged).
 - **Version:** `clasp create-version` recorded **Created version 50** tagged `P6VC GitHub commit 8fd9d3a`. **This is source traceability, NOT a Web App deployment.**
-- **Live verification (read-back, not just API OK):** the Worker-facing **pinned** `/exec` deployment health was probed twice (credential-free `system.health`, POST→302→GET echo): `{"ok":true,"data":{"status":"ready","backendVersion":"0.9.2","releaseChannel":"development"}}` — **UNCHANGED**. The push did **not** publish; the published Web App remains **V49 / 0.9.2**.
+- **Live verification (read-back, not just API OK):** the Worker-facing **pinned** `/exec` deployment health was probed twice (credential-free `system.health`, POST→302→GET echo): `{"ok":true,"data":{"status":"ready","backendVersion":"0.9.2","releaseChannel":"development"}}` — **UNCHANGED**. At push time the published Web App was **V49 / 0.9.2** (a source push does not publish); publication followed under separate owner approval — see the publication section above.
 - **Runtime impact:** none. Version 50 source is runtime-identical to V49 (F2 adapter unwired; schema change is metadata only; `backendVersion` still 0.9.2). The secondary **@HEAD** deployment auto-follows source but requires Google login (POST 401 / GET 302→ServiceLogin), so it is not anonymously probeable and is **not** the Worker-facing path.
-- **Publication remains the owner's separate action.** No ENFORCED mode, no real data, no schema mutation, no destructive retention. Endpoints/credentials are not reproduced here.
+- **Publication was subsequently performed** under separate owner approval (`approve`) via the clasp self-deploy path — see the publication section above. No ENFORCED mode, no real data, no schema mutation, no destructive retention. Endpoints/credentials are not reproduced here.
 
 **Date:** 2026-11-17  
 **State:** ES Modules built and contract-tested; first authenticated `clasp push` to supplied GAS Script ID **SUCCESS** (run 44033187307), browser integration and security/PDPA gate **NOT DONE**.
