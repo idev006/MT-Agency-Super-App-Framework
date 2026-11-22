@@ -59,7 +59,7 @@ Protected GitHub secrets `P6VC_TEST_USERNAME` / `P6VC_TEST_PASSWORD` are optiona
 2. Run relevant offline checks. Use the [live automation runbook](LIVE_API_AUTOMATION.md) only for authorized synthetic DEV verification, with exact transport and cleanup results reported.
 3. Complete human browser/business and physical-device acceptance; rotate credentials through the approved security process.
 4. Resolve D-E1/D3/D5/B3 and VC-ADR-014/015/017 as applicable; complete PDPA/security/UAT review.
-5. Build the release candidate from a reviewed SHA. For any GAS source push, obtain exact per-push **`PUSH_VEHICLE_GAS`** authorization. The owner-authorized assistant `clasp` path may be used only within that authorization.
+5. Build the release candidate from a reviewed SHA. The GitHub Actions GAS source-push workflow requires exact per-push **`PUSH_VEHICLE_GAS`** authorization. A separately owner-authorized assistant `clasp` self-deploy path may be used only within its approved scope.
 6. Record source push, created GAS source version, Web App publication, Worker deployment and Pages deployment independently; verify health and regression scope after publication.
 7. Obtain final human release approval. Until then, the system remains a DEV release candidate at most.
 

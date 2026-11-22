@@ -92,7 +92,7 @@ These results remain useful evidence but do not replace the current baseline abo
 ## 6. Execution and safety rules
 
 - Small slices include source, DTO/permission/inventory gates, Worker allowlist when applicable, tests, evidence and decision-log updates when policy changes.
-- Every GAS source push needs exact owner phrase **`PUSH_VEHICLE_GAS`**. The owner-authorized assistant `clasp` path exists; source push/version creation is still separate from Web App publication.
+- The GitHub Actions GAS source-push workflow requires the exact owner phrase **`PUSH_VEHICLE_GAS`**. A separately owner-authorized assistant `clasp` self-deploy path may be used within its approved scope; source push/version creation remains separate from Web App publication.
 - Credentials are environment/profile based and never committed, logged or pasted into documentation. Rotate credentials through the owner/security process.
 - Live writes are synthetic DEV only under the documented guard; preserve cleanup failures as failures. Never run enabled destructive retention against real data.
 - Sheets access stays bounded, text-preserving and without cross-sheet joins. Preserve schema fail-closed behavior and idempotent repair evidence.

@@ -25,7 +25,7 @@
 | [UC-ADMIN-02](UC-ADMIN-02/specification.md) | Police hierarchy and external organization master | 4 | [sequence](./UC-ADMIN-02/sequence.mmd) | Live API; B1 ancestor-cycle guard delivered |
 | [UC-ADMIN-03](UC-ADMIN-03/specification.md) | System settings and public health check | 3 | [sequence](./UC-ADMIN-03/sequence.mmd) | Public/authenticated live API; release gates open |
 | [UC-CAMP-01](UC-CAMP-01/specification.md) | Create, list and revoke registration campaigns | 3 | [sequence](./UC-CAMP-01/sequence.mmd) | Live API; browser/business UAT open |
-| [UC-CAMP-02](UC-CAMP-02/specification.md) | Validate a public registration campaign token | 1 | [sequence](./UC-CAMP-02/sequence.mmd) | Public live smoke; browser/business UAT open |
+| [UC-CAMP-02](UC-CAMP-02/specification.md) | Validate a public registration campaign token | 1 | [sequence](./UC-CAMP-02/sequence.mmd) | Campaign-token direct-GAS workflow; browser/business UAT open |
 | [UC-PHOTO-01](UC-PHOTO-01/specification.md) | Upload five staged vehicle photos | 1 | [sequence](./UC-PHOTO-01/sequence.mmd) | Live API; device/browser media UAT open |
 | [UC-REG-01](UC-REG-01/specification.md) | Vehicle application submission with five photos | 2 | [sequence](./UC-REG-01/sequence.mmd) | Live API; B2 retry reconciliation delivered; quota/ambiguous recovery manual |
 | [UC-REG-02](UC-REG-02/specification.md) | Administrator review, approval or rejection of vehicle registration | 4 | [sequence](./UC-REG-02/sequence.mmd) | Live API; human review UAT + residual B2b approval journaling open |

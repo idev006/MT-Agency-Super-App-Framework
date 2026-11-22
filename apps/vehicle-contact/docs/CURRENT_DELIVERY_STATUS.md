@@ -75,11 +75,11 @@ The protected local WIP reference is:
 stash@{0}: On codex/p6vc-qr-camera-scanner-20261120: wip: qr camera scanner before reference catalog
 ```
 
-Verify the stash still exists before applying it. Safe continuation:
+Verify the stash still exists before applying it. Use the `FETCH_HEAD` written by the immediately preceding fetch; do not substitute a potentially stale local `origin/main`. Safe continuation:
 
 ```powershell
 git fetch origin main
-git switch -c codex/p6vc-qr-camera-scanner-resume origin/main
+git switch -c codex/p6vc-qr-camera-scanner-resume FETCH_HEAD
 git stash apply 'stash@{0}'
 ```
 
@@ -88,7 +88,7 @@ Resolve against current Frontend **0.8.0 or later**, inspect the diff, and **do 
 ## 6. Safety and deployment rules
 
 - GitHub source is canonical; generated `.gs` and deployed artifacts are not a second source tree.
-- Every GAS source push requires the owner’s exact per-push phrase **`PUSH_VEHICLE_GAS`**. The owner-authorized assistant `clasp` path exists, but it does not remove this gate.
+- The GitHub Actions GAS source-push workflow requires the owner’s exact per-push phrase **`PUSH_VEHICLE_GAS`**. A separately owner-authorized assistant `clasp` self-deploy path may be used within its approved scope; neither path removes authorization or evidence requirements.
 - Source push and source-version creation are **not** Web App publication. Record push, created version, publication/deployment and health verification as separate facts.
 - Never expose credentials, session tokens, private endpoints, raw PII or secret-bearing logs. Live authenticated tests require their documented synthetic-DEV write guard and cleanup.
 - Frontend permissions are UX only; GAS is the authorization authority. Never infer access from a client-supplied role.

@@ -72,4 +72,4 @@ The first command may legitimately finish `PASS_PUBLIC_ONLY` when optional authe
 - [Production sign-off dossier](docs/E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md)
 - [Code map](docs/CODE_MAP_20261121.md) · [Agile Kanban](docs/AGILE_KANBAN.md)
 
-Every GAS source push requires the exact per-push owner phrase **`PUSH_VEHICLE_GAS`**. Source push/version creation and Web App publication are separate operations. The owner-authorized assistant `clasp` path exists but never removes authorization or evidence requirements.
+The GitHub Actions GAS source-push workflow requires the exact per-push owner phrase **`PUSH_VEHICLE_GAS`**. A separately owner-authorized assistant `clasp` self-deploy path may be used within its approved scope. Neither path removes authorization or evidence requirements; source push/version creation and Web App publication are separate operations.

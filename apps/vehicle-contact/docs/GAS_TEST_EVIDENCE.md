@@ -1,5 +1,7 @@
 # Vehicle Contact GAS — Test Evidence & Deployment Status
 
+> **Historical 2026-11-17 snapshot:** the implementation/deployment states below are evidence for that date only. Use [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) and [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md) for the current V48/0.9.1, 56-operation and 97/97 live-DEV scope.
+
 **Date:** 2026-11-17  
 **State:** ES Modules built and contract-tested; first authenticated `clasp push` to supplied GAS Script ID **SUCCESS** (run 44033187307), browser integration and security/PDPA gate **NOT DONE**.
 

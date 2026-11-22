@@ -1,6 +1,8 @@
 # P6 Vehicle Contact — API Test Suites (Approved 2026-11-17)
 
-**Status:** PARTIALLY IMPLEMENTED / LIVE BACKEND INTEGRATION GATED  
+> **Historical 2026-11-17 snapshot:** the narrow gates and `NOT IMPLEMENTED` rows below describe the initial scaffold, not current delivery. Use [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md) for the current executable suite and [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) for remaining gates.
+
+**Status at this snapshot:** PARTIALLY IMPLEMENTED / LIVE BACKEND INTEGRATION GATED
 **Authority:** Owner approved executing the five proposed test areas: Schema, Authentication/Authorization, Vehicle Registration, Media Upload, and QR.  
 **Source:** [Automated gate suites](../backend/gas/tests/phase1-api-gates.test.mjs), [original contract suite](../backend/gas/tests/contract.test.mjs), [live HTTP bootstrap tester](../backend/gas/scripts/smoke-api.mjs).  
 **Current CI evidence:** [GitHub Actions run 44037490677](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44037490677), commit `63fe4ada`. **10 Node.js subtests PASS (0 failures)**; original contract tests PASS. Build emits 17 source-mirrored GAS files + manifest, without deployment.  

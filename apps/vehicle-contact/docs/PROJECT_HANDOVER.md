@@ -8,7 +8,7 @@
 ## 1. Ready-to-paste next-AI prompt
 
 ```text
-Take over P6 Vehicle Contact in idev006/MT-Agency-Super-App-Framework. Read apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md first, then PROJECT_MANAGEMENT_PLAN_20261121.md and PRODUCTION_READINESS_PLAN_20261121.md. Use last verified 2026-11-22 08:23 Asia/Bangkok and PR #110 merged main bf3553d as the documented baseline, but inspect current git status, origin/main, Issues and CI before changing anything.
+Take over P6 Vehicle Contact in idev006/MT-Agency-Super-App-Framework. Read apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md first, then PROJECT_MANAGEMENT_PLAN_20261121.md and PRODUCTION_READINESS_PLAN_20261121.md. Use last verified 2026-11-22 08:23 Asia/Bangkok and PR #110 merged main bf3553d as the documented baseline, but inspect current git status, fetch and verify the remote main SHA, and inspect Issues and CI before changing anything.
 
 Verified snapshot: published GAS Web App V48 backend 0.9.1; frontend 0.8.0; Worker version 20180237-7441-481a-9540-e7ca2c9c79eb; offline GAS npm check PASS. Live DEV automation passed 97/97 = 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated direct-GAS, covering 56/56 operations and all five roles with cleanup 7/7. Do not describe the authenticated stage as all-through-Worker. DEV reset logically retired 11 and created 10 ACTIVE vehicles, each with 1 contact/5 photos/QR MATCH, cleanup 2/2; post-seed audit passed 25/25 Sheets with zero visible errors and zero repairs. Display-error follow-up maintenance source is GAS HEAD only; published API remains V48. Live report sourceCommit f14458d is not the merge/content baseline.
 
@@ -16,14 +16,14 @@ Completed engineering slices: A1-A3, B1/B2/B4, C1-C4, C6, E2, display repair and
 
 Keep PDPA/security/UAT/release, browser/business/device acceptance, D-E1/D3/D5/B3, VC-ADR-014/015/017 and credential rotation OPEN unless a named human supplies actual approval evidence. Optional protected GitHub P6VC_TEST_USERNAME/P6VC_TEST_PASSWORD secrets are only for future manual full-suite runs, not a blocker for the completed local run.
 
-Follow all runbooks and scope your changes to the requested slice. Never expose endpoints, credentials, tokens or PII. Every GAS source push requires the exact per-push owner phrase PUSH_VEHICLE_GAS; the owner-authorized assistant clasp path exists, but source push/version creation is separate from Web App publication. Keep source, deployment, live test transport, human acceptance and production approval distinct in every report.
+Follow all runbooks and scope your changes to the requested slice. Never expose endpoints, credentials, tokens or PII. The GitHub Actions GAS source-push workflow requires the exact per-push owner phrase PUSH_VEHICLE_GAS; a separately owner-authorized assistant clasp self-deploy path may be used within its approved scope. Source push/version creation is separate from Web App publication. Keep source, deployment, live test transport, human acceptance and production approval distinct in every report.
 ```
 
 ## 2. Document precedence and conflict handling
 
 Use each authority for its own concern; do not let an old narrative override newer verified evidence.
 
-1. **Current canonical code, explicit owner decisions and named approvals** govern implementation and authorization now. Reconfirm `origin/main`, Issues and CI before work.
+1. **Current canonical code, explicit owner decisions and named approvals** govern implementation and authorization now. Fetch and verify the remote `main` SHA, then inspect Issues and CI before work.
 2. **[CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)** is the current verified runtime/evidence snapshot and resume point.
 3. **[PROJECT_MANAGEMENT_PLAN_20261121.md](PROJECT_MANAGEMENT_PLAN_20261121.md)** owns slice state/dependencies; **[PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md)** owns release gates.
 4. **Approved requirements, blueprints, canonical schema and [DECISION_LOG.md](DECISION_LOG.md)** govern business/architecture policy. An implemented engineering decision is not automatically a ratified security/PDPA decision.
@@ -83,7 +83,7 @@ flowchart TD
 
 ## 6. Exact next actions
 
-1. **Reconcile before editing:** inspect current branch/status, `origin/main`, relevant Issue and checks. Treat the snapshot above as last-verified, not a substitute for current inspection.
+1. **Reconcile before editing:** inspect current branch/status, fetch and verify the remote `main` SHA, then inspect the relevant Issue and checks. Treat the snapshot above as last-verified, not a substitute for current inspection.
 2. **QR path:** verify and recover the stash using §7; integrate latest `main`, inspect the diff, add direct adapter-cleanup tests, run focused/offline suites, then obtain physical Android/iOS acceptance. Do not drop the stash prematurely.
 3. **B2b path:** add durable PREPARED/recovery semantics for `registrationReview` and `assignRoles`, prove restart/fault idempotency, and update the [recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) and evidence.
 4. **C5:** leave **BLOCKED** until D5+B3 are explicitly ratified. Only then build the permission-gated console and perform synthetic two-person/`legal_hold` rehearsal; never enable real-data destructive retention.
@@ -98,11 +98,11 @@ The documented local WIP reference is:
 stash@{0}: On codex/p6vc-qr-camera-scanner-20261120: wip: qr camera scanner before reference catalog
 ```
 
-Verify the stash still exists, then:
+Verify the stash still exists. Use the `FETCH_HEAD` written by the immediately preceding fetch; do not substitute a potentially stale local `origin/main`. Then:
 
 ```powershell
 git fetch origin main
-git switch -c codex/p6vc-qr-camera-scanner-resume origin/main
+git switch -c codex/p6vc-qr-camera-scanner-resume FETCH_HEAD
 git stash apply 'stash@{0}'
 ```
 
@@ -112,7 +112,7 @@ Resolve against Frontend **0.8.0 or later**. Do not drop the stash until recover
 
 - Keep endpoints, credentials, session tokens, raw responses with PII and secret-bearing logs out of chat, commits, Issues and evidence.
 - Obtain authorization before live mutation. Live automation is synthetic DEV only under its exact write guard; cleanup failures fail the run.
-- Every GAS source push requires exact per-push **`PUSH_VEHICLE_GAS`**. The owner-authorized assistant `clasp` path exists, but does not bypass that gate.
+- The GitHub Actions GAS source-push workflow requires exact per-push **`PUSH_VEHICLE_GAS`**. A separately owner-authorized assistant `clasp` self-deploy path may be used within its approved scope; both require authorization and evidence.
 - Record source push, GAS source-version creation, Web App publication, Worker deployment and Pages deployment separately; verify health/behavior after publication.
 - No unapproved schema migration, production catalog `ENFORCED` mode, destructive retention or production release.
 - Preserve least privilege, server-side identity/ownership, bounded Sheets reads, no cross-sheet joins and fail-closed DTO/Worker behavior.

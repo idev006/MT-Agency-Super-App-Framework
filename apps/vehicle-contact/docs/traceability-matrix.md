@@ -15,11 +15,11 @@ The permission column is from `contracts/api-permissions.v1.json` and retains **
 | `system.config.get` | `VC-SYSTEM-002` | [UC-ADMIN-03](use-cases/UC-ADMIN-03/specification.md) | `system.settings.read` | LIVE-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `system.config.update` | `VC-SYSTEM-003` | [UC-ADMIN-03](use-cases/UC-ADMIN-03/specification.md) | `system.settings.manage` | LIVE-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `auth.login` | `VC-AUTH-001` | [UC-AUTH-01](use-cases/UC-AUTH-01/specification.md) | PUBLIC | TC-AUTH-01 | PASS — public/direct-GAS; B4 delivered; security signoff open |
-| `auth.googleLogin` | `VC-AUTH-002` | [UC-AUTH-03](use-cases/UC-AUTH-03/specification.md) | PUBLIC | ACTOR-07 | PASS — API inventory scope; real external OIDC provider open |
+| `auth.googleLogin` | `VC-AUTH-002` | [UC-AUTH-03](use-cases/UC-AUTH-03/specification.md) | PUBLIC | ACTOR-07 | PASS — invalid-token direct-GAS negative only; real external OIDC provider open |
 | `auth.changePassword` | `VC-AUTH-003` | [UC-AUTH-02](use-cases/UC-AUTH-02/specification.md) | `session.authenticated` | TC-AUTH-04 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `auth.logout` | `VC-AUTH-004` | [UC-AUTH-01](use-cases/UC-AUTH-01/specification.md) | `session.authenticated` | TC-AUTH-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `auth.session` | `VC-AUTH-005` | [UC-AUTH-01](use-cases/UC-AUTH-01/specification.md) | `session.authenticated` | TC-AUTH-01 | PASS — authenticated direct-GAS; browser/business UAT open |
-| `auth.linkGoogle` | `VC-AUTH-006` | [UC-AUTH-03](use-cases/UC-AUTH-03/specification.md) | `session.authenticated` | ACTOR-07 | PASS — API inventory scope; real external OIDC provider open |
+| `auth.linkGoogle` | `VC-AUTH-006` | [UC-AUTH-03](use-cases/UC-AUTH-03/specification.md) | `session.authenticated` | ACTOR-07 | PASS — invalid-token authenticated direct-GAS negative only; real external OIDC provider open |
 | `users.create` | `VC-USERS-001` | [UC-ADMIN-01](use-cases/UC-ADMIN-01/specification.md) | `users.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `users.list` | `VC-USERS-002` | [UC-ADMIN-01](use-cases/UC-ADMIN-01/specification.md) | `users.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `users.update` | `VC-USERS-003` | [UC-ADMIN-01](use-cases/UC-ADMIN-01/specification.md) | `users.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
@@ -32,10 +32,10 @@ The permission column is from `contracts/api-permissions.v1.json` and retains **
 | `organizations.disable` | `VC-ORGANIZATIONS-004` | [UC-ADMIN-02](use-cases/UC-ADMIN-02/specification.md) | `organizations.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `campaigns.create` | `VC-CAMPAIGNS-001` | [UC-CAMP-01](use-cases/UC-CAMP-01/specification.md) | `campaigns.manage` | ACTOR-02 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `campaigns.list` | `VC-CAMPAIGNS-002` | [UC-CAMP-01](use-cases/UC-CAMP-01/specification.md) | `campaigns.manage` | ACTOR-02 | PASS — authenticated direct-GAS; browser/business UAT open |
-| `campaigns.validate` | `VC-CAMPAIGNS-003` | [UC-CAMP-02](use-cases/UC-CAMP-02/specification.md) | PUBLIC | ACTOR-02 | PASS — public direct-GAS smoke; browser/business UAT open |
+| `campaigns.validate` | `VC-CAMPAIGNS-003` | [UC-CAMP-02](use-cases/UC-CAMP-02/specification.md) | PUBLIC | ACTOR-02 | PASS — campaign-token direct-GAS workflow; browser/business UAT open |
 | `campaigns.revoke` | `VC-CAMPAIGNS-004` | [UC-CAMP-01](use-cases/UC-CAMP-01/specification.md) | `campaigns.manage` | ACTOR-02 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `references.registration` | `VC-REFERENCES-001` | [UC-REG-01](use-cases/UC-REG-01/specification.md) | `vehicle.registration.approve` | REF-CATALOG-01 | PASS — authenticated direct-GAS; browser/business UAT open |
-| `registrations.submit` | `VC-REGISTRATIONS-001` | [UC-REG-01](use-cases/UC-REG-01/specification.md) | `campaign.token.valid` | ACTOR-03 | PASS — public/authenticated direct-GAS; manual quota/ambiguous recovery remains |
+| `registrations.submit` | `VC-REGISTRATIONS-001` | [UC-REG-01](use-cases/UC-REG-01/specification.md) | `campaign.token.valid` | ACTOR-03 | PASS — campaign-token direct-GAS submit + idempotent replay; manual quota/ambiguous recovery remains |
 | `registrations.listPending` | `VC-REGISTRATIONS-002` | [UC-REG-02](use-cases/UC-REG-02/specification.md) | `vehicle.registration.approve` | ACTOR-03 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `registrations.detail` | `VC-REGISTRATIONS-003` | [UC-REG-02](use-cases/UC-REG-02/specification.md) | `vehicle.registration.approve` | ACTOR-03 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `registrations.review` | `VC-REGISTRATIONS-004` | [UC-REG-02](use-cases/UC-REG-02/specification.md) | `vehicle.registration.approve` | ACTOR-03 | PASS — authenticated direct-GAS; human UAT + residual B2b journaling open |
@@ -57,11 +57,11 @@ The permission column is from `contracts/api-permissions.v1.json` and retains **
 | `qr.issue` | `VC-QR-002` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-04 | PASS — authenticated direct-GAS token API; physical QR/device acceptance open |
 | `qr.revoke` | `VC-QR-003` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-04 | PASS — authenticated direct-GAS token API; physical QR/device acceptance open |
 | `qr.replace` | `VC-QR-004` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-04 | PASS — authenticated direct-GAS token API; physical QR/device acceptance open |
-| `photos.upload` | `VC-PHOTOS-001` | [UC-PHOTO-01](use-cases/UC-PHOTO-01/specification.md) | `campaign.token.valid` | ACTOR-03 | PASS — public direct-GAS smoke; browser/business UAT open |
+| `photos.upload` | `VC-PHOTOS-001` | [UC-PHOTO-01](use-cases/UC-PHOTO-01/specification.md) | `campaign.token.valid` | ACTOR-03 | PASS — campaign-token direct-GAS five-photo workflow; browser/business UAT open |
 | `photos.list` | `VC-PHOTOS-002` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.photos.read` | ACTOR-03 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `photos.replace` | `VC-PHOTOS-003` | [UC-PHOTO-02](use-cases/UC-PHOTO-02/specification.md) | `vehicle.update` | ACTOR-05 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `retention.listDue` | `VC-RETENTION-001` | [UC-RET-01](use-cases/UC-RET-01/specification.md) | `retention.delete.approve` | ACTOR-06 | PASS — authenticated direct-GAS; destructive retention execution open |
-| `retention.approve` | `VC-RETENTION-002` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.delete.approve` | ACTOR-06 | PASS — authenticated direct-GAS; destructive retention execution open |
+| `retention.approve` | `VC-RETENTION-002` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.delete.approve` | ACTOR-06 | PASS — authenticated direct-GAS non-approvable-job negative; successful approval/destructive execution open |
 | `retention.execute` | `VC-RETENTION-003` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.worker` | ACTOR-06 | PASS — inventory/fail-closed scope; destructive execution DISABLED/gated |
 | `retention.jobStatus` | `VC-RETENTION-004` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.read` | ACTOR-06 | PASS — authenticated direct-GAS; destructive retention execution open |
 | `retention.listExecutable` | `VC-RETENTION-005` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.worker` | ACTOR-06 | PASS — authenticated direct-GAS; destructive retention execution open |
