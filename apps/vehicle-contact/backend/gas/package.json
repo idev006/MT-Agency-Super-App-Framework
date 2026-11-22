@@ -12,6 +12,7 @@
     "check": "npm run build && npm test"
   },
   "devDependencies": {
+    "@google-cloud/firestore": "^9.4.1",
     "esbuild": "0.25.12"
   }
 }
