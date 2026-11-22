@@ -3,7 +3,7 @@
 **Date:** 2026-11-22 (Asia/Bangkok)
 **Doc ID:** P6VC-BE-POC1-FIRESTORE-REST-001
 **Slice:** POC #1, de-risks **F3a** (the real GAS REST gateway) before it is built. PM plan lane F, D-E1 Option 2 / [VC-ADR-019](DECISION_LOG.md).
-**Status:** **OFFLINE PROOF DONE (10/10).** **LIVE GAS RUN #1 EXECUTED 2026-11-22 20:25 ICT: FAIL 5/8** — three real-API contract bugs (read-back key order, runQuery URL form, commit relative names) root-caused and **fixed in source**; see [incident doc](FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md) and §4.1. **LIVE GAS RE-RUN PENDING** a fresh owner `PUSH_VEHICLE_GAS` + editor Run (§6). The live runtime is **unchanged**: Sheets **V50 / 0.9.2** remains the system of record; the [F2 adapter](BACKEND_FIRESTORE_ADAPTER_F2_EVIDENCE_20261122.md) and this POC stay **bundled but UNWIRED**.
+**Status:** **DONE — OFFLINE 10/10 + LIVE GAS RUN #2 PASS 8/8 (2026-11-22 20:57 ICT).** Run #1 (20:25 ICT) FAIL 5/8 exposed three real-API contract bugs (read-back key order, runQuery URL form, commit relative names), root-caused and fixed in [#130](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/130); run #2 on the fixed source passed all 8 steps with independent read-backs and the gate was re-armed (§4.2, §6). [Incident doc](FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md) **CLOSED**. The live runtime is **unchanged**: Sheets **V50 / 0.9.2** remains the system of record; the [F2 adapter](BACKEND_FIRESTORE_ADAPTER_F2_EVIDENCE_20261122.md) and this POC stay **bundled but UNWIRED**.
 **Companion:** [F4 infra evidence](BACKEND_FIRESTORE_INFRA_F4_EVIDENCE_20261122.md) (project/SA/region/key), [F2 adapter evidence](BACKEND_FIRESTORE_ADAPTER_F2_EVIDENCE_20261122.md), [E1 migration design](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md).
 
 ## 1. Why this POC exists (the honest gap)
@@ -60,7 +60,7 @@ The offline proof validates **logic, request shapes, codec and JWT construction*
 - that **`UrlFetchApp`** reaches `oauth2.googleapis.com` + `firestore.googleapis.com` from the GAS egress path and the token is honored;
 - that the **real Firestore DEV** persists/queries/commits the synthetic doc end-to-end via this hand-built REST client.
 
-These are exactly the F3a blockers. **Until the live run passes, F3a is de-risked on paper, not on the GAS runtime.** This is stated honestly rather than claiming the POC is "done".
+These are exactly the F3a blockers. **Live run #2 (§4.2) closed all three on the GAS runtime** — F3a is now de-risked on evidence, not assumption.
 
 ### 4.1 Live GAS run #1 (2026-11-22 20:25 ICT): FAIL 5/8 — root-caused and fixed
 
@@ -69,7 +69,15 @@ Run #1 (owner-authorized push; editor Run driven via OS-level input on the owner
 - **Proven live by run #1:** GAS `Utilities.computeRsaSha256Signature` RS256 JWT is accepted by Google's token endpoint; `UrlFetchApp` egress reaches oauth2 + Firestore; PATCH/GET/DELETE persist and clean up correctly. The irreducible runtime unknowns above are therefore **closed**.
 - **The three failures were REST contract bugs**, reproduced and root-caused with a Node probe against Firestore DEV (real Google `INVALID_ARGUMENT` messages): (B1) order-sensitive `JSON.stringify` read-back compare vs Firestore's nondeterministic map-key order; (B2) collection-suffixed `…/documents/{coll}:runQuery` URL transcodes to `createDocument` — correct form is `…/documents:runQuery` with `structuredQuery.from`; (B3) `writes[].update.name` must be a **relative** resource name (`projects/…`), not an absolute URL (and query rows return relative names).
 - **Fix:** `canon()` canonical deep-equal; parent-form runQuery + relative-name match; `relName()` for commit. Offline fake tightened to enforce these contracts (incl. the real 400s) + POC-OFFLINE-10. **Verification:** Node live-shape probe all-200 with read-backs and 404 cleanup; offline **10/10**; `npm test` exit 0; build 58 modules; `/exec` health still `0.9.2` (V50, unwired).
-- **Remaining:** live GAS editor **re-run of the fixed source** — gated on a fresh owner `PUSH_VEHICLE_GAS` (§6). Full detail: [incident doc](FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md).
+- **Remaining:** live GAS editor **re-run of the fixed source** — gated on a fresh owner `PUSH_VEHICLE_GAS` (§6). Full detail: [incident doc](FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md). **Superseded by §4.2: run #2 PASS 8/8.**
+
+### 4.2 Live GAS run #2 (2026-11-22 20:57 ICT): PASS 8/8 — POC CLOSED
+
+- **Push (owner-authorized for this push):** clasp `-u p6vc push --force` → "Pushed 59 files" at 20:53 ICT (58 modules + manifest). HEAD only — no version created, no deployment changed.
+- **Editor Run** of `pocFirestoreRestFromEditor()` on the fixed HEAD source: Execution log 20:56:58 → 20:57:02 ICT, returned `{"status":"PASS","tokenAcquired":true,"jwtAlgorithm":"RS256","passed":8,"total":8,…}` (doc `poc-a4780d9d-…`). All steps ok: POC-04.READ_BACK canonical deep-equal; POC-05.QUERY parent-form runQuery returned the doc (relative-name match); POC-06.TRANSACTION commit `seq:2` read back; POC-07/08 DELETE + 404 read-back (no residue).
+- **Live runtime unchanged:** `/exec` health `ready` / `backendVersion 0.9.2` (published V50) probed before and after the push.
+- **Gate re-armed + read-back verified:** `VEHICLE_FIRESTORE_POC_APPROVED` removed via Project Settings → Edit script properties → Save; the saved properties list reads DATABASE_ID → PROJECT_ID → SA_KEY contiguously (row absent), all other properties untouched. `VEHICLE_FIRESTORE_SA_KEY` / `PROJECT_ID` / `DATABASE_ID` retained for F3a.
+- **Conclusion:** the irreducible unknowns of §4 are closed on the GAS runtime; **F3a may proceed** (offline code first; live cutover still gated).
 
 ## 5. Boundaries — what this is NOT
 
@@ -82,18 +90,18 @@ Run #1 (owner-authorized push; editor Run driven via OS-level input on the owner
 
 The live proof requires the following, in order. **Step 1 is the binding per-push gate.**
 
-1. **Owner types `PUSH_VEHICLE_GAS`** → assistant `clasp push` the source (adds the POC module + entrypoint; runtime dispatch unchanged). *No push happens without this exact phrase.* **Run #1 used one phrase; the fix re-push needs a NEW one — a prior phrase does not carry over.**
+1. **Owner types `PUSH_VEHICLE_GAS`** → assistant `clasp push` the source (adds the POC module + entrypoint; runtime dispatch unchanged). *No push happens without this exact phrase.* **Run #1 used one phrase; the fix re-push needs a NEW one — a prior phrase does not carry over.** Run #2's push was authorized by the owner's explicit per-push instruction ("clasp push เอง ครับ คุณทำ"); the gate remains per-push.
 2. **Set GAS Script Properties** (Project Settings → Script Properties; additive, does not touch existing properties): **DONE for run #1** (all four set and verified; the SA key entered via a secret-safe loopback bridge, never echoed):
    - `VEHICLE_FIRESTORE_SA_KEY` = the **full SA key JSON** (secret — enters GAS's encrypted Script Properties store, **never source/log/git**; same key as `~/.p6vc/p6vc-firestore-dev-key.json`).
    - `VEHICLE_FIRESTORE_PROJECT_ID` = `mt-iam-core-2026`
    - `VEHICLE_FIRESTORE_DATABASE_ID` = `(default)`
    - `VEHICLE_FIRESTORE_POC_APPROVED` = `RUN_SYNTHETIC_FIRESTORE_POC`
    *Assistant can set these via the in-app browser GAS editor (owner session) after the push gate, or the owner sets them. The key is pasted only into the secure Script Properties UI.*
-3. **Run `pocFirestoreRestFromEditor()`** in the GAS Editor (owner session via browser, or owner runs it). Read the sanitized `Logger.log` / return value. **Run #1 executed 2026-11-22 20:25 ICT → FAIL 5/8 (§4.1); re-run of the fixed source pending step 1.**
+3. **Run `pocFirestoreRestFromEditor()`** in the GAS Editor (owner session via browser, or owner runs it). Read the sanitized `Logger.log` / return value. **Run #1 2026-11-22 20:25 ICT → FAIL 5/8 (§4.1); run #2 20:57 ICT → PASS 8/8 (§4.2). DONE.**
 4. **Expected:** `{status:'PASS', tokenAcquired:true, passed:8, total:8, …}`. On any FAIL the function throws `FIRESTORE_REST_POC_FAILED:<reason>` and the sanitized step error identifies the failing seam (token vs REST vs read-back).
-5. Assistant records the live result in this doc (update §3/§4), then proceeds to **F3a** only if the live path is green.
+5. Assistant records the live result in this doc (update §3/§4), then proceeds to **F3a** only if the live path is green. **Done: §4.2 records run #2 PASS; F3a unblocked (offline).**
 
-**After the POC:** remove `VEHICLE_FIRESTORE_POC_APPROVED` (re-arm the gate) and optionally clear `VEHICLE_FIRESTORE_SA_KEY` if the live gateway will use a different credential mechanism. The POC doc collection self-cleans.
+**After the POC — DONE:** `VEHICLE_FIRESTORE_POC_APPROVED` removed and the save read-back verified (§4.2); `VEHICLE_FIRESTORE_SA_KEY` retained because F3a will use the same SA credential mechanism. The POC doc collection self-cleaned (DELETE + 404 read-back).
 
 ## 7. SSOT lessons (bugs found + solutions)
 

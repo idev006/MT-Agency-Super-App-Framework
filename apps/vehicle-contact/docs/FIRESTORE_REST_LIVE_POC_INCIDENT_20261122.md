@@ -3,7 +3,7 @@
 **Date:** 2026-11-22 (Asia/Bangkok)
 **Doc ID:** P6VC-BE-POC1-INC-001
 **Slice:** POC #1 ([#65](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/65)), follow-up to [#129](https://github.com/idev006/MT-Agency-Super-App-Framework/pull/129).
-**Status:** **ROOT-CAUSED + FIXED in source.** Offline suite **10/10**, live-shape probe against Firestore DEV **green**, `npm test` exit 0, build 58 modules. **Live GAS editor re-run PENDING** the per-push owner gate `PUSH_VEHICLE_GAS`.
+**Status:** **CLOSED — fixed and live-verified.** Offline suite **10/10**, live-shape probe against Firestore DEV **green**, `npm test` exit 0, build 58 modules; **live GAS editor run #2 (2026-11-22 20:57 ICT) PASS 8/8** on the fixed source, gate re-armed ([evidence §4.2](BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md)).
 **Companion:** [POC #1 evidence](BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md) (§4.1 live run #1), [F4 infra evidence](BACKEND_FIRESTORE_INFRA_F4_EVIDENCE_20261122.md).
 
 ## 1. What happened
@@ -45,7 +45,7 @@ The original fake stored and echoed fields **in insertion order**, accepted **an
 - **Node live-shape probe (Firestore DEV, synthetic only):** WRITE 200 → READ canonical deep-equal `true` → runQuery 200 `rows=1 found=true` (all three limit forms) → beginTransaction 200 → commit 200 (`writeResults`+`commitTime`) → DELETE 200 → GET 404. **No residue.**
 - **Offline:** `node --test tests/firestore-rest-poc.test.mjs` → **10/10**; full `npm test` → **exit 0**; `npm run build` → 58 `.gs` modules, no deployment performed.
 - **Live runtime unchanged:** `/exec` health `ready`, `backendVersion 0.9.2` (published V50). F2 adapter + POC remain **unwired**.
-- **Live GAS editor re-run of the fixed source:** pending owner `PUSH_VEHICLE_GAS` (per-push gate; a previous phrase does not carry over), then editor Run (assistant can drive the visible editor via OS input). Expect `{status:'PASS', tokenAcquired:true, passed:8, total:8}`.
+- **Live GAS editor run #2 of the fixed source (2026-11-22 20:57 ICT): PASS 8/8** — owner-authorized clasp push ("Pushed 59 files", 20:53 ICT), editor Run via OS input on the owner's visible browser; returned `{status:'PASS', tokenAcquired:true, passed:8, total:8}`; `/exec` health unchanged `ready/0.9.2`; `VEHICLE_FIRESTORE_POC_APPROVED` removed afterwards (save read-back verified). Detail: [evidence §4.2](BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md).
 
 ## 6. Rules for the F3a gateway (best practices distilled)
 
@@ -58,4 +58,4 @@ The original fake stored and echoed fields **in insertion order**, accepted **an
 
 ## 7. Gates and boundaries (unchanged)
 
-Synthetic DEV data only; no real data, no `ENFORCED`; private key/token never logged, returned or committed; new-store **PDPA + security review [#55](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/55) remains a human gate, OPEN**; publication stays owner-controlled; **every GAS push waits for a fresh owner `PUSH_VEHICLE_GAS`**. After the re-run PASSes: remove `VEHICLE_FIRESTORE_POC_APPROVED` (re-arm), record the result in the evidence doc, then F3a.
+Synthetic DEV data only; no real data, no `ENFORCED`; private key/token never logged, returned or committed; new-store **PDPA + security review [#55](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/55) remains a human gate, OPEN**; publication stays owner-controlled; **every GAS push waits for a fresh owner `PUSH_VEHICLE_GAS`**. Re-run PASSed (run #2): `VEHICLE_FIRESTORE_POC_APPROVED` removed (re-arm read-back verified), result recorded in the evidence doc §4.2; **F3a unblocked for offline build**.
