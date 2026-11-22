@@ -1,6 +1,7 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
-**Last verified:** 2026-11-22 09:17 Asia/Bangkok
+**Last verified:** 2026-11-22 11:45 Asia/Bangkok
+**Current main:** PR **#114** merged @ **`9269be2`** (gated synthetic DEV clean-init reset). Full test now includes an **independent read-only Sheets SSOT data audit** (25/25 sheets, 0 display errors, 10/10 fixtures, clean FK) — an API `OK` is not treated as data proof.
 **Handoff baseline:** PR **#111**, merged `main` @ **`ad7630e`**
 **Source/content baseline:** PR **#110**, merged `main` @ **`bf3553d`**
 **Status:** DEV engineering evidence is strong; **production readiness and all human sign-offs remain OPEN**.
@@ -28,6 +29,7 @@ These are DEV facts, not PDPA, security, UAT or production-release approval.
 | Live automation | **97/97 PASS**, **56/56 operations**, cleanup **7/7**, all five roles | 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated **direct-GAS** cases. The 72 authenticated cases are **not** an all-through-Worker claim. |
 | DEV fixture reset | 11 vehicles logically retired; 10 new `ACTIVE`; each has 1 contact, 5 photos and QR `MATCH`; cleanup **2/2** | Domain lifecycle preserved related records and audit history; no physical table clear. |
 | Post-seed Sheets audit | **25/25 sheets**, zero visible errors before/after, zero repairs, no incomplete sheets | Confirms the reset did not recreate display corruption. |
+| **Independent Sheets data audit** | **25/25 sheets, 0 display errors, 25/25 headers OK, 10/10 ACTIVE fixtures complete** (1 contact / 5 photos / 1 QR / 1 APPROVED reg), **12 clean FK checks** | Raw-cell recheck via read-only `gviz` CSV **independent of the API** (an API `OK` is not data proof). Empty `vc_roles`/`vc_role_permissions` confirmed **by design** (frozen code catalog `ROLE_PERMISSIONS`). [Evidence](SHEETS_DATA_AUDIT_EVIDENCE_20261122.md). |
 
 Canonical evidence and commands: [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md). Reports are sanitized and gitignored. Optional protected GitHub secrets `P6VC_TEST_USERNAME` / `P6VC_TEST_PASSWORD` are needed only for a **future manual GitHub Actions full-suite run**; they are **not** a blocker for the completed local 97/97 run.
 
@@ -87,6 +89,7 @@ Do not recreate or reapply the historical stash over PR #112. Physical Android/i
 
 - [World-class test suite plan](WORLD_CLASS_TEST_SUITE_PLAN_20261122.md) · [Data model ER diagram (25 Sheets)](DATA_MODEL_ER_DIAGRAM_20261122.md)
 - [DEV clean-init reset evidence (Mode A-full executed + Mode B source)](DEV_CLEAN_RESET_EVIDENCE_20261122.md)
+- [Independent Sheets SSOT data audit (raw-cell, read-only)](SHEETS_DATA_AUDIT_EVIDENCE_20261122.md)
 - [Current live automation, reset and audit](LIVE_API_AUTOMATION.md)
 - [A2/A3 historical live DEV evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md)
 - [QR camera recovery engineering evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md)

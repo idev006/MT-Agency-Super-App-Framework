@@ -53,6 +53,7 @@ flowchart LR
 | Public entrances | 6 non-session routes (`system.health`, `auth.login`, `auth.googleLogin`, `campaigns.validate`, `photos.upload`, `registrations.submit`) | live public + campaign-token workflows |
 | Use cases | **20 UCs**, each with spec + canonical `.mmd` | 20/20; validator-enforced |
 | Live DEV suite | 11 public + 14 Worker + 72 authenticated = **97/97**, cleanup **7/7** | PASS (synthetic DEV, direct-GAS authenticated) |
+| **Sheets SSOT data audit** | raw-cell recheck of all 25 sheets **independent of the API**: 0 display errors, schema headers, logical FK integrity, seeded-fixture consistency | **PASS 25/25, 0 errors, 10/10 fixtures, 12 clean FK** (§6.5) |
 | Frontend | unit/contract + a11y | **192/192** offline |
 | Worker | gateway contract/security | **31/31** offline + 14 live |
 | GAS offline | build + contract/security/persistence/recovery | `npm run check` PASS (55 modules) |
@@ -115,6 +116,15 @@ For a physically empty DEV sheet, `backend/gas/src/infrastructure/persistence/sh
 ### 6.4 Execution boundary
 Clearing data is a **live mutation**. A bot runs Mode A-full under the exact synthetic gates (executed 2026-11-22). Mode B source is delivered; its physical execution requires the Owner editor Run or one-time `clasp run` enablement plus the approval property. Neither mode may run against production or real data.
 
+### 6.5 Sheets SSOT data audit — mandatory full-test stage (DELIVERED, read-only)
+**An API `OK` is not proof the persisted data is correct.** Every full test (after any reset/seed/migration, and after the L3 live suite) must independently recheck the **raw Sheets cells**, not trust API responses. This is the data-layer complement to the 97/97 API suite.
+
+- **Tool:** [`backend/gas/scripts/sheets-data-audit.browser.js`](../backend/gas/scripts/sheets-data-audit.browser.js) — run via `browser-use evaluate_script` (or DevTools console) on the spreadsheet `/edit` page while logged in to an authorized Google account. It reads the spreadsheet id from `location.pathname` (no hardcoded private id) and fetches each sheet through the **read-only `gviz/tq?tqx=out:csv` export**. **No mutation.** Returns sanitized counters only (no names/phones/hashes/tokens/`application_json`).
+- **Checks (25 sheets):** header parity vs `DATABASE_SCHEMA`; trailing-column emptiness; spreadsheet display errors (`#VALUE!` etc.); data row counts; logical FK integrity (contacts/photos/qr/registrations/changes/retention/sessions/staging/user_roles→parents) with sentinel exclusion (`NO_MATCH` failed-lookup audits); seeded-fixture consistency (each ACTIVE synthetic vehicle = 1 contact / 5 photos / 1 QR / 1 APPROVED registration); vehicle status distribution.
+- **Executed 2026-11-22 (baseline `9269be2`): PASS** — 25/25 sheets, **0 display errors**, 25/25 headers OK, **10/10** ACTIVE `ฑฆ1000`–`ฑฆ1009` fixtures complete, **12 clean FK checks**, 10 ACTIVE + 26 INACTIVE vehicles. Evidence: [SHEETS_DATA_AUDIT_EVIDENCE_20261122.md](SHEETS_DATA_AUDIT_EVIDENCE_20261122.md).
+- **Key finding (by design, not a bug):** `vc_roles` / `vc_role_permissions` are **runtime-vestigial**; the authoritative role→permission policy is the frozen code catalog `ROLE_PERMISSIONS` ([`SessionService.js`](../backend/gas/src/application/security/SessionService.js)). `vc_user_roles.role_id` stores the role NAME (matches the 5 catalog keys), so empty role sheets with 27 populated assignments is correct. The audit flags `rolesCodeCatalogLikely` rather than reporting corruption. See evidence §5.
+- **Boundary:** read-only synthetic DEV verification; not UAT/PDPA/security/release approval. Requires an authorized logged-in browser session (Owner account); a bot may run it but must never mutate the sheet through this path.
+
 ## 7. Bot-executable automation contract
 
 ### 7.1 Current commands (any bot, from repo root)
@@ -136,6 +146,7 @@ npm --prefix apps/vehicle-contact/backend/gas run test:live:full   # fails close
 # clean init (Mode A-full); also requires P6VC_ALLOW_DEV_RESET=RUN_SYNTHETIC_DEV_RESET
 P6VC_ALLOW_DEV_RESET=RUN_SYNTHETIC_DEV_RESET npm --prefix apps/vehicle-contact/backend/gas run reset:dev -- --count=10
 ```
+Sheets SSOT data audit (read-only, independent of API; **mandatory after init/suite** — §6.5): not a bash command. Open the spreadsheet `/edit` URL in the logged-in Qoder browser, then run the body of `auditSheetsData()` from `apps/vehicle-contact/backend/gas/scripts/sheets-data-audit.browser.js` via `browser-use evaluate_script`. Expect 25 sheets / 0 errors / complete ACTIVE fixtures / clean FK; role-sheet emptiness is by design (§6.5).
 
 ### 7.2 Unified runner (PROPOSED)
 Deliver `scripts/run-test-suite.mjs` as the single bot entrypoint:
