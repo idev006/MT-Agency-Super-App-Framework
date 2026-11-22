@@ -27,7 +27,7 @@ const router=readFileSync(resolve(root,'backend/gas/src/api/routes/Router.js'),'
 for(const word of ['createApiRouter','createOperationController','createSessionService','createStoreForBackend','VEHICLE_PERSISTENCE_BACKEND','createDrivePhotos','VEHICLE_API_ENABLED'])
   assert.ok(container.includes(word),'Missing composition dependency: '+word);
 const selector=readFileSync(resolve(root,'backend/gas/src/composition/StoreSelector.js'),'utf8');
-for(const word of ['createSheetStore','createFirestoreStore','createFirestoreRestGateway','UNKNOWN_PERSISTENCE_BACKEND','STORAGE_NOT_CONFIGURED'])
+for(const word of ['createSheetStore','createFirestoreStore','createFirestoreRestGateway','createDualWriteStore','VEHICLE_FIRESTORE_DUALWRITE','UNKNOWN_PERSISTENCE_BACKEND','STORAGE_NOT_CONFIGURED'])
   assert.ok(selector.includes(word),'Missing backend-selector dependency: '+word);
 for(const word of ['createIdentityOperations','createAdministrationOperations','createVehicleOperations','createMediaRetentionOperations','validateOperationPayload','sessions.authorize'])
   assert.ok(controller.includes(word),'Missing API controller dependency: '+word);
