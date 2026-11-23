@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.5",
+  "backendVersion": "0.9.6",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-23T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.5 = TUNEUP L1+L2 authorize round-trip reduction (masked last_seen write closes revoke-resurrection race + parallel fetchAll user/roles/overrides; owner-approved VC-ADR-027); publish V54 then re-verify. Prior 0.9.4 = Slice G + Slice F (V53)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.6 = owner-authorized refactor/tuneup batch (no auth-semantics change): T1 insert 3->2 round-trips (batchGet newTransaction) + follow-on slices in the same deploy cycle; publish then re-verify. Prior 0.9.5 = TUNEUP L1+L2 (V54)."
 }

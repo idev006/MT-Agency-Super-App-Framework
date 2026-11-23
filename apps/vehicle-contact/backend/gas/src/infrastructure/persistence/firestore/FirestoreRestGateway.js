@@ -118,11 +118,17 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
   function queryMany(specs){
     return callMany(specs.map(s=>({url:base+':runQuery',method:'post',body:queryBody(s.coll,s)}))).map(queryRows);
   }
-  function batchGetNames(names,txId){
-    const body={documents:names};if(txId)body.transaction=txId;
+  // txId: read inside an existing transaction. beginNew: start a read-write transaction IN
+  // this same request (Firestore newTransaction) — saves the separate :beginTransaction round;
+  // the started transaction id comes back on the response stream and is returned as .txId.
+  function batchGetNames(names,txId,beginNew){
+    const body={documents:names};
+    if(txId)body.transaction=txId;
+    else if(beginNew)body.newTransaction={readWrite:{}};
     const rows=call(base+':batchGet','post',body);
     const out=new Map();
     for(const r of Array.isArray(rows)?rows:[]){
+      if(r.transaction&&!out.txId)out.txId=r.transaction;
       if(r.found)out.set(r.found.name,decodeFields(r.found.fields));
       else if(r.missing)out.set(r.missing,null);
     }
@@ -155,18 +161,22 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
   function batchGetMany(coll,ids){return batchGet(coll,ids);}
 
   function runTransaction(fn,prefetch){
-    const begin=call(base+':beginTransaction','post',{options:{readWrite:{}}});
-    const txId=begin&&begin.transaction;
-    if(!txId)throw new Error('NO_TRANSACTION_ID');
     const pending=new Map();
     const key=(coll,id)=>coll+'/'+id;
-    // Prefetch folds the tx's initial reads (e.g. doc + sequence counter) into ONE
-    // batchGet across collections, cutting insert from 4 round-trips to 3.
+    // Prefetch folds the tx's initial reads (e.g. doc + sequence counter) into ONE batchGet
+    // that ALSO begins the transaction (newTransaction): insert = 2 round-trips (was 3; 4
+    // before 0.9.3). Without prefetch the tx is begun explicitly as before.
     const seeded=new Map();
+    let txId;
     if(prefetch&&prefetch.length){
-      const m=batchGetNames(prefetch.map(p=>relName(p.coll,p.id)),txId);
+      const m=batchGetNames(prefetch.map(p=>relName(p.coll,p.id)),null,true);
+      txId=m.txId;
       for(const p of prefetch){const n=relName(p.coll,p.id);seeded.set(key(p.coll,p.id),m.has(n)?m.get(n):null);}
+    }else{
+      const begin=call(base+':beginTransaction','post',{options:{readWrite:{}}});
+      txId=begin&&begin.transaction;
     }
+    if(!txId)throw new Error('NO_TRANSACTION_ID');
     const serverGet=(coll,id)=>{const k=key(coll,id);if(seeded.has(k))return seeded.get(k);const m=batchGet(coll,[id],txId);return m.has(id)?m.get(id):null;};
     const tx={
       get(coll,id){
