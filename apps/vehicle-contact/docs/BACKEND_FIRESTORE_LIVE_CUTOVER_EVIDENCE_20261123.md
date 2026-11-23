@@ -1,7 +1,7 @@
 # Backend Firestore LIVE cutover + integration test evidence (synthetic DEV)
 
 **Doc ID:** P6VC-BE-FS-LIVE-CUTOVER-001 · **Date:** 2026-11-23 (Asia/Bangkok)
-**Status:** SYNTHETIC-DEV CUTOVER Phases 0→2 EXECUTED + verified on live GAS V51; **Phase 3 (Firestore SoR) flip done but integration suite FAILED on latency** (26/97, one `registrations.submit` 40 s timeout cascading). Root cause POC-diagnosed (§5); **targeted optimization delivered in source `backendVersion` 0.9.3 (offline 224/224)** — live suite re-run + dual-store audit **PENDING the 0.9.3 GAS deploy** (`PUSH_VEHICLE_GAS`). **Real-data go-live remains BLOCKED** (#55 legal/DPO sign-off outstanding; no real data exists — synthetic only).
+**Status:** SYNTHETIC-DEV CUTOVER Phases 0→2 EXECUTED + verified on live GAS @51; **Phase 3 (Firestore SoR) flip done**. The first integration suite at @51/0.9.2 **FAILED on latency** (26/97, one `registrations.submit` 40 s timeout cascading). Root cause POC-diagnosed (§5); **targeted optimization shipped as `backendVersion` 0.9.3 and DEPLOYED: owner `PUSH_VEHICLE_GAS` → CI version 52 → clasp self-publish @52** (main `0cc74ba`, PR #139; live health `persistence{firestore,dualWrite:true}` verified). **0.9.3 suite re-run COMPLETE and GREEN: 97/97 PASS** (public 11/11 + worker 14/14 + authenticated 72/72, 56/56 ops covered, 0 missing, cleanup 7/7, 0 residue). **`REGISTRATIONS.SUBMIT` PASS at 32.1 s** (the 40 s timeout is resolved). Latency still marginal (p50 9.7 s, p95 23 s, max 36.7 s `REGISTRATIONS.REVIEW`) with the Sheets dual-write mirror on every write. **The independent dual-store read-back audit (§4.3) is the remaining Phase 3 data-proof gate** (suite green ≠ data proof). **Real-data go-live remains BLOCKED** (#55 legal/DPO sign-off outstanding; no real data exists — synthetic only). See [continuation handoff](HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md).
 **Design authority:** [E1 §5](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) (D-E1 Option 2 / VC-ADR-019) · **Procedure:** [F3b-3 runbook](FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md) · **Prior rehearsal (Node pipeline):** [BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md](BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md)
 **Owner authorization:** `PUSH_VEHICLE_GAS` (CI source push → V51) + `approve` (clasp self-publish @51 + synthetic-DEV cutover). Blanket "-PDPA real-data go-live gate // อนุมัติเสมอ" recorded as intent in VC-ADR-020; it does **not** substitute legal-counsel/DPO sign-off, so the real-data gate stays BLOCKED.
 
@@ -16,18 +16,20 @@ This is the **first live execution of the cutover on the real GAS V8 runtime** (
 
 It does **not** prove production readiness: cross-store atomicity is not claimed; real-data PDPA/security gates are unsigned; and the GAS Firestore REST path's per-op latency (§5) — though now reduced in source — still needs live re-measurement and a production runtime decision.
 
-## 1. Deployment state at cutover
+## 1. Deployment state
 
 | Item | Value |
 |---|---|
 | GAS Script ID | `1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX` |
-| Source commit | `436c6e3` (main, PR #138) — 61 GAS modules incl. F3a/F3b wired |
-| Published version | **@51** on Worker-facing deployment `AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA` (owner `approve` → clasp `update-deployment -V 51`) |
-| Health (direct + Worker→GAS) | `status:ready`, `backendVersion:0.9.2`, `releaseChannel:development` |
+| Worker-facing deployment | `AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA` |
+| **Cutover deployment (Phases 0→2 + first Phase 3 suite)** | **@51** · source `436c6e3` (main, PR #138, 61 GAS modules incl. F3a/F3b wired) · `backendVersion 0.9.2` (no marker bump for the F3 wiring; verified by pin @51 + functional flag behavior) |
+| **Optimization re-deploy (Phase 3 re-verification — CURRENT)** | **@52** · source `0cc74ba` (main, PR #139, incl. 0.9.3 round-trip fix `e81a960` + connection-panel `5a6d1b9`) · `backendVersion 0.9.3` |
+| Publish path | owner `PUSH_VEHICLE_GAS` → CI `deploy-vehicle-gas` created version 52 (CI never publishes); owner-authorized clasp self-publish `update-deployment -V 52` → **@52** |
+| Health (direct, post-@52) | HTTP 200 · `status:ready`, `apiVersion:v1`, **`backendVersion:0.9.3`**, `releaseChannel:development`, **`persistence:{engine:"firestore",dualWrite:true}`** (Firestore SoR + Sheets warm shadow) |
 | Firestore DEV | project `mt-iam-core-2026`, db `(default)`, Bangkok `asia-southeast3`; SA key outside repo via gitignored `.env` |
 | Sheets SSOT | `17uVyxgLkWoMrqUhgRVZQFp6EFs4oWb6lw2FPKogDqEE` (25 `vc_*` tables) |
 
-`backendVersion` stays `0.9.2` (no marker bump for the F3 wiring); V51 is verified by the **deployment pin @51 + functional flag behavior**, not by the health marker.
+Script Properties (project-level) persist across GAS versions, so the Phase 3 flag flip (`VEHICLE_PERSISTENCE_BACKEND=firestore` + `VEHICLE_FIRESTORE_DUALWRITE=true`) carried from @51 to @52 unchanged; @52 only swaps in the optimized code. V52 is verified by the **health marker `0.9.3` + deployment pin @52 + `persistence` block**.
 
 ## 2. Phase 1 — forward dual-write verified on live GAS (Sheets SoR)
 
@@ -96,7 +98,16 @@ Verified **server-side after a full page reload**: 19 properties present incl. `
 
 **Root cause + fix:** POC-diagnosed in §5 (GAS `UrlFetchApp` ~1 s/call × sequential REST call count). A targeted round-trip optimization was delivered in source as **`backendVersion` 0.9.3** (commit `e81a960`): `users.list` N+1 38→7, `config.get` 2→1, standalone `update`/`remove` by PK 4→2, `insert` 4→3, session `last_seen` touch de-sequenced. Offline **GAS check 224/224 EXIT 0** incl. a new round-trip regression test (insert=3 / update=2 / remove=2). `registrations.submit` projected ~33–50 calls → ~20–26 calls (under the 40 s timeout).
 
-**Live re-run PENDING:** the optimized 0.9.3 source must be pushed (`PUSH_VEHICLE_GAS`) + published, then the suite re-run against Firestore-backed GAS. Until then Phase 3 is **NOT green** and no PASS is claimed.
+**Re-run on Firestore-backed GAS @52 (0.9.3): PASS — 97/97 overall, authenticated 72/72, 56/56 operations covered, 0 missing, cleanup 7/7 (0 residue).** Finished 2026-11-23T01:21:44Z.
+
+| Stage | Result |
+|---|---|
+| PUBLIC_DIRECT_GAS | PASS 11/11 |
+| WORKER_FAIL_CLOSED | PASS 14/14 |
+| AUTHENTICATED_FULL_INVENTORY | **PASS 72/72** (56/56 ops, 0 missing) |
+| Cleanup | PASS 7/7 (CAMPAIGN_REVOKE, ORGANIZATION_DISABLE, USER_SUSPEND ×4, AUTOMATION_ADMIN_LOGOUT; 0 residue) |
+
+**The latency fix resolved the timeout:** `REGISTRATIONS.SUBMIT` **PASS at 32,125 ms** (was 40,010 ms abort at 0.9.2). **Latency is still marginal, recorded honestly:** p50 **9,726 ms**, p90 **20,056 ms**, p95 **23,000 ms**, max **36,737 ms (`REGISTRATIONS.REVIEW`, near the 40 s ceiling)**; write-heavy ops (`users.assignRoles`, `auth.changePassword`, `changes.submit`, `system.config.update`) 15–25 s. The synchronous **Sheets dual-write mirror is still on every write** — clearing it after the rollback window (§6) is the next latency win. Owner chose **GAS Firestore REST** for production (cost, VC-ADR-022); Node/Cloud Run remains a documented fallback. **Functional correctness is proven (97/97); the independent dual-store read-back audit (§4.3) is the remaining Phase 3 data-proof gate.** Continuation: [handoff](HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md).
 <!-- /SUITE_RESULTS -->
 
 ### 4.3 Independent dual-store read-back audit (API OK ≠ data proof)
