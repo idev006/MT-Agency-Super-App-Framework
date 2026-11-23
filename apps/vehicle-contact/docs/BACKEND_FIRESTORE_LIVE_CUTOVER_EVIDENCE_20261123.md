@@ -179,6 +179,19 @@ Safe, targeted round-trip reduction — **no over-engineering**, no contract/DTO
 
 ## 6. Rollback posture
 
+### 6.1 Post-green monitoring window (owner item 6 — duration delegated, executed by Tech Lead)
+
+**Window:** starts **2026-11-23 ~08:40 +07** (after the green suite + PASS audit) and runs **~24 h → ~2026-11-24 08:40 +07**. `VEHICLE_FIRESTORE_DUALWRITE=true` stays on for the whole window (Sheets stays warm).
+
+**Baseline at window start (measured):** `system.health` HTTP 200 · `backendVersion 0.9.3` · `status:ready` · `persistence{engine:"firestore",dualWrite:true}` · 2.7 s round-trip · divergence journal `OPEN` = **0** (audit).
+
+**Checks during the window (sanitized counters only):** health flag/latency; `vc_operation_journal` `operation='dualwrite.divergence'` `status='OPEN'` count; GAS quota/errors in the console; no suite re-run needed unless an anomaly appears.
+
+**Exit criteria → clear dual-write:** 0 OPEN divergences, health stable on 0.9.3/ready, no write-error spike. Then set `VEHICLE_FIRESTORE_DUALWRITE=false` in GAS Script Properties (owner-facing editor step, secret-safe) → **Firestore-only** (drops the synchronous Sheets mirror → the next latency win). Sheets is retained **read-only** until the owner approves decommission.
+**Rollback at any point in or after the window:** flip `VEHICLE_PERSISTENCE_BACKEND=sheets` (dual-write back on) — no committed write is lost; re-run suite + independent dual-store audit; journal the incident as SSOT.
+
+### 6.2 Rollback mechanics
+
 Reverse dual-write keeps Sheets warm. Rollback = set `VEHICLE_PERSISTENCE_BACKEND=sheets` (keep dual-write → Firestore becomes shadow again); **no committed write is lost** because Sheets stayed current. Reconcile divergence journals both directions; re-run suite + independent Sheets audit; record incident as SSOT. Cross-store atomicity is **not claimed** — the guarantee is SoR-first + journal + checksum audit + warm standby.
 
 ## 7. Honest boundaries
