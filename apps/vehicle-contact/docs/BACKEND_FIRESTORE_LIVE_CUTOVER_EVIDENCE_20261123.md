@@ -248,6 +248,24 @@ The owner tested the live `vehicles/detail` page and reported it slow ("มั�
 
 **Bigger lever — NOT done, owner security gate:** reducing the authorize path (session/permission caching, `last_seen` write field-masking) touches auth/revocation semantics and **cannot be self-approved** (PM hard rule: no self-approval of security). Proposed as the next slice requiring owner security review. Honest expectation: Slice F alone is a modest ~2 s win; the meaningful detail-page speedup requires the authorize-path work.
 
+### 5.6 Slice G — Sheets runtime decommission (Firestore-only dispatch, VC-ADR-026)
+
+Owner proposal: remove the Google Sheets storage code → Firestore only, for maintainability, then refactor + tune up. Via AskUserQuestion the owner chose **scope = runtime data path first** (admin maintenance stays Sheets-bound temporarily) and **fold the merged-but-undeployed Slice F into this one deploy cycle**.
+
+**Removed from the API dispatch path:**
+- `StoreSelector.js`: the dual-engine selector (`VEHICLE_PERSISTENCE_BACKEND`) + dual-write mirror (`VEHICLE_FIRESTORE_DUALWRITE`) → `createRuntimeStore({props,services,clock})`, **Firestore-only**, still fails closed on missing (`STORAGE_NOT_CONFIGURED`) / malformed (`INVALID_FIRESTORE_SA_KEY`) SA credentials before any network call.
+- Deleted `DualWriteStore.js` + `dual-write.test.mjs` (only the selector used them; the backfill engine has its own checksum mirror, unaffected).
+- `Container.readHealthInfo` now reports `persistence{engine:'firestore',dualWrite:false}` unconditionally; the dispatcher no longer reads `VEHICLE_PERSISTENCE_BACKEND` / `VEHICLE_SHEET_ID`.
+- `backendVersion` 0.9.3 → **0.9.4** (`SystemGroup.js` + `package.json`, contract-test bound); `expected-live-version.json` updated in-slice.
+
+**Kept (owner-agreed temporary, admin/maintenance Sheets-bound):** `SheetStore.js` — still required by `BootstrapAdmin`, `AdminPasswordReset`, `StagingAcceptanceProbe`; schema verify/drift, additive migration, reference seed, repair utilities; legacy Sheets read repos (no runtime importer — follow-up cleanup); backfill scripts (tooling). The Editor staging probe is decoupled from the runtime selector via a `deps.store` DI seam in `createApplication` (the probe injects its own sandbox `SheetStore`; the HTTP entrypoint passes none, so production stays Firestore-only — no external injection vector).
+
+**Rollback consequence (owner accepted):** engine-flip rollback to Sheets is retired (the Sheets shadow was already stale — post-flip writes were never mirrored). Rollback is now **version-based** (redeploy a prior GAS deployment) + Firestore backups. **The frozen Sheet DATA is NOT deleted.**
+
+**Offline proof:** `npm run check` (build + test) **EXIT 0, 215/215 pass, 0 fail** (was 224; −9 from the removed dual-write suite). `store-selector.test.mjs` rewritten Firestore-only (SEL-01 REST routing / zero Spreadsheet opens, SEL-02 fail-closed creds, SEL-03 Container dispatch reaches REST + `SERVICE_UNAVAILABLE` on missing creds); `api-wiring.test.mjs` asserts the new composition; compiled-artifact Editor VM probes GAS-VM-01/02 still PASS on the injected sandbox SheetStore. No FE/Worker/contract coupling to 0.9.3 (56-op inventory/DTO/permissions unchanged).
+
+**Status: GAS RUNTIME source change → voids V52 live evidence. Pending one owner `PUSH_VEHICLE_GAS` (covers Slice F + G) → CI version 53 → clasp publish @53 → full G6-chain re-verify (`verify-live-publish.mjs`: health 0.9.4 match → public smoke → suite `--require-authenticated --require-data-proof`) + fresh latency measurement.** Tuneup (authorize-path reduction) is the NEXT slice and stays security-gated (owner review).
+
 ## 6. Rollback posture
 
 ### 6.1 Post-green monitoring window (owner item 6 — duration delegated, executed by Tech Lead)

@@ -32,7 +32,8 @@ function deps({spreadsheetApp,lockService,utilities,driveApp,urlFetchApp,folderI
 }
 function makeRunner(options) {
  validateSandbox(options.spreadsheetApp);
- const env=deps(options),application=createApplication(env);
+ const store=createSheetStore({spreadsheetApp:options.spreadsheetApp,spreadsheetId:SANDBOX_ID,lockService:options.lockService});
+ const env={...deps(options),store},application=createApplication(env);
  const request=(op,payload={},token=null)=>{
   const pos=op.indexOf('.');
   return application.dispatch({

@@ -2,12 +2,13 @@
 
 **Doc ID:** P6VC-BE-F3B1-DUALWRITE-001 · **Date:** 2026-11-22 (Asia/Bangkok)
 **Status:** OFFLINE DONE — code + tests merged to source; **NOT pushed to GAS, NOT enabled live.** Runtime stays Sheets V50/0.9.2; no Script Property changed.
+**⚠️ SUPERSEDED (2026-11-23, VC-ADR-026 / Slice G):** the dual-write wrapper was retired from the runtime dispatch path (Firestore-only). `DualWriteStore.js` + `dual-write.test.mjs` were **removed**; source links below point to the last commit where they existed (`3c845f1`). Historical evidence retained.
 **Slice:** F3b-1 of F3 (#53), per [E1 design §5.3](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) (owner-ratified D-E1 Option 2 / VC-ADR-019).
 **Companions:** [F2 adapter](BACKEND_FIRESTORE_ADAPTER_F2_EVIDENCE_20261122.md) · [F3a gateway + selection](BACKEND_FIRESTORE_GATEWAY_F3A_EVIDENCE_20261122.md) · [F4 infra](BACKEND_FIRESTORE_INFRA_F4_EVIDENCE_20261122.md)
 
 ## 1. What was built
 
-[DualWriteStore.js](../backend/gas/src/infrastructure/persistence/firestore/DualWriteStore.js) — `createDualWriteStore({primary,secondary,journal,clock})` implements the SAME 8-method store port:
+[DualWriteStore.js](https://github.com/idev006/MT-Agency-Super-App-Framework/blob/3c845f1/apps/vehicle-contact/backend/gas/src/infrastructure/persistence/firestore/DualWriteStore.js) — `createDualWriteStore({primary,secondary,journal,clock})` implements the SAME 8-method store port:
 
 | Port method | Behavior |
 |---|---|
@@ -39,7 +40,7 @@ Only the runtime dispatch store is wrapped; schema/migration/seed maintenance pa
 - **B1 — `SheetStore.sequence(fn)` calls `fn()` with NO transaction argument** (FirestoreStore passes a tx-scoped store). A capturing proxy that assumed a tx object crashed on reads inside `fn` when the primary was Sheets. **Fix:** proxy falls back to `primary` when no tx is supplied (`const base=tx||primary`). Regression test DW-08. **Best practice:** adapter-agnostic wrappers must probe each engine's `sequence` calling convention, not assume the richer one.
 - **B2 (design decision, recorded):** journal-record failure inside the mirror catch is swallowed — failing the user operation *after* the SoR committed would be worse than an unjournaled divergence, and the independent backfill read-back audit still detects it (owner verification directive: API OK ≠ data proof). DW-07 pins this behavior.
 
-## 4. Test matrix — [dual-write.test.mjs](../backend/gas/tests/dual-write.test.mjs) (11 new + 2 imported contract = 13/13)
+## 4. Test matrix — [dual-write.test.mjs](https://github.com/idev006/MT-Agency-Super-App-Framework/blob/3c845f1/apps/vehicle-contact/backend/gas/tests/dual-write.test.mjs) (11 new + 2 imported contract = 13/13)
 
 | ID | Proof |
 |---|---|
