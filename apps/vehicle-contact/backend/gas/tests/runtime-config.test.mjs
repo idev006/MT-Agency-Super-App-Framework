@@ -31,6 +31,9 @@ test('every property name read by source is catalogued',async()=>{
   for(const f of files){
     const s=readFileSync(f,'utf8');
     for(const m of s.matchAll(/(?:get|set|delete)Property\('([A-Z0-9_]+)'\)/g))read.add(m[1]);
+    // Prefixed reads, e.g. AdminPasswordReset: PREFIX='VEHICLE_ADMIN_RESET_' + value(props,'SUFFIX').
+    const prefix=(s.match(/PREFIX\s*=\s*'([A-Z0-9_]+)'/)||[])[1];
+    if(prefix)for(const m of s.matchAll(/(?:value\(props,|PREFIX\+)'([A-Z0-9_]+)'/g))read.add(prefix+m[1]);
   }
   for(const name of read)assert.ok(SCRIPT_PROPERTIES[name],'uncatalogued property: '+name);
 });
