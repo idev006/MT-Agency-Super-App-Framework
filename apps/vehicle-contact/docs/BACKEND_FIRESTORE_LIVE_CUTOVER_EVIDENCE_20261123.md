@@ -169,6 +169,26 @@ Empty `vc_roles` / `vc_user_identities` / `vc_role_permissions` / `vc_user_permi
 
 **Sheets freeze note:** the live Sheet is **frozen/read-only shadow as of 2026-11-23T02:30Z** (flip time; last mirrored state = 2,464-row baseline). Retained for rollback (`VEHICLE_PERSISTENCE_BACKEND=sheets` — note: writes after the flip are NOT in Sheets; rollback requires reconciling Firestore-only writes first) until the owner approves decommission. **Do not delete.**
 
+### 4.5 Slice A test-automation tooling — live end-to-end proof (G1+G2+G6, VC-ADR-024)
+
+The committed tooling from Slice A (PR #146) was proven on live V52 @52 / 0.9.3 Firestore-only by running the new `verify-live-publish.mjs` chain (detached, 2026-11-23T03:04:31Z → 03:18:38Z). **Chain PASS end-to-end:**
+
+| Chain stage | Result |
+|---|---|
+| `HEALTH_VERSION_MATCH` (live health vs `expected-live-version.json`) | **PASS** — backendVersion 0.9.3 / engine firestore / dualWrite:false |
+| `PUBLIC_SMOKE` | **PASS** 11/11 |
+| `FULL_SUITE_WITH_DATA_PROOF` → PUBLIC_DIRECT_GAS | **PASS** 11/11 |
+| → WORKER_FAIL_CLOSED | **PASS** 14/14 |
+| → AUTHENTICATED_FULL_INVENTORY | **PASS** 72/72, **56/56 ops**, cleanup 7/7 |
+| → **DATA_PROOF** (G1, `firestore-readback-proof.mjs`) | **PASS 6/6** — vehicle `TST03539720` persisted (version≥2, owner set), registration APPROVED (sha256 idem), contact updated, photos 5, post-cleanup INACTIVE, 0 OPEN divergence |
+| **VERIFY_PUBLISH overall** | **PASS** |
+
+**G2 latency guard live (n=72 authenticated):** p50 **7,562 ms** / p90 13,948 / p95 **19,230** / max 24,471 (SUBMIT). vs the recorded Firestore-only baseline (p50 8,382 / p95 22,374): **p95 −14.1%, budget OK** (WARN threshold = baseline p95 ×1.25). Slowest 5: SUBMIT 24.5s, assignRoles.staff 23.4s, REVIEW 20.5s, config.update 19.2s, assignRoles.reg 16.3s. The guard is **WARN-only** until the owner sets a production budget (VC-ADR-022).
+
+**Significance:** "API OK ≠ data proof" is now an **automated committed suite stage** (DATA_PROOF), not an ad-hoc scratch script; every post-publish verify is one fail-closed command. CI `full-api-suite` still reports `SKIPPED_DATA_PROOF` (no SA secret in CI — owner gate) — never a silent PASS.
+
+**Note:** this run's suite aggregate shows DATA_PROOF as 0/0 in the stage counter because the child spawned before the `counts()` enhancement (which folds proof `checks` into the suite total); the 6/6 is recorded in `p6vc-firestore-readback-proof.json`. Future runs (incl. Slice F re-verify) count the 6 checks in the aggregate (97+6).
+
 ## 5. Latency: POC-diagnosed root cause + delivered optimization
 
 ### 5.1 POC (owner ask: "แก้ปัญหา GAS+Firestore ช้าให้ได้ ด้วยการ POC ก่อน")

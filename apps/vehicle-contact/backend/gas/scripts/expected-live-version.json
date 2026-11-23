@@ -1,0 +1,7 @@
+{
+  "backendVersion": "0.9.3",
+  "persistenceEngine": "firestore",
+  "dualWrite": false,
+  "updatedAt": "2026-11-23T02:30:00Z",
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag."
+}

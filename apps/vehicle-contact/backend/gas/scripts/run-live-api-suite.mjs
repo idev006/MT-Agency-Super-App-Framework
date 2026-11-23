@@ -2,10 +2,12 @@ import './load-env.mjs';
 import {spawn,execFileSync} from 'node:child_process';
 import fs from 'node:fs';
 import {join,resolve} from 'node:path';
+import {computeLatency} from './latency-math.mjs';
 
 const repoRoot=resolve(import.meta.dirname,'../../../../..');
 const scriptsRoot=import.meta.dirname;
 const requireAuthenticated=process.argv.includes('--require-authenticated');
+const requireDataProof=process.argv.includes('--require-data-proof');
 const gasUrl=process.env.P6VC_GAS_EXEC_URL||'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec';
 const reportDir=join(repoRoot,'test-results');
 const aggregatePath=join(reportDir,'p6vc-live-api-suite.json');
@@ -18,15 +20,18 @@ const persist=()=>fs.writeFileSync(aggregatePath,JSON.stringify(suite,null,2)+'\
 const readReport=name=>{
  try{return JSON.parse(fs.readFileSync(join(reportDir,name),'utf8'));}catch{return null;}
 };
-const counts=report=>({
- tests:Array.isArray(report?.tests)?report.tests.length:0,
- passed:Number(report?.passed)||(Array.isArray(report?.tests)?report.tests.filter(x=>x.status==='PASS').length:0),
- failed:Number(report?.failed)||(Array.isArray(report?.tests)?report.tests.filter(x=>x.status==='FAIL').length:0)
-});
-async function runStage(id,script,reportName){
+const counts=report=>{
+ const rows=Array.isArray(report?.tests)?report.tests:Array.isArray(report?.checks)?report.checks:[];
+ return {
+  tests:rows.length,
+  passed:Number(report?.passed)||rows.filter(x=>x.status==='PASS').length,
+  failed:Number(report?.failed)||rows.filter(x=>x.status==='FAIL').length
+ };
+};
+async function runStage(id,script,reportName,args=[]){
  const startedAt=new Date().toISOString();
  const exitCode=await new Promise(resolveExit=>{
-  const child=spawn(process.execPath,[join(scriptsRoot,script)],{
+  const child=spawn(process.execPath,[join(scriptsRoot,script),...args],{
    cwd:repoRoot,env:{...process.env,P6VC_GAS_EXEC_URL:gasUrl},stdio:'inherit'
   });
   child.once('error',()=>resolveExit(127));
@@ -62,7 +67,21 @@ if(!preflightPassed){
  }else authenticated=await runStage('AUTHENTICATED_FULL_INVENTORY','run-live-owner-dev-regression.mjs','p6vc-live-owner-dev-regression.json');
 }
 
+let dataProof;
+if(!requireDataProof){
+ dataProof=skippedStage('DATA_PROOF','SKIPPED_DATA_PROOF','NOT_REQUESTED');
+}else if(authenticated.status!=='PASS'){
+ dataProof=skippedStage('DATA_PROOF','BLOCKED_AUTHENTICATED','AUTHENTICATED_STAGE_NOT_PASS');
+}else if(process.env.P6VC_ALLOW_FIRESTORE_DEV_PROBE!=='RUN_SYNTHETIC_FIRESTORE_PROBE'||!process.env.GOOGLE_APPLICATION_CREDENTIALS||!process.env.FIRESTORE_PROJECT_ID){
+ dataProof=skippedStage('DATA_PROOF','BLOCKED_CONFIGURATION','MISSING_FIRESTORE_PROBE_GATE_OR_CREDENTIALS');
+}else{
+ dataProof=await runStage('DATA_PROOF','firestore-readback-proof.mjs','p6vc-firestore-readback-proof.json',['--since',suite.startedAt]);
+}
+
 const ownerReport=readReport('p6vc-live-owner-dev-regression.json');
+let baseline=null;
+try{baseline=JSON.parse(fs.readFileSync(join(scriptsRoot,'latency-baseline.json'),'utf8'));}catch{}
+suite.latency=ownerReport?computeLatency(ownerReport.tests,baseline):{n:0,reason:'NO_OWNER_REPORT'};
 suite.operationCoverage=authenticated.status==='PASS'&&ownerReport?{
  covered:ownerReport.coverage?.length||0,
  expected:(ownerReport.coverage?.length||0)+(ownerReport.missingOperations?.length||0),
@@ -72,7 +91,7 @@ suite.cleanup=(authenticated.status==='PASS'||authenticated.status==='FAIL')&&ow
 suite.finishedAt=new Date().toISOString();
 suite.passed=suite.stages.reduce((n,x)=>n+x.passed,0);
 suite.failed=suite.stages.reduce((n,x)=>n+x.failed,0);
-suite.status=!preflightPassed||authenticated.status==='FAIL'||authenticated.status.startsWith('BLOCKED')?'FAIL':
+suite.status=!preflightPassed||authenticated.status==='FAIL'||authenticated.status.startsWith('BLOCKED')||(requireDataProof&&dataProof.status!=='PASS')?'FAIL':
  authenticated.status==='PASS'?'PASS':'PASS_PUBLIC_ONLY';
 persist();
 
@@ -81,8 +100,9 @@ if(process.env.GITHUB_STEP_SUMMARY){
   '- Secrets, session tokens, raw responses and PII are excluded.','','| Stage | Status | Passed | Failed |','| --- | --- | ---: | ---: |',
   ...suite.stages.map(x=>`| ${x.id} | ${x.status} | ${x.passed} | ${x.failed} |`)];
  if(suite.operationCoverage)lines.push('',`Authenticated operation coverage: ${suite.operationCoverage.covered}/${suite.operationCoverage.expected}.`);
+ if(suite.latency?.n)lines.push('',`Latency (authenticated, n=${suite.latency.n}): p50 ${suite.latency.p50} ms / p90 ${suite.latency.p90} ms / p95 ${suite.latency.p95} ms / max ${suite.latency.max} ms — budget ${suite.latency.budget||'N/A'}${suite.latency.p95DeltaPct!=null?` (p95 vs baseline ${suite.latency.p95DeltaPct>0?'+':''}${suite.latency.p95DeltaPct}%)`:''}.`);
  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,lines.join('\n')+'\n');
 }
 console.log('LIVE_SUITE '+JSON.stringify({status:suite.status,passed:suite.passed,failed:suite.failed,
- stages:suite.stages.map(x=>({id:x.id,status:x.status})),report:'test-results/p6vc-live-api-suite.json'}));
+ stages:suite.stages.map(x=>({id:x.id,status:x.status})),latency:suite.latency?.n?{p50:suite.latency.p50,p95:suite.latency.p95,budget:suite.latency.budget}:undefined,report:'test-results/p6vc-live-api-suite.json'}));
 if(suite.status==='FAIL')process.exitCode=1;
