@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.7",
+  "backendVersion": "0.9.8",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-23T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.7 = W1 single-round writes (insert/update/remove = 1 commit, time-ordered _seq) + registrations.submit/review parallel reads + ONE all-or-nothing commit (owner: no transaction, correctness + speed) + P1 config snapshot; publish then re-verify. Prior 0.9.6 = T1/T2/R1 (V56)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.8 = W1 (0.9.7) + fix: registrations.review reads the latest journal with the DESC newest-window query (V57 regression: the ASC query has no live composite index -> FAILED_PRECONDITION; deployment rolled back to @56). Prior good: 0.9.6 (V56)."
 }

@@ -131,3 +131,24 @@ test('W1a writeMany: several writes in ONE commit, all-or-nothing on any precond
     {op:'update',table:'vc_users',key:{user_id:'u1'},fields:{display_name:'B'}}
   ]),/DUPLICATE_WRITE_TARGET/,'live Firestore rejects two writes to one doc per commit; fail early');
 });
+
+test('V57 regression: registrations.review only issues queries backed by the live composite indexes (journal = DESC)',()=>{
+  const fake=createFakeFirestoreRest({strictIndexes:true});
+  // The live DEV DB has the DESC journal index (listNewest) but NOT an ASC one.
+  fake.state.addIndex('vc_operation_journal',[{fieldPath:'operation'},{fieldPath:'entity_id'},{fieldPath:'_seq',order:'DESCENDING'}]);
+  const store=makeStore(fake);
+  let n=0;
+  const security={now:()=>'2026-11-23T00:00:00.000Z',secretToken:()=>'t'+String(++n).padStart(63,'0'),
+    sha256:v=>'h'+String(v).length,deriveSecret:p=>'derived:'+p};
+  const ops=createVehicleOperations({store,security,campaigns:{},references:{}});
+  const photos=['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'].map((slot,i)=>({photoId:'p'+i,slot,storageRef:'ref'+i,mimeType:'image/png',sizeBytes:10}));
+  store.insert('vc_registration_requests',{request_id:'r1',vehicle_id:'v1',campaign_id:'c1',status:'PENDING_APPROVAL',submitted_at:'2026-11-23T00:00:00.000Z',
+    reviewed_by:'',reviewed_at:'',idempotency_key:'k1',application_json:JSON.stringify({plate_normalized:'TST1',province_code:'10',plate_type:'NORMAL',
+    vehicle_type:'CAR',make:'M',model:'X',color:'W',organization_id:'org1',relationship:'OWNER',contactName:'N',contactPhone:'+66810000001',photos})});
+  const out=ops['registrations.review']({requestId:'r1',decision:'APPROVE',platePhotoVerified:true},{userId:'u1'});
+  assert.equal(out.status,'APPROVED');
+  assert.ok(out.qrToken&&out.qrId);
+  assert.equal(store.one('vc_vehicles',{vehicle_id:'v1'}).status,'ACTIVE');
+  // An ASC journal query (the V57 bug) is rejected by this strict fake exactly like live Firestore.
+  assert.throws(()=>store.list('vc_operation_journal',{operation:'registrations.review',entity_id:'r1'}),/FAILED_PRECONDITION/);
+});

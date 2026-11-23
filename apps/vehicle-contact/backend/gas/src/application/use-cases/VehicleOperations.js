@@ -8,7 +8,9 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   audit_id:identity.auditId||id(),actor_id:actor&&actor.userId||'PUBLIC_CAMPAIGN',entity_type:kind,entity_id:entity,
   action,redacted_summary:action,correlation_id:identity.correlationId||id().slice(0,16),created_at:now()
  });
- const latestJournal=(operation,entityId)=>store.listNewest('vc_operation_journal',{operation,entity_id:entityId},20).at(-1)||null;
+ // limit 1 = THE newest row under either port ordering (Sheets returns the window ascending,
+ // Firestore descending; the old .at(-1) on a 20-row window picked the OLDEST on Firestore).
+ const latestJournal=(operation,entityId)=>store.listNewest('vc_operation_journal',{operation,entity_id:entityId},1)[0]||null;
  const parseJournal=row=>{try{return JSON.parse(row?.detail_json||'{}');}catch{return {};}};
  const reviewStatus=decision=>decision==='APPROVE'?'APPROVED':'REJECTED';
  const reviewAction=decision=>decision==='APPROVE'?'REGISTRATION_APPROVED':'REGISTRATION_REJECTED';
@@ -124,7 +126,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  // write in ONE commit. Firestore applies a commit all-or-nothing with per-write
  // preconditions, so there is never a partial submit to compensate (no saga, no locks).
  const readAll=reqs=>typeof store.readMany==='function'?store.readMany(reqs)
-  :reqs.map(r=>r.kind==='one'?store.one(r.name,r.filter):store.list(r.name,r.filter));
+  :reqs.map(r=>r.kind==='one'?store.one(r.name,r.filter):r.kind==='newest'?store.listNewest(r.name,r.filter,r.limit||1):store.list(r.name,r.filter));
  const writeAll=ops=>{
   if(typeof store.writeMany==='function')return store.writeMany(ops);
   for(const o of ops){if(o.op==='insert')store.insert(o.table,o.data);else if(o.op==='update')store.update(o.table,o.key,o.fields);else store.remove(o.table,o.key);}
@@ -218,10 +220,12 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    const decision=p.decision;
    let [r,journals,vehicles]=readAll([
     {kind:'one',name:'vc_registration_requests',filter:{request_id:requestId}},
-    {kind:'list',name:'vc_operation_journal',filter:{operation:'registrations.review',entity_id:requestId}},
+    // Newest-first (DESC) query: the live DB only has the DESC composite index for this
+    // filter; an ASC orderBy fails FAILED_PRECONDITION (the V57 regression).
+    {kind:'newest',name:'vc_operation_journal',filter:{operation:'registrations.review',entity_id:requestId},limit:1},
     ...(decision==='APPROVE'?[{kind:'list',name:'vc_vehicles'}]:[])]);
    if(!r)throw new Error('INVALID_REQUEST_STATE');
-   const app=JSON.parse(r.application_json),previous=journals.at(-1)||null,prior=parseJournal(previous);
+   const app=JSON.parse(r.application_json),previous=journals[0]||null,prior=parseJournal(previous);
    if(decision==='APPROVE'&&p.platePhotoVerified!==true)throw new Error('PLATE_PHOTO_NOT_VERIFIED');
    if(previous&&['PREPARED','RECOVERY_REQUIRED'].includes(previous.status)){
     if(prior.decision!==decision)throw new Error('OPERATION_RECOVERY_REQUIRED');
