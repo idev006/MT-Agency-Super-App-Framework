@@ -1,5 +1,7 @@
 # Vehicle Contact — GAS Phase 1 Security & Privacy Release Gate
 
+**Last updated (git):** 2026-11-17 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 **Status:** BLOCKED FOR PROTECTED DATA OPERATIONS.
 
 - Phase 1 sign-in is Username/Password; MT-I-AM deferred. Authentication must be server-side with approved password hashing/session handling and action-level authorization.

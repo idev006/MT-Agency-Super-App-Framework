@@ -1,4 +1,7 @@
 # Retention Schedule and PDPA Release Gate
+
+**Last updated (git):** 2026-11-16 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 สถานะ: เตรียมใช้งานหลังเติมตัวเลขที่อนุมัติและตรวจฐานกฎหมาย
 
 | ประเภทข้อมูล | เหตุจำเป็นในการเก็บ | ตัวกระตุ้นเริ่มนับ | ระยะเก็บ | การลบ/ทำลาย | ผู้อนุมัติ |

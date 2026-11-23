@@ -1,4 +1,7 @@
 # P6 Vehicle Contact — Policy / Workflow / SOP Review
+
+**Last updated (git):** 2026-11-16 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 **3 Nov 2026 — Draft for command and field review**
 
 ## Core policy

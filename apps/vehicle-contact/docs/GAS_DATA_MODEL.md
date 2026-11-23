@@ -1,5 +1,7 @@
 # Sheets physical projection (DERIVED) — Phase 1 candidate snapshot
 
+**Last updated (git):** 2026-11-22 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 > **DB-agnostic logical SSOT:** [database.schema.json](../schema/database.schema.json) (25 entities) + [ER diagram](DATA_MODEL_ER_DIAGRAM_20261122.md) are authoritative and **engine-independent**. This page is the **derived Google Sheets physical projection** (one tab = one entity, columns = declared headers) — a partial/historical candidate snapshot, **not** a competing field list and **not** authoritative. The full current entity/column list lives in the canonical JSON. Field type/required/key definitions are **provisional** pending data-owner review. See [Data Dictionary Workflow](GAS_DATA_DICTIONARY.md), [Schema Sync](SCHEMA_SYNC_IMPLEMENTATION.md), and the sibling [Firestore physical projection](FIRESTORE_PHYSICAL_MAPPING_20261122.md).
 
 **Status:** Working technical schema, NOT approved final business/PDPA schema.  

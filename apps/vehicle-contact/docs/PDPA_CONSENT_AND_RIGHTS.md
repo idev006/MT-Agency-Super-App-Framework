@@ -1,4 +1,7 @@
 # Consent, Rights and Breach Operational Procedures
+
+**Last updated (git):** 2026-11-16 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 สถานะ: แบบต้นฉบับสำหรับกิจกรรมที่ฝ่ายกฎหมายกำหนดว่าใช้ฐานความยินยอมเท่านั้น
 
 ## 1. แบบขอความยินยอมเฉพาะวัตถุประสงค์ (conditional template)

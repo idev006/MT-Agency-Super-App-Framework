@@ -1,5 +1,7 @@
 # Vehicle Contact — Backend delivery status (2026-11-17)
 
+> **SUPERSEDED (2026-11-17 snapshot) — do not use for current state.** See [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); retained for history only.
+
 ## Scope
 Target: 50 operations / 13 groups, Google Apps Script with Sheets/Drive, RBAC and audit.
 Architecture and approved requirements remain the source of truth. Do not deploy GAS without owner approval.
