@@ -120,7 +120,7 @@ After the suite, a fresh gviz Sheets snapshot is compared against Firestore (Nod
 
 | Metric | Result |
 |---|---|
-| Fresh post-suite gviz export (read-only, 25 tabs) | **25 tables · 2,464 rows · `failures={}`** (pre-suite: 2,277 rows — the suite's writes are included) |
+| Fresh post-suite gviz export (read-only, 25 tabs) | **25 tables · 2,464 rows · `failures={}`** (pre-suite snapshot recorded 2,277 rows; that file was replaced by this fresh export, so the pre-count is retained from the Phase 0 record; the suite's writes are included in 2,464) |
 | Tables compared (per-doc by PK, type-normalized) | **25 / 25** |
 | Docs matched | **2,464 / 2,464** |
 | Missing in Firestore / extras in Firestore | **0 / 0** |

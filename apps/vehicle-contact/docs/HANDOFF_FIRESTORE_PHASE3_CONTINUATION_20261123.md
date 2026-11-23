@@ -175,3 +175,21 @@ OWNER DECISIONS (VC-ADR-022): production runtime = GAS Firestore REST (cost, NOT
 
 GOAL: ready for ALL roles / ALL use cases on Firestore (frontend thin shell, GAS main engine). Continue effectively from the suite result. Start by checking the suite and reporting the measured outcome in Thai.
 ```
+---
+
+## 10. Handoff acceptance review (2026-11-23, performed by the receiving Tech Lead)
+
+Standard applied: the project's own precedence and safety rules ([PROJECT_HANDOVER](PROJECT_HANDOVER.md) §2/§8) — *status claims must be verified against artifacts; current counts supersede old counts; never accept a PASS without persisted-data proof; no secrets in docs; the read-first chain must not contradict itself.*
+
+| # | Criterion | Result | Evidence |
+|---|---|---|---|
+| 1 | Status claims true (suite/audit/deploy) | **PASS** | repo-root suite report 97/97 `finishedAt 2026-11-23T01:21:44Z`; child reports 11/14/72 aligned ±1 s; `clasp list-deployments` → **@52** exists with the 0.9.3 description; live health `0.9.3` · ready · `persistence{firestore,dualWrite:true}`; `SystemGroup.js` source `backendVersion:"0.9.3"`; `.clasp.json` Script ID matches |
+| 2 | Traceability (commits/PRs/scripts exist) | **PASS** | `0cc74ba` = merge PR #139; `858ea4d` = merge PR #140; `e81a960`/`5a6d1b9` present under it; frontend `0.8.0`; all 7 referenced scripts exist; launcher gates match the documented gates |
+| 3 | Read-first chain self-consistency | **FAIL → FIXED in this review** | `CURRENT_DELIVERY_STATUS` row 4 said "live is now V50/0.9.2" and the Firestore row said "live cutover GATED / runtime still Sheets V50" — contradicting its own header (Firestore SoR on V52); `PROJECT_HANDOVER` §1/§3/§6 still described V48/0.9.1 and listed B2b as the next action. All corrected to current state, history retained as dated evidence |
+| 4 | Secret hygiene | **PASS** | regex scan of the 5 handoff docs: no private keys, API keys, OAuth tokens or passwords; only the SA **path** is named (outside repo) |
+| 5 | Reproducibility / actionability | **PASS** | every runbook command resolves to an existing script; gates reproduced from `launch-suite.mjs`; next step (audit → window → clear dual-write) unambiguous |
+| 6 | Honest boundaries | **PASS** | audit was genuinely pending at handoff (placeholder empty); synthetic-only, #55 blocked, latency caveats present |
+
+Minor notes (no action required, recorded for the next handoff): (a) `suite-run.log` opens in **append** mode, so it holds an earlier FAIL block before the PASS — always read the final `LIVE_SUITE` line or the JSON report; (b) latency percentiles use the *floor(q·n)*-th value (p50 9,726 / p90 20,056 / p95 23,000) — state the method when quoting; (c) version↔commit linkage is procedural (CI artifact + clasp pin), not cryptographic.
+
+**Verdict: CONDITIONAL ACCEPT → ACCEPTED after the §3 fix.** No false PASS claims were found; "garbage" risk was stale current-state text in two navigation docs, now corrected.
