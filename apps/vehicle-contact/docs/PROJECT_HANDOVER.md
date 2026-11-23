@@ -1,19 +1,19 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified:** 2026-11-22 09:17 Asia/Bangkok
-**Handoff baseline:** PR **#111**, merged `main` @ **`ad7630e`**
-**Source/content baseline:** PR **#110**, merged `main` @ **`bf3553d`**
+**Last verified:** 2026-11-23 Asia/Bangkok (Phase 3 GREEN on V52 / 0.9.3)
+**Runtime baseline:** PR **#139**, merged `main` @ **`0cc74ba`** (backend 0.9.3) · docs PR **#140** @ **`858ea4d`**
+**Historical baselines (superseded):** handoff PR **#111** @ `ad7630e` · source/content PR **#110** @ `bf3553d`
 **Purpose:** concise continuation brief. Start with [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); this handover supplies precedence, safety, exact next actions and a ready-to-paste prompt.
 
 ## 1. Ready-to-paste next-AI prompt
 
 ```text
-Take over P6 Vehicle Contact in idev006/MT-Agency-Super-App-Framework. Read apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md first, then PROJECT_MANAGEMENT_PLAN_20261121.md and PRODUCTION_READINESS_PLAN_20261121.md. Use handoff PR #111 merged main ad7630e and implementation/content baseline PR #110 bf3553d as the last verified baseline, but inspect current git status, fetch and verify the remote main SHA, and inspect Issues and CI before changing anything. QR camera engineering source is delivered in PR #112 from d92e08c; physical Android/iOS acceptance remains open. Continue B2b as a separate PR.
+Take over P6 Vehicle Contact in idev006/MT-Agency-Super-App-Framework. Read apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md first, then PROJECT_MANAGEMENT_PLAN_20261121.md and PRODUCTION_READINESS_PLAN_20261121.md. Latest verified baseline: runtime PR #139 merged main 0cc74ba (backend 0.9.3) + docs PR #140 858ea4d; but inspect current git status, fetch and verify the remote main SHA, and inspect Issues and CI before changing anything. QR camera engineering source is delivered in PR #112 from d92e08c; physical Android/iOS acceptance remains open.
 
-Verified snapshot: published GAS Web App V48 backend 0.9.1; frontend 0.8.0; Worker version 20180237-7441-481a-9540-e7ca2c9c79eb; offline GAS npm check PASS. Live DEV automation passed 97/97 = 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated direct-GAS, covering 56/56 operations and all five roles with cleanup 7/7. Do not describe the authenticated stage as all-through-Worker. DEV reset logically retired 11 and created 10 ACTIVE vehicles, each with 1 contact/5 photos/QR MATCH, cleanup 2/2; post-seed audit passed 25/25 Sheets with zero visible errors and zero repairs. Display-error follow-up maintenance source is GAS HEAD only; published API remains V48. Live report sourceCommit f14458d is not the merge/content baseline.
+Verified snapshot (2026-11-23): live GAS Web App V52 backend 0.9.3 = Firestore SoR + Sheets warm shadow (persistence{engine:firestore,dualWrite:true}); frontend 0.8.0; Worker version 20180237-7441-481a-9540-e7ca2c9c79eb; offline GAS check 224/224 PASS. Live DEV automation passed 97/97 = 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated direct-GAS, covering 56/56 operations and all five roles with cleanup 7/7. Do not describe the authenticated stage as all-through-Worker. Independent post-suite dual-store audit PASS: 25/25 tables, 2,464/2,464 docs matched, divergenceOpen 0. Latency is marginal (p50 9.7 s / p95 23 s / max 36.7 s) with the Sheets dual-write mirror on. Historical: V48/0.9.1, V50/0.9.2 and the V51 first-suite latency failure are superseded, retained in dated evidence.
 
-Completed engineering slices: A1-A3, B1/B2/B4, C1-C4, C6, E2, display repair, live automation and QR camera source recovery (PR #112 / d92e08c; focused QR/resolve 16/16, Frontend 192/192). Physical Android/iOS QR acceptance remains OPEN. Continue with B2b durable journaling/compensation for registrationReview and assignRoles with fault/restart tests as a separate PR. C5 RETENTION_WORKER console is BLOCKED on human D5+B3 decisions and is not in progress; do not implement or enable destructive retention while blocked.
+Completed engineering slices: A1-A3, B1/B2/B4, B2b durable journaling (published, carried in V50+), C1-C4, C6, E2, display repair, live automation, QR camera source recovery (PR #112 / d92e08c; focused QR/resolve 16/16, Frontend 192/192), Firestore F1-F4 + Phase 3 cutover (V52/0.9.3). Physical Android/iOS QR acceptance remains OPEN. Next engineering step: the ~24 h post-green dual-write monitoring window, then clear VEHICLE_FIRESTORE_DUALWRITE -> Firestore-only (task #78). C5 RETENTION_WORKER console is BLOCKED on human D5+B3 decisions and is not in progress; do not implement or enable destructive retention while blocked.
 
 Keep PDPA/security/UAT/release, browser/business/device acceptance, D-E1/D3/D5/B3, VC-ADR-014/015/017 and credential rotation OPEN unless a named human supplies actual approval evidence. Optional protected GitHub P6VC_TEST_USERNAME/P6VC_TEST_PASSWORD secrets are only for future manual full-suite runs, not a blocker for the completed local run.
 
@@ -37,12 +37,13 @@ If sources conflict, record the conflict and request the required human decision
 
 | Area | Verified state |
 |---|---|
-| Runtime | GAS Web App **V48 / 0.9.1**; Frontend **0.8.0**; Worker **`20180237-7441-481a-9540-e7ca2c9c79eb`**. |
+| Runtime | GAS Web App **V52 / `backendVersion` 0.9.3** = **Firestore SoR + Sheets warm shadow** (`persistence{engine:firestore,dualWrite:true}`, health-verified); Frontend **0.8.0**; Worker **`20180237-7441-481a-9540-e7ca2c9c79eb`**. |
 | Inventory | **56 operations**, **25 Sheets**, five roles. |
-| Offline/live | Offline GAS check PASS; live **97/97**, **56/56**, cleanup 7/7. Authenticated 72 cases are direct-GAS; Worker has separate 14-case live fail-closed proof. |
+| Offline/live | Offline GAS check **224/224**; live **97/97**, **56/56**, cleanup 7/7. Authenticated 72 cases are direct-GAS; Worker has separate 14-case live fail-closed proof. |
+| Firestore cutover | **Phase 3 GREEN (synthetic DEV):** suite 97/97 on V52/0.9.3 + independent post-suite dual-store audit PASS (**25/25 tables, 2,464/2,464 docs, `divergenceOpen=0`**). Next: ~24 h dual-write monitoring window → clear dual-write → Firestore-only. Production/real-data cutover BLOCKED (#55). |
 | DEV data | 11 retired logically, 10 new ACTIVE, each 1 contact/5 photos/QR MATCH; cleanup 2/2. |
-| Sheets audit | 25/25 complete, zero visible errors before/after and zero repairs after seed. |
-| Publication nuance | Display-error repair source is GAS HEAD only; published API remains V48. `f14458d` is report provenance, not baseline. |
+| Sheets audit | 25/25 complete, zero visible errors before/after and zero repairs after seed (2026-11-22 seed audit; superseded for current counts by the post-suite dual-store audit). |
+| Publication nuance | Live V52 was created by CI (owner `PUSH_VEHICLE_GAS`) and published by owner-authorized clasp `update-deployment -V 52`; CI never publishes. `f14458d` is historical report provenance, not a baseline. |
 | Release | **Not production-ready. All human sign-offs are OPEN.** |
 
 Primary evidence: [live automation/reset/audit](LIVE_API_AUTOMATION.md), [C6 registry](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md), [E2 authorization](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md), [Sheets repair/runbook](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md), [E1 design](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md), and [E3 dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md).
@@ -86,7 +87,7 @@ flowchart TD
 
 1. **Reconcile before editing:** inspect current branch/status, fetch and verify the remote `main` SHA, then inspect the relevant Issue and checks. Treat the snapshot above as last-verified, not a substitute for current inspection.
 2. **QR path:** engineering source is delivered in PR #112; obtain named-human physical Android/iOS acceptance after reviewed Pages publication and keep it separate from offline evidence.
-3. **B2b path:** add durable PREPARED/recovery semantics for `registrationReview` and `assignRoles` in a separate PR, prove restart/fault idempotency, and update the [recovery runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) and evidence.
+3. **B2b path — DONE** (durable PREPARED/recovery semantics + restart/fault idempotency, published V49→V50). Next engineering item: **run the ~24 h post-green dual-write monitoring window** (health flag/latency, `dualwrite.divergence` OPEN count), then set `VEHICLE_FIRESTORE_DUALWRITE=false` → Firestore-only; rollback = flip `VEHICLE_PERSISTENCE_BACKEND=sheets`. Update the [rollback runbook](FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md) + evidence when executed.
 4. **C5:** leave **BLOCKED** until D5+B3 are explicitly ratified. Only then build the permission-gated console and perform synthetic two-person/`legal_hold` rehearsal; never enable real-data destructive retention.
 5. **Acceptance:** arrange named-human browser/business review of gallery/copy, C1–C4 and C6 plus QR device review. API automation is not UAT.
 6. **Release:** resolve D-E1/D3/D5/B3 and VC-ADR-014/015/017 as applicable, rotate credentials, complete PDPA/security/UAT review, then follow the [release sequence](PRODUCTION_READINESS_PLAN_20261121.md#4-release-sequence--no-date-commitment). Final release approval remains OPEN.
