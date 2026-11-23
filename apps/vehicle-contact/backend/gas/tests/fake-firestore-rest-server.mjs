@@ -67,13 +67,19 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
   const docs=new Map();
   const txs=new Set();
   const indexes=new Set();
-  const state={requests:[],tokenCount:0,issuedToken:null,residue:()=>docs.size,
+  // rounds = sequential wall-clock rounds (one per fetch OR per fetchAll batch); requests = HTTP calls.
+  const state={requests:[],rounds:0,tokenCount:0,issuedToken:null,residue:()=>docs.size,
     seed(coll,id,plain){docs.set(BASE+'/'+coll+'/'+id,encodeFields(plain));},
     plain(coll,id){const f=docs.get(BASE+'/'+coll+'/'+id);return f?decodeFields(f):null;},
     addIndex(coll,fields){indexes.add(coll+'|'+fields.map(f=>f.fieldPath+':'+(f.order||'ASCENDING')).join(','));}};
   const reply=(code,body)=>({getResponseCode:()=>code,getContentText:()=>body===undefined?'':JSON.stringify(body)});
   const err=(code,status,message)=>reply(code,{error:{code,status,message}});
-  function fetch(url,opts={}){
+  function fetch(url,opts={}){state.rounds++;return handle(url,opts);}
+  // GAS UrlFetchApp.fetchAll: array of {url,...params}, executed in parallel, one round.
+  // state.onRequest(url,opts) lets a test interleave a concurrent writer before any call.
+  function fetchAll(reqs){state.rounds++;return reqs.map(({url,...opts})=>handle(url,opts));}
+  function handle(url,opts={}){
+    if(state.onRequest)state.onRequest(url,opts);
     const method=(opts.method||'get').toLowerCase();
     state.requests.push({url,method,payload:opts.payload,headers:opts.headers});
     if(url===TOKEN_URL){
@@ -112,7 +118,13 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
         const pre=w.currentDocument;
         if(pre&&pre.exists===false&&docs.has(full))return err(409,'ALREADY_EXISTS','document already exists');
         if(pre&&pre.exists===true&&!docs.has(full))return err(404,'NOT_FOUND','document to modify not found');
-        if(w.update){docs.set(full,w.update.fields);writeResults.push({updateTime:CLOCK});}
+        if(w.update&&w.updateMask){
+          // Real semantics: only masked paths change; a masked path absent from fields is deleted.
+          const next={...docs.get(full)};
+          for(const p of w.updateMask.fieldPaths||[]){if(w.update.fields&&p in w.update.fields)next[p]=w.update.fields[p];else delete next[p];}
+          docs.set(full,next);writeResults.push({updateTime:CLOCK});
+        }
+        else if(w.update){docs.set(full,w.update.fields);writeResults.push({updateTime:CLOCK});}
         else{docs.delete(full);writeResults.push({});}
       }
       return reply(200,{writeResults,commitTime:CLOCK});
@@ -163,5 +175,5 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
     }
     return err(405,'METHOD_NOT_ALLOWED','single-doc writes must go through commit');
   }
-  return {fetch,state};
+  return {fetch,fetchAll,state};
 }

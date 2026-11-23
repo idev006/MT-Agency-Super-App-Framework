@@ -66,10 +66,25 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     return cached.token;
   }
 
-  function call(url,method,body){
-    const opts={method,headers:{Authorization:'Bearer '+token()},muteHttpExceptions:true};
+  function request(url,method,body){
+    const opts={url,method,headers:{Authorization:'Bearer '+token()},muteHttpExceptions:true};
     if(body!==undefined){opts.contentType='application/json';opts.payload=JSON.stringify(body);}
-    const resp=urlFetchApp.fetch(url,opts);
+    return opts;
+  }
+  function call(url,method,body){
+    const {url:_u,...opts}=request(url,method,body);
+    return parse(urlFetchApp.fetch(url,opts));
+  }
+  // Independent requests in ONE wall-clock round (UrlFetchApp.fetchAll runs them in
+  // parallel). Falls back to sequential fetch where the transport has no fetchAll.
+  function callMany(reqs){
+    if(!reqs.length)return [];
+    const built=reqs.map(r=>request(r.url,r.method,r.body));
+    if(typeof urlFetchApp.fetchAll!=='function')
+      return built.map(({url,...opts})=>parse(urlFetchApp.fetch(url,opts)));
+    return urlFetchApp.fetchAll(built).map(parse);
+  }
+  function parse(resp){
     const code=resp.getResponseCode(),text=resp.getContentText();
     let parsed=null;try{parsed=text?JSON.parse(text):null;}catch(_){parsed=null;}
     if(code<200||code>=300){
@@ -87,14 +102,21 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     if(!filters.length)return undefined;
     return filters.length===1?filters[0]:{compositeFilter:{op:'AND',filters}};
   }
-  function query(coll,{where=[],orderBy,limit}={},txId){
+  function queryBody(coll,{where=[],orderBy,limit}={},txId){
     const structuredQuery={from:[{collectionId:coll}]};
     const w=whereClause(where);if(w)structuredQuery.where=w;
     if(orderBy)structuredQuery.orderBy=[{field:{fieldPath:orderBy.field},direction:orderBy.direction==='desc'?'DESCENDING':'ASCENDING'}];
     if(limit!==undefined)structuredQuery.limit=limit;
     const body={structuredQuery};if(txId)body.transaction=txId;
-    const rows=call(base+':runQuery','post',body);
-    return (Array.isArray(rows)?rows:[]).filter(r=>r.document).map(r=>({id:idOf(r.document.name),fields:decodeFields(r.document.fields)}));
+    return body;
+  }
+  const queryRows=rows=>(Array.isArray(rows)?rows:[]).filter(r=>r.document).map(r=>({id:idOf(r.document.name),fields:decodeFields(r.document.fields)}));
+  function query(coll,opts={},txId){
+    return queryRows(call(base+':runQuery','post',queryBody(coll,opts,txId)));
+  }
+  // Non-transactional independent queries in one parallel round. specs: [{coll,where,orderBy,limit}].
+  function queryMany(specs){
+    return callMany(specs.map(s=>({url:base+':runQuery',method:'post',body:queryBody(s.coll,s)}))).map(queryRows);
   }
   function batchGetNames(names,txId){
     const body={documents:names};if(txId)body.transaction=txId;
@@ -115,10 +137,19 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
   // Non-transactional single-round-trip write. Ops are {type:'create'|'update'|'delete',
   // coll,id,fields}; existence preconditions (currentDocument.exists) keep each write
   // atomic without begin+commit. Mirrors runTransaction's commit write shape.
+  // type 'patch' writes ONLY the given fields (updateMask) on an existing doc — no read,
+  // and concurrent writes to other fields (e.g. a session revoke) are never overwritten.
+  const FIELD_PATH=/^[A-Za-z_][A-Za-z0-9_]*$/;
   function commit(ops){
-    const writes=ops.map(o=>o.type==='delete'
-      ?{delete:relName(o.coll,o.id),currentDocument:{exists:true}}
-      :{update:{name:relName(o.coll,o.id),fields:encodeFields(o.fields)},currentDocument:{exists:o.type==='create'?false:true}});
+    const writes=ops.map(o=>{
+      if(o.type==='delete')return {delete:relName(o.coll,o.id),currentDocument:{exists:true}};
+      if(o.type==='patch'){
+        const paths=Object.keys(o.fields||{});
+        if(!paths.length||paths.some(p=>!FIELD_PATH.test(p)))throw new Error('INVALID_PATCH');
+        return {update:{name:relName(o.coll,o.id),fields:encodeFields(o.fields)},updateMask:{fieldPaths:paths},currentDocument:{exists:true}};
+      }
+      return {update:{name:relName(o.coll,o.id),fields:encodeFields(o.fields)},currentDocument:{exists:o.type==='create'?false:true}};
+    });
     return call(base+':commit','post',{writes});
   }
   function batchGetMany(coll,ids){return batchGet(coll,ids);}
@@ -200,5 +231,5 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     return result;
   }
 
-  return Object.freeze({query,runTransaction,commit,batchGetMany});
+  return Object.freeze({query,queryMany,runTransaction,commit,batchGetMany});
 }

@@ -111,9 +111,37 @@ export function createFirestoreStore({firestore}){
         return true;
       });
     }
+    // Optional port extensions (Sheets and the in-tx store degrade to the sequential port).
+    // readMany: independent one/list reads in ONE parallel round. reqs: [{kind:'one'|'list',name,filter}].
+    function readMany(reqs){
+      if(typeof gw.queryMany!=='function')
+        return reqs.map(r=>r.kind==='one'?one(r.name,r.filter):list(r.name,r.filter));
+      const specs=reqs.map(r=>{
+        columns(r.name);
+        if(r.kind==='one')return {coll:r.name,where:whereOf(r.filter)};
+        if(r.kind==='list')return {coll:r.name,where:whereOf(r.filter),orderBy:{field:SEQ_FIELD,direction:'asc'},limit:MAX_LIMIT};
+        throw new Error('INVALID_READ');
+      });
+      return gw.queryMany(specs).map((hits,i)=>{
+        if(reqs[i].kind==='list')return hits.map(d=>strip(d.fields));
+        if(hits.length>1)throw new Error('DUPLICATE_KEY');
+        return hits.length?strip(hits[0].fields):null;
+      });
+    }
+    // patch: blind field-masked write by primary key — 1 round-trip, touches ONLY the
+    // patched fields, so it can never resurrect a concurrently revoked/changed record.
+    function patch(name,filter,fields){
+      const cols=columns(name);
+      if(!fields||!Object.keys(fields).length||Object.keys(fields).some(k=>!cols.some(c=>c.name===k)))throw new Error('INVALID_PATCH');
+      if(!isPk(name,filter))throw new Error('PATCH_REQUIRES_PRIMARY_KEY');
+      if(!fast){update(name,filter,fields);return true;}
+      try{gw.commit([{type:'patch',coll:name,id:String(filter[primaryKey(name)]),fields}]);}
+      catch(e){if(e&&e.code==='NOT_FOUND')throw new Error('NOT_FOUND');throw e;}
+      return true;
+    }
     function withLock(fn){return fn();}
     function sequence(fn){return gw.runTransaction(tx=>fn(build(tx)));}
-    return Object.freeze({one,list,listNewest,insert,update,remove,withLock,sequence});
+    return Object.freeze({one,list,listNewest,insert,update,remove,withLock,sequence,readMany,patch});
   }
   return build(firestore);
 }
