@@ -58,4 +58,4 @@ Options: (a) browser gviz raw export in the logged-in Sheets session (extends th
 - Cross-store atomicity is **not claimed** at any phase; the guarantee is SoR-first + journal + checksum audit + warm standby.
 - The backfill engine targets Firestore; a Firestore→Sheets reverse import (rollback repair beyond warm-standby) is a separate gated tool if ever needed.
 - Production volume caps, retention enforcement and the volume/latency cutover-review threshold remain owner decisions (E1 §4/§6).
-- Nothing in this runbook has been executed live. Current runtime: Sheets V50/0.9.2, no dual-write flag set.
+- **Live execution status (2026-11-23):** Phases 0→2 EXECUTED + verified on live GAS @51 (synthetic DEV). Phase 3 flag flip done → **live DEV runtime is Firestore SoR + Sheets warm shadow (V51/0.9.2, dual-write on)**, but the integration suite FAILED on latency; optimization delivered in source 0.9.3, live re-run PENDING deploy. Production cutover (real data) remains BLOCKED (#55). See [live cutover evidence](BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md).
