@@ -337,3 +337,21 @@ P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE \
 - **Rollback window duration:** owner sets the monitoring window before clearing dual-write (Firestore-only).
 - **Production Firestore provisioning + SA-key rotation:** owner gates.
 - Outstanding ratifications: D3/D5/B3, VC-ADR-014/015/017, E3 four sign-offs, physical QR-device acceptance.
+
+### 5.7 TUNEUP L1+L2 — authorize round-trip reduction (owner-approved, VC-ADR-027)
+
+**Status:** source + offline evidence only (`backendVersion` 0.9.5). **Not deployed; no live claim.** Requires owner `PUSH_VEHICLE_GAS` → CI version 54 → owner-authorized clasp publish @54 → full G6 `verify-live-publish` re-verify (the V53 103/103 evidence is void for 0.9.5).
+
+| Step of `authorize` | Before (0.9.4) | After (0.9.5) |
+|---|---|---|
+| Session by `token_digest` (runQuery) | 1 round | 1 round |
+| User + role assignments + permission overrides | 3 sequential rounds | **1 parallel round** (`UrlFetchApp.fetchAll`, 3 requests) |
+| `last_seen_at` write | 2 rounds (batchGet + full-doc commit) | **1 round** (`updateMask:[last_seen_at]`, `exists:true`) |
+| **Total sequential rounds** | **6** | **3** |
+
+**Security finding closed by L1 (pre-existing, code-traced + reproduced offline):** the old write merged the session read earlier and committed the WHOLE document. A logout / `revokeUser` / admin-reset revoke committing between that read and write was overwritten back to `ACTIVE` (session resurrected). The masked write touches only `last_seen_at`, so a concurrent `REVOKED` survives and the next call is `UNAUTHENTICATED`.
+
+**Invariants kept:** no cross-request cache; all checks fresh per call; rejected calls do not touch `last_seen`; Sheets / in-transaction stores fall back to the sequential port.
+
+**Offline evidence:** `npm --prefix apps/vehicle-contact/backend/gas run check` EXIT 0; node:test 222 pass / 0 fail (prior 215) incl. [`session-authorize-roundtrips.test.mjs`](../backend/gas/tests/session-authorize-roundtrips.test.mjs) 7/7 over the real REST gateway + contract-enforcing fake (fake now models `updateMask` and `fetchAll` and counts wall-clock `rounds`). Expected live effect ≈ −3 s per authenticated API (≈ −6 s per detail page, 2 APIs) at the measured ~1 s/UrlFetch — an **estimate until measured on V54**.
+

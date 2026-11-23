@@ -6,19 +6,34 @@ export const ROLE_PERMISSIONS=Object.freeze({
  OWNER:['session.authenticated','vehicle.change.submit','vehicle.own.read'],
  RETENTION_WORKER:['session.authenticated','retention.worker']
 });
+function accessFrom(roleRows,overrideRows){
+ const assignments=roleRows.filter(x=>x.status==='ACTIVE').map(x=>String(x.role_id));
+ const overrides=overrideRows.filter(x=>x.status==='ACTIVE').map(x=>String(x.permission));
+ return {roles:assignments,permissions:[...new Set([...assignments.flatMap(r=>ROLE_PERMISSIONS[r]||[]),...overrides])]};
+}
 export function createSessionService({store,security}) {
+ // TUNEUP L2: user + role + override reads are independent once the session is known, so
+ // they run in one parallel round when the store supports it. Every check below is still
+ // evaluated fresh on every call — nothing is cached across requests (revocation is immediate).
+ const readMany=typeof store.readMany==='function'?store.readMany
+  :reqs=>reqs.map(r=>r.kind==='one'?store.one(r.name,r.filter):store.list(r.name,r.filter));
+ // TUNEUP L1: last_seen is a field-masked blind write (never a read-modify-write of the
+ // whole session), so it cannot overwrite a concurrent REVOKED status.
+ const touch=typeof store.patch==='function'
+  ?(id,fields)=>store.patch('vc_sessions',{session_id:id},fields)
+  :(id,fields)=>store.update('vc_sessions',{session_id:id},fields);
  function permissionsFor(userId) {
-  const assignments=store.list('vc_user_roles',{user_id:userId})
-   .filter(x=>x.status==='ACTIVE').map(x=>String(x.role_id));
-  const overrides=store.list('vc_user_permissions',{user_id:userId})
-   .filter(x=>x.status==='ACTIVE').map(x=>String(x.permission));
-  return {roles:assignments,permissions:[...new Set([...assignments.flatMap(r=>ROLE_PERMISSIONS[r]||[]),...overrides])]};
+  return accessFrom(store.list('vc_user_roles',{user_id:userId}),store.list('vc_user_permissions',{user_id:userId}));
  }
  function authorize(token,permission,{allowPasswordChange=false}={}) {
   if(typeof token!=='string'||!/^[a-f0-9]{64}$/i.test(token))throw new Error('UNAUTHENTICATED');
   const session=store.one('vc_sessions',{token_digest:security.sha256(token.toLowerCase())});
   if(!session||session.status!=='ACTIVE'||session.revoked_at)throw new Error('UNAUTHENTICATED');
-  const user=store.one('vc_users',{user_id:session.user_id});
+  const [user,roleRows,overrideRows]=readMany([
+   {kind:'one',name:'vc_users',filter:{user_id:session.user_id}},
+   {kind:'list',name:'vc_user_roles',filter:{user_id:session.user_id}},
+   {kind:'list',name:'vc_user_permissions',filter:{user_id:session.user_id}}
+  ]);
   if(!user||user.status!=='ACTIVE')throw new Error('UNAUTHENTICATED');
   const now=Date.parse(security.now()),issued=Date.parse(session.issued_at);
   if(!Number.isFinite(issued)||issued>now||now>=Date.parse(session.expires_at))
@@ -28,9 +43,9 @@ export function createSessionService({store,security}) {
   if(now-Date.parse(session.last_seen_at)>=idle*60000)throw new Error('SESSION_IDLE_EXPIRED');
   if((user.password_change_required===true||String(user.password_change_required)==='true')&&!allowPasswordChange)
    throw new Error('PASSWORD_CHANGE_REQUIRED');
-  const access=permissionsFor(user.user_id);
+  const access=accessFrom(roleRows,overrideRows);
   if(!access.permissions.includes(permission))throw new Error('FORBIDDEN');
-  store.update('vc_sessions',{session_id:session.session_id},{last_seen_at:security.now()});
+  touch(session.session_id,{last_seen_at:security.now()});
   return {userId:user.user_id,user,roles:access.roles,permissions:access.permissions,sessionId:session.session_id,session};
  }
  function issue(user) {
