@@ -248,11 +248,19 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   lookupAudit(actor,v.vehicle_id,source,'FOUND');
   const response={vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,status:v.status,
    vehicleType:v.vehicle_type,brand:v.make,model:v.model,color:v.color,version:Number(v.version)};
-  if(actor.permissions.includes('vehicle.contact.read'))
-   response.contacts=store.list('vc_vehicle_contacts',{vehicle_id:v.vehicle_id}).filter(c=>c.status==='ACTIVE')
+  // Contacts and photos are independent reads: fetched in ONE parallel round when the store
+  // supports readMany (Firestore), sequentially otherwise. Permission gating is unchanged.
+  const wantContacts=actor.permissions.includes('vehicle.contact.read');
+  const wantPhotos=actor.permissions.includes('vehicle.photos.read');
+  const reads=[];
+  if(wantContacts)reads.push({kind:'list',name:'vc_vehicle_contacts',filter:{vehicle_id:v.vehicle_id}});
+  if(wantPhotos)reads.push({kind:'list',name:'vc_vehicle_photos',filter:{vehicle_id:v.vehicle_id}});
+  const rows=typeof store.readMany==='function'?store.readMany(reads):reads.map(r=>store.list(r.name,r.filter));
+  if(wantContacts)
+   response.contacts=rows.shift().filter(c=>c.status==='ACTIVE')
     .map(c=>({name:c.display_name,phone:c.phone_e164,relationship:c.relationship,isPrimary:c.is_primary}));
-  if(actor.permissions.includes('vehicle.photos.read'))
-   response.photos=store.list('vc_vehicle_photos',{vehicle_id:v.vehicle_id}).filter(x=>x.status==='ACTIVE')
+  if(wantPhotos)
+   response.photos=rows.shift().filter(x=>x.status==='ACTIVE')
     .map(x=>({photoId:x.photo_id,slot:x.slot,storageRef:x.storage_ref,mimeType:x.mime_type}));
   return response;
  }
