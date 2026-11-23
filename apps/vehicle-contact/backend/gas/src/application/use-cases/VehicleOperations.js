@@ -81,8 +81,10 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   }
  }
  function lookupAudit(actor,vehicleId,source,result){
-  store.sequence(()=>store.insert('vc_lookup_audit',{audit_id:id(),actor_id:actor.userId,vehicle_id:vehicleId,
-   lookup_source:source,result,correlation_id:id().slice(0,16),created_at:now()}));
+  // Append-only log: insert is already an atomic transaction that maintains _seq ordering,
+  // so an outer sequence() wrapper was a redundant second transaction (2 extra round-trips).
+  store.insert('vc_lookup_audit',{audit_id:id(),actor_id:actor.userId,vehicle_id:vehicleId,
+   lookup_source:source,result,correlation_id:id().slice(0,16),created_at:now()});
  }
  function activeVehicle(vehicleId){
   const row=store.one('vc_vehicles',{vehicle_id:need(vehicleId,'VEHICLE_ID')});

@@ -3,9 +3,11 @@
 // over a fake server enforcing the live-calibrated REST contract. No credentials/network.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
 import {DATABASE_SCHEMA} from '../src/domain/ports/SchemaRepository.js';
 import {createFirestoreStore} from '../src/infrastructure/persistence/firestore/FirestoreStore.js';
 import {createFirestoreRestGateway} from '../src/infrastructure/persistence/firestore/FirestoreRestGateway.js';
+import {createVehicleOperations} from '../src/application/use-cases/VehicleOperations.js';
 import {runStorePortContract} from './store-port-contract.test.mjs';
 import {createFakeFirestoreRest,makeFakeUtilities,fakeServiceAccountKey,PROJECT,DATABASE} from './fake-firestore-rest-server.mjs';
 
@@ -68,4 +70,37 @@ test('write round-trips are minimized: insert=3, update/remove by PK=2 (GAS late
   assert.equal(count()-n,2,'remove by PK = batchGet + single commit');
   const verbs=fake.state.requests.slice(-4).map(r=>r.url.split('/').pop());
   assert.ok(!verbs.includes(':beginTransaction'),'standalone update/remove avoid beginTransaction');
+});
+
+function vehicleRec(id,over={}){
+  const cols=DATABASE_SCHEMA.tables.vc_vehicles.columns;
+  const base={vehicle_id:id,plate_normalized:'TST12345678',province_code:'10',vehicle_type:'CAR',make:'SYNTHETIC',
+    model:'AUTOMATED',color:'WHITE',status:'ACTIVE',version:1,created_at:'2026-11-23T00:00:00.000Z',
+    updated_at:'2026-11-23T00:00:00.000Z',created_by:'u1',updated_by:'u1',plate_type:'NORMAL',organization_id:'org1',owner_user_id:'u1'};
+  const r={};for(const c of cols)r[c.name]=over[c.name]!==undefined?over[c.name]:(base[c.name]!==undefined?base[c.name]:'');
+  return r;
+}
+
+test('vehicles.detail round-trips minimized: lookup audit is a plain append-only insert, not a redundant sequence() transaction (Slice F)',()=>{
+  const fake=createFakeFirestoreRest();
+  const store=makeStore(fake);
+  const security={now:()=>'2026-11-23T00:00:00.000Z',secretToken:()=>randomUUID()};
+  const ops=createVehicleOperations({store,security,campaigns:{},references:{}});
+  store.insert('vc_vehicles',vehicleRec('v1'));
+  store.one('vc_users',{user_id:'warm'}); // prime the cached OAuth token
+  const count=()=>fake.state.requests.length;
+  const actor={userId:'u1',permissions:['vehicle.lookup','vehicle.contact.read','vehicle.photos.read']};
+  const n=count();
+  const result=ops['vehicles.detail']({vehicleId:'v1'},actor);
+  const calls=count()-n;
+  assert.equal(result.vehicleId,'v1');
+  // activeVehicle runQuery(1) + lookupAudit insert(3: begin + prefetch batchGet + commit)
+  //   + contacts runQuery(1) + photos runQuery(1) = 6.
+  // The removed redundant sequence() wrapper around the single insert cost 5 alone (detail was 8).
+  assert.equal(calls,6,'detail = 1 vehicle read + 3 audit insert + 1 contacts + 1 photos; no redundant outer transaction');
+  // The append-only audit is still persisted AND ordered (MediaRetention reads vc_lookup_audit via store.list).
+  const audits=store.list('vc_lookup_audit',{vehicle_id:'v1'});
+  assert.equal(audits.length,1,'lookup audit persisted');
+  assert.equal(audits[0].result,'FOUND');
+  assert.equal(fake.state.plain('vc_lookup_audit',audits[0].audit_id)._seq,1,'_seq ordering maintained by plain insert');
 });
