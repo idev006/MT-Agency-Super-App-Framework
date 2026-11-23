@@ -355,3 +355,23 @@ P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE \
 
 **Offline evidence:** `npm --prefix apps/vehicle-contact/backend/gas run check` EXIT 0; node:test 222 pass / 0 fail (prior 215) incl. [`session-authorize-roundtrips.test.mjs`](../backend/gas/tests/session-authorize-roundtrips.test.mjs) 7/7 over the real REST gateway + contract-enforcing fake (fake now models `updateMask` and `fetchAll` and counts wall-clock `rounds`). Expected live effect ≈ −3 s per authenticated API (≈ −6 s per detail page, 2 APIs) at the measured ~1 s/UrlFetch — an **estimate until measured on V54**.
 
+### 5.8 V54 / 0.9.5 deployed + G6 re-verify GREEN (TUNEUP L1+L2) + GAS CRUD POC
+
+**Deploy:** PR #149 squash-merged `851f2f0` → owner `PUSH_VEHICLE_GAS` → CI run `45157814673` (check EXIT 0, pushed 61 files, **created version 54**) → owner-authorized clasp `update-deployment … -V 54` → **@54**. Live `system.health` ×2 HTTP 200 `backendVersion 0.9.5`, `persistence{engine:firestore,dualWrite:false}`.
+
+**G6 `verify-live-publish` — honest run log:**
+
+| Run | Result | Cause |
+|---|---|---|
+| 1 (10:41Z) | FAIL (API 97/97 PASS, DATA_PROOF `BLOCKED_CONFIGURATION`) | **Operator error:** chain started without the documented gate `P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE`. Not a product defect. |
+| 2 (10:58Z) | FAIL 19/20 authenticated, then `fetch failed` | `auth.changePassword` client abort at 40 s followed by client-side network failures (`fetch failed` on every later call incl. cleanup); health re-probed 200 ×3 right after. **Residue: 4 synthetic users not suspended** (cleanup `USER_SUSPEND_*` failed) — pending gated prune (Slice E, `PRUNE_SYNTHETIC_SUITE_RESIDUE`). |
+| **3 (11:05Z)** | **PASS 103/103** | public 11/11 · Worker fail-closed 14/14 · authenticated **72/72, 56/56 ops, cleanup 0 failed** · **DATA_PROOF 6/6** independent Firestore read-back (plate `TST32564087`). |
+
+**Latency (run 3, n=72 authenticated):** p50 **7,544 ms** · p90 15,441 · p95 **20,711** · max **29,830** (`registrations.review`); budget OK. vs V53 (p50 8,587 / p95 18,515 / max 36.9 s): **p50 −12%, max −19%, p95 +12%** (tail is noisy at n=72; slowest ops are multi-write flows — review, assignRoles, submit, users.create — which L1+L2 do not target). Run 1 measured p50 7,537 / p95 17,988.
+
+**GAS CRUD POC (owner ask, PR #150 `d8095f8`, pushed as HEAD version 55 — NOT published; live stays @54):** `pocFirestoreCrudFromEditor` run in the GAS editor (real V8 runtime) 2026-11-23 18:13 +07 → **PASS 7/7** (create+read-back, duplicate rejected, masked update+read-back, list, query, delete+read-back null, update-missing rejected), 5,888 ms. Independent post-run read-back from outside GAS: `__p6vc_crud_poc` **0 docs**. Two earlier editor runs stopped at the gate (`EXPLICIT_FIRESTORE_POC_APPROVAL_REQUIRED`) until the owner set the Script Property.
+
+**Security incident (disclosed):** during the gate setup an assistant screenshot of the in-app browser captured the GAS Script Properties page while the owner was editing it, partially exposing `VEHICLE_AUTH_PEPPER`. The value was not reproduced anywhere; recommendation to the owner: rotate the pepper at the next credential rotation (synthetic DEV users only). Process fix: no screenshots while the owner is on Settings; navigate to the editor URL first.
+
+**Tooling safety finding:** `scripts/firestore-live-contract.mjs` (POC #2/#3) pre-cleans by deleting **all** `vc_users` and `__p6vc_seq` docs — written for the empty pre-cutover DB, destructive against today's live runtime store. It was NOT run. Added a refusal guard (`LIVE_RUNTIME_DATA_PRESENT`, exit 2) when sessions/users exist.
+
