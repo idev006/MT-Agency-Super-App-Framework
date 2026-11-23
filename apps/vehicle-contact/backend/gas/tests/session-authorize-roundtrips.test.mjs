@@ -66,7 +66,7 @@ test('L1 closes the revoke-resurrection race: a revoke landing between authorize
   assert.throws(()=>sessions.authorize(TOKEN,'vehicle.lookup'),/UNAUTHENTICATED/,'the very next call is rejected');
 });
 
-test('pre-tuneup read-modify-write update DID resurrect a concurrent revoke (documents the closed bug)',()=>{
+test('W1a: generic store.update is field-masked too — a concurrent revoke survives any update',()=>{
   const {fake,store}=setup();
   fake.state.onRequest=(url)=>{
     if(!url.endsWith(':commit'))return;
@@ -74,8 +74,9 @@ test('pre-tuneup read-modify-write update DID resurrect a concurrent revoke (doc
     const s=fake.state.plain('vc_sessions','s1');
     fake.state.seed('vc_sessions','s1',{...s,status:'REVOKED',revoked_at:NOW});
   };
-  store.update('vc_sessions',{session_id:'s1'},{last_seen_at:NOW}); // the old authorize write path
-  assert.equal(fake.state.plain('vc_sessions','s1').status,'ACTIVE','full-document overwrite lost the revoke');
+  store.update('vc_sessions',{session_id:'s1'},{last_seen_at:NOW}); // was a full-document read-modify-write before W1a
+  assert.equal(fake.state.plain('vc_sessions','s1').status,'REVOKED','masked update cannot overwrite the revoke');
+  assert.equal(fake.state.plain('vc_sessions','s1').last_seen_at,NOW);
 });
 
 test('no caching: role removal, user suspension and session revoke take effect on the very next call',()=>{

@@ -110,14 +110,19 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
         txs.delete(body.transaction);
       }
       const writeResults=[];
+      // Real contract: a commit is atomic — every precondition is checked before ANY write applies.
+      const staged=new Set([...docs.keys()]);
       for(const w of body.writes||[]){
         const rel=w.update?w.update.name:w.delete;
         if(typeof rel!=='string'||!rel.startsWith('projects/'))
           return err(400,'INVALID_ARGUMENT','Document name "'+rel+'" lacks "projects" at index 0.');
-        const full=API_ROOT+rel;
-        const pre=w.currentDocument;
-        if(pre&&pre.exists===false&&docs.has(full))return err(409,'ALREADY_EXISTS','document already exists');
-        if(pre&&pre.exists===true&&!docs.has(full))return err(404,'NOT_FOUND','document to modify not found');
+        const full=API_ROOT+rel,pre=w.currentDocument;
+        if(pre&&pre.exists===false&&staged.has(full))return err(409,'ALREADY_EXISTS','document already exists');
+        if(pre&&pre.exists===true&&!staged.has(full))return err(404,'NOT_FOUND','document to modify not found');
+        if(w.delete)staged.delete(full);else staged.add(full);
+      }
+      for(const w of body.writes||[]){
+        const full=API_ROOT+(w.update?w.update.name:w.delete);
         if(w.update&&w.updateMask){
           // Real semantics: only masked paths change; a masked path absent from fields is deleted.
           const next={...docs.get(full)};
