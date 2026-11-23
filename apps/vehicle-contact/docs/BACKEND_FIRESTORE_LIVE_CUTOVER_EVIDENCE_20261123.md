@@ -1,7 +1,7 @@
 # Backend Firestore LIVE cutover + integration test evidence (synthetic DEV)
 
 **Doc ID:** P6VC-BE-FS-LIVE-CUTOVER-001 · **Date:** 2026-11-23 (Asia/Bangkok)
-**Status:** SYNTHETIC-DEV CUTOVER Phases 0→2 EXECUTED + verified on live GAS @51; **Phase 3 (Firestore SoR) flip done**. The first integration suite at @51/0.9.2 **FAILED on latency** (26/97, one `registrations.submit` 40 s timeout cascading). Root cause POC-diagnosed (§5); **targeted optimization shipped as `backendVersion` 0.9.3 and DEPLOYED: owner `PUSH_VEHICLE_GAS` → CI version 52 → clasp self-publish @52** (main `0cc74ba`, PR #139; live health `persistence{firestore,dualWrite:true}` verified). **0.9.3 suite re-run COMPLETE and GREEN: 97/97 PASS** (public 11/11 + worker 14/14 + authenticated 72/72, 56/56 ops covered, 0 missing, cleanup 7/7, 0 residue). **`REGISTRATIONS.SUBMIT` PASS at 32.1 s** (the 40 s timeout is resolved). Latency still marginal (p50 9.7 s, p95 23 s, max 36.7 s `REGISTRATIONS.REVIEW`) with the Sheets dual-write mirror on every write. **The independent dual-store read-back audit (§4.3) is the remaining Phase 3 data-proof gate** (suite green ≠ data proof). **Real-data go-live remains BLOCKED** (#55 legal/DPO sign-off outstanding; no real data exists — synthetic only). See [continuation handoff](HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md).
+**Status:** SYNTHETIC-DEV CUTOVER Phases 0→2 EXECUTED + verified on live GAS @51; **Phase 3 (Firestore SoR) flip done**. The first integration suite at @51/0.9.2 **FAILED on latency** (26/97, one `registrations.submit` 40 s timeout cascading). Root cause POC-diagnosed (§5); **targeted optimization shipped as `backendVersion` 0.9.3 and DEPLOYED: owner `PUSH_VEHICLE_GAS` → CI version 52 → clasp self-publish @52** (main `0cc74ba`, PR #139; live health `persistence{firestore,dualWrite:true}` verified). **0.9.3 suite re-run COMPLETE and GREEN: 97/97 PASS** (public 11/11 + worker 14/14 + authenticated 72/72, 56/56 ops covered, 0 missing, cleanup 7/7, 0 residue). **`REGISTRATIONS.SUBMIT` PASS at 32.1 s** (the 40 s timeout is resolved). Latency still marginal (p50 9.7 s, p95 23 s, max 36.7 s `REGISTRATIONS.REVIEW`) with the Sheets dual-write mirror on every write. **The independent dual-store read-back audit (§4.3) is GREEN: 25/25 tables, 2,464/2,464 docs matched, `divergenceOpen=0`** on a fresh post-suite export — **Phase 3 data-proof gate CLOSED**. **Real-data go-live remains BLOCKED** (#55 legal/DPO sign-off outstanding; no real data exists — synthetic only). See [continuation handoff](HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md).
 **Design authority:** [E1 §5](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) (D-E1 Option 2 / VC-ADR-019) · **Procedure:** [F3b-3 runbook](FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md) · **Prior rehearsal (Node pipeline):** [BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md](BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md)
 **Owner authorization:** `PUSH_VEHICLE_GAS` (CI source push → V51) + `approve` (clasp self-publish @51 + synthetic-DEV cutover). Blanket "-PDPA real-data go-live gate // อนุมัติเสมอ" recorded as intent in VC-ADR-020; it does **not** substitute legal-counsel/DPO sign-off, so the real-data gate stays BLOCKED.
 
@@ -12,7 +12,8 @@ This is the **first live execution of the cutover on the real GAS V8 runtime** (
 - The wired `Container → StoreSelector → DualWriteStore` actually fires on live GAS @51 (flag-driven, no code change per phase).
 - Forward dual-write (Sheets SoR + Firestore shadow) and reverse dual-write (Firestore SoR + Sheets warm shadow) both persist correctly, verified by **independent read-back of both stores** (owner directive: API OK ≠ data proof).
 - A quiesced checksum backfill aligns Firestore to the current synthetic Sheets state before the flip.
-- The full live API/use-case integration suite was **run against Firestore-backed GAS @51 and FAILED on latency** (26/97, all cascading from one `registrations.submit` 40 s timeout). The root cause was POC-diagnosed (§5) and a **targeted round-trip optimization was delivered in source (`backendVersion` 0.9.3, offline 224/224)**; the live suite re-run is **PENDING the 0.9.3 GAS deploy** (owner `PUSH_VEHICLE_GAS`). Phase 3 is therefore **NOT yet green**.
+- The full live API/use-case integration suite was **run against Firestore-backed GAS @51 and FAILED on latency** (26/97, all cascading from one `registrations.submit` 40 s timeout). The root cause was POC-diagnosed (§5) and a **targeted round-trip optimization was delivered as `backendVersion` 0.9.3**; the re-run on **@52 / 0.9.3 is GREEN 97/97** (§4.2).
+- A **fresh post-suite gviz export of all 25 Sheets** was compared per-doc against Firestore (Node SDK) by primary key — **2,464/2,464 docs matched, 0 missing, 0 extras, `divergenceOpen=0`** (§4.3). Suite green ≠ data proof; this audit is the data proof. **Phase 3 is GREEN.**
 
 It does **not** prove production readiness: cross-store atomicity is not claimed; real-data PDPA/security gates are unsigned; and the GAS Firestore REST path's per-op latency (§5) — though now reduced in source — still needs live re-measurement and a production runtime decision.
 
@@ -115,7 +116,21 @@ Verified **server-side after a full page reload**: 19 properties present incl. `
 After the suite, a fresh gviz Sheets snapshot is compared against Firestore (Node SDK) per-doc by primary key with type normalization (Firestore typed number/boolean vs Sheets text display). Script: `backend/gas/test-results/dualstore-audit.mjs` (gitignored; counters + field NAMES only).
 
 <!-- AUDIT_RESULTS -->
-_Pending a green suite re-run on 0.9.3._ The first suite run failed on latency (§4.2), so a post-suite dual-store audit would compare an incomplete write set. The audit script (`dualstore-audit.mjs`) is ready and will run after the optimized deploy + a fresh post-suite Sheets export. Phase 1–2 independent read-backs (both stores) already passed; the full post-suite audit is the remaining Phase 3 gate.
+**Executed 2026-11-23 after the green 97/97 suite — PASS (data proof, independent of the API).**
+
+| Metric | Result |
+|---|---|
+| Fresh post-suite gviz export (read-only, 25 tabs) | **25 tables · 2,464 rows · `failures={}`** (pre-suite: 2,277 rows — the suite's writes are included) |
+| Tables compared (per-doc by PK, type-normalized) | **25 / 25** |
+| Docs matched | **2,464 / 2,464** |
+| Missing in Firestore / extras in Firestore | **0 / 0** |
+| Field mismatches | **0** |
+| `divergenceOpen` (vc_operation_journal `dualwrite.divergence`) | **0** |
+| Verdict | **PASS** (`status=PASS`, `allMatch=true`) |
+
+Empty `vc_roles` / `vc_user_identities` / `vc_role_permissions` / `vc_user_permissions` on **both** stores are **by design** (frozen code catalog `ROLE_PERMISSIONS`). Report: `test-results/firestore-dualstore-audit.json` (gas dir, gitignored; counters + field NAMES only).
+
+**Bug found + fixed during the audit (SSOT):** the first audit run reported `0 matched` on all 21 non-empty tables while PKs aligned 100% (0 missing / 0 extras) and the per-row field-diff list was empty. Diagnosis (field NAMES only): Google gviz CSV appends an **unnamed trailing column** to every tab, so every Sheets row carried an extra `""`-keyed field that Firestore docs do not have — `canon()` therefore never matched, and the diff filter (which compares values by key) could not surface it. **Fix:** the exporter now drops empty-header columns and the audit's `canon()` ignores the `""` key. Re-ran against a **fresh clean re-export** → PASS above. Lesson: *when a dual-store audit reports total mismatch with zero field diffs, compare row **key sets**, not values — an export artifact can masquerade as divergence.*
 <!-- /AUDIT_RESULTS -->
 
 ## 5. Latency: POC-diagnosed root cause + delivered optimization
