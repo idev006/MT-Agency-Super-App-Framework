@@ -145,15 +145,17 @@ export function createFirestoreStore({firestore}){
     // readMany: independent one/list reads in ONE parallel round. reqs: [{kind:'one'|'list',name,filter}].
     function readMany(reqs){
       if(typeof gw.queryMany!=='function')
-        return reqs.map(r=>r.kind==='one'?one(r.name,r.filter):list(r.name,r.filter));
+        return reqs.map(r=>r.kind==='one'?one(r.name,r.filter):r.kind==='newest'?listNewest(r.name,r.filter,r.limit||1):list(r.name,r.filter));
       const specs=reqs.map(r=>{
         columns(r.name);
         if(r.kind==='one')return {coll:r.name,where:whereOf(r.filter)};
         if(r.kind==='list')return {coll:r.name,where:whereOf(r.filter),orderBy:{field:SEQ_FIELD,direction:'asc'},limit:MAX_LIMIT};
+        // newest-first window — reuses the existing DESC composite indexes (listNewest).
+        if(r.kind==='newest'){const l=r.limit||1;checkLimit(l);return {coll:r.name,where:whereOf(r.filter),orderBy:{field:SEQ_FIELD,direction:'desc'},limit:l};}
         throw new Error('INVALID_READ');
       });
       return gw.queryMany(specs).map((hits,i)=>{
-        if(reqs[i].kind==='list')return hits.map(d=>strip(d.fields));
+        if(reqs[i].kind==='list'||reqs[i].kind==='newest')return hits.map(d=>strip(d.fields));
         if(hits.length>1)throw new Error('DUPLICATE_KEY');
         return hits.length?strip(hits[0].fields):null;
       });
