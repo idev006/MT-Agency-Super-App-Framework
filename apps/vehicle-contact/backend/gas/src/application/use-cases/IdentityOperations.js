@@ -90,9 +90,16 @@ export function createIdentityOperations({store,security,sessions}) {
   return {userId:id};
  }
  function listUsers(p){
+  const rolesByUser=new Map();
+  for(const r of store.list('vc_user_roles')){
+   if(r.status!=='ACTIVE')continue;
+   const uid=String(r.user_id);
+   if(!rolesByUser.has(uid))rolesByUser.set(uid,[]);
+   rolesByUser.get(uid).push(String(r.role_id));
+  }
   const items=store.list('vc_users').map(u=>({
    userId:u.user_id,username:u.username_normalized,displayName:u.display_name,organizationId:u.org_id,status:u.status,
-   roles:store.list('vc_user_roles',{user_id:u.user_id}).filter(r=>r.status==='ACTIVE').map(r=>String(r.role_id))
+   roles:rolesByUser.get(String(u.user_id))||[]
   }));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }

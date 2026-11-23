@@ -57,6 +57,11 @@ watch(
   },
   { immediate: true },
 )
+watch(
+  () => [session.authenticated, session.sessionVerified, session.transport, session.endpoint],
+  ([authenticated, verified]) => { if (authenticated && verified) session.loadReleaseInfo() },
+  { immediate: true },
+)
 provide(vehicleSearchRepositoryKey, createGasVehicleSearchRepository({
   callOperation: session.callProtected,
 }))

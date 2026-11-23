@@ -50,3 +50,22 @@ test('sequence() over REST commits on success and rolls back on failure',()=>{
   assert.equal(store.one('vc_users',{user_id:'u2'}),null,'rolled back insert left no residue');
   assert.equal(fake.state.plain('__p6vc_seq','vc_users').value,1,'sequence counter not advanced by rolled-back tx');
 });
+
+test('write round-trips are minimized: insert=3, update/remove by PK=2 (GAS latency fix)',()=>{
+  const fake=createFakeFirestoreRest();
+  const store=makeStore(fake);
+  store.one('vc_users',{user_id:'warm'}); // prime the cached OAuth token
+  const count=()=>fake.state.requests.length;
+  let n=count();
+  store.insert('vc_users',rec('u1'));
+  assert.equal(count()-n,3,'insert = beginTransaction + one prefetch batchGet + commit');
+  n=count();
+  const up=store.update('vc_users',{user_id:'u1'},{status:'SUSPENDED'});
+  assert.equal(count()-n,2,'update by PK = batchGet + single commit (no transaction)');
+  assert.equal(up.status,'SUSPENDED','update still returns the merged record');
+  n=count();
+  assert.equal(store.remove('vc_users',{user_id:'u1'}),true);
+  assert.equal(count()-n,2,'remove by PK = batchGet + single commit');
+  const verbs=fake.state.requests.slice(-4).map(r=>r.url.split('/').pop());
+  assert.ok(!verbs.includes(':beginTransaction'),'standalone update/remove avoid beginTransaction');
+});

@@ -96,24 +96,47 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     const rows=call(base+':runQuery','post',body);
     return (Array.isArray(rows)?rows:[]).filter(r=>r.document).map(r=>({id:idOf(r.document.name),fields:decodeFields(r.document.fields)}));
   }
-  function batchGet(coll,ids,txId){
-    const body={documents:ids.map(id=>relName(coll,id))};if(txId)body.transaction=txId;
+  function batchGetNames(names,txId){
+    const body={documents:names};if(txId)body.transaction=txId;
     const rows=call(base+':batchGet','post',body);
     const out=new Map();
     for(const r of Array.isArray(rows)?rows:[]){
-      if(r.found)out.set(idOf(r.found.name),decodeFields(r.found.fields));
-      else if(r.missing)out.set(idOf(r.missing),null);
+      if(r.found)out.set(r.found.name,decodeFields(r.found.fields));
+      else if(r.missing)out.set(r.missing,null);
     }
     return out;
   }
+  function batchGet(coll,ids,txId){
+    const m=batchGetNames(ids.map(id=>relName(coll,id)),txId);
+    const out=new Map();
+    for(const id of ids){const n=relName(coll,id);out.set(id,m.has(n)?m.get(n):null);}
+    return out;
+  }
+  // Non-transactional single-round-trip write. Ops are {type:'create'|'update'|'delete',
+  // coll,id,fields}; existence preconditions (currentDocument.exists) keep each write
+  // atomic without begin+commit. Mirrors runTransaction's commit write shape.
+  function commit(ops){
+    const writes=ops.map(o=>o.type==='delete'
+      ?{delete:relName(o.coll,o.id),currentDocument:{exists:true}}
+      :{update:{name:relName(o.coll,o.id),fields:encodeFields(o.fields)},currentDocument:{exists:o.type==='create'?false:true}});
+    return call(base+':commit','post',{writes});
+  }
+  function batchGetMany(coll,ids){return batchGet(coll,ids);}
 
-  function runTransaction(fn){
+  function runTransaction(fn,prefetch){
     const begin=call(base+':beginTransaction','post',{options:{readWrite:{}}});
     const txId=begin&&begin.transaction;
     if(!txId)throw new Error('NO_TRANSACTION_ID');
     const pending=new Map();
     const key=(coll,id)=>coll+'/'+id;
-    const serverGet=(coll,id)=>{const m=batchGet(coll,[id],txId);return m.has(id)?m.get(id):null;};
+    // Prefetch folds the tx's initial reads (e.g. doc + sequence counter) into ONE
+    // batchGet across collections, cutting insert from 4 round-trips to 3.
+    const seeded=new Map();
+    if(prefetch&&prefetch.length){
+      const m=batchGetNames(prefetch.map(p=>relName(p.coll,p.id)),txId);
+      for(const p of prefetch){const n=relName(p.coll,p.id);seeded.set(key(p.coll,p.id),m.has(n)?m.get(n):null);}
+    }
+    const serverGet=(coll,id)=>{const k=key(coll,id);if(seeded.has(k))return seeded.get(k);const m=batchGet(coll,[id],txId);return m.has(id)?m.get(id):null;};
     const tx={
       get(coll,id){
         const p=pending.get(key(coll,id));
@@ -177,5 +200,5 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     return result;
   }
 
-  return Object.freeze({query,runTransaction});
+  return Object.freeze({query,runTransaction,commit,batchGetMany});
 }

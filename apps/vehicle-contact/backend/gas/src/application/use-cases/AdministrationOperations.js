@@ -7,7 +7,8 @@ export function createAdministrationOperations({store,security}) {
  });
  const settings=['idle_timeout_minutes','retention_days'];
  function getSettings(){
-  return Object.fromEntries(settings.map(k=>[k,store.one('vc_settings',{key:k})?.value??null]));
+  const byKey=new Map(store.list('vc_settings').map(r=>[r.key,r.value]));
+  return Object.fromEntries(settings.map(k=>[k,byKey.get(k)??null]));
  }
  function updateSettings(p,a){
   const values=p.values;

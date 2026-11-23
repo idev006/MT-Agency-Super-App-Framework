@@ -59,11 +59,18 @@ export const useSessionStore = defineStore('session', () => {
 
   function captureBackendRelease(data) {
     if (!data || typeof data !== 'object') return
+    const persistence = data.persistence && typeof data.persistence === 'object'
+      ? Object.freeze({
+          engine: typeof data.persistence.engine === 'string' ? data.persistence.engine : 'unknown',
+          dualWrite: data.persistence.dualWrite === true,
+        })
+      : null
     backendRelease.value = Object.freeze({
       status: typeof data.status === 'string' ? data.status : 'unknown',
       apiVersion: typeof data.apiVersion === 'string' ? data.apiVersion : 'unknown',
       backendVersion: typeof data.backendVersion === 'string' ? data.backendVersion : 'unknown',
       releaseChannel: typeof data.releaseChannel === 'string' ? data.releaseChannel : 'unknown',
+      persistence,
     })
   }
 
