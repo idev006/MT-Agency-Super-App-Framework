@@ -1,5 +1,8 @@
 # Vehicle Contact GAS API Contract — Phase 1 bootstrap
 
+> **⚠️ HISTORICAL (2026-11-17 Phase-1 bootstrap) — the "DISABLED / NOT DEPLOYED" states below are superseded.**
+> **Current live: GAS V53 / `backendVersion` 0.9.4, Firestore-only runtime, all 56 operations ENABLED + authorized on every call** (VC-ADR-023/026), G6 re-verify GREEN 103/103. For the current operation/use-case contract see [use-cases SSOT](use-cases/README.md) + [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); this table is retained only as the Phase-1 bootstrap record.
+
 **Status (2026-11-17 code branch):** SOURCE HANDLERS 50/50 WIRED, BUT UNVERIFIED AND NOT DEPLOYED. Live public bootstrap remains the only historically verified endpoint; protected APIs are NOT ENABLED. Live HTTP GET/POST tests [PASS 7/7](GAS_LIVE_API_TEST_EVIDENCE.md) (2026-11-17); public /exec deployment version not independently verified. **Master:** [GAS Backend Blueprint](../../../blueprint/MASTER_GAS_BACKEND_API_BLUEPRINT.md). **Data architecture:** [Phase 1 Sheets decision](PHASE1_GOOGLE_SHEETS_DATA_ARCHITECTURE.md).
 
 | API version | Group | Action | Transport | Access | State |

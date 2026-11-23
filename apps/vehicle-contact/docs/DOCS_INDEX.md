@@ -24,6 +24,7 @@
 |---|---|---|---|---|
 | [BACKEND_DELIVERY_STATUS_20261117.md](BACKEND_DELIVERY_STATUS_20261117.md) — Vehicle Contact — Backend delivery status (2026-11-17) | Engineering reference | 2026-11-23 | 2026-11-17 |  |
 | [BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md](BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md) — BACKEND — Firestore integration test + synthetic-DEV cutover rehearsal | Evidence | 2026-11-23 | 2026-11-23 |  |
+| [BACKEND_FIRESTORE_DUALWRITE_F3B1_EVIDENCE_20261122.md](BACKEND_FIRESTORE_DUALWRITE_F3B1_EVIDENCE_20261122.md) — F3b-1 — Dual-write wrapper + divergence journal (offline evidence) | Evidence | 2026-11-23 | 2026-11-23 | OFFLINE DONE — code + tests merged to source; **NOT pushed to GAS, NOT enabled live.** Run |
 | [BACKEND_FIRESTORE_LIVE_API_SUITE_EVIDENCE_20261122.md](BACKEND_FIRESTORE_LIVE_API_SUITE_EVIDENCE_20261122.md) — BACKEND — Full automated API/use-case pipeline on LIVE Firestore DEV (#69) | Evidence | 2026-11-23 | 2026-11-22 |  |
 | [BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md](BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md) — Backend Firestore LIVE cutover + integration test evidence (synthetic DEV) | Evidence | 2026-11-23 | 2026-11-24 | SYNTHETIC-DEV CUTOVER Phases 0→2 EXECUTED + verified on live GAS @51; **Phase 3 (Firestore |
 | [BACKEND_FIRESTORE_LIVE_POC2_POC3_EVIDENCE_20261122.md](BACKEND_FIRESTORE_LIVE_POC2_POC3_EVIDENCE_20261122.md) — BACKEND — Firestore live POC #2/#3 evidence (Node sync bridge → real gateway → live Firestore DEV) | Evidence | 2026-11-23 | 2026-11-22 |  |
@@ -48,6 +49,7 @@
 | [PROJECT_PROPOSAL_POLICY_DRIVEN.md](PROJECT_PROPOSAL_POLICY_DRIVEN.md) — ข้อเสนอโครงการระบบตรวจสอบและติดต่อผู้รับผิดชอบยานพาหนะ (MT Vehicle Contact) | Proposal / decision input | 2026-11-23 | 2026-11-17 |  |
 | [SENIOR_THAI_LEGAL_COUNSEL_ROLE.md](SENIOR_THAI_LEGAL_COUNSEL_ROLE.md) — TOR — นิติกรอาวุโสด้านกฎหมายไทย กฎหมายคุ้มครองข้อมูลส่วนบุคคลและกฎหมายดิจิทัล | Standard / architecture | 2026-11-23 | 2026-11-16 |  |
 | [TEST_AND_DELIVERY.md](TEST_AND_DELIVERY.md) — Test, Acceptance & Rapid Delivery — MT Vehicle Contact v1.0 | Engineering reference | 2026-11-23 | 2026-11-16 | PROPOSED |
+| [TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md](TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md) — P6VC Test Automation + Integration Test Design (GAS + Firestore main engine) | Engineering reference | 2026-11-23 | 2026-11-23 | **Doc ID:** P6VC-QA-TEST-DESIGN-001 |
 | [WORKFLOW_SOP_POLICY_REVIEW.md](WORKFLOW_SOP_POLICY_REVIEW.md) — P6 Vehicle Contact — Policy / Workflow / SOP Review | Plan / process | 2026-11-23 | 2026-11-16 |  |
 | [AGILE_KANBAN.md](AGILE_KANBAN.md) — P6 Vehicle Contact — Agile Kanban Operations & Live Issue Board | Navigation / current | 2026-11-22 | 2026-11-22 | **Created:** 2026-11-17 |
 | [API_TEST_SUITE_PHASE1.md](API_TEST_SUITE_PHASE1.md) — P6 Vehicle Contact — API Test Suites (Approved 2026-11-17) | Engineering reference | 2026-11-22 | 2026-11-17 | **Status at this snapshot:** PARTIALLY IMPLEMENTED / LIVE BACKEND INTEGRATION GATED |
@@ -55,7 +57,6 @@
 | [BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md) — B2b — Durable journaling for `registrationReview` and `assignRoles` | Evidence | 2026-11-22 | 2026-11-22 |  |
 | [BACKEND_FIRESTORE_ADAPTER_F2_EVIDENCE_20261122.md](BACKEND_FIRESTORE_ADAPTER_F2_EVIDENCE_20261122.md) — F2 — Firestore persistence adapter behind the store port (offline contract proof) | Evidence | 2026-11-22 | 2026-11-22 |  |
 | [BACKEND_FIRESTORE_BACKFILL_F3B2_EVIDENCE_20261122.md](BACKEND_FIRESTORE_BACKFILL_F3B2_EVIDENCE_20261122.md) — F3b-2/F3b-3 — Checksum backfill + independent read-back audit + reverse dual-write + cutover runbook (offline  | Evidence | 2026-11-22 | 2026-11-22 | OFFLINE DONE — **NOT executed live, NOT pushed to GAS.** Runtime stays Sheets V50/0.9.2; n |
-| [BACKEND_FIRESTORE_DUALWRITE_F3B1_EVIDENCE_20261122.md](BACKEND_FIRESTORE_DUALWRITE_F3B1_EVIDENCE_20261122.md) — F3b-1 — Dual-write wrapper + divergence journal (offline evidence) | Evidence | 2026-11-22 | 2026-11-22 | OFFLINE DONE — code + tests merged to source; **NOT pushed to GAS, NOT enabled live.** Run |
 | [BACKEND_FIRESTORE_GATEWAY_F3A_EVIDENCE_20261122.md](BACKEND_FIRESTORE_GATEWAY_F3A_EVIDENCE_20261122.md) — F3a — real GAS Firestore REST gateway + backend selection flag (offline proof) | Evidence | 2026-11-22 | 2026-11-22 | **OFFLINE DONE.** 19 new tests pass; full `npm run check` **exit 0** (build **60 `.gs` mod |
 | [BACKEND_FIRESTORE_INFRA_F4_EVIDENCE_20261122.md](BACKEND_FIRESTORE_INFRA_F4_EVIDENCE_20261122.md) — F4 (infra slice) — Firestore DEV provisioning + service account + connectivity read-back proof | Evidence | 2026-11-22 | 2026-11-22 |  |
 | [BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md](BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md) — POC #1 — GAS V8 → Firestore REST + service-account OAuth proof (F3a de-risk) | Evidence | 2026-11-22 | 2026-11-22 | **DONE — OFFLINE 10/10 + LIVE GAS RUN #2 PASS 8/8 (2026-11-22 20:57 ICT).** Run #1 (20:25  |
@@ -160,7 +161,6 @@
 | [SYSTEM_ANALYSIS_V2.md](SYSTEM_ANALYSIS_V2.md) — P6 Vehicle Contact — System Analysis & Design v2.0 | Reference | 2026-11-16 | 2026-10-31 |  |
 | [TEAM_UPSKILL_RESEARCH_2026-10-31.md](TEAM_UPSKILL_RESEARCH_2026-10-31.md) — MT Vehicle Contact — Team Upskill / Reskill Research | Engineering reference | 2026-11-16 | 2026-10-31 | **Research date:** 31 ตุลาคม 2569 |
 | [WORKFLOW_AND_MEDIA_PIPELINE.md](WORKFLOW_AND_MEDIA_PIPELINE.md) — MT Vehicle Contact v1.0 — Workflow & Photo Pipeline | Plan / process | 2026-11-16 | 2026-10-30 | PROPOSED / Implementation-ready design draft |
-| [TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md](TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md) — P6VC Test Automation + Integration Test Design (GAS + Firestore main engine) | Engineering reference | — | 2026-11-23 | **Doc ID:** P6VC-QA-TEST-DESIGN-001 |
 
 ## 3. กติกาความสด (freshness rules)
 

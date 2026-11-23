@@ -19,13 +19,13 @@ Older dated documents are evidence for their recorded scope, not current status.
 ## Current architecture and verified scope
 
 - **Frontend:** Vue 3, Router, Pinia, Vite, Tailwind CSS and DaisyUI; current version **0.8.0**.
-- **Backend:** Google Apps Script API with generated deployment artifacts; published Web App **V48**, backend **0.9.1**.
+- **Backend:** Google Apps Script API (V8) with generated deployment artifacts; published Web App **V53**, backend **0.9.4**. Runtime persistence is **Firestore-only** (VC-ADR-026); `SheetStore` is retained for admin/maintenance editor tools only.
 - **Edge:** Cloudflare Worker with Origin, operation/DTO allowlists and fail-closed validation.
-- **Persistence/media:** **25 logical Sheets** plus Google Drive media; bounded reads, text-preserving writes and no cross-sheet joins.
+- **Persistence/media:** **Firestore** (DEV Bangkok `asia-southeast3`, 25 logical collections) plus Google Drive media; the runtime reaches Firestore via REST + service-account OAuth. Frozen Sheets data is kept for maintenance/rollback history, not as the runtime system of record.
 - **API:** **56 operations** across five roles and 20 use cases. See the [use-case and sequence SSOT](docs/use-cases/README.md), [API specification](docs/GAS_API_SPEC.md) and [canonical schema](schema/database.schema.json).
-- **Verification:** offline GAS check PASS; live DEV automation **97/97**, 56/56 operations, all five roles and cleanup 7/7. The authenticated 72-case stage is direct-GAS; the Worker has separate live fail-closed coverage.
+- **Verification:** offline GAS check **215/215**; G6 `verify-live-publish` chain **103/103** (11 public + 14 Worker fail-closed + 72 authenticated direct-GAS, 56/56 operations, all five roles, cleanup 7/7) + **DATA_PROOF 6/6** independent Firestore read-back. The authenticated 72-case stage is direct-GAS; the Worker has separate live fail-closed coverage.
 
-Completed engineering source includes A1–A3, B1/B2/B4, C1–C4, C6, E2, display repair, live automation and QR camera recovery (PR #112). QR physical Android/iOS acceptance and B2b remain open; C5 is BLOCKED on D5+B3. PDPA/security/UAT/release, browser/business acceptance, applicable decisions/ADRs and credential rotation remain OPEN.
+Completed engineering source includes A1–A3, B1/B2/B4, B2b durable journaling, C1–C4, C6, E2, display repair, live automation, QR camera recovery (PR #112), Firestore F1–F4 + Phase 3 cutover, Slice A test-automation tooling, and Slice F+G (Firestore-only runtime, V53/0.9.4, live-verified). QR physical Android/iOS acceptance remains open; C5 is BLOCKED on D5+B3. Next engineering step = authorize-path round-trip tuneup (SECURITY-GATED, owner review). PDPA/security/UAT/release, browser/business acceptance, applicable decisions/ADRs and credential rotation remain OPEN; real-data go-live (#55) BLOCKED.
 
 ## Local setup
 

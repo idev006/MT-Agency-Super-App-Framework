@@ -1,5 +1,9 @@
 # Handoff — Firestore Phase 3 continuation (synthetic DEV)
 
+> **⚠️ SUPERSEDED (2026-11-23 late session) — historical phase handoff, do NOT use as current state.**
+> The steps this doc describes as "next" are **all DONE**: the ~24 h monitoring window was **early-exited** (owner-approved), `VEHICLE_FIRESTORE_DUALWRITE` was **cleared** (Firestore-only), and **Slice G+F (VC-ADR-026) retired the Sheets runtime data path** → live **V53 / `backendVersion` 0.9.4**, G6 re-verify **GREEN 103/103** (DATA_PROOF 6/6). The Sheets "warm shadow" / engine-flip rollback described below is **retired**; rollback is now **version-based**.
+> **Current state lives in [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) + [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md); measured proof in [BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md §5.6](BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md).** The body below is retained as dated evidence of the V52/0.9.3 Phase-3 state only. **Next engineering step = authorize-path tuneup (SECURITY-GATED, owner review) + test-plan Slices B–E.**
+
 **Doc ID:** P6VC-HANDOFF-FS-PHASE3-20261123 · **Date:** 2026-11-23 (Asia/Bangkok)
 **Audience:** the next AI assistant continuing this project in a fresh chat.
 **Status at handoff:** V52 / `backendVersion` 0.9.3 **DEPLOYED + health-verified** (Firestore SoR + Sheets warm shadow). The detached full live suite re-run is **COMPLETE and GREEN: 97/97 PASS** (56/56 ops, cleanup 7/7); `registrations.submit` PASS 32.1 s (prior 40 s timeout resolved). **The independent post-suite dual-store read-back audit is PASS (2026-11-23): 25/25 tables, 2,464/2,464 docs matched, `divergenceOpen=0` → Phase 3 GREEN** (suite green ≠ data proof; the audit is the proof). Latency is still marginal (p95 ~23 s) — the ~24 h rollback/monitoring window (task #78) then clearing dual-write is the next win.
