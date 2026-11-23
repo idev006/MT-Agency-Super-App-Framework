@@ -375,3 +375,17 @@ P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE \
 
 **Tooling safety finding:** `scripts/firestore-live-contract.mjs` (POC #2/#3) pre-cleans by deleting **all** `vc_users` and `__p6vc_seq` docs — written for the empty pre-cutover DB, destructive against today's live runtime store. It was NOT run. Added a refusal guard (`LIVE_RUNTIME_DATA_PRESENT`, exit 2) when sessions/users exist.
 
+### 5.9 Refactor/tuneup batch (VC-ADR-028): V56 GREEN → V57 FAIL + rollback → V58 GREEN
+
+| Deploy | Content | G6 result | Latency (n=72 authenticated) |
+|---|---|---|---|
+| **V56 / 0.9.6** (`6b0ffe0`, CI run `45166410480`) | T1 insert 3→2 · T2 detail parallel reads · R1 dead code | **PASS 103/103**, DATA_PROOF 6/6 (`TST34295208`) | p50 7,105 · p95 18,267 · max 26,459 ms |
+| V57 / 0.9.7 (`1900e2f`, run `45170342410`) | W1 single-round writes + submit/review one commit · P1 config snapshot | **FAIL** authenticated 50/72 (22 failed), DATA_PROOF not run | (not evidence — failed suite) |
+| **V58 / 0.9.8** (`f1f8ab6`, run `45173045788`) | V57 + journal-index fix + P1b | **PASS 103/103**, DATA_PROOF 6/6 (`TST36844186`), cleanup 0 failed | **p50 6,385 · p95 13,747 · max 16,958 ms** |
+
+**V57 incident (honest):** `registrations.review` → `OPERATION_FAILED`, cascading to every case that needs an approved vehicle. Root cause found with a read-only live probe: W1 read the latest review journal with an **ASC** `orderBy(_seq)` on `(operation, entity_id)`; the live DEV DB only has the **DESC** composite index (built for `listNewest`) → `FAILED_PRECONDITION`. All other W1 queries were probed live and are index-backed. **Deployment rolled back to @56 immediately** (health `0.9.6` 200). Fix (#159): DESC newest-window read (`readMany` kind `newest`, limit 1); `latestJournal` → `listNewest(…,1)[0]` (the old `.at(-1)` on a 20-row DESC window picked the **oldest** journal on Firestore). Regression test runs review on a strict-index fake holding only the live DESC index (mutation-checked: V57 code fails it). Lesson: the fake did not enforce indexes by default — new composite-index queries must be probed live or covered by a strict-index test before deploy.
+
+**W1 measured effect (V58 vs V56):** `registrations.submit` 26.5 s → **13.0 s**; `registrations.review` 21.4 s → **7.4 s**; `vehicles.detail` → **4.0 s**; suite p50 −10 %, p95 −25 %, max −36 %. Slowest now: `users.assignRoles` (17.0 s) and `auth.changePassword` (14.2 s) — both touch sessions/revocation, so a W2 on them needs the owner's security review (VC-ADR-028 scope rule).
+
+**Script Properties (P1):** owner ran `inspectVehicleConfigFromEditor` 19:04 +07: `ok:true`, no required missing; flagged for deletion — retired `VEHICLE_PERSISTENCE_BACKEND`, `VEHICLE_FIRESTORE_DUALWRITE`; gates left on `VEHICLE_FIRESTORE_POC_APPROVED`, `VEHICLE_SCHEMA_MIGRATION_APPROVED`; unknown duplicate secret `FIRESTORE_SA_KEY` (no reader); admin-reset gates (catalogued in P1b #158). Deletion is an owner action (values page).
+
