@@ -20,11 +20,14 @@ const persist=()=>fs.writeFileSync(aggregatePath,JSON.stringify(suite,null,2)+'\
 const readReport=name=>{
  try{return JSON.parse(fs.readFileSync(join(reportDir,name),'utf8'));}catch{return null;}
 };
-const counts=report=>({
- tests:Array.isArray(report?.tests)?report.tests.length:0,
- passed:Number(report?.passed)||(Array.isArray(report?.tests)?report.tests.filter(x=>x.status==='PASS').length:0),
- failed:Number(report?.failed)||(Array.isArray(report?.tests)?report.tests.filter(x=>x.status==='FAIL').length:0)
-});
+const counts=report=>{
+ const rows=Array.isArray(report?.tests)?report.tests:Array.isArray(report?.checks)?report.checks:[];
+ return {
+  tests:rows.length,
+  passed:Number(report?.passed)||rows.filter(x=>x.status==='PASS').length,
+  failed:Number(report?.failed)||rows.filter(x=>x.status==='FAIL').length
+ };
+};
 async function runStage(id,script,reportName,args=[]){
  const startedAt=new Date().toISOString();
  const exitCode=await new Promise(resolveExit=>{
