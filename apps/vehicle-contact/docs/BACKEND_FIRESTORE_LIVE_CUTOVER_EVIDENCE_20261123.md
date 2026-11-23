@@ -226,12 +226,27 @@ Safe, targeted round-trip reduction — **no over-engineering**, no contract/DTO
 
 **Offline proof:** store-port + REST contract green; new regression test asserts **insert=3 / update=2 / remove=2** round-trips and that standalone update/remove avoid `:beginTransaction`; full **GAS check 224/224 EXIT 0**. Projected `registrations.submit` ~20–26 calls (under the 40 s timeout).
 
-### 5.4 Remaining latency levers (NOT done — owner decisions / future slices)
+### 5.4 Remaining latency levers (owner decisions / future slices)
 
-- **Live re-measurement** of 0.9.3 is pending the GAS deploy (§4.2). The fix reduces call count; the fundamental ~1 s/`UrlFetchApp` call and GAS cold starts remain.
 - **Token caching across executions** (`CacheService`): each GAS execution builds a fresh gateway → one token exchange per execution. Caching would save ~1 call/exec. Deferred (avoid over-engineer; measure first).
-- **Clear `VEHICLE_FIRESTORE_DUALWRITE`** after the rollback window → Firestore-only, dropping the synchronous Sheets mirror on every write.
 - **Production runtime:** if GAS latency is still unacceptable for production UX, a **Node/Cloud Run** runtime with the Firestore SDK + connection reuse (the #135 pipeline showed ~0.7 s p50) is the alternative. This is an owner production decision, separate from synthetic-DEV correctness.
+- ~~Clear `VEHICLE_FIRESTORE_DUALWRITE`~~ — **DONE** (owner-approved early exit ~02:30Z; Firestore-only, §4.4). ~~Live re-measurement of 0.9.3 pending~~ — **DONE** (§4.4/§4.5).
+
+### 5.5 Detail-page latency diagnosis + Slice F (owner UX-confirmed, VC-ADR-025)
+
+The owner tested the live `vehicles/detail` page and reported it slow ("มันช้านะ"), confirming the latency blocker is real for UX. Code-traced + fake-server-measured round-trip breakdown of the page (2 sequential GAS APIs, `vehicles.detail` → `vehicles.history`):
+
+| Component | Round-trips (Firestore REST via UrlFetchApp) |
+|---|---|
+| **`SessionService.authorize` (PER API call)** | session runQuery(1) + user runQuery(1) + roles runQuery(1) + permissions runQuery(1) + `last_seen` update batchGet+commit(2) = **6** |
+| `vehicles.detail` backend | activeVehicle runQuery(1) + lookupAudit + contacts runQuery(1) + photos runQuery(1) |
+| `vehicles.history` backend | change_audit runQuery(1) |
+
+**Dominant cost = authorize ≈ 6 round-trips × 2 APIs ≈ 12/page** (each ~1 s). This is the bulk of the ~8–10 s page load.
+
+**Slice F (safe, implemented):** `VehicleOperations.lookupAudit` wrapped a single append-only `vc_lookup_audit` insert in `store.sequence()` — a redundant second transaction. **Measured on the fake REST server: plain `insert` = 3 round-trips vs `sequence(insert)` = 5 → 2 saved per lookup** (detail backend 8 → 6). Safe: `insert` is already an atomic transaction maintaining `_seq` ordering; Sheets `sequence` is a no-op so Sheets behavior is identical. Regression test asserts `vehicles.detail` = 6 round-trips (fails at 8 if re-wrapped). Offline `npm run check` EXIT 0. **GAS runtime change → pending owner `PUSH_VEHICLE_GAS` + publish + G6-chain re-verify.**
+
+**Bigger lever — NOT done, owner security gate:** reducing the authorize path (session/permission caching, `last_seen` write field-masking) touches auth/revocation semantics and **cannot be self-approved** (PM hard rule: no self-approval of security). Proposed as the next slice requiring owner security review. Honest expectation: Slice F alone is a modest ~2 s win; the meaningful detail-page speedup requires the authorize-path work.
 
 ## 6. Rollback posture
 
