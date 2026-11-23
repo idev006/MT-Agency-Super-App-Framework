@@ -91,14 +91,15 @@ test('vehicles.detail round-trips minimized: lookup audit is a plain append-only
   store.one('vc_users',{user_id:'warm'}); // prime the cached OAuth token
   const count=()=>fake.state.requests.length;
   const actor={userId:'u1',permissions:['vehicle.lookup','vehicle.contact.read','vehicle.photos.read']};
-  const n=count();
+  const n=count(),r0=fake.state.rounds;
   const result=ops['vehicles.detail']({vehicleId:'v1'},actor);
-  const calls=count()-n;
+  const calls=count()-n,rounds=fake.state.rounds-r0;
   assert.equal(result.vehicleId,'v1');
   // activeVehicle runQuery(1) + lookupAudit insert(2: prefetch batchGet w/ newTransaction + commit)
   //   + contacts runQuery(1) + photos runQuery(1) = 5.
   // The removed redundant sequence() wrapper around the single insert cost 5 alone (detail was 8).
   assert.equal(calls,5,'detail = 1 vehicle read + 2 audit insert + 1 contacts + 1 photos; no redundant outer transaction');
+  assert.equal(rounds,4,'T2: contacts + photos share ONE parallel fetchAll round (5 HTTP calls, 4 sequential rounds)');
   // The append-only audit is still persisted AND ordered (MediaRetention reads vc_lookup_audit via store.list).
   const audits=store.list('vc_lookup_audit',{vehicle_id:'v1'});
   assert.equal(audits.length,1,'lookup audit persisted');
