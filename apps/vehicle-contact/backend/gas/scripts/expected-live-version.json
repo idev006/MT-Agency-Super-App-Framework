@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.3",
+  "backendVersion": "0.9.4",
   "persistenceEngine": "firestore",
   "dualWrite": false,
-  "updatedAt": "2026-11-23T02:30:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag."
+  "updatedAt": "2026-11-23T00:00:00Z",
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.4 = Slice G Sheets-runtime decommission (Firestore-only dispatch, VC-ADR-026) + Slice F lookup-audit round-trip fix; publish V53 then re-verify."
 }

@@ -1,6 +1,6 @@
 import {createOperationController} from '../api/controllers/OperationController.js';
 import {createSessionService} from '../application/security/SessionService.js';
-import {createStoreForBackend} from './StoreSelector.js';
+import {createRuntimeStore} from './StoreSelector.js';
 import {createGasSecurity} from '../infrastructure/security/GasSecurity.js';
 import {createDrivePhotos} from '../infrastructure/media/DrivePhotos.js';
 import { createAdditiveMigration } from "../infrastructure/migrations/ExecuteAdditiveMigration.js";
@@ -22,14 +22,14 @@ export function createApplication(deps={}) {
   const router=createApiRouter({readHealthInfo(){
     const s=services(),props=s.propertiesService&&s.propertiesService.getScriptProperties();
     if(!props)return undefined;
-    const engine=props.getProperty('VEHICLE_PERSISTENCE_BACKEND')==='firestore'?'firestore':'sheets';
-    return {persistence:{engine,dualWrite:props.getProperty('VEHICLE_FIRESTORE_DUALWRITE')==='true'}};
+    return {persistence:{engine:'firestore',dualWrite:false}};
   },createProtectedDispatcher(){
     const s=services(),props=s.propertiesService.getScriptProperties();
     if(props.getProperty('VEHICLE_API_ENABLED')!=='true')throw new Error('FEATURE_DISABLED');
-    const spreadsheetId=props.getProperty('VEHICLE_SHEET_ID');
     const clock=()=>new Date().toISOString();
-    const store=createStoreForBackend({backend:props.getProperty('VEHICLE_PERSISTENCE_BACKEND'),props,services:s,clock});
+    // Production runtime is Firestore-only (VC-ADR-026). Admin/testing tools (e.g. the Editor
+    // staging probe) may inject their own store via deps.store; the HTTP entrypoint passes none.
+    const store=deps.store||createRuntimeStore({props,services:s,clock});
     const security=createGasSecurity({utilities:s.utilities,urlFetchApp:s.urlFetchApp,propertiesService:s.propertiesService,clock});
     const sessions=createSessionService({store,security});
     const folderId=props.getProperty('VEHICLE_PHOTOS_FOLDER_ID');
