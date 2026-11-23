@@ -83,3 +83,5 @@ Protected GitHub secrets `P6VC_TEST_USERNAME` / `P6VC_TEST_PASSWORD` are optiona
 | Security | **OPEN** | Named security approval and applicable ADR ratifications required. |
 | UAT / browser / business / device | **OPEN** | Named reviewer and sanitized acceptance evidence required. |
 | Production release | **OPEN** | Named release approval after all applicable gates. |
+
+**Release precondition (2026-11-23):** production must use a freshly generated `VEHICLE_AUTH_PEPPER` (the DEV pepper was partially exposed in an assistant screenshot; owner deferred DEV rotation) and enable Firestore backups/PITR before using the editor admin-reset tool (the Sheets backup gate was removed by S1, VC-ADR-029).

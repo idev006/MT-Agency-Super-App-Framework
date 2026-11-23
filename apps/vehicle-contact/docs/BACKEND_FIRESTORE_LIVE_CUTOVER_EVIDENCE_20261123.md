@@ -389,3 +389,11 @@ P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE \
 
 **Script Properties (P1):** owner ran `inspectVehicleConfigFromEditor` 19:04 +07: `ok:true`, no required missing; flagged for deletion — retired `VEHICLE_PERSISTENCE_BACKEND`, `VEHICLE_FIRESTORE_DUALWRITE`; gates left on `VEHICLE_FIRESTORE_POC_APPROVED`, `VEHICLE_SCHEMA_MIGRATION_APPROVED`; unknown duplicate secret `FIRESTORE_SA_KEY` (no reader); admin-reset gates (catalogued in P1b #158). Deletion is an owner action (values page).
 
+### 5.10 S1 — Google Sheets removed (VC-ADR-029): V59 / 0.9.9 GREEN
+
+Owner approved the admin-reset security change and typed `PUSH_VEHICLE_GAS` (2026-11-23). PR #161 squash-merged `6667bbe` → CI run `45179330228` (check EXIT 0, **39 modules + manifest, pushed 40 files** — was 54, the Sheets code is gone) → **created version 59** → owner-authorized clasp publish **@59** → health ×2 HTTP 200 `backendVersion 0.9.9`, `firestore`, `dualWrite:false`.
+
+**G6 `verify-live-publish`: PASS 103/103** — public 11/11 · Worker fail-closed 14/14 · authenticated **72/72, 56/56 ops, cleanup 0 failed** · **DATA_PROOF 6/6** (`TST39282152`). Latency p50 **6,218** · p95 15,577 · max 18,997 ms (budget OK; submit 15.6 s, review 4.2 s, detail 5.0 s — within run-to-run variance of V58; S1 does not touch the API path).
+
+Pre-existing residue cleanup (owner approved): 4 synthetic suite users from the V54 run-2 network failure suspended via `users.suspend`; independent Firestore read-back 4/4 `SUSPENDED`, 0 active sessions. One older suite user (`p6vc_reg_mwsi6knk`, 07:05 +07) left untouched pending owner decision. Pepper: owner accepted deferral — DEV keeps the current pepper; **production MUST use a freshly generated pepper** (release precondition).
+
