@@ -62,6 +62,14 @@ try{
       console.log(e.type+' '+e.spec.coll+' ['+e.spec.fields.map(f=>f.fieldPath+' '+f.order).join(', ')+']');}});
   const store=provisioner.wrapStore(node.store);
   const gw=node.gateway;
+  // SAFETY (2026-11-23): this runner pre-cleans by DELETING every vc_users and __p6vc_seq doc.
+  // It was written for the empty pre-cutover DB; since Phase 3 the DEV DB IS the live runtime
+  // store. Refuse to run when live runtime data exists (sessions or users present).
+  if(gw.query('vc_sessions',{limit:1}).length||gw.query('vc_users',{limit:1}).length){
+    runner.status='REFUSED';runner.reason='LIVE_RUNTIME_DATA_PRESENT';save();
+    console.error('REFUSED: live runtime data present in this database — this runner would wipe vc_users/__p6vc_seq.');
+    process.exit(2);
+  }
   let auth=null;
   const inner=bridge.fetch.bind(bridge);
   bridge.fetch=(url,opts={})=>{
