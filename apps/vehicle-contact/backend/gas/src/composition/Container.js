@@ -19,7 +19,12 @@ export function createApplication(deps={}) {
     urlFetchApp:deps.urlFetchApp||(typeof UrlFetchApp!=='undefined'?UrlFetchApp:null),
     driveApp:deps.driveApp||(typeof DriveApp!=='undefined'?DriveApp:null)
   });
-  const router=createApiRouter({createProtectedDispatcher(){
+  const router=createApiRouter({readHealthInfo(){
+    const s=services(),props=s.propertiesService&&s.propertiesService.getScriptProperties();
+    if(!props)return undefined;
+    const engine=props.getProperty('VEHICLE_PERSISTENCE_BACKEND')==='firestore'?'firestore':'sheets';
+    return {persistence:{engine,dualWrite:props.getProperty('VEHICLE_FIRESTORE_DUALWRITE')==='true'}};
+  },createProtectedDispatcher(){
     const s=services(),props=s.propertiesService.getScriptProperties();
     if(props.getProperty('VEHICLE_API_ENABLED')!=='true')throw new Error('FEATURE_DISABLED');
     const spreadsheetId=props.getProperty('VEHICLE_SHEET_ID');

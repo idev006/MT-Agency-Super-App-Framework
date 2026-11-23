@@ -30,7 +30,7 @@ export function createSessionService({store,security}) {
    throw new Error('PASSWORD_CHANGE_REQUIRED');
   const access=permissionsFor(user.user_id);
   if(!access.permissions.includes(permission))throw new Error('FORBIDDEN');
-  store.sequence(()=>store.update('vc_sessions',{session_id:session.session_id},{last_seen_at:security.now()}));
+  store.update('vc_sessions',{session_id:session.session_id},{last_seen_at:security.now()});
   return {userId:user.user_id,user,roles:access.roles,permissions:access.permissions,sessionId:session.session_id,session};
  }
  function issue(user) {

@@ -1,7 +1,7 @@
 {
   "name": "@p6/vehicle-contact-gas",
   "private": true,
-  "version": "0.9.2",
+  "version": "0.9.3",
   "type": "module",
   "scripts": {
     "build": "node scripts/build.mjs",

@@ -28,6 +28,10 @@ export function createFirestoreStore({firestore}){
   const strip=fields=>{const out={};for(const k of Object.keys(fields))if(k!==SEQ_FIELD)out[k]=fields[k];return out;};
 
   function build(gw){
+    // Fast path only on the real REST gateway (has commit/batchGetMany). The tx object
+    // passed by sequence() lacks them, so transactional callers keep the atomic tx path.
+    const fast=typeof gw.commit==='function'&&typeof gw.batchGetMany==='function';
+    const isPk=(name,filter)=>{const ks=Object.keys(filter||{});return ks.length===1&&ks[0]===primaryKey(name);};
     function one(name,filter){
       columns(name);
       const hits=gw.query(name,{where:whereOf(filter)});
@@ -54,11 +58,25 @@ export function createFirestoreStore({firestore}){
         if(counter)tx.update(SEQ_COLLECTION,name,{value:next});
         else tx.create(SEQ_COLLECTION,name,{value:next});
         return {...data};
-      });
+      },[{coll:name,id:docId},{coll:SEQ_COLLECTION,id:name}]);
     }
     function update(name,filter,patch){
       const cols=columns(name);
       if(!patch||Object.keys(patch).some(k=>!cols.some(c=>c.name===k)))throw new Error('INVALID_PATCH');
+      if(fast){
+        let id,current;
+        if(isPk(name,filter)){
+          id=String(filter[primaryKey(name)]);current=gw.batchGetMany(name,[id]).get(id);
+          if(!current)throw new Error('NOT_FOUND');
+        }else{
+          const hits=gw.query(name,{where:whereOf(filter)});
+          if(hits.length!==1)throw new Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
+          id=hits[0].id;current=hits[0].fields;
+        }
+        const merged={...current,...patch};
+        gw.commit([{type:'update',coll:name,id,fields:merged}]);
+        return strip(merged);
+      }
       const hits=gw.query(name,{where:whereOf(filter)});
       if(hits.length!==1)throw new Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
       const id=hits[0].id;
@@ -71,6 +89,19 @@ export function createFirestoreStore({firestore}){
     }
     function remove(name,filter){
       columns(name);
+      if(fast){
+        let id;
+        if(isPk(name,filter)){
+          id=String(filter[primaryKey(name)]);
+          if(!gw.batchGetMany(name,[id]).get(id))throw new Error('NOT_FOUND');
+        }else{
+          const hits=gw.query(name,{where:whereOf(filter)});
+          if(hits.length!==1)throw new Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
+          id=hits[0].id;
+        }
+        gw.commit([{type:'delete',coll:name,id}]);
+        return true;
+      }
       const hits=gw.query(name,{where:whereOf(filter)});
       if(hits.length!==1)throw new Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
       const id=hits[0].id;

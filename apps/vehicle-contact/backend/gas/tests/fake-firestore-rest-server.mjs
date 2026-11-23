@@ -99,8 +99,10 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
       txs.delete(body.transaction);return reply(200,{});
     }
     if(rest.endsWith(':commit')){
-      if(!body||!txs.has(body.transaction))return err(400,'INVALID_ARGUMENT','unknown transaction');
-      txs.delete(body.transaction);
+      if(body&&body.transaction){
+        if(!txs.has(body.transaction))return err(400,'INVALID_ARGUMENT','unknown transaction');
+        txs.delete(body.transaction);
+      }
       const writeResults=[];
       for(const w of body.writes||[]){
         const rel=w.update?w.update.name:w.delete;
