@@ -53,14 +53,15 @@ test('sequence() over REST commits on success and rolls back on failure',()=>{
   assert.equal(fake.state.plain('__p6vc_seq','vc_users').value,1,'sequence counter not advanced by rolled-back tx');
 });
 
-test('write round-trips are minimized: insert=3, update/remove by PK=2 (GAS latency fix)',()=>{
+test('write round-trips are minimized: insert=2 (newTransaction folded into prefetch, T1), update/remove by PK=2',()=>{
   const fake=createFakeFirestoreRest();
   const store=makeStore(fake);
   store.one('vc_users',{user_id:'warm'}); // prime the cached OAuth token
   const count=()=>fake.state.requests.length;
   let n=count();
   store.insert('vc_users',rec('u1'));
-  assert.equal(count()-n,3,'insert = beginTransaction + one prefetch batchGet + commit');
+  assert.equal(count()-n,2,'insert = one prefetch batchGet that begins the tx + commit (no separate beginTransaction)');
+  assert.ok(!fake.state.requests.slice(-2).some(r=>r.url.endsWith(':beginTransaction')),'insert never calls :beginTransaction');
   n=count();
   const up=store.update('vc_users',{user_id:'u1'},{status:'SUSPENDED'});
   assert.equal(count()-n,2,'update by PK = batchGet + single commit (no transaction)');
@@ -94,10 +95,10 @@ test('vehicles.detail round-trips minimized: lookup audit is a plain append-only
   const result=ops['vehicles.detail']({vehicleId:'v1'},actor);
   const calls=count()-n;
   assert.equal(result.vehicleId,'v1');
-  // activeVehicle runQuery(1) + lookupAudit insert(3: begin + prefetch batchGet + commit)
-  //   + contacts runQuery(1) + photos runQuery(1) = 6.
+  // activeVehicle runQuery(1) + lookupAudit insert(2: prefetch batchGet w/ newTransaction + commit)
+  //   + contacts runQuery(1) + photos runQuery(1) = 5.
   // The removed redundant sequence() wrapper around the single insert cost 5 alone (detail was 8).
-  assert.equal(calls,6,'detail = 1 vehicle read + 3 audit insert + 1 contacts + 1 photos; no redundant outer transaction');
+  assert.equal(calls,5,'detail = 1 vehicle read + 2 audit insert + 1 contacts + 1 photos; no redundant outer transaction');
   // The append-only audit is still persisted AND ordered (MediaRetention reads vc_lookup_audit via store.list).
   const audits=store.list('vc_lookup_audit',{vehicle_id:'v1'});
   assert.equal(audits.length,1,'lookup audit persisted');

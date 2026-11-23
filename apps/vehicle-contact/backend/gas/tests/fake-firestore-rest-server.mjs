@@ -131,11 +131,15 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
     }
     if(rest.endsWith(':batchGet')){
       if(body&&body.transaction&&!txs.has(body.transaction))return err(400,'INVALID_ARGUMENT','unknown transaction');
-      return reply(200,(body.documents||[]).map(name=>{
+      if(body&&body.transaction&&body.newTransaction)return err(400,'INVALID_ARGUMENT','transaction and newTransaction are mutually exclusive');
+      const rows=(body.documents||[]).map(name=>{
         const full=API_ROOT+name;
         return docs.has(full)?{found:{name,fields:reorder(docs.get(full)),createTime:CLOCK,updateTime:CLOCK},readTime:CLOCK}
           :{missing:name,readTime:CLOCK};
-      }));
+      });
+      // Real contract: newTransaction starts a tx; its id is set ONLY on the first stream element.
+      if(body&&body.newTransaction){const id='tx-'+randomUUID();txs.add(id);if(rows.length)rows[0].transaction=id;else rows.push({transaction:id});}
+      return reply(200,rows);
     }
     if(rest.endsWith(':runQuery')){
       if(rest!==':runQuery')return err(400,'INVALID_ARGUMENT','Invalid JSON payload received. Unknown name "structuredQuery" at \'document\': Cannot find field.');
