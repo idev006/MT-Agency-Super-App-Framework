@@ -1,0 +1,11 @@
+{
+  "measuredAt": "2026-11-23T02:46:13Z",
+  "runtime": "GAS V52 @52 / backendVersion 0.9.3, Firestore-only (dualWrite=false)",
+  "source": "test-results/p6vc-live-owner-dev-regression.json (97/97 suite, n=72 authenticated tests)",
+  "evidence": "apps/vehicle-contact/docs/BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md §4.4",
+  "p50": 8382,
+  "p90": 16500,
+  "p95": 22374,
+  "max": 35852,
+  "priorDualWriteOn": { "p50": 9726, "p90": 20056, "p95": 23000, "max": 36737 }
+}
