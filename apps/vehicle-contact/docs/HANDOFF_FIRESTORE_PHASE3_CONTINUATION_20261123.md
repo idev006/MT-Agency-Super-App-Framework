@@ -150,46 +150,16 @@ Key files: `backend/gas/src/infrastructure/persistence/firestore/FirestoreRestGa
 - Docs SSOT refactor (#59/#125) awaits ratification.
 
 ## 8. Task list anchors
-- **#74** Phase 3 (in_progress) — suite re-run + dual-store audit + evidence fill.
-- **#54** F4 live cutover (in_progress). **#55** PDPA real-data gate (pending/BLOCKED). **#13** C5 console (pending).
+- **#74** Phase 3 — **DONE (2026-11-23)**: suite 97/97 + dual-store audit PASS + evidence filled (PR #141).
+- **#54** F4 live cutover — **synthetic-DEV cutover DONE** (Firestore SoR on V52); remaining = monitoring window (#78). **#55** PDPA real-data gate (pending/BLOCKED). **#13** C5 console (pending).
 - **#78** Rollback window: monitor then clear dual-write → Firestore-only (owner item 6).
 
 ---
 
 ## 9. Copy-paste prompt for the next AI
 
-```
-You are continuing the P6 Vehicle Contact project (Thai-speaking Project Owner; you act as senior engineer/Tech Lead). Repo: F:\programming\police6\p6-vehicle-contact. Reply in Thai, concise, small slices; list owner-action items every time; honest status — never claim PASS without persisted-data proof.
+**Canonical prompt = [PROJECT_HANDOVER §1](PROJECT_HANDOVER.md)** (maintained, now reflects V52 / 0.9.3 + Phase 3 GREEN). Do not keep a second full copy here — two prompts drifted before (see §10 finding 3). For this phase, append only the deltas below.
 
-READ FIRST: apps/vehicle-contact/docs/HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md, then CURRENT_DELIVERY_STATUS.md, BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md, FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md, DECISION_LOG.md (VC-ADR-019/020/021/022).
-
-STATE: Live GAS V52 / backendVersion 0.9.3 @52 is deployed + health-verified = Firestore SoR + Sheets warm shadow (persistence{engine:firestore,dualWrite:true}), main 0cc74ba (PR #139). The detached full live suite re-run is COMPLETE and GREEN: overall 97/97 PASS (public 11/11 + worker 14/14 + authenticated 72/72), 56/56 ops covered, 0 missing, cleanup 7/7 (0 residue), finishedAt 2026-11-23T01:21:44Z. REGISTRATIONS.SUBMIT PASS at 32.1s (the 0.9.3 fix resolved the prior 40s timeout). Latency still marginal (p50 9.7s, p95 23s, max 36.7s REGISTRATIONS.REVIEW) because the Sheets dual-write mirror is still on every write.
-
-FIRST ACTION: confirm the green suite by reading the aggregate report at REPO ROOT test-results/p6vc-live-api-suite.json (F:\programming\police6\p6-vehicle-contact\test-results\) + auth child test-results/p6vc-live-owner-dev-regression.json; log apps/vehicle-contact/backend/gas/test-results/suite-run.log shows LIVE_SUITE PASS. NOTE TWO test-results dirs (repo-root = suite reports; gas/test-results = log + snapshot.json + audit). The suite is DONE (PIDs exited) — do not re-launch it. The remaining Phase 3 gate is the independent dual-store read-back audit (suite green != data proof).
-
-THEN (suite is GREEN — do the remaining data-proof gate): fresh post-suite Sheets export (cwd apps/vehicle-contact/backend/gas; start test-results/snapshot-receiver.mjs, evaluate test-results/sheets-gviz-export.js in the logged-in Sheets browser page) → run dualstore-audit.mjs --snapshot test-results/snapshot.json (gate P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE) → require status=PASS/allMatch/divergenceOpen=0 → fill the evidence doc AUDIT_RESULTS placeholder (SUITE_RESULTS already filled 97/97) + update status docs/VC-ADR-021 → commit on a codex/ branch + PR + merge. Then the rollback window (~24h monitoring, then clear VEHICLE_FIRESTORE_DUALWRITE → Firestore-only; task #78). Record the marginal latency honestly (p95 ~23s); clearing dual-write is the next latency win.
-
-BINDING RULES: every API call verified against actually-persisted data (API OK ≠ data proof; audit Sheets independently via gviz). Every bug/solution/best practice → GitHub SSOT evidence doc. Avoid cross-sheet joins. Synthetic DEV ONLY — real-data go-live (#55) BLOCKED (legal/DPO sign-off; owner fiat is intent, not legal approval). PDPA does NOT block synthetic DEV (owner item 3). Secrets (SA key/pepper/tokens) NEVER echoed/logged/committed/written to docs; key outside repo ~/.p6vc via gitignored .env; reports sanitized counters/field-names only. NEVER take_snapshot on GAS Script Properties (exposes secrets) — evaluate_script names/structure only. GAS source push needs owner "PUSH_VEHICLE_GAS" (CI creates version, never publishes); publication = clasp update-deployment -V <n> (owner-authorized). Owner authorized automatic GitHub/Cloudflare workflows + computer use. NEVER run API suite + frontend Firestore bridge concurrently. Avoid over-engineering — make it work.
-
-OWNER DECISIONS (VC-ADR-022): production runtime = GAS Firestore REST (cost, NOT Cloud Run); production Firestore provisioning + SA rotation deferred; owner personally does ratifications (D3/D5/B3, VC-ADR-014/015/017, E3) + QR device acceptance and will notify; rollback-window duration delegated to you.
-
-GOAL: ready for ALL roles / ALL use cases on Firestore (frontend thin shell, GAS main engine). Continue effectively from the suite result. Start by checking the suite and reporting the measured outcome in Thai.
-```
----
-
-## 10. Handoff acceptance review (2026-11-23, performed by the receiving Tech Lead)
-
-Standard applied: the project's own precedence and safety rules ([PROJECT_HANDOVER](PROJECT_HANDOVER.md) §2/§8) — *status claims must be verified against artifacts; current counts supersede old counts; never accept a PASS without persisted-data proof; no secrets in docs; the read-first chain must not contradict itself.*
-
-| # | Criterion | Result | Evidence |
-|---|---|---|---|
-| 1 | Status claims true (suite/audit/deploy) | **PASS** | repo-root suite report 97/97 `finishedAt 2026-11-23T01:21:44Z`; child reports 11/14/72 aligned ±1 s; `clasp list-deployments` → **@52** exists with the 0.9.3 description; live health `0.9.3` · ready · `persistence{firestore,dualWrite:true}`; `SystemGroup.js` source `backendVersion:"0.9.3"`; `.clasp.json` Script ID matches |
-| 2 | Traceability (commits/PRs/scripts exist) | **PASS** | `0cc74ba` = merge PR #139; `858ea4d` = merge PR #140; `e81a960`/`5a6d1b9` present under it; frontend `0.8.0`; all 7 referenced scripts exist; launcher gates match the documented gates |
-| 3 | Read-first chain self-consistency | **FAIL → FIXED in this review** | `CURRENT_DELIVERY_STATUS` row 4 said "live is now V50/0.9.2" and the Firestore row said "live cutover GATED / runtime still Sheets V50" — contradicting its own header (Firestore SoR on V52); `PROJECT_HANDOVER` §1/§3/§6 still described V48/0.9.1 and listed B2b as the next action. All corrected to current state, history retained as dated evidence |
-| 4 | Secret hygiene | **PASS** | regex scan of the 5 handoff docs: no private keys, API keys, OAuth tokens or passwords; only the SA **path** is named (outside repo) |
-| 5 | Reproducibility / actionability | **PASS** | every runbook command resolves to an existing script; gates reproduced from `launch-suite.mjs`; next step (audit → window → clear dual-write) unambiguous |
-| 6 | Honest boundaries | **PASS** | audit was genuinely pending at handoff (placeholder empty); synthetic-only, #55 blocked, latency caveats present |
-
-Minor notes (no action required, recorded for the next handoff): (a) `suite-run.log` opens in **append** mode, so it holds an earlier FAIL block before the PASS — always read the final `LIVE_SUITE` line or the JSON report; (b) latency percentiles use the *floor(q·n)*-th value (p50 9,726 / p90 20,056 / p95 23,000) — state the method when quoting; (c) version↔commit linkage is procedural (CI artifact + clasp pin), not cryptographic.
-
-**Verdict: CONDITIONAL ACCEPT → ACCEPTED after the §3 fix.** No false PASS claims were found; "garbage" risk was stale current-state text in two navigation docs, now corrected.
+1. Phase 3 is **closed** (suite 97/97 + dual-store audit 2,464/2,464, divergence 0). The only remaining runtime step is the **~24 h monitoring window → clear `VEHICLE_FIRESTORE_DUALWRITE`** ([evidence §6.1](BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md), task #78).
+2. Binding rules in §3 of this doc remain in force (synthetic DEV only, secrets hygiene, `PUSH_VEHICLE_GAS`, API OK ≠ data proof).
+3. Docs navigation lives in [DOCS_INDEX.md](DOCS_INDEX.md); quote time-dependent numbers with their date/source.

@@ -1,4 +1,7 @@
 # MT Vehicle Contact — PDPA Governance Pack (Draft)
+
+**Last updated (git):** 2026-11-16 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 วันที่ 31 ตุลาคม 2569 | Version 0.1 | **รออนุมัติจากผู้ควบคุมข้อมูล/ฝ่ายกฎหมาย/DPO**
 
 ## ข้อกำหนดก่อนเริ่มเก็บข้อมูลจริง (Privacy Gate)

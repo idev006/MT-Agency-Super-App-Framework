@@ -1,4 +1,7 @@
 # ประกาศความเป็นส่วนตัว 2 ฉบับ — Draft for issuance
+
+**Last updated (git):** 2026-11-16 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 **ต้องแทนช่อง [ ] ด้วยข้อมูลจริงและอนุมัติก่อนเผยแพร่**
 
 ## A. สำหรับบุคลากรประจำและผู้พักอาศัย

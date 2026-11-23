@@ -1,6 +1,6 @@
 # P6 Vehicle Contact — Source-Mirrored GAS Module Mapping
 
-> **STALE MODULE TABLE (2026-11-17, GAS Version 5, 14 modules).** For the current 52-module / 55-operation structure, live dispatch path, operation→module→permission map and legacy-module list, use **[CODE_MAP_20261121.md](CODE_MAP_20261121.md)**. The `$`-flattening explanation below remains valid.
+> **SUPERSEDED BY [CODE_MAP_20261121.md](CODE_MAP_20261121.md)** (current map + §10 addendum). STALE MODULE TABLE (2026-11-17, GAS Version 5, 14 modules). For the current 56-module / 56-operation structure, live dispatch path, operation→module→permission map and legacy-module list, use **[CODE_MAP_20261121.md](CODE_MAP_20261121.md)**. The `$`-flattening explanation below remains valid.
 
 **Document:** P6VC-GAS-MODULE-001  
 **Date:** 2026-11-17  

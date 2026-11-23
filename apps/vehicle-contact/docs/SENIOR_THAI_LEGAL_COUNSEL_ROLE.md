@@ -1,4 +1,7 @@
 # TOR — นิติกรอาวุโสด้านกฎหมายไทย กฎหมายคุ้มครองข้อมูลส่วนบุคคลและกฎหมายดิจิทัล
+
+**Last updated (git):** 2026-11-16 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 **MT Vehicle Contact | บทบาทในทีมตรวจทานโครงการ | 31 ต.ค. 2569**
 
 ## วัตถุประสงค์ของบทบาท

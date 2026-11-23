@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — additive GAS migration runbook
 
+**Last updated (git):** 2026-11-17 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 This implements the canonical `schema/database.schema.json` as **forward-only** Google Sheets worksheets and appended headers. It never drops columns/tabs, rewrites existing data, or infers destructive transforms.
 
 ## Editor-only flow

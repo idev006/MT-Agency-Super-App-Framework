@@ -1,4 +1,7 @@
 # P6 Vehicle Contact — Engineering Work Packages
+
+**Last updated (git):** 2026-11-17 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 **Document ID:** P6VC-WP-001 | **Status:** IMPLEMENTATION BACKLOG / NO RELEASE APPROVAL
 **References:** [Implementation Spec](IMPLEMENTATION_READY_SPEC_PHASE1.md), [Test Matrix](IMPLEMENTATION_TEST_MATRIX_PHASE1.md), [Roadmap](DEVELOPMENT_ROADMAP_PHASE1.md), [Issue Kanban](AGILE_KANBAN.md).
 

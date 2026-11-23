@@ -1,5 +1,7 @@
 # Test, Acceptance & Rapid Delivery — MT Vehicle Contact v1.0
 
+**Last updated (git):** 2026-11-16 · **Current state:** [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md)
+
 **Status:** PROPOSED | **Priority:** deliver the narrow policy outcome rapidly without bypassing security
 
 ## 1. Development slices and gates
