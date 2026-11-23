@@ -38,7 +38,8 @@ test('insertion order persists in Firestore _seq, not adapter memory (REST path)
   assert.deepEqual(b.list('vc_users').map(r=>r.user_id),['u1','u2','u3']);
   assert.deepEqual(b.listNewest('vc_users',{},2).map(r=>r.user_id),['u3','u2']);
   assert.equal(Object.prototype.hasOwnProperty.call(b.one('vc_users',{user_id:'u1'}),'_seq'),false,'_seq never leaks');
-  assert.equal(fake.state.plain('vc_users','u1')._seq,1,'ordering field persisted server-side');
+  const seqs=['u1','u2','u3'].map(id=>fake.state.plain('vc_users',id)._seq);
+  assert.ok(seqs.every(Number.isSafeInteger)&&seqs[0]<seqs[1]&&seqs[1]<seqs[2],'time-ordered _seq persisted server-side, strictly increasing');
 });
 
 test('sequence() over REST commits on success and rolls back on failure',()=>{
@@ -50,25 +51,25 @@ test('sequence() over REST commits on success and rolls back on failure',()=>{
   assert.equal(store.one('vc_users',{user_id:'u1'}).status,'SUSPENDED');
   assert.throws(()=>store.sequence(tx=>{tx.insert('vc_users',rec('u2'));throw new Error('boom');}),/boom/);
   assert.equal(store.one('vc_users',{user_id:'u2'}),null,'rolled back insert left no residue');
-  assert.equal(fake.state.plain('__p6vc_seq','vc_users').value,1,'sequence counter not advanced by rolled-back tx');
+  assert.equal(fake.state.plain('__p6vc_seq','vc_users'),null,'W1a: no counter document is maintained any more');
 });
 
-test('write round-trips are minimized: insert=2 (newTransaction folded into prefetch, T1), update/remove by PK=2',()=>{
+test('write round-trips are minimized: insert/update/remove by PK = ONE commit each (W1a)',()=>{
   const fake=createFakeFirestoreRest();
   const store=makeStore(fake);
   store.one('vc_users',{user_id:'warm'}); // prime the cached OAuth token
   const count=()=>fake.state.requests.length;
   let n=count();
   store.insert('vc_users',rec('u1'));
-  assert.equal(count()-n,2,'insert = one prefetch batchGet that begins the tx + commit (no separate beginTransaction)');
+  assert.equal(count()-n,1,'insert = one commit with exists:false (no counter read, no transaction)');
   assert.ok(!fake.state.requests.slice(-2).some(r=>r.url.endsWith(':beginTransaction')),'insert never calls :beginTransaction');
   n=count();
   const up=store.update('vc_users',{user_id:'u1'},{status:'SUSPENDED'});
-  assert.equal(count()-n,2,'update by PK = batchGet + single commit (no transaction)');
+  assert.equal(count()-n,1,'update by PK = one field-masked commit (exists:true)');
   assert.equal(up.status,'SUSPENDED','update still returns the merged record');
   n=count();
   assert.equal(store.remove('vc_users',{user_id:'u1'}),true);
-  assert.equal(count()-n,2,'remove by PK = batchGet + single commit');
+  assert.equal(count()-n,1,'remove by PK = one delete commit (exists:true)');
   const verbs=fake.state.requests.slice(-4).map(r=>r.url.split('/').pop());
   assert.ok(!verbs.includes(':beginTransaction'),'standalone update/remove avoid beginTransaction');
 });
@@ -98,11 +99,35 @@ test('vehicles.detail round-trips minimized: lookup audit is a plain append-only
   // activeVehicle runQuery(1) + lookupAudit insert(2: prefetch batchGet w/ newTransaction + commit)
   //   + contacts runQuery(1) + photos runQuery(1) = 5.
   // The removed redundant sequence() wrapper around the single insert cost 5 alone (detail was 8).
-  assert.equal(calls,5,'detail = 1 vehicle read + 2 audit insert + 1 contacts + 1 photos; no redundant outer transaction');
-  assert.equal(rounds,4,'T2: contacts + photos share ONE parallel fetchAll round (5 HTTP calls, 4 sequential rounds)');
+  assert.equal(calls,4,'detail = 1 vehicle read + 1 audit insert commit + 1 contacts + 1 photos');
+  assert.equal(rounds,3,'T2+W1a: vehicle read → audit commit → contacts+photos in one parallel round');
   // The append-only audit is still persisted AND ordered (MediaRetention reads vc_lookup_audit via store.list).
   const audits=store.list('vc_lookup_audit',{vehicle_id:'v1'});
   assert.equal(audits.length,1,'lookup audit persisted');
   assert.equal(audits[0].result,'FOUND');
-  assert.equal(fake.state.plain('vc_lookup_audit',audits[0].audit_id)._seq,1,'_seq ordering maintained by plain insert');
+  assert.ok(Number.isSafeInteger(fake.state.plain('vc_lookup_audit',audits[0].audit_id)._seq),'_seq ordering field persisted by plain insert');
+});
+test('W1a writeMany: several writes in ONE commit, all-or-nothing on any precondition failure',()=>{
+  const fake=createFakeFirestoreRest();
+  const store=makeStore(fake);
+  store.insert('vc_users',rec('u1'));
+  const n=fake.state.requests.length;
+  store.writeMany([
+    {op:'insert',table:'vc_users',data:rec('u2')},
+    {op:'update',table:'vc_users',key:{user_id:'u1'},fields:{status:'SUSPENDED'}}
+  ]);
+  assert.equal(fake.state.requests.length-n,1,'one commit for two writes');
+  assert.equal(store.one('vc_users',{user_id:'u2'}).status,'ACTIVE');
+  assert.equal(store.one('vc_users',{user_id:'u1'}).status,'SUSPENDED');
+  // u2 already exists → the whole commit is rejected; the update to u1 must NOT apply.
+  assert.throws(()=>store.writeMany([
+    {op:'update',table:'vc_users',key:{user_id:'u1'},fields:{status:'ACTIVE'}},
+    {op:'insert',table:'vc_users',data:rec('u2')}
+  ]),/DUPLICATE_KEY/);
+  assert.equal(store.one('vc_users',{user_id:'u1'}).status,'SUSPENDED','no partial write');
+  assert.throws(()=>store.writeMany([{op:'update',table:'vc_users',key:{status:'x'},fields:{status:'y'}}]),/WRITE_REQUIRES_PRIMARY_KEY/);
+  assert.throws(()=>store.writeMany([
+    {op:'update',table:'vc_users',key:{user_id:'u1'},fields:{status:'A'}},
+    {op:'update',table:'vc_users',key:{user_id:'u1'},fields:{display_name:'B'}}
+  ]),/DUPLICATE_WRITE_TARGET/,'live Firestore rejects two writes to one doc per commit; fail early');
 });

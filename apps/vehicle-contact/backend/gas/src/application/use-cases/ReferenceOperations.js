@@ -9,12 +9,21 @@ const clean=(value,max=120)=>{
  if(!out||out.length>max||/^[=+@-]/.test(out))throw new Error('REFERENCE_DATA_INVALID');
  return out;
 };
-function loadRows(store){
- try{return store.list('vc_reference_values');}
- catch(error){if(String(error?.message||'').startsWith('MISSING_TABLE'))return null;throw error;}
+const missingTable=error=>String(error?.message||'').startsWith('MISSING_TABLE');
+// The three reference reads are independent: ONE parallel round when the store supports
+// readMany (Firestore). The sequential path keeps the Sheets MISSING_TABLE tolerance.
+function loadAll(store){
+ if(typeof store.readMany==='function'){
+  const [raw,orgRows,setting]=store.readMany([{kind:'list',name:'vc_reference_values'},{kind:'list',name:'vc_organizations'},
+   {kind:'one',name:'vc_settings',filter:{key:'registration_reference_enforcement'}}]);
+  return {raw,orgRows,setting};
+ }
+ const guard=(fn,fallback)=>{try{return fn();}catch(error){if(missingTable(error))return fallback;throw error;}};
+ return {raw:guard(()=>store.list('vc_reference_values'),null),orgRows:guard(()=>store.list('vc_organizations'),[]),
+  setting:guard(()=>store.one('vc_settings',{key:'registration_reference_enforcement'}),null)};
 }
 function normalize(store,security){
- const raw=loadRows(store);
+ const {raw,orgRows,setting}=loadAll(store);
  const empty=Object.fromEntries(Object.values(CATALOGS).map(key=>[key,[]]));
  if(raw===null)return {mode:'LEGACY',version:security.sha256('P6VC_REFERENCE_LEGACY'),lists:empty,organizations:[],policies:{}};
  if(!Array.isArray(raw)||raw.length>MAX_ROWS)throw new Error('REFERENCE_DATA_BOUNDS');
@@ -37,17 +46,13 @@ function normalize(store,security){
  active.sort((a,b)=>a.sortOrder-b.sortOrder||a.label.localeCompare(b.label,'th')||a.code.localeCompare(b.code));
  const lists={...empty};
  for(const row of active)lists[CATALOGS[row.catalog]].push(Object.freeze({code:row.code,label:row.label,...(row.parentCode?{parentCode:row.parentCode}:{})}));
- let organizations=[];
- try{organizations=store.list('vc_organizations').filter(row=>row.status==='ACTIVE').map(row=>({
+ const organizations=(orgRows||[]).filter(row=>row.status==='ACTIVE').map(row=>({
   code:clean(row.organization_id,100),label:clean(row.name,120)
- })).sort((a,b)=>a.label.localeCompare(b.label,'th')||a.code.localeCompare(b.code));}
- catch(error){if(!String(error?.message||'').startsWith('MISSING_TABLE'))throw error;}
+ })).sort((a,b)=>a.label.localeCompare(b.label,'th')||a.code.localeCompare(b.code));
  const organizationCodes=new Set();
  if(organizations.some(row=>organizationCodes.has(row.code)||!organizationCodes.add(row.code)))throw new Error('REFERENCE_DATA_INVALID');
  const complete=organizations.length>0&&Object.values(STRICT).every(catalog=>lists[CATALOGS[catalog]].length>0);
- let enforcement='ADVISORY';
- try{enforcement=String(store.one('vc_settings',{key:'registration_reference_enforcement'})?.value||'ADVISORY').toUpperCase();}
- catch(error){if(!String(error?.message||'').startsWith('MISSING_TABLE'))throw error;}
+ const enforcement=String(setting?.value||'ADVISORY').toUpperCase();
  const mode=complete&&enforcement==='ENFORCED'?'ENFORCED':complete?'ADVISORY':'LEGACY';
  const policies=Object.fromEntries(Object.entries(CATALOGS).map(([catalog,key])=>[key,
   Object.values(STRICT).includes(catalog)&&mode==='ENFORCED'?'ENFORCED':'ADVISORY']));

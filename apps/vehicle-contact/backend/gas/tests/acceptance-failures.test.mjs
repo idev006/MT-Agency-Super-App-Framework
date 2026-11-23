@@ -77,18 +77,18 @@ test('EDGE-08 photo upload failure after Drive write triggers compensation trash
  assert.equal(h.read('vc_photo_staging').length,0);
  assert.equal(h.driveState.size,0);
 });
-test('EDGE-09 caught registration write failure compensates pending records, media claims and quota',()=>{
+test('EDGE-09 a failing registration write leaves NO partial state (one all-or-nothing commit, W1)',()=>{
  const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign(),photos=h.stagePhotos(camp.campaignToken);
  h.setWriteFailure('vc_idempotency');
  const payload=h.registrationPayload(camp.campaignToken,org,photos);
  assertError(assert,h.call('registrations.submit',payload),'OPERATION_FAILED','injected final idempotency failure');
  const pending=h.read('vc_registration_requests'),journal=h.read('vc_operation_journal');
- assert.equal(pending.length,0,'caught error must remove pending application');
+ assert.equal(pending.length,0,'no pending application was ever written');
  assert.equal(h.read('vc_idempotency').length,0);
- assert.equal(h.read('vc_campaigns')[0].submitted_count,0,'quota refunded for failed, uncommitted application');
- assert.equal(h.read('vc_photo_staging').every(p=>p.status==='STAGED'),true,'photos restored to staging');
- assert.equal(journal.some(j=>j.operation==='registrations.submit'&&j.status==='ROLLED_BACK'),true);
- console.log('Caught partial registration write compensated; uncontrolled timeout still requires manual journal reconciliation');
+ assert.equal(h.read('vc_campaigns')[0].submitted_count,0,'quota never consumed');
+ assert.equal(h.read('vc_photo_staging').every(p=>p.status==='STAGED'),true,'photos never claimed');
+ assert.equal(journal.some(j=>j.operation==='registrations.submit'),false,'nothing written, so nothing to journal or compensate');
+ assert.equal(pending.length,0);
 });
 test('EDGE-10 real DrivePhotos adapter validates content signature/size/mime before file creation',()=>{
  const blobs=[],trashed=[],png=Buffer.from('89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000b49444154789c636000020000050001a5f645400000000049454e44ae426082','hex');

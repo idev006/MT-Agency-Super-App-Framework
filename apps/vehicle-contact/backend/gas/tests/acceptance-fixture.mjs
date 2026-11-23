@@ -49,6 +49,24 @@ export function createAcceptanceHarness(){
    if(hits.length!==1)throw Error(hits.length?'DUPLICATE_KEY':'NOT_FOUND');
    data(t).splice(data(t).indexOf(hits[0]),1);io.writes++;return true;
   },
+  // Mirrors a Firestore commit: every precondition and injected failure is checked BEFORE
+  // any write applies (all-or-nothing), then the writes are applied in order.
+  writeMany(ops){
+   const keyOf=t=>schema(t).find(c=>c.key==='primary')?.name;
+   const seen=new Set();
+   ops.forEach((o,i)=>{
+    const saved=io.writes;io.writes=saved+i;
+    try{failWrite(o.table);}finally{io.writes=saved;}
+    const k=keyOf(o.table),idv=o.op==='insert'?o.data[k]:o.key[k],tag=o.table+'/'+idv;
+    if(seen.has(tag))throw Error('DUPLICATE_WRITE_TARGET');seen.add(tag);
+    const exists=data(o.table).some(r=>r[k]===idv);
+    if(o.op==='insert'&&exists)throw Error('DUPLICATE_KEY');
+    if(o.op!=='insert'&&!exists)throw Error('NOT_FOUND');
+   });
+   // The check pass used the same write indices, so the apply pass cannot fail part-way.
+   for(const o of ops){if(o.op==='insert')store.insert(o.table,o.data);else if(o.op==='update')store.update(o.table,o.key,o.fields);else store.remove(o.table,o.key);}
+   return true;
+  },
   withLock(fn){io.locks++;return fn();},
   sequence(fn){return fn();}
  };

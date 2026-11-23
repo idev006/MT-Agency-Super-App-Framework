@@ -99,14 +99,6 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   organization_id:need(p.organizationId,'ORGANIZATION_ID'),relationship:need(p.relationship,'RELATIONSHIP'),
   contactName:need(p.contactName,'CONTACT_NAME'),contactPhone:phone(p.contactPhone)
  });
- function photos(p,campaignId){
-  if(!validateFivePhotos(p.photos))throw new Error('FIVE_PHOTOS_REQUIRED');
-  return p.photos.map(x=>{
-   const file=store.one('vc_photo_staging',{photo_id:need(x.photoId,'PHOTO_ID')});
-   if(!file||file.campaign_id!==campaignId||file.status!=='STAGED'||file.slot!==x.slot)throw new Error('PHOTO_NOT_STAGED');
-   return file;
-  });
- }
  function reconcileSubmitTimeout(idemKey){
   // A previous attempt may have died (GAS timeout/restart) after PREPARED but before the
   // idempotency commit, leaving an orphan application + CLAIMED photos. Reverse those partial
@@ -128,6 +120,16 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   }
   if(blocked)throw new Error('OPERATION_RECOVERY_REQUIRED');
  }
+ // W1 (VC-ADR-028): read independent rows in ONE parallel round and apply every business
+ // write in ONE commit. Firestore applies a commit all-or-nothing with per-write
+ // preconditions, so there is never a partial submit to compensate (no saga, no locks).
+ const readAll=reqs=>typeof store.readMany==='function'?store.readMany(reqs)
+  :reqs.map(r=>r.kind==='one'?store.one(r.name,r.filter):store.list(r.name,r.filter));
+ const writeAll=ops=>{
+  if(typeof store.writeMany==='function')return store.writeMany(ops);
+  for(const o of ops){if(o.op==='insert')store.insert(o.table,o.data);else if(o.op==='update')store.update(o.table,o.key,o.fields);else store.remove(o.table,o.key);}
+  return true;
+ };
  function registrationSubmit(p){
   const payload=body(p),key=payload.plate_normalized+'|'+payload.province_code;
   const idem=need(p.idempotencyKey,'IDEMPOTENCY_KEY',100);
@@ -136,7 +138,15 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    references.assertRegistration(p);
    const campaign=campaigns.getCampaign(p.campaignToken,{requireCapacity:false});
    const idemKey=security.sha256('registration:'+campaign.campaign_id+':'+idem);
-   const old=store.one('vc_idempotency',{key:idemKey});
+   const fivePhotos=validateFivePhotos(p.photos);
+   const photoReads=fivePhotos?p.photos.map(x=>({kind:'one',name:'vc_photo_staging',filter:{photo_id:need(x.photoId,'PHOTO_ID')}})):[];
+   let [old,orphans,org,vehicles,pending,...staged]=readAll([
+    {kind:'one',name:'vc_idempotency',filter:{key:idemKey}},
+    {kind:'list',name:'vc_registration_requests',filter:{idempotency_key:idemKey}},
+    {kind:'one',name:'vc_organizations',filter:{organization_id:payload.organization_id}},
+    {kind:'list',name:'vc_vehicles'},
+    {kind:'list',name:'vc_registration_requests',filter:{status:'PENDING_APPROVAL'}},
+    ...photoReads]);
    if(old){
     if(old.request_digest!==digest||old.status!=='COMPLETED')throw new Error('IDEMPOTENCY_CONFLICT');
     const result=JSON.parse(old.result_json);
@@ -144,57 +154,50 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     if(j&&j.status==='PREPARED'){try{store.update('vc_operation_journal',{event_id:j.event_id},{status:'APPLIED'});}catch{}}
     return result;
    }
-   // A script timeout may interrupt a previous attempt before it writes the idempotency result.
-   // Reconcile a timed-out partial attempt (remove orphan, restore photos) so a retry can proceed.
-   // Ambiguous campaign quota is flagged RECOVERY_REQUIRED for the manual recovery runbook.
-   reconcileSubmitTimeout(idemKey);
+   // Legacy (pre-W1) timed-out partial attempts may have left an orphan request: reconcile it.
+   // Reconciliation restores the orphan's photos to STAGED, so re-read them afterwards.
+   if(orphans.length){reconcileSubmitTimeout(idemKey);staged=readAll(photoReads);}
    if(Number(campaign.submitted_count)>=Number(campaign.max_submissions))throw new Error('CAMPAIGN_INVALID');
-   const org=store.one('vc_organizations',{organization_id:payload.organization_id});
    if(!org||org.status!=='ACTIVE')throw new Error('ORGANIZATION_INACTIVE');
-   const duplicate=store.list('vc_vehicles').some(v=>v.plate_normalized===payload.plate_normalized&&v.province_code===payload.province_code&&v.status!=='INACTIVE');
-   if(duplicate||store.list('vc_registration_requests',{status:'PENDING_APPROVAL'}).some(r=>{
-    const x=JSON.parse(r.application_json);return x.plate_normalized+'|'+x.province_code===key;
-   }))throw new Error('DUPLICATE_VEHICLE');
-   const media=photos(p,campaign.campaign_id),requestId=id(),vehicleId=id(),eventId=id();
+   const duplicate=vehicles.some(v=>v.plate_normalized===payload.plate_normalized&&v.province_code===payload.province_code&&v.status!=='INACTIVE');
+   // Orphans were just reconciled away, so they no longer count as pending duplicates.
+   const live=pending.filter(r=>!orphans.some(o=>o.request_id===r.request_id));
+   if(duplicate||live.some(r=>{const x=JSON.parse(r.application_json);return x.plate_normalized+'|'+x.province_code===key;}))
+    throw new Error('DUPLICATE_VEHICLE');
+   if(!fivePhotos)throw new Error('FIVE_PHOTOS_REQUIRED');
+   const media=p.photos.map((x,i)=>{
+    const file=staged[i];
+    if(!file||file.campaign_id!==campaign.campaign_id||file.status!=='STAGED'||file.slot!==x.slot)throw new Error('PHOTO_NOT_STAGED');
+    return file;
+   });
+   const requestId=id(),vehicleId=id(),eventId=id(),at=now();
    const snapshot={...payload,photos:media.map(f=>({photoId:f.photo_id,slot:f.slot,storageRef:f.storage_ref,mimeType:f.mime_type,sizeBytes:f.size_bytes}))};
    const journal={operation:'registrations.submit',requestId,vehicleId,campaignId:campaign.campaign_id,idempotencyKey:idemKey,requestDigest:digest};
-   // PREPARED is persisted before applying writes. A timeout leaves evidence for manual recovery.
-   store.insert('vc_operation_journal',{event_id:eventId,operation:'registrations.submit',entity_id:requestId,actor_id:'PUBLIC_CAMPAIGN',
-    status:'PREPARED',detail_json:JSON.stringify(journal),created_at:now()});
-   let requestWritten=false,claimed=[],quotaWritten=false,idemWritten=false;
-   try {
-    store.insert('vc_registration_requests',{request_id:requestId,vehicle_id:vehicleId,campaign_id:campaign.campaign_id,
-     status:'PENDING_APPROVAL',submitted_at:now(),reviewed_by:'',reviewed_at:'',application_json:JSON.stringify(snapshot),idempotency_key:idemKey});
-    requestWritten=true;
-    for(const file of media){
-     store.update('vc_photo_staging',{photo_id:file.photo_id},{status:'CLAIMED',used_at:now()});
-     claimed.push(file.photo_id);
+   const result={requestId,vehicleId,status:'PENDING_APPROVAL'};
+   try{
+    writeAll([
+     {op:'insert',table:'vc_operation_journal',data:{event_id:eventId,operation:'registrations.submit',entity_id:requestId,actor_id:'PUBLIC_CAMPAIGN',
+      status:'APPLIED',detail_json:JSON.stringify(journal),created_at:at}},
+     {op:'insert',table:'vc_registration_requests',data:{request_id:requestId,vehicle_id:vehicleId,campaign_id:campaign.campaign_id,
+      status:'PENDING_APPROVAL',submitted_at:at,reviewed_by:'',reviewed_at:'',application_json:JSON.stringify(snapshot),idempotency_key:idemKey}},
+     ...media.map(file=>({op:'update',table:'vc_photo_staging',key:{photo_id:file.photo_id},fields:{status:'CLAIMED',used_at:at}})),
+     {op:'update',table:'vc_campaigns',key:{campaign_id:campaign.campaign_id},fields:{submitted_count:Number(campaign.submitted_count)+1}},
+     {op:'insert',table:'vc_idempotency',data:{key:idemKey,operation:'registrations.submit',actor_id:'PUBLIC_CAMPAIGN',request_digest:digest,
+      result_json:JSON.stringify(result),status:'COMPLETED',created_at:at}}
+    ]);
+   }catch(error){
+    // A concurrent submit with the same idempotency key won the race: nothing of ours was
+    // written (all-or-nothing). Replay its stored result when the body matches.
+    if(error&&error.message==='DUPLICATE_KEY'){
+     const winner=store.one('vc_idempotency',{key:idemKey});
+     if(winner){
+      if(winner.request_digest===digest&&winner.status==='COMPLETED')return JSON.parse(winner.result_json);
+      throw new Error('IDEMPOTENCY_CONFLICT');
+     }
     }
-    store.update('vc_campaigns',{campaign_id:campaign.campaign_id},{submitted_count:Number(campaign.submitted_count)+1});
-    quotaWritten=true;
-    const result={requestId,vehicleId,status:'PENDING_APPROVAL'};
-    store.insert('vc_idempotency',{key:idemKey,operation:'registrations.submit',actor_id:'PUBLIC_CAMPAIGN',request_digest:digest,
-     result_json:JSON.stringify(result),status:'COMPLETED',created_at:now()});
-    idemWritten=true;
-    store.update('vc_operation_journal',{event_id:eventId},{status:'APPLIED'});
-    return result;
-   } catch(error) {
-    // Apps Script/Sheets cannot guarantee rollback on timeout. For caught errors,
-    // compensate in reverse order under the same script lock and expose recovery state.
-    const errors=[];
-    const attempt=fn=>{try{fn();}catch(e){errors.push(String(e?.message||'COMPENSATION_FAILED').slice(0,64));}};
-    if(idemWritten)attempt(()=>store.remove('vc_idempotency',{key:idemKey}));
-    if(quotaWritten)attempt(()=>store.update('vc_campaigns',{campaign_id:campaign.campaign_id},{submitted_count:Number(campaign.submitted_count)}));
-    for(const photoId of claimed.reverse())
-     attempt(()=>store.update('vc_photo_staging',{photo_id:photoId},{status:'STAGED',used_at:''}));
-    if(requestWritten)attempt(()=>store.remove('vc_registration_requests',{request_id:requestId}));
-    attempt(()=>store.update('vc_operation_journal',{event_id:eventId},{
-     status:errors.length?'RECOVERY_REQUIRED':'ROLLED_BACK',
-     detail_json:JSON.stringify({...journal,recoveryErrors:errors})
-    }));
-    if(errors.length)throw new Error('OPERATION_RECOVERY_REQUIRED');
     throw error;
    }
+   return result;
   });
  }
  function registrationPending(p){
@@ -211,9 +214,14 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   const requestId=need(p.requestId,'REQUEST_ID');
   if(!['APPROVE','REJECT'].includes(p.decision))throw new Error('INVALID_DECISION');
   return store.withLock(()=>{
-   let r=store.one('vc_registration_requests',{request_id:requestId});
+   // W1: request + latest journal (+ vehicles for the duplicate check) in ONE parallel round.
+   const decision=p.decision;
+   let [r,journals,vehicles]=readAll([
+    {kind:'one',name:'vc_registration_requests',filter:{request_id:requestId}},
+    {kind:'list',name:'vc_operation_journal',filter:{operation:'registrations.review',entity_id:requestId}},
+    ...(decision==='APPROVE'?[{kind:'list',name:'vc_vehicles'}]:[])]);
    if(!r)throw new Error('INVALID_REQUEST_STATE');
-   const app=JSON.parse(r.application_json),decision=p.decision,previous=latestJournal('registrations.review',requestId),prior=parseJournal(previous);
+   const app=JSON.parse(r.application_json),previous=journals.at(-1)||null,prior=parseJournal(previous);
    if(decision==='APPROVE'&&p.platePhotoVerified!==true)throw new Error('PLATE_PHOTO_NOT_VERIFIED');
    if(previous&&['PREPARED','RECOVERY_REQUIRED'].includes(previous.status)){
     if(prior.decision!==decision)throw new Error('OPERATION_RECOVERY_REQUIRED');
@@ -237,11 +245,39 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    if(r.status!=='PENDING_APPROVAL')throw new Error('INVALID_REQUEST_STATE');
    const eventId=id(),detail={operation:'registrations.review',requestId,vehicleId:r.vehicle_id,decision,actorId:a.userId,
     contactId:id(),qrId:decision==='APPROVE'?id():'',auditId:id(),correlationId:id().slice(0,16)};
-   const journal={event_id:eventId,operation:'registrations.review',entity_id:requestId,actor_id:a.userId,
-    status:'PREPARED',detail_json:JSON.stringify(detail),created_at:now()};
-   store.insert('vc_operation_journal',journal);
-   return applyReview(journal,detail,r,app);
+   return commitReview(eventId,detail,r,app,vehicles||[]);
   });
+ }
+ // W1 fresh review: every write in ONE all-or-nothing commit — nothing partial to compensate.
+ // A concurrent approval of the same request collides on the vehicle/QR create preconditions,
+ // so only one approval can ever land.
+ function commitReview(eventId,detail,request,app,vehicles){
+  const at=now(),approve=detail.decision==='APPROVE',token=approve?reviewToken(eventId,request.request_id):'';
+  if(approve&&vehicles.some(v=>v.vehicle_id!==request.vehicle_id&&v.plate_normalized===app.plate_normalized&&v.province_code===app.province_code&&v.status==='ACTIVE'))
+   throw new Error('DUPLICATE_VEHICLE');
+  const writes=[{op:'insert',table:'vc_operation_journal',data:{event_id:eventId,operation:'registrations.review',entity_id:request.request_id,
+   actor_id:detail.actorId,status:'APPLIED',detail_json:JSON.stringify(detail),created_at:at}}];
+  if(approve){
+   writes.push({op:'insert',table:'vc_vehicles',data:{vehicle_id:request.vehicle_id,plate_normalized:app.plate_normalized,province_code:app.province_code,
+    vehicle_type:app.vehicle_type,make:app.make,model:app.model,color:app.color,status:'ACTIVE',version:1,
+    created_at:at,updated_at:at,created_by:detail.actorId,updated_by:detail.actorId,plate_type:app.plate_type,organization_id:app.organization_id}});
+   writes.push({op:'insert',table:'vc_vehicle_contacts',data:{contact_id:detail.contactId,vehicle_id:request.vehicle_id,display_name:app.contactName,
+    phone_e164:app.contactPhone,relationship:app.relationship,is_primary:true,status:'ACTIVE',verified_at:at,created_at:at,updated_at:at}});
+   for(const f of app.photos)writes.push({op:'insert',table:'vc_vehicle_photos',data:{photo_id:f.photoId,vehicle_id:request.vehicle_id,
+    slot:f.slot,storage_ref:f.storageRef,mime_type:f.mimeType,size_bytes:f.sizeBytes,status:'ACTIVE',version:1,created_at:at}});
+   writes.push({op:'insert',table:'vc_qr_tokens',data:{qr_id:detail.qrId,vehicle_id:request.vehicle_id,token_digest:security.sha256(token),
+    issued_at:at,revoked_at:'',issued_by:detail.actorId,reason:'REGISTRATION_APPROVED',status:'ACTIVE'}});
+  }
+  writes.push({op:'update',table:'vc_registration_requests',key:{request_id:request.request_id},
+   fields:{status:reviewStatus(detail.decision),reviewed_by:detail.actorId,reviewed_at:at}});
+  writes.push({op:'insert',table:'vc_change_audit',data:{audit_id:detail.auditId,actor_id:detail.actorId,entity_type:'registration',
+   entity_id:request.request_id,action:reviewAction(detail.decision),redacted_summary:reviewAction(detail.decision),
+   correlation_id:detail.correlationId,created_at:at}});
+  try{writeAll(writes);}
+  catch(error){if(error&&error.message==='DUPLICATE_KEY')throw new Error('INVALID_REQUEST_STATE');throw error;}
+  const result={requestId:request.request_id,vehicleId:request.vehicle_id,status:reviewStatus(detail.decision)};
+  if(approve){result.qrToken=token;result.qrId=detail.qrId;}
+  return result;
  }
  function vehicleView(v,actor,source) {
   if(!v||v.status!=='ACTIVE')return null;

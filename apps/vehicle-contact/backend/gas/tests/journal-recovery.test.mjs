@@ -111,17 +111,21 @@ test('B2B-ROLE-02 assignRoles restart converges a PREPARED partial and replay st
  assert.equal(h.read('vc_change_audit').filter(a=>a.audit_id===auditId).length,1);
 });
 
-test('B2B-REVIEW-01 registrationReview caught partial write removes orphan state and journals ROLLED_BACK',()=>{
+test('B2B-REVIEW-01 (W1) a failing review write leaves NO partial state — one all-or-nothing commit, retry succeeds',()=>{
  const h=createAcceptanceHarness(),ctx=submitContext(h);
  const sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
- h.setWriteFailure('vc_vehicle_contacts'); // vehicle insert succeeds, contact insert fails
+ h.setWriteFailure('vc_vehicle_contacts'); // contact write fails → the whole commit is rejected
  assertError(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'OPERATION_FAILED','injected contact failure');
  h.setWriteFailure(null);
- assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,0,'orphan vehicle compensated');
+ assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,0,'no vehicle written');
  assert.equal(h.read('vc_registration_requests').find(r=>r.request_id===sub.requestId).status,'PENDING_APPROVAL');
  assert.equal(h.read('vc_vehicle_contacts').filter(c=>c.vehicle_id===sub.vehicleId).length,0,'no contact written');
  assert.equal(h.read('vc_qr_tokens').filter(q=>q.vehicle_id===sub.vehicleId).length,0,'no QR issued');
- assert.equal(h.read('vc_operation_journal').filter(j=>j.operation==='registrations.review'&&j.entity_id===sub.requestId).at(-1).status,'ROLLED_BACK');
+ assert.equal(h.read('vc_operation_journal').filter(j=>j.operation==='registrations.review'&&j.entity_id===sub.requestId).length,0,'nothing journaled: nothing was written');
+ const ok=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'retry succeeds cleanly');
+ assert.equal(ok.status,'APPROVED');
+ assert.equal(h.read('vc_vehicle_photos').filter(x=>x.vehicle_id===sub.vehicleId).length,5);
+ assert.equal(h.read('vc_operation_journal').filter(j=>j.operation==='registrations.review'&&j.entity_id===sub.requestId).at(-1).status,'APPLIED');
 });
 
 test('B2B-REVIEW-02 registrationReview restart cleans a PREPARED partial and replays the same derived token',()=>{
