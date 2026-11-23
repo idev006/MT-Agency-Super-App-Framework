@@ -1,7 +1,7 @@
 # Backend Firestore LIVE cutover + integration test evidence (synthetic DEV)
 
 **Doc ID:** P6VC-BE-FS-LIVE-CUTOVER-001 · **Date:** 2026-11-23 (Asia/Bangkok)
-**Status:** SYNTHETIC-DEV CUTOVER Phases 0→2 EXECUTED + verified on live GAS @51; **Phase 3 (Firestore SoR) flip done**. The first integration suite at @51/0.9.2 **FAILED on latency** (26/97, one `registrations.submit` 40 s timeout cascading). Root cause POC-diagnosed (§5); **targeted optimization shipped as `backendVersion` 0.9.3 and DEPLOYED: owner `PUSH_VEHICLE_GAS` → CI version 52 → clasp self-publish @52** (main `0cc74ba`, PR #139; live health `persistence{firestore,dualWrite:true}` verified). **0.9.3 suite re-run COMPLETE and GREEN: 97/97 PASS** (public 11/11 + worker 14/14 + authenticated 72/72, 56/56 ops covered, 0 missing, cleanup 7/7, 0 residue). **`REGISTRATIONS.SUBMIT` PASS at 32.1 s** (the 40 s timeout is resolved). Latency still marginal (p50 9.7 s, p95 23 s, max 36.7 s `REGISTRATIONS.REVIEW`) with the Sheets dual-write mirror on every write. **The independent dual-store read-back audit (§4.3) is GREEN: 25/25 tables, 2,464/2,464 docs matched, `divergenceOpen=0`** on a fresh post-suite export — **Phase 3 data-proof gate CLOSED**. **Real-data go-live remains BLOCKED** (#55 legal/DPO sign-off outstanding; no real data exists — synthetic only). See [continuation handoff](HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md).
+**Status:** SYNTHETIC-DEV CUTOVER Phases 0→2 EXECUTED + verified on live GAS @51; **Phase 3 (Firestore SoR) flip done**. The first integration suite at @51/0.9.2 **FAILED on latency** (26/97, one `registrations.submit` 40 s timeout cascading). Root cause POC-diagnosed (§5); **targeted optimization shipped as `backendVersion` 0.9.3 and DEPLOYED: owner `PUSH_VEHICLE_GAS` → CI version 52 → clasp self-publish @52** (main `0cc74ba`, PR #139; live health `persistence{firestore,dualWrite:true}` verified). **0.9.3 suite re-run COMPLETE and GREEN: 97/97 PASS** (public 11/11 + worker 14/14 + authenticated 72/72, 56/56 ops covered, 0 missing, cleanup 7/7, 0 residue). **`REGISTRATIONS.SUBMIT` PASS at 32.1 s** (the 40 s timeout is resolved). Latency still marginal (p50 9.7 s, p95 23 s, max 36.7 s `REGISTRATIONS.REVIEW`) with the Sheets dual-write mirror on every write. **The independent dual-store read-back audit (§4.3) is GREEN: 25/25 tables, 2,464/2,464 docs matched, `divergenceOpen=0`** on a fresh post-suite export — **Phase 3 data-proof gate CLOSED**. **2026-11-23 ~09:30 +07: owner-approved EARLY EXIT of the monitoring window → `VEHICLE_FIRESTORE_DUALWRITE=false` → live runtime is FIRESTORE-ONLY; re-verified GREEN 97/97 + direct Firestore read-back 6/6 + Sheets-absence proof (§4.4, §6.1).** **Real-data go-live remains BLOCKED** (#55 legal/DPO sign-off outstanding; no real data exists — synthetic only). See [continuation handoff](HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md).
 **Design authority:** [E1 §5](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) (D-E1 Option 2 / VC-ADR-019) · **Procedure:** [F3b-3 runbook](FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md) · **Prior rehearsal (Node pipeline):** [BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md](BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md)
 **Owner authorization:** `PUSH_VEHICLE_GAS` (CI source push → V51) + `approve` (clasp self-publish @51 + synthetic-DEV cutover). Blanket "-PDPA real-data go-live gate // อนุมัติเสมอ" recorded as intent in VC-ADR-020; it does **not** substitute legal-counsel/DPO sign-off, so the real-data gate stays BLOCKED.
 
@@ -133,6 +133,42 @@ Empty `vc_roles` / `vc_user_identities` / `vc_role_permissions` / `vc_user_permi
 **Bug found + fixed during the audit (SSOT):** the first audit run reported `0 matched` on all 21 non-empty tables while PKs aligned 100% (0 missing / 0 extras) and the per-row field-diff list was empty. Diagnosis (field NAMES only): Google gviz CSV appends an **unnamed trailing column** to every tab, so every Sheets row carried an extra `""`-keyed field that Firestore docs do not have — `canon()` therefore never matched, and the diff filter (which compares values by key) could not surface it. **Fix:** the exporter now drops empty-header columns and the audit's `canon()` ignores the `""` key. Re-ran against a **fresh clean re-export** → PASS above. Lesson: *when a dual-store audit reports total mismatch with zero field diffs, compare row **key sets**, not values — an export artifact can masquerade as divergence.*
 <!-- /AUDIT_RESULTS -->
 
+### 4.4 Firestore-only re-verification (after dual-write cleared — CURRENT)
+
+**Executed 2026-11-23 after the owner-approved early exit (§6.1). The §4.3 dual-store audit is HISTORICAL from this point: Sheets stopped mirroring at the flip, so dual-store comparison is no longer the valid data proof — Firestore-only direct read-back replaces it.**
+
+**Suite re-run on Firestore-only V52/0.9.3: PASS 97/97** (public 11/11 + worker 14/14 + authenticated 72/72, **56/56 ops**, 0 missing, cleanup 7/7). Started 02:30:50Z, finished **02:46:13Z**. `REGISTRATIONS.SUBMIT` PASS 35,852 ms (under the 40 s ceiling; run-to-run GAS variance).
+
+**Direct Firestore read-back (Node SDK, independent of the API): 6/6 PASS** — the suite's synthetic records located by run marker (`make=SYNTHETIC`, `model=AUTOMATED`, plate `TST########`, `created_at >= suite start`):
+
+| Check | Result |
+|---|---|
+| RB-01 new vehicle persisted | PASS — plate `TST01586925`, version 4 (post-lifecycle), owner set, timestamps in run window |
+| RB-02 registration APPROVED | PASS — `reviewed_at` set, `application_json.plate_normalized` matches, idempotency key = sha256 |
+| RB-03 contact updated | PASS — `display_name='Synthetic Updated'`, phone persisted |
+| RB-04 photos | PASS — 5 persisted |
+| RB-05 cleanup lifecycle | PASS — post-`VEHICLE_CANCEL` status `INACTIVE` |
+| RB-06 divergence journal | PASS — 0 OPEN |
+
+**Sheets-absence proof (dual-write OFF at the data level):** fresh gviz export of the live Sheet — `vc_vehicles` **38 rows** (frozen pre-suite) vs Firestore **39**; `vc_registration_requests` **40** vs **41**; the new plate/vehicleId/requestId are **absent from Sheets** (0 needles found). Suite writes landed in Firestore only.
+
+**Post-suite Firestore totals:** **2,558 docs** (+94 from this run: vehicles +1, registrations +1, users +4, journal +6, …), `divergenceOpen=0`. Cleanup = disable/suspend (not delete), so the synthetic baseline grows per run — residue lifecycle automation proposed in the [test design](TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md) G5.
+
+**Latency, dual-write OFF vs ON (same method: floor(q·n)-th of ascending durations, n=72):**
+
+| Quantile | dual-write ON (baseline) | dual-write OFF | Δ |
+|---|---|---|---|
+| p50 | 9,726 ms | **8,382 ms** | −13.8% |
+| p90 | 20,056 ms | **16,500 ms** | −17.7% |
+| p95 | 23,000 ms | **22,374 ms** | −2.7% |
+| max | 36,737 ms (REVIEW) | **35,852 ms (SUBMIT)** | −2.4% |
+
+**Honest reading:** clearing dual-write helps (p50 −14%, p90 −18%) but is NOT a dramatic win — the dominant cost remains GAS `UrlFetchApp` ~1 s/call × sequential call count + cold starts (§5). `REGISTRATIONS.SUBMIT` at 35.9 s is still near the 40 s ceiling; write-heavy `users.assignRoles` 21–24 s. Latency remains a production-readiness blocker; next levers (token `CacheService` caching, further call-count reduction) stay measure-first per VC-ADR-022.
+
+**Bug found + fixed during this verification (SSOT):** the first read-back run reported 2/6 FAIL while the persisted data was CORRECT. Root cause: scratch-script expectations were written against the API payload shape, not the persisted schema — (1) `application_json` stores NORMALIZED field names (`plate_normalized`, `make`), not the submit DTO names (`plate`, `brand`); (2) `idempotency_key` is the sha256 digest of the payload, not the client-supplied key; (3) final vehicle `version` reflects the WHOLE lifecycle (update → QR/photos → cancel = 4), not the mid-suite API snapshot (2). **Best practice: independent read-back expectations must be derived from the persisted schema + full operation lifecycle, never from the request DTO or a mid-flow API response.** Fixed expectations → 6/6 PASS.
+
+**Sheets freeze note:** the live Sheet is **frozen/read-only shadow as of 2026-11-23T02:30Z** (flip time; last mirrored state = 2,464-row baseline). Retained for rollback (`VEHICLE_PERSISTENCE_BACKEND=sheets` — note: writes after the flip are NOT in Sheets; rollback requires reconciling Firestore-only writes first) until the owner approves decommission. **Do not delete.**
+
 ## 5. Latency: POC-diagnosed root cause + delivered optimization
 
 ### 5.1 POC (owner ask: "แก้ปัญหา GAS+Firestore ช้าให้ได้ ด้วยการ POC ก่อน")
@@ -188,6 +224,13 @@ Safe, targeted round-trip reduction — **no over-engineering**, no contract/DTO
 **Checks during the window (sanitized counters only):** health flag/latency; `vc_operation_journal` `operation='dualwrite.divergence'` `status='OPEN'` count; GAS quota/errors in the console; no suite re-run needed unless an anomaly appears.
 
 **Exit criteria → clear dual-write:** 0 OPEN divergences, health stable on 0.9.3/ready, no write-error spike. Then set `VEHICLE_FIRESTORE_DUALWRITE=false` in GAS Script Properties (owner-facing editor step, secret-safe) → **Firestore-only** (drops the synchronous Sheets mirror → the next latency win). Sheets is retained **read-only** until the owner approves decommission.
+
+**EXECUTED — EARLY EXIT 2026-11-23 (owner-approved in chat; window duration delegated to Tech Lead by VC-ADR-022 item 6):**
+- **Rationale for shortening ~24 h → ~50 min:** synthetic DEV has no organic overnight traffic, so the window would accrue little additional signal; the green suite + PASS audit + 0 OPEN divergences already met every exit criterion; Sheets stayed warm as the rollback path. Owner explicitly chose "clear dual-write now" over waiting.
+- **Pre-flight (02:28:52Z, measured):** health 0.9.3/ready/`dualWrite:true` (2,393 ms); Firestore 2,464 docs / 25 tables; divergence OPEN = 0. The 6-hourly read-only window-check automation was removed before the flip (its `dualWrite:true` expectation would false-ALERT afterwards).
+- **Flip (~02:30Z):** GAS editor Script Properties UI, secret-safe flow (property NAMES only via `evaluate_script`, never `take_snapshot`); edit buffer `true→false` → Save → **page reload → server value `false` confirmed**.
+- **Post-flip health (measured):** `backendVersion 0.9.3`, `status:ready`, **`persistence{engine:firestore,dualWrite:false}`** (2,473 ms). No source push, no publication — runtime bundle unchanged (@52, source `0cc74ba`).
+- **Re-verification:** §4.4 — suite 97/97 + direct read-back 6/6 + Sheets-absence proof + latency re-measurement. **Window CLOSED; task #78 DONE.**
 **Rollback at any point in or after the window:** flip `VEHICLE_PERSISTENCE_BACKEND=sheets` (dual-write back on) — no committed write is lost; re-run suite + independent dual-store audit; journal the incident as SSOT.
 
 ### 6.2 Rollback mechanics
