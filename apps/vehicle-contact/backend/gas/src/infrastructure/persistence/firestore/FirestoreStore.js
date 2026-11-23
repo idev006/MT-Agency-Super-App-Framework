@@ -9,8 +9,7 @@ import {DATABASE_SCHEMA} from '../../../domain/ports/SchemaRepository.js';
 // The Firestore gateway is injected: the real REST + service-account-OAuth client
 // (FirestoreRestGateway.js, F3a) in production, an in-memory fake in the offline contract
 // test. This module uses no GAS- or Node-specific API, so it bundles unchanged into the
-// GAS artifact; the composition root selects it only when VEHICLE_PERSISTENCE_BACKEND
-// =firestore (default stays Sheets).
+// GAS artifact; it is the only runtime store since Slice G (VC-ADR-026).
 const SEQ_COLLECTION='__p6vc_seq';
 const SEQ_FIELD='_seq';
 const MAX_LIMIT=5000;

@@ -214,3 +214,11 @@ export function pocFirestoreCrudFromEditor() {
  if(result.status!=='PASS')throw new Error('FIRESTORE_CRUD_POC_FAILED:'+(result.error||result.status));
  return result;
 }
+
+// Names-only Script Properties health report (VC-ADR-028 P1): missing required, unknown,
+// retired-still-present and gates left on. NEVER returns or logs any property VALUE.
+export function inspectVehicleConfigFromEditor() {
+ const report=createApplication({propertiesService:PropertiesService}).inspectConfig();
+ Logger.log(JSON.stringify(report));
+ return report;
+}

@@ -1,6 +1,7 @@
 import {createOperationController} from '../api/controllers/OperationController.js';
 import {createSessionService} from '../application/security/SessionService.js';
 import {createRuntimeStore} from './StoreSelector.js';
+import {snapshotScriptProperties,inspectScriptProperties} from './RuntimeConfig.js';
 import {createGasSecurity} from '../infrastructure/security/GasSecurity.js';
 import {createDrivePhotos} from '../infrastructure/media/DrivePhotos.js';
 import { createAdditiveMigration } from "../infrastructure/migrations/ExecuteAdditiveMigration.js";
@@ -24,13 +25,15 @@ export function createApplication(deps={}) {
     if(!props)return undefined;
     return {persistence:{engine:'firestore',dualWrite:false}};
   },createProtectedDispatcher(){
-    const s=services(),props=s.propertiesService.getScriptProperties();
+    const s=services();
+    // ONE PropertiesService read per request (was one service call per getProperty).
+    const snap=snapshotScriptProperties(s.propertiesService),props=snap.props;
     if(props.getProperty('VEHICLE_API_ENABLED')!=='true')throw new Error('FEATURE_DISABLED');
     const clock=()=>new Date().toISOString();
     // Production runtime is Firestore-only (VC-ADR-026). Admin/testing tools (e.g. the Editor
     // staging probe) may inject their own store via deps.store; the HTTP entrypoint passes none.
     const store=deps.store||createRuntimeStore({props,services:s,clock});
-    const security=createGasSecurity({utilities:s.utilities,urlFetchApp:s.urlFetchApp,propertiesService:s.propertiesService,clock});
+    const security=createGasSecurity({utilities:s.utilities,urlFetchApp:s.urlFetchApp,propertiesService:snap.service,clock});
     const sessions=createSessionService({store,security});
     const folderId=props.getProperty('VEHICLE_PHOTOS_FOLDER_ID');
     const drivePhotos=folderId?createDrivePhotos({driveApp:s.driveApp,utilities:s.utilities,folderId}):{
@@ -46,6 +49,8 @@ export function createApplication(deps={}) {
   }
   return Object.freeze({
     dispatch:router.dispatch,
+    // Names-only Script Properties report (no values) for the owner's tidy-up.
+    inspectConfig(){return inspectScriptProperties(services().propertiesService.getScriptProperties().getProperties());},
     migrateSchema(options){
       const id=deps.propertiesService.getScriptProperties().getProperty("VEHICLE_SHEET_ID");
       return createAdditiveMigration({spreadsheetApp:deps.spreadsheetApp,spreadsheetId:id,lockService:deps.lockService,driveApp:deps.driveApp,propertiesService:deps.propertiesService}).run(options);
