@@ -3,6 +3,7 @@ import {normalizeNumberFormats} from '../infrastructure/persistence/sheets/Numbe
 import {repairDisplayErrors} from '../infrastructure/persistence/sheets/DisplayErrorRepair.js';
 import {resetDevData} from '../infrastructure/persistence/sheets/DevDataReset.js';
 import {runFirestoreRestPoc} from '../infrastructure/persistence/firestore/FirestoreRestPoc.js';
+import {createFirestoreCrud,runFirestoreCrudPoc} from '../infrastructure/persistence/firestore/FirestoreCrudPoc.js';
 import {benchmarkStagingPasswordHash} from '../infrastructure/security/HashDiagnostics.js';
 import {createOneTimeAdminPasswordReset} from '../infrastructure/security/AdminPasswordReset.js';
 import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
@@ -192,5 +193,24 @@ export function pocFirestoreRestFromEditor() {
   databaseId:props.getProperty('VEHICLE_FIRESTORE_DATABASE_ID')||'(default)'});
  Logger.log(JSON.stringify(result)); // Sanitized steps/counters ONLY; no key, token or PII.
  if(result.status!=='PASS')throw new Error('FIRESTORE_REST_POC_FAILED:'+(result.reason||result.status));
+ return result;
+}
+
+// CRUD POC (owner ask 2026-11-23). Trusted GAS Editor ONLY: short readable Firestore CRUD
+// (create/get/update/delete/list/query) on a synthetic collection, each step read-back
+// verified, always cleaned up. Reuses the POC #1 approval gate + the runtime SA key Script
+// Property (never logged). Not callable over doGet/doPost; touches no vc_* collection.
+export function pocFirestoreCrudFromEditor() {
+ const props=PropertiesService.getScriptProperties();
+ if(props.getProperty('VEHICLE_FIRESTORE_POC_APPROVED')!=='RUN_SYNTHETIC_FIRESTORE_POC')
+  throw new Error('EXPLICIT_FIRESTORE_POC_APPROVAL_REQUIRED');
+ const rawKey=props.getProperty('VEHICLE_FIRESTORE_SA_KEY');
+ if(!rawKey)throw new Error('FIRESTORE_SA_KEY_NOT_CONFIGURED');
+ const crud=createFirestoreCrud({utilities:Utilities,urlFetchApp:UrlFetchApp,key:JSON.parse(rawKey),
+  projectId:props.getProperty('VEHICLE_FIRESTORE_PROJECT_ID'),
+  databaseId:props.getProperty('VEHICLE_FIRESTORE_DATABASE_ID')});
+ const result=runFirestoreCrudPoc(crud,{newId:()=>Utilities.getUuid()});
+ Logger.log(JSON.stringify(result)); // Step names/counters ONLY; no key, token or values.
+ if(result.status!=='PASS')throw new Error('FIRESTORE_CRUD_POC_FAILED:'+(result.error||result.status));
  return result;
 }
