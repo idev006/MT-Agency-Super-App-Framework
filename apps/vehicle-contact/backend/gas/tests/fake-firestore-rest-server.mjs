@@ -66,7 +66,7 @@ const matches=(fields,w)=>{
 export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={}){
   const docs=new Map();
   const txs=new Set();
-  const indexes=new Set();
+  const indexes=new Set(),issued=new Set();
   // rounds = sequential wall-clock rounds (one per fetch OR per fetchAll batch); requests = HTTP calls.
   const state={requests:[],rounds:0,tokenCount:0,issuedToken:null,residue:()=>docs.size,
     seed(coll,id,plain){docs.set(BASE+'/'+coll+'/'+id,encodeFields(plain));},
@@ -92,10 +92,12 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
       if(tokenFails||!sigOk||claims.iss!==CLIENT_EMAIL||claims.aud!==TOKEN_URL||!(claims.exp>claims.iat))
         return reply(400,{error:'invalid_grant'});
       state.issuedToken='fake-access-token-'+randomUUID();
+      issued.add(state.issuedToken); // real OAuth: every unexpired token stays valid
       return reply(200,{access_token:state.issuedToken,token_type:'Bearer',expires_in:3600});
     }
     if(!url.startsWith(BASE))return err(404,'NOT_FOUND','unknown route');
-    if((opts.headers||{}).Authorization!=='Bearer '+state.issuedToken)return err(401,'UNAUTHENTICATED','bad token');
+    const auth=String((opts.headers||{}).Authorization||'');
+    if(!auth.startsWith('Bearer ')||!issued.has(auth.slice(7)))return err(401,'UNAUTHENTICATED','bad token');
     let rest=url.slice(BASE.length);
     if(rest.startsWith('/'))rest=rest.slice(1);
     const body=opts.payload?JSON.parse(opts.payload):null;

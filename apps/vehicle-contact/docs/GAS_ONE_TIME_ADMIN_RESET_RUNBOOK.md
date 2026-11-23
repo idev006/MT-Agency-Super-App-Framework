@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — One-Time Admin Password Reset (Editor Only)
 
+> **Superseded in part by S1 (VC-ADR-029, 2026-11-23):** the reset now runs on Firestore. `VEHICLE_SHEET_ID`, `VEHICLE_ADMIN_RESET_EXPECTED_SHEET_ID` and `VEHICLE_ADMIN_RESET_BACKUP_FILE_ID` are no longer used; set `VEHICLE_ADMIN_RESET_EXPECTED_PROJECT_ID` to the runtime Firestore project instead. All other steps/gates below still apply.
+
 **Document ID:** P6VC-RESET-001  
 **Approval:** Project Owner approved implementation on 2026-11-18 (Asia/Bangkok).  
 **Status:** PR #42 MERGED (commit `92f880f`), GAS Editor source PUSHED (GitHub Actions [run #10](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/44142149132), 50 files and GAS version 13). **No admin password reset run or user-row mutation has been authorized/executed by the deployment.**  

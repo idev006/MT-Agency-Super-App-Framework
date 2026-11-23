@@ -53,7 +53,7 @@ jobs:
           echo "Verified $actual_gs generated GAS modules (sources + schema) and manifest"
           test -s 'dist/ENTRYPOINTS$WebApp.gs'
           test -s 'dist/API$routes$Router.gs'
-          test -s 'dist/INFRASTRUCTURE$persistence$sheets$SheetsSchemaRepository.gs'
+          test -s 'dist/INFRASTRUCTURE$persistence$firestore$FirestoreStore.gs'
           find dist -maxdepth 1 -type f -name '*.gs' -print0 | while IFS= read -r -d '' file; do
             test -s "$file"
             test "$(wc -l < "$file")" -le 800

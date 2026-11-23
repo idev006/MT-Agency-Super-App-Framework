@@ -2,8 +2,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createApiRouter} from '../src/api/routes/Router.js';
-import {createSheetsSchemaRepository} from '../src/infrastructure/persistence/sheets/SheetsSchemaRepository.js';
-import {compareSchema} from '../src/application/schema-sync/CompareSchema.js';
 import {DATABASE_SCHEMA,VEHICLE_SCHEMA_V1} from '../src/domain/ports/SchemaRepository.js';
 import {validateVehicleRegistrationDraft} from '../src/domain/policies/VehicleRegistration.js';
 import {VEHICLE_PHOTO_SLOTS,validatePhotoSlotSelection} from '../src/domain/policies/PhotoSlots.js';
@@ -14,42 +12,6 @@ const router=createApiRouter();
 function call(group,action,payload={},overrides={}) {
   return router.dispatch({apiVersion:'v1',group,action,payload,...overrides},'POST');
 }
-function makeFakeSheets(headers) {
-  const calls=[];
-  const service={openById(id){
-    calls.push(['open',id]);
-    return {getSheets:()=>Object.entries(headers).map(([name,columns])=>({
-      getName(){return name;},
-      getLastColumn(){return columns.length;},
-      getRange(row,col,height,width){
-        calls.push(['header',name,row,col,height,width]);
-        assert.equal(row,1);
-        assert.equal(height,1);
-        return {getDisplayValues(){return [[...columns]];}};
-      }
-    }))};
-  }};
-  return {service,calls};
-}
-
-test('G1 Schema integration: current canonical Sheet projection passes without reading PII rows',()=>{
-  const headers=Object.fromEntries(Object.entries(VEHICLE_SCHEMA_V1).map(([k,v])=>[k,[...v]]));
-  const {service,calls}=makeFakeSheets(headers);
-  const result=createSheetsSchemaRepository(service,'synthetic-sheet').verifyHeaders();
-  assert.deepEqual(result,{ok:true,mismatches:[]});
-  assert.equal(calls.filter(x=>x[0]==='header').length,Object.keys(VEHICLE_SCHEMA_V1).length);
-  assert.ok(calls.filter(x=>x[0]==='header').every(x=>x[2]===1&&x[4]===1));
-});
-
-test('G1 Schema integration: unknown column cannot be silently accepted',()=>{
-  const headers=Object.fromEntries(Object.entries(VEHICLE_SCHEMA_V1).map(([k,v])=>[k,[...v]]));
-  headers.vc_vehicles.push('new_field_from_sheet');
-  const diff=compareSchema(DATABASE_SCHEMA,headers);
-  assert.equal(diff.match,false);
-  assert.equal(diff.changes.some(x=>x.kind==='UNDECLARED_COLUMN'&&x.column==='new_field_from_sheet'),true);
-  assert.equal(createSheetsSchemaRepository(makeFakeSheets(headers).service,'synthetic-sheet').verifyHeaders().ok,false);
-});
-
 test('G2 AuthN/AuthZ: only health allowed, forged identity, scopes and admin role never enable business API',()=>{
   for(const [group,action] of [['vehicles','lookup'],['vehicles','register'],['contacts','read'],['qr','resolve'],['audit','restricted-report']]){
     for(const forged of [{},{role:'admin'},{authenticated:true,permissions:['*']},{actorId:'owner',scope:'global'}]){
