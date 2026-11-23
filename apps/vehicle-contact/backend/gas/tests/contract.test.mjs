@@ -3,11 +3,6 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {createApiRouter} from '../src/api/routes/Router.js';
-import {createSheetsSchemaRepository} from '../src/infrastructure/persistence/sheets/SheetsSchemaRepository.js';
-import {verifySchemaUseCase} from '../src/application/use-cases/VerifySchema.js';
-import {compareSchema} from '../src/application/schema-sync/CompareSchema.js';
-import {proposeSchemaChanges} from '../src/application/schema-sync/ProposeMigration.js';
-import {VEHICLE_SCHEMA_V1,DATABASE_SCHEMA} from '../src/domain/ports/SchemaRepository.js';
 const router=createApiRouter(), call=(group,action,apiVersion='v1')=>router.dispatch({apiVersion,group,action,payload:{}},'POST');
 assert.equal(call('system','health').ok,true);
 assert.equal(call('vehicles','lookup').ok,false);
@@ -21,40 +16,6 @@ assert.match(health.backendVersion,/^\d+\.\d+\.\d+$/);
 assert.equal(health.releaseChannel,'development');
 const pkgVersion=JSON.parse(readFileSync(resolve(import.meta.dirname,'../package.json'),'utf8')).version;
 assert.equal(health.backendVersion,pkgVersion,'system.health backendVersion must equal package.json version so a published deployment is verifiable by probe');
-const tabs=Object.fromEntries(Object.entries(VEHICLE_SCHEMA_V1).map(([n,h])=>[n,[...h]]));
-function fakeSheet(name) {return{
-  getName(){return name;},
-  getLastColumn(){return tabs[name].length;},
-  getRange(r,c,n,w){assert.equal(r,1);assert.equal(c,1);assert.equal(n,1);assert.equal(w,tabs[name].length);return{getDisplayValues(){return [[...tabs[name]]];}};}
-};}
-const fakeSheets={openById(id){assert.equal(id,'test-sheet-id');return{getSheets(){return Object.keys(tabs).map(fakeSheet);}};}};
-const repo=createSheetsSchemaRepository(fakeSheets,'test-sheet-id');
-assert.equal(verifySchemaUseCase(repo).ok,true);
-tabs.vc_vehicles.push('parking_zone');
-let diff=compareSchema(DATABASE_SCHEMA,tabs);
-assert.equal(diff.match,false);
-assert.equal(diff.changes.some(c=>c.kind==='UNDECLARED_COLUMN'&&c.column==='parking_zone'),true);
-assert.equal(verifySchemaUseCase(repo).ok,false);
-const proposal=proposeSchemaChanges(diff);
-assert.equal(proposal.automaticMigration,false);
-assert.equal(proposal.changes[0].approval,'PENDING');
-assert.equal(proposal.changes[0].inferredType,null);
-tabs.vc_vehicles.pop();
-const reordered=[...tabs.vc_vehicles];
-[reordered[0],reordered[1]]=[reordered[1],reordered[0]];
-assert.equal(compareSchema(DATABASE_SCHEMA,{...tabs,vc_vehicles:reordered}).changes.some(c=>c.kind==='REORDERED_COLUMNS'),true);
-const duplicate=[...tabs.vc_vehicles];
-duplicate[1]=duplicate[0];
-assert.equal(compareSchema(DATABASE_SCHEMA,{...tabs,vc_vehicles:duplicate}).changes.some(c=>c.kind==='DUPLICATE_HEADER'),true);
-tabs.vc_vehicles[0]='unknown';
-assert.equal(compareSchema(DATABASE_SCHEMA,tabs).changes.some(c=>c.kind==='MISSING_COLUMN'),true);
-tabs.vc_vehicles[0]='vehicle_id';
-const removed=tabs.vc_vehicle_photos;delete tabs.vc_vehicle_photos;
-assert.equal(compareSchema(DATABASE_SCHEMA,tabs).changes.some(c=>c.kind==='MISSING_TABLE'),true);
-tabs.vc_vehicle_photos=removed;
-tabs.unapproved_table=['a'];
-assert.equal(compareSchema(DATABASE_SCHEMA,tabs).changes.some(c=>c.kind==='UNDECLARED_TABLE'),true);
-delete tabs.unapproved_table;
 const root=resolve(import.meta.dirname,'..');
 const {readdirSync}=await import('node:fs');
 const gasFiles=readdirSync(join(root,'dist')).filter(f=>f.endsWith('.gs')).sort();
@@ -84,17 +45,16 @@ function loadGAS(order) {
 // GAS file ordering is implementation detail, not an architectural dependency.
 for(const order of [gasFiles,[...gasFiles].reverse()]){
  const context=loadGAS(order);
- for(const name of ['doGet','doPost','verifyVehicleSchemaFromEditor','inspectVehicleSchemaDriftFromEditor','proposeVehicleSchemaChangeFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor','previewVehicleReferenceSeedFromEditor','applyVehicleReferenceSeedFromEditor','recoverVehicleReferenceSeedFromEditor','bootstrapVehicleAdminFromEditor','benchmarkVehiclePasswordHashFromEditor','inspectVehicleAdminResetFromEditor','resetVehicleAdminPasswordFromEditor','runVehicleStagingAuthTestsFromEditor','runVehicleStagingLifecycleTestsFromEditor'])
-   assert.equal(typeof context[name],'function');
+ for(const name of ['doGet','doPost','previewVehicleReferenceSeedFromEditor','applyVehicleReferenceSeedFromEditor','recoverVehicleReferenceSeedFromEditor','bootstrapVehicleAdminFromEditor','benchmarkVehiclePasswordHashFromEditor','inspectVehicleAdminResetFromEditor','resetVehicleAdminPasswordFromEditor','pocFirestoreRestFromEditor','pocFirestoreCrudFromEditor','inspectVehicleConfigFromEditor'])
+   assert.equal(typeof context[name],'function',name);
+ // S1: no Google Sheets editor tool survives in the bundle.
+ for(const gone of ['verifyVehicleSchemaFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor','runVehicleStagingAuthTestsFromEditor','resetDevDataFromEditor','repairVehicleDisplayErrorsFromEditor','normalizeVehicleNumberFormatsFromEditor'])
+   assert.equal(typeof context[gone],'undefined',gone);
  assert.equal(JSON.parse(context.doGet({}).value).data.status,'ready');
  assert.equal(JSON.parse(context.doPost({postData:{contents:'not JSON'}}).value).ok,false);
  const denied=JSON.parse(context.doPost({postData:{contents:JSON.stringify({apiVersion:'v1',group:'vehicles',action:'lookup',payload:{role:'admin'}})}}).value);
  assert.equal(denied.ok,false);
- const fakeProps={getScriptProperties(){return {getProperty(name){assert.equal(name,'VEHICLE_SHEET_ID');return 'test-sheet-id';}};}};
- context.PropertiesService=fakeProps;context.SpreadsheetApp=fakeSheets;context.Logger={log(){}};
- assert.equal(context.verifyVehicleSchemaFromEditor().ok,true);
- const drift=context.inspectVehicleSchemaDriftFromEditor();
- assert.equal(drift.match,true);
- assert.equal(context.proposeVehicleSchemaChangeFromEditor().status,'REVIEW_REQUIRED');
 }
-console.log('Layer-mirrored GAS source modules, order independence, schema, safe API, and editor entrypoints PASSED');
+const bundle=gasFiles.map(f=>readFileSync(join(root,'dist',f),'utf8')).join('\n');
+assert.equal(/SpreadsheetApp/.test(bundle),false,'S1: the GAS bundle must not reference SpreadsheetApp');
+console.log('Layer-mirrored GAS source modules, order independence, safe API, editor entrypoints and no-Sheets bundle PASSED');

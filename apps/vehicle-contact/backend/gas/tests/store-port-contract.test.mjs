@@ -7,7 +7,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {DATABASE_SCHEMA} from '../src/domain/ports/SchemaRepository.js';
-import {createSheetStore} from '../src/infrastructure/persistence/sheets/SheetStore.js';
 
 const COLS=DATABASE_SCHEMA.tables.vc_users.columns.map(c=>c.name);
 function row(id,over={}){
@@ -65,24 +64,8 @@ export function runStorePortContract(a,store){
   a.throws(()=>store.one('vc_missing',{}),/UNKNOWN_TABLE/,'unknown table rejected');
 }
 
-// Subject 1: the production Sheets adapter, over a bounded fake Spreadsheet.
-function makeSheetStore(){
-  const rows=[COLS.slice()];
-  const sheet={
-    getLastRow(){return rows.length;},
-    getLastColumn(){return COLS.length;},
-    getRange(r,c,h,w){return{
-      getValues(){return rows.slice(r-1,r-1+h).map(x=>x.slice());},
-      setValues(next){next.forEach((v,i)=>rows[r-1+i]=v.slice());},
-      setNumberFormats(){}
-    };},
-    deleteRow(r){rows.splice(r-1,1);}
-  };
-  const spreadsheetApp={openById(){return{getSheetByName(name){return name==='vc_users'?sheet:null;}};},flush(){}};
-  const lockService={getScriptLock(){return{tryLock(){return true;},releaseLock(){}};}};
-  return createSheetStore({spreadsheetApp,spreadsheetId:'contract-sheet',lockService});
-}
-
+// The Sheets adapter was removed in S1 (VC-ADR-029); Firestore adapters run this contract
+// in firestore-store-contract / firestore-store-rest-contract.
 // Subject 2: an in-memory reference adapter (same shape the acceptance harness
 // uses to run the full real API without Sheets). Proves the port is store-agnostic.
 function makeMemoryStore(){
@@ -109,5 +92,5 @@ function makeMemoryStore(){
   };
 }
 
-test('Sheets adapter satisfies the store port contract',()=>runStorePortContract(assert,makeSheetStore()));
+
 test('in-memory reference adapter satisfies the same store port contract',()=>runStorePortContract(assert,makeMemoryStore()));

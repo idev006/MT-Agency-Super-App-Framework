@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.8",
+  "backendVersion": "0.9.9",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-23T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.8 = W1 (0.9.7) + fix: registrations.review reads the latest journal with the DESC newest-window query (V57 regression: the ASC query has no live composite index -> FAILED_PRECONDITION; deployment rolled back to @56). Prior good: 0.9.6 (V56)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.9 = S1 Google Sheets fully removed (VC-ADR-029): editor admin tools (bootstrap, admin reset, reference seed) on Firestore; Sheets-only tools deleted. API behaviour unchanged. Prior: 0.9.8 (V58)."
 }

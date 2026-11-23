@@ -1,7 +1,7 @@
 // Slice G offline proof (VC-ADR-026): runtime persistence is Firestore-only. The API dispatch
 // path never opens the Spreadsheet (even when VEHICLE_SHEET_ID is present), routes writes to
 // the REST gateway, and fails closed on missing/malformed service-account credentials before
-// any network call. SheetStore survives only for admin maintenance tools, not runtime dispatch.
+// any network call. No Sheets adapter exists any more (S1, VC-ADR-029).
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {DATABASE_SCHEMA} from '../src/domain/ports/SchemaRepository.js';
