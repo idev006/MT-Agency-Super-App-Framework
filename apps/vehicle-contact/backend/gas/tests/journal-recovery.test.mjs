@@ -197,7 +197,7 @@ test('G7-RACE-01 a racing same-key submit that reads idempotency BEFORE the winn
  let stale=true;
  h.store.readMany=reqs=>reqs.map(r=>{
   if(stale&&r.name==='vc_idempotency'){stale=false;return null;}
-  return r.kind==='one'?h.store.one(r.name,r.filter):h.store.list(r.name,r.filter);
+  return r.kind==='one'?h.store.one(r.name,r.filter):r.kind==='versioned'?{row:h.store.one(r.name,r.filter),version:null}:h.store.list(r.name,r.filter);
  });
  const loser=assertOk(assert,h.call('registrations.submit',ctx.payload),'loser replays the winner');
  h.store.readMany=realReadMany;
@@ -208,4 +208,23 @@ test('G7-RACE-01 a racing same-key submit that reads idempotency BEFORE the winn
  assert.equal(h.read('vc_photo_staging').filter(p=>p.status==='CLAIMED').length,5,'photos stay CLAIMED');
  assert.equal(journalOf(h,first.requestId).status,'APPLIED','winner journal untouched');
  assert.equal(h.read('vc_campaigns').find(c=>c.campaign_id===ctx.campaign.campaignId).submitted_count,1,'quota counted once');
+});
+
+test('G7-RACE-02 a same-key retry that sees the winner\'s pending request / CLAIMED photos (but a stale idempotency read) replays instead of erroring',()=>{
+ const h=createAcceptanceHarness(),ctx=submitContext(h);
+ const first=assertOk(assert,h.call('registrations.submit',ctx.payload),'winner commits');
+ const realReadMany=h.store.readMany;
+ let stale=true;
+ // Stale view of BOTH the idempotency row and the orphan query, fresh view of everything else.
+ h.store.readMany=reqs=>reqs.map(r=>{
+  if(stale&&r.name==='vc_idempotency')return null;
+  if(stale&&r.name==='vc_registration_requests'&&r.filter&&r.filter.idempotency_key)return [];
+  return r.kind==='one'?h.store.one(r.name,r.filter):r.kind==='versioned'?{row:h.store.one(r.name,r.filter),version:null}:h.store.list(r.name,r.filter);
+ });
+ const retry=assertOk(assert,h.call('registrations.submit',ctx.payload),'retry replays (was DUPLICATE_VEHICLE)');
+ stale=false;h.store.readMany=realReadMany;
+ assert.equal(retry.requestId,first.requestId);
+ assert.equal(h.read('vc_registration_requests').filter(r=>r.idempotency_key===ctx.idemKey).length,1,'still exactly one request');
+ // A DIFFERENT key for the same plate must still be rejected as a duplicate.
+ assertError(assert,h.call('registrations.submit',{...ctx.payload,idempotencyKey:'other-key-g7'}),'DUPLICATE_VEHICLE','different key still blocked');
 });
