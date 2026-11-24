@@ -1,5 +1,7 @@
 <script setup>
-import { computed, inject, onBeforeUnmount, reactive, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { isCampaignCode } from '../domain/campaigns/campaign-link.js'
 import { storeToRefs } from 'pinia'
 import { registrationIntakeRepositoryKey } from '../application/registrations/registration-intake-port.js'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
@@ -41,6 +43,16 @@ const campaignReady = computed(() => Boolean(work.campaign.value?.valid) && work
 const editingLocked = computed(() => busy.value || work.locked.value)
 
 watch(contactPhoneInput, (value) => { fields.contactPhone = toE164(value) })
+
+// VC-ADR-031: a shared campaign link (#/register?c=<code>) fills in and checks the code, so the
+// person registering never types 64 characters.
+const route = useRoute()
+onMounted(() => {
+  const code = route?.query?.c
+  if (!isCampaignCode(code)) return
+  campaignToken.value = code.toLowerCase()
+  work.validateCampaign(campaignToken.value)
+})
 
 function labelOf(listKey, code) {
   if (!canonicalMode.value) return code || '—'
@@ -153,7 +165,7 @@ watch(referenceVersion, reconcileSelections)
       <fieldset v-show="step === 0" :ref="(el) => { stepPanels[0] = el }" class="fieldset rounded-box border border-base-300 bg-base-100 p-5 sm:p-6" :disabled="editingLocked">
         <legend class="fieldset-legend text-lg font-semibold">1. แคมเปญรับลงทะเบียน</legend>
         <div class="p6-form-row md:grid-cols-[minmax(0,1fr)_auto]">
-          <label class="field-stack"><span class="label-text font-semibold">รหัสแคมเปญ (64 ตัวอักษร)</span><input v-model.trim="campaignToken" class="input input-bordered w-full font-mono" type="password" autocomplete="off" required minlength="64" maxlength="64" placeholder="วางรหัสแคมเปญที่ได้รับ" /><span class="label-text-alt">ใช้ตรวจสอบแคมเปญเท่านั้น ระบบไม่บันทึกรหัสใน browser</span></label>
+          <label class="field-stack"><span class="label-text font-semibold">รหัสแคมเปญ (64 ตัวอักษร)</span><input v-model.trim="campaignToken" class="input input-bordered w-full font-mono" type="text" autocomplete="off" spellcheck="false" required minlength="64" maxlength="64" placeholder="วางรหัสแคมเปญที่ได้รับ" /><span class="label-text-alt">เปิดจากลิงก์ลงทะเบียน ระบบจะใส่รหัสให้อัตโนมัติ</span></label>
           <div class="p6-row-action"><button class="btn w-full" type="button" :disabled="busy || campaignToken.length !== 64" @click="work.validateCampaign(campaignToken)"><span v-if="work.phase.value === 'validating'" class="loading loading-spinner loading-sm"></span>ตรวจสอบแคมเปญ</button></div>
         </div>
         <div v-if="campaignReady" class="alert alert-success mt-3">แคมเปญพร้อมรับคำขอ</div>

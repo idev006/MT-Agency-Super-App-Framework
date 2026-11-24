@@ -1,6 +1,6 @@
 {
   "name": "@p6/vehicle-contact-frontend",
-  "version": "0.8.8",
+  "version": "0.8.9",
   "private": true,
   "type": "module",
   "engines": {
@@ -16,6 +16,7 @@
   "dependencies": {
     "html5-qrcode": "2.3.8",
     "pinia": "4.1.0",
+    "qrcode-generator": "2.0.4",
     "vue": "3.5.45",
     "vue-router": "4.6.5"
   },

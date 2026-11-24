@@ -53,6 +53,10 @@ export const router = createRouter({
         { path: 'admin/audit', name: 'audit-review', component: AuditReviewPage, meta: { title: 'ตรวจสอบ Audit', requiredPermissions: ['audit.read'] } },
       ],
     },
+    // VC-ADR-031: the stable, shareable campaign link. Today it opens the staff intake page with the
+    // code pre-filled (sign-in first); a public registrant page can replace the target later without
+    // changing links already printed or shared.
+    { path: '/register', name: 'campaign-link', redirect: (to) => ({ name: 'registration-intake', query: typeof to.query.c === 'string' ? { c: to.query.c } : {} }) },
     { path: '/', redirect: { name: 'dashboard' } },
     { path: '/:pathMatch(.*)*', redirect: { name: 'dashboard' } },
   ],

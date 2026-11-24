@@ -29,9 +29,10 @@ describe('SYSTEM_ADMIN governance page contracts', () => {
     expect(pages[1]).toContain('เพิกถอนแคมเปญหรือไม่')
   })
 
-  it('warns that the campaign token is one-time and never persists it', () => {
+  it('VC-ADR-031: the campaign link stays copyable from the list and is never put in browser storage', () => {
     const component = read('../src/features/campaigns/components/CampaignAdministrationPanel.vue')
-    expect(component).toContain('ระบบจะแสดงค่านี้ครั้งเดียว')
+    expect(component).not.toContain('ระบบจะแสดงค่านี้ครั้งเดียว')
+    expect(component).toContain('คัดลอกลิงก์ลงทะเบียน')
     expect(component).not.toContain('localStorage')
     expect(component).not.toContain('sessionStorage')
   })

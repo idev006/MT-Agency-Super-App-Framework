@@ -9,7 +9,7 @@ export function useCampaignAdministration({ repository, permissions }) {
   const source = assertCampaignAdministrationRepository(repository)
   const phase = ref('idle'), campaigns = ref([]), failure = ref(null)
   const page = ref(1), pageSize = ref(10), pagination = ref({ total: 0, page: 1, pageSize: 10, totalPages: 0 })
-  const actionPhase = ref('idle'), actionFailure = ref(null), oneTimeToken = ref(null)
+  const actionPhase = ref('idle'), actionFailure = ref(null), oneTimeToken = ref(null), lastCreatedId = ref('')
   const permissionList = computed(() => Array.isArray(unref(permissions)) ? unref(permissions) : [])
   const canManage = computed(() => permissionList.value.includes('campaigns.manage'))
 
@@ -38,6 +38,7 @@ export function useCampaignAdministration({ repository, permissions }) {
     try {
       const result = await source.create(input)
       oneTimeToken.value = { campaignId: result.campaignId, token: result.campaignToken }
+      lastCreatedId.value = result.campaignId // VC-ADR-031: highlighted in the list, where the code stays copyable
       actionPhase.value = 'success'
       await load()
       return true
@@ -64,7 +65,7 @@ export function useCampaignAdministration({ repository, permissions }) {
     }
   }
 
-  return { phase, campaigns, failure, page, pageSize, pagination, actionPhase, actionFailure, oneTimeToken, canManage, load,
+  return { phase, campaigns, failure, page, pageSize, pagination, actionPhase, actionFailure, oneTimeToken, lastCreatedId, canManage, load,
     changePage: (value) => { page.value = value; return load() },
     changePageSize: (value) => { pageSize.value = value; page.value = 1; return load() },
     create, revoke, clearOneTimeToken: () => { oneTimeToken.value = null } }

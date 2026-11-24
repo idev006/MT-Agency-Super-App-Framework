@@ -17,6 +17,7 @@ const count = (value) => {
   if (!Number.isSafeInteger(value) || value < 0) throw new CampaignContractError()
   return value
 }
+const optionalText = (value) => (typeof value === 'string' ? value.trim() : '')
 const positiveCount = (value) => {
   if (!Number.isSafeInteger(value) || value < 1) throw new CampaignContractError()
   return value
@@ -31,6 +32,9 @@ function mapCampaign(value) {
     maxSubmissions: positiveCount(value.maxSubmissions),
     submittedCount: count(value.submittedCount),
     status: requiredText(value.status),
+    // VC-ADR-031: present for campaigns created from 0.9.20; empty for older ones (code unrecoverable).
+    name: optionalText(value.name),
+    campaignToken: optionalText(value.campaignToken),
   })
 }
 
@@ -42,8 +46,9 @@ export function createGasCampaignAdministrationRepository({ callOperation }) {
       const result = mapPaginatedData(response.data, mapCampaign)
       return { campaigns: result.items, pagination: result.pagination, requestId: response.requestId }
     },
-    async create({ startsAt, endsAt, maxSubmissions, signal }) {
-      const response = await callOperation('campaigns.create', { startsAt, endsAt, maxSubmissions }, { signal })
+    async create({ name, startsAt, endsAt, maxSubmissions, signal }) {
+      const payload = { startsAt, endsAt, maxSubmissions, ...(name?.trim() ? { name: name.trim() } : {}) }
+      const response = await callOperation('campaigns.create', payload, { signal })
       return {
         campaignId: requiredText(response.data?.campaignId),
         campaignToken: requiredText(response.data?.campaignToken),

@@ -19,7 +19,7 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "users.assignRoles":[["userId","roles"],[]],
  "organizations.list":[[],["limit","page","pageSize"]],"organizations.create":[["name","type"],["parentId"]],
  "organizations.update":[["organizationId"],["name","parentId"]],"organizations.disable":[["organizationId"],[]],
- "campaigns.create":[["startsAt","endsAt","maxSubmissions"],[]],"campaigns.list":[[],["limit","page","pageSize"]],
+ "campaigns.create":[["startsAt","endsAt","maxSubmissions"],["name"]],"campaigns.list":[[],["limit","page","pageSize"]],
  "campaigns.validate":[["campaignToken"],[]],
  "campaigns.revoke":[["campaignId"],[]],
  "references.registration":[[],[]],

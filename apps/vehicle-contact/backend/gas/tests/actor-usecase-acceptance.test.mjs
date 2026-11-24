@@ -163,3 +163,19 @@ test('ACTOR-R6 campaigns.list returns the newest campaign first (E2E P3)',()=>{
  assert.equal(list.items[0].campaignId,second.campaignId,'newest on page 1');
  assert.notEqual(list.items[0].campaignId,first.campaignId);
 });
+
+test('ACTOR-ADR031 the campaign code can be copied at any time; the name is kept; lookup still uses the digest',()=>{
+ const h=createAcceptanceHarness();
+ const window={startsAt:'2026-11-17T00:00:00.000Z',endsAt:'2026-11-20T00:00:00.000Z',maxSubmissions:3};
+ const made=assertOk(assert,h.as('sys','campaigns.create',{...window,name:'  งานลงทะเบียน สภ.เมือง  '}),'create with name');
+ assert.equal(made.name,'งานลงทะเบียน สภ.เมือง');
+ const unnamed=assertOk(assert,h.as('sys','campaigns.create',window),'name is optional');
+ const listed=assertOk(assert,h.as('sys','campaigns.list',{}),'list'),items=Array.isArray(listed)?listed:listed.items;
+ const row=items.find(x=>x.campaignId===made.campaignId);
+ assert.equal(row.campaignToken,made.campaignToken,'the same code is returned later, not only once');
+ assert.equal(row.name,'งานลงทะเบียน สภ.เมือง');
+ assert.equal(items.find(x=>x.campaignId===unnamed.campaignId).name,'');
+ assert.equal(assertOk(assert,h.as(null,'campaigns.validate',{campaignToken:row.campaignToken}),'copied code works').campaignId,made.campaignId);
+ assertError(assert,h.as('sys','campaigns.create',{...window,name:'x'.repeat(121)}),'INVALID_CAMPAIGN','name too long');
+ assertError(assert,h.as('staff','campaigns.list',{}),'FORBIDDEN','only campaign admins see the codes');
+});
