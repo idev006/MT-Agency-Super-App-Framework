@@ -279,3 +279,15 @@ textarea {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* R3: vehicle identity styled like a Thai plate (white plate, dark border) in every theme. */
+.vehicle-plate {
+  display: inline-grid;
+  justify-items: center;
+  min-width: 12rem;
+  border: 3px solid #111;
+  border-radius: 0.6rem;
+  background: #fff;
+  color: #111;
+  padding: 0.4rem 1.25rem 0.5rem;
+}
