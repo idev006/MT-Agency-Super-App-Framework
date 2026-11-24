@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.13",
+  "backendVersion": "0.9.14",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-24T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.13 = C4 (registration review commit guarded by the request version; a concurrent different decision is refused, the same decision replays) + vehicles.update guarded by the vehicle version. Prior: 0.9.12 (V62, C6 change review)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.14 = vehicle view returns Thai labels (vehicle type / colour / plate type) + embedded history; registration approval also audited under the vehicle id (UI E2E findings P1.2/P1.3, search 1 call). Prior: 0.9.13 (V63)."
 }

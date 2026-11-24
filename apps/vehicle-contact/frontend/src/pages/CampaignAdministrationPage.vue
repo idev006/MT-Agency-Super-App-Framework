@@ -9,6 +9,7 @@ import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import CampaignAdministrationPanel from '../features/campaigns/components/CampaignAdministrationPanel.vue'
 import { useCampaignAdministration } from '../features/campaigns/useCampaignAdministration.js'
 import { useSessionStore } from '../stores/session.js'
+import { useOneTimeSecretGuard } from '../features/common/useOneTimeSecretGuard.js'
 
 const auth = useSessionStore()
 const { roles, permissions, session, transport } = storeToRefs(auth)
@@ -16,6 +17,7 @@ const administration = useCampaignAdministration({ repository: inject(campaignAd
 const revokeTarget = ref(null)
 async function revokeConfirmed() { await administration.revoke(revokeTarget.value.campaignId); revokeTarget.value = null }
 onMounted(() => administration.load())
+useOneTimeSecretGuard(administration.oneTimeToken)
 </script>
 
 <template>

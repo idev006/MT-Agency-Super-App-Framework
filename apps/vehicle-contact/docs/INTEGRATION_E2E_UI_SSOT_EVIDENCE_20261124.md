@@ -62,3 +62,19 @@
 **Data correctness through the real UI: PASS.** Every write was confirmed in Firestore, every photo was confirmed in Drive, and every count matched the SSOT.
 
 **Ready for real users: NOT YET.** P1 items 1–4 and the P2 latency items need fixing first. Real-data go-live also stays blocked on the legal/DPO gates (#55).
+
+## 6. Fixes for P1 + P2 (FE 0.8.5 / backend 0.9.14, offline-proven; live re-run pending deploy)
+
+| Finding | Fix | Proof |
+|---|---|---|
+| P1.1 one-time secrets lost | A **copy** button for the campaign token. While the campaign token or the approval QR is on screen, leaving the page (route change, reload, tab close) asks for confirmation. The campaign status is split into เปิดรับอยู่ / ยังไม่เริ่ม / เต็มโควตา / หมดเวลาแล้ว / เพิกถอนแล้ว. | FE tests (status matrix, guard wired on both pages) |
+| P1.2 codes on the vehicle card | The backend view returns `labels` (vehicle type / colour / plate type) read by reference id in the **same parallel round** (no new composite index: live has none for catalog/vehicle_id queries). Relationship labels come from a static FE list with a **drift test** against the backend seed. | BE `VIEW-01/02`; FE mapper + seed-drift tests |
+| P1.3 empty history | The approval is also audited under the **vehicle id** (same commit). The view embeds history (sanitised: no actor ids). | BE `VIEW-01` |
+| P1.4 maintenance page | Province / plate type / vehicle type / colour are **selects with Thai labels** (an unknown current value is kept as "(ค่าเดิม)"). The phone is typed in Thai format and converted to E.164 with an inline error. A **success message** shows after each save. The cancel dialog reads "ยืนยันยกเลิกยานพาหนะ" / "ไม่ใช่ กลับไป". | FE contract test |
+| P2 intake 46 s | The 5 uploads run **in parallel**. Successful ones are kept, so a retry resends only the failed slot. | FE test: peak 5 concurrent, retry = 1 extra upload |
+| P2 review photos 30 s | Loaded in parallel. | FE test: peak 5 |
+| P2 search 11.9 s | History is embedded in `vehicles.lookup` / `vehicles.detail` / `qr.resolve`: **1 call instead of 2**. Older backends fall back to the separate call. | FE repository tests |
+
+**Not changed (noted):**
+- `vehicles.lookup` still scans `vc_vehicles` and filters in memory. It is fine at DEV size; a query by plate needs a composite index or an equality-only query and is planned separately.
+- The campaign list order (P3) is unchanged.

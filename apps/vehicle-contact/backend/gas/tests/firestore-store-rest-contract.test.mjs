@@ -94,12 +94,14 @@ test('vehicles.detail round-trips minimized: lookup audit is a plain append-only
   const actor={userId:'u1',permissions:['vehicle.lookup','vehicle.contact.read','vehicle.photos.read']};
   const n=count(),r0=fake.state.rounds;
   const result=ops['vehicles.detail']({vehicleId:'v1'},actor);
-  const calls=count()-n,rounds=fake.state.rounds-r0;
+  const calls=count()-n,rounds=fake.state.rounds-r0,refReads=3;
   assert.equal(result.vehicleId,'v1');
   // activeVehicle runQuery(1) + lookupAudit insert(2: prefetch batchGet w/ newTransaction + commit)
   //   + contacts runQuery(1) + photos runQuery(1) = 5.
   // The removed redundant sequence() wrapper around the single insert cost 5 alone (detail was 8).
-  assert.equal(calls,4,'detail = 1 vehicle read + 1 audit insert commit + 1 contacts + 1 photos');
+  // E2E fix: + label reads by reference id (vehicle type / colour / plate type present on the row)
+  // in the SAME parallel round — more calls, no extra round.
+  assert.equal(calls,4+refReads,'detail = 1 vehicle read + 1 audit insert commit + 1 contacts + 1 photos + label reads');
   assert.equal(rounds,3,'T2+W1a: vehicle read → audit commit → contacts+photos in one parallel round');
   // The append-only audit is still persisted AND ordered (MediaRetention reads vc_lookup_audit via store.list).
   const audits=store.list('vc_lookup_audit',{vehicle_id:'v1'});

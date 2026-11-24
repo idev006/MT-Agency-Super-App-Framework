@@ -33,7 +33,10 @@ export function useVehicleDetail({ repository, permissions }) {
       if (!detail.vehicle) { phase.value = 'empty'; return false }
       let history = []
       let historyRequestId = ''
-      if (permissionList.value.includes('vehicle.history.read') && typeof source.history === 'function') {
+      if (Array.isArray(detail.history)) {
+        history = detail.history
+        historyRequestId = detail.requestId
+      } else if (permissionList.value.includes('vehicle.history.read') && typeof source.history === 'function') {
         const response = await source.history(vehicleId.value)
         history = response.history
         historyRequestId = response.requestId

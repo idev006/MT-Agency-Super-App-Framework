@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { provinceLabel } from '../../../domain/reference/provinces.js'
-import { formatThaiPhone, orderContacts, photoSlotLabel, telHref } from '../../../domain/reference/vehicle-presentation.js'
+import { formatThaiPhone, orderContacts, photoSlotLabel, relationshipLabel, telHref } from '../../../domain/reference/vehicle-presentation.js'
 
 const props = defineProps({
   result: { type: Object, required: true },
@@ -13,7 +13,9 @@ const props = defineProps({
 const vehicle = computed(() => props.result.vehicle)
 const contacts = computed(() => orderContacts(vehicle.value.contacts))
 const province = computed(() => provinceLabel(vehicle.value.province) || `รหัส ${vehicle.value.province}`)
-const describe = computed(() => [vehicle.value.brand, vehicle.value.model, vehicle.value.color].filter(Boolean).join(' · ') || 'ไม่ระบุรายละเอียดรถ')
+const typeText = computed(() => vehicle.value.labels?.vehicleType || vehicle.value.vehicleType)
+const colorText = computed(() => vehicle.value.labels?.color || vehicle.value.color)
+const describe = computed(() => [vehicle.value.brand, vehicle.value.model, colorText.value].filter(Boolean).join(' · ') || 'ไม่ระบุรายละเอียดรถ')
 const historyLabels = Object.freeze({
   VEHICLE_UPDATED: 'แก้ไขข้อมูลยานพาหนะ',
   CONTACT_UPDATED: 'แก้ไขผู้ประสานงาน',
@@ -41,10 +43,10 @@ const thaiDateTime = (value) => {
         </div>
         <p class="text-lg">{{ describe }}</p>
         <dl class="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-          <div><dt class="text-base-content/80">ประเภทรถ</dt><dd class="font-medium">{{ vehicle.vehicleType || 'ไม่ระบุ' }}</dd></div>
+          <div><dt class="text-base-content/80">ประเภทรถ</dt><dd class="font-medium">{{ typeText || 'ไม่ระบุ' }}</dd></div>
           <div><dt class="text-base-content/80">ยี่ห้อ</dt><dd class="font-medium">{{ vehicle.brand || 'ไม่ระบุ' }}</dd></div>
           <div><dt class="text-base-content/80">รุ่น</dt><dd class="font-medium">{{ vehicle.model || 'ไม่ระบุ' }}</dd></div>
-          <div><dt class="text-base-content/80">สี</dt><dd class="font-medium">{{ vehicle.color || 'ไม่ระบุ' }}</dd></div>
+          <div><dt class="text-base-content/80">สี</dt><dd class="font-medium">{{ colorText || 'ไม่ระบุ' }}</dd></div>
         </dl>
         <div class="card-actions"><RouterLink class="btn btn-sm" :to="{ name: 'vehicle-detail', params: { vehicleId: vehicle.vehicleId } }">ดูรายละเอียดทั้งหมด</RouterLink></div>
       </div>
@@ -61,7 +63,7 @@ const thaiDateTime = (value) => {
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="min-w-0">
                 <p class="text-lg font-semibold">{{ contact.name }} <span v-if="contact.isPrimary" class="badge badge-primary badge-sm align-middle">ผู้ติดต่อหลัก</span></p>
-                <p class="text-sm text-base-content/80">{{ contact.relationship || 'ไม่ระบุความสัมพันธ์' }} · <span class="font-mono">{{ formatThaiPhone(contact.phone) || 'ไม่มีหมายเลข' }}</span></p>
+                <p class="text-sm text-base-content/80">{{ relationshipLabel(contact.relationship) || 'ไม่ระบุความสัมพันธ์' }} · <span class="font-mono">{{ formatThaiPhone(contact.phone) || 'ไม่มีหมายเลข' }}</span></p>
               </div>
               <a v-if="telHref(contact.phone)" class="btn btn-primary btn-lg min-h-12 w-full sm:w-auto" :href="telHref(contact.phone)" :aria-label="`โทรหา ${contact.name} ${formatThaiPhone(contact.phone)}`">โทร</a>
             </div>

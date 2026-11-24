@@ -37,3 +37,10 @@ export function toE164(input) {
   if (/^\+[1-9]\d{6,14}$/.test(compact)) return compact
   return ''
 }
+
+// Relationship labels (fixed reference catalog, mirrored from backend ReferenceSeedV1; drift-tested).
+export const RELATIONSHIP_LABELS = Object.freeze({
+  OWNER: 'เจ้าของรถ', LESSEE: 'ผู้เช่าซื้อหรือผู้เช่า', AUTHORIZED_USER: 'ผู้ได้รับอนุญาตให้ใช้รถ',
+  DRIVER: 'ผู้ขับขี่', ORGANIZATION_REP: 'ผู้แทนหน่วยงาน', OTHER_REVIEW: 'อื่น ๆ — ต้องตรวจสอบ',
+})
+export const relationshipLabel = (code) => RELATIONSHIP_LABELS[code] || code || ''

@@ -327,6 +327,8 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   }
   writes.push({op:'update',table:'vc_registration_requests',key:{request_id:request.request_id},
    fields:{status:reviewStatus(detail.decision),reviewed_by:detail.actorId,reviewed_at:at},...(requestVersion?{ifVersion:requestVersion}:{})});
+  if(approve)writes.push({op:'insert',table:'vc_change_audit',data:{audit_id:detail.auditId+'-v',actor_id:detail.actorId,entity_type:'vehicle',
+   entity_id:request.vehicle_id,action:'REGISTRATION_APPROVED',redacted_summary:'REGISTRATION_APPROVED',correlation_id:detail.correlationId,created_at:at}});
   writes.push({op:'insert',table:'vc_change_audit',data:{audit_id:detail.auditId,actor_id:detail.actorId,entity_type:'registration',
    entity_id:request.request_id,action:reviewAction(detail.decision),redacted_summary:reviewAction(detail.decision),
    correlation_id:detail.correlationId,created_at:at}});
@@ -342,7 +344,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   if(!v||v.status!=='ACTIVE')return null;
   lookupAudit(actor,v.vehicle_id,source,'FOUND');
   const response={vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,status:v.status,
-   vehicleType:v.vehicle_type,brand:v.make,model:v.model,color:v.color,version:Number(v.version)};
+   vehicleType:v.vehicle_type,plateType:v.plate_type,brand:v.make,model:v.model,color:v.color,version:Number(v.version)};
   // Contacts and photos are independent reads: fetched in ONE parallel round when the store
   // supports readMany (Firestore), sequentially otherwise. Permission gating is unchanged.
   const wantContacts=actor.permissions.includes('vehicle.contact.read');
@@ -350,13 +352,27 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   const reads=[];
   if(wantContacts)reads.push({kind:'list',name:'vc_vehicle_contacts',filter:{vehicle_id:v.vehicle_id}});
   if(wantPhotos)reads.push({kind:'list',name:'vc_vehicle_photos',filter:{vehicle_id:v.vehicle_id}});
-  const rows=typeof store.readMany==='function'?store.readMany(reads):reads.map(r=>store.list(r.name,r.filter));
+  // E2E 2026-11-24: search roles saw codes (RY01/WHITE/OWNER) and an empty history. Labels are read
+  // by reference id and history by entity id (live index exists) in the same parallel round.
+  const wantHistory=actor.permissions.includes('vehicle.history.read');
+  if(wantHistory)reads.push({kind:'list',name:'vc_change_audit',filter:{entity_id:v.vehicle_id}});
+  const refKeys=[['VEHICLE_TYPE',v.vehicle_type],['COLOR',v.color],['PLATE_TYPE',v.plate_type]]
+   .filter(([,code])=>code);
+  for(const [catalog,code] of refKeys)reads.push({kind:'one',name:'vc_reference_values',filter:{reference_id:'REF-'+catalog+'-'+code}});
+  const rows=typeof store.readMany==='function'?store.readMany(reads)
+   :reads.map(r=>r.kind==='one'?(typeof store.one==='function'?store.one(r.name,r.filter):(store.list(r.name,r.filter)||[])[0]||null):store.list(r.name,r.filter));
+  const contactRows=wantContacts?rows.shift():[],photoRows=wantPhotos?rows.shift():[],historyRows=wantHistory?rows.shift():[];
+  const label={};for(const ref of rows)if(ref&&ref.label_th)label[ref.catalog+'|'+ref.code]=ref.label_th;
+  const labelOf=(catalog,code)=>label[catalog+'|'+code]||'';
+  response.labels={vehicleType:labelOf('VEHICLE_TYPE',v.vehicle_type),color:labelOf('COLOR',v.color),plateType:labelOf('PLATE_TYPE',v.plate_type)};
   if(wantContacts)
-   response.contacts=rows.shift().filter(c=>c.status==='ACTIVE')
+   response.contacts=contactRows.filter(c=>c.status==='ACTIVE')
     .map(c=>({name:c.display_name,phone:c.phone_e164,relationship:c.relationship,isPrimary:c.is_primary}));
   if(wantPhotos)
-   response.photos=rows.shift().filter(x=>x.status==='ACTIVE')
+   response.photos=photoRows.filter(x=>x.status==='ACTIVE')
     .map(x=>({photoId:x.photo_id,slot:x.slot,storageRef:x.storage_ref,mimeType:x.mime_type}));
+  if(wantHistory)response.history=historyRows.slice(-100)
+   .map(x=>({audit_id:x.audit_id,action:x.action,redacted_summary:x.redacted_summary,created_at:x.created_at}));
   return response;
  }
  function vehicleLookup(p,a){
