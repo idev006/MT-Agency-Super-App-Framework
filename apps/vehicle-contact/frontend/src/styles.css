@@ -73,22 +73,6 @@ textarea {
   content: "";
 }
 
-.route-mini {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.route-mini i {
-  width: 2.5rem;
-  height: 1px;
-  background: currentColor;
-  opacity: 0.45;
-}
 
 .transport-choice {
   display: flex;
@@ -171,8 +155,8 @@ textarea {
 
 .transport-choice small {
   margin-top: 0.15rem;
-  color: color-mix(in oklab, var(--color-base-content) 55%, transparent);
-  font-size: 0.65rem;
+  color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+  font-size: 0.72rem;
 }
 
 .route-plate {
