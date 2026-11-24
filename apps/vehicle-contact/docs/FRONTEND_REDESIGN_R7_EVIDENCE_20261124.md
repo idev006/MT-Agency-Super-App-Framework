@@ -48,3 +48,23 @@ Owner feedback on the live system:
 3. `wrangler deploy` of the Worker allowlist. Self-serve is authorised: see CODE_MAP "Worker deploy".
 4. G6 (now 57 ops) + SSOT scenarios.
 5. Live check of the photo tab.
+
+## 5. Live result (GAS V66 / 0.9.16 · Worker `cddfec87…` · Pages FE 0.8.7)
+
+**Process note:**
+- #177 was merged while the use-case SSOT gate was red: the new op had no owning UC or matrix row. That was an operator error.
+- Nothing was deployed until #178 fixed the gate with CI green.
+- Rule going forward: never merge on a red check.
+
+| Check | Result |
+|---|---|
+| Worker probe (Origin github.io) | `vehicles.photo` forwarded → `UNAUTHENTICATED` (dummy session) · missing `photoId` → `INVALID_OPERATION_PAYLOAD` · `vehicles.delete` → `OPERATION_NOT_ALLOWED`. The first probe right after deploy was still `OPERATION_NOT_ALLOWED` (edge propagation, about 20 s). |
+| G6 | **104/104** · authenticated **73/73** · **57/57 ops covered** (incl. `VEHICLES.PHOTO`) · DATA_PROOF PASS · p50 5,916 / p95 14,942 ms |
+| SSOT scenarios | **9/9 PASS** · cleanup 0 failed |
+| UI on Pages (owner session) | header shows the role. The registry is a table (10 rows). Detail from the registry: breadcrumb "ทะเบียนยานพาหนะ"; facts include the agency (P6VC Reset …), approval/update dates and version 1; badge "QR ใช้งานอยู่ · ออกเมื่อ 24 พ.ย. 2569 06:52". The photo tab loaded **5 images in 11.8 s (parallel)**. |
+| SSOT for the photo views | Firestore `vc_lookup_audit`: exactly **5** `PHOTO` rows for that vehicle; `vc_change_audit` for the vehicle unchanged (0). |
+
+**Seed-data gap found:**
+- The 10 DEV seed vehicles from `reset-dev-data.mjs` use **1×1 px placeholder photos** and non-catalog codes (`TH-10`, `SEDAN`, `PRIVATE`).
+- So the photo tab and the labels work, but these vehicles show blank images and raw codes.
+- Fix: re-seed with catalog codes and visible synthetic images. This is DEV data only and is a separate slice.
