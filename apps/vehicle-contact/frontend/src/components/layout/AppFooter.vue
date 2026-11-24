@@ -27,19 +27,19 @@ const statusLabel = computed(() => (backendRelease.value?.status === 'ready' ? '
     </p>
     <dl v-if="authenticated" class="mx-auto mt-3 grid max-w-3xl grid-cols-1 gap-x-6 gap-y-1 text-left font-mono text-xs sm:grid-cols-2">
       <div class="flex justify-between gap-2 border-b border-base-200 py-1">
-        <dt class="text-base-content/50">Frontend</dt>
+        <dt class="text-base-content/80">Frontend</dt>
         <dd class="text-base-content/80">v{{ packageInfo.version }} · Vue shell</dd>
       </div>
       <div class="flex justify-between gap-2 border-b border-base-200 py-1">
-        <dt class="text-base-content/50">ช่องทาง Backend</dt>
+        <dt class="text-base-content/80">ช่องทาง Backend</dt>
         <dd class="truncate text-base-content/80" :title="endpoint">{{ channelLabel }} · {{ endpointHost }}</dd>
       </div>
       <div class="flex justify-between gap-2 border-b border-base-200 py-1">
-        <dt class="text-base-content/50">API</dt>
+        <dt class="text-base-content/80">API</dt>
         <dd class="text-base-content/80">{{ backendRelease?.apiVersion || '—' }} · {{ statusLabel }}</dd>
       </div>
       <div class="flex justify-between gap-2 border-b border-base-200 py-1">
-        <dt class="text-base-content/50">ฐานข้อมูล</dt>
+        <dt class="text-base-content/80">ฐานข้อมูล</dt>
         <dd class="text-base-content/80">{{ databaseLabel }}<span v-if="dualWrite" class="badge badge-xs badge-outline ml-2 align-middle">dual-write</span></dd>
       </div>
     </dl>

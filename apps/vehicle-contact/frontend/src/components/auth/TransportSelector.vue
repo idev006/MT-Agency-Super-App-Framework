@@ -22,9 +22,9 @@ const { transport, endpoint, endpointValid } = storeToRefs(auth)
       <input class="input input-bordered w-full font-mono text-xs" type="url" :value="endpoint"
         :placeholder="transport === 'direct' ? 'https://script.google.com/macros/s/.../exec' : 'https://...workers.dev/api/frontend'"
         @input="auth.updateEndpoint($event.target.value)" />
-      <span class="text-xs" :class="endpointValid ? 'text-success' : 'text-error'">{{ endpointValid ? 'รูปแบบ endpoint ถูกต้อง' : 'กรุณาตรวจ URL ของ endpoint' }}</span>
+      <span class="text-xs" :class="endpointValid ? 'text-base-content/80' : 'text-error'">{{ endpointValid ? 'รูปแบบ endpoint ถูกต้อง' : 'กรุณาตรวจ URL ของ endpoint' }}</span>
     </label>
-    <div class="rounded-xl bg-base-200 p-3 text-xs leading-5 text-base-content/65">
+    <div class="rounded-xl bg-base-200 p-3 text-xs leading-5 text-base-content/80">
       <template v-if="transport === 'direct'">โหมดตรงใช้ GAS URL จริง แต่อาจถูก browser ปฏิเสธที่ redirect/CORS</template>
       <template v-else>Worker รับ request จาก SPA แล้วส่งต่อไป GAS ช่วยควบคุม CORS, origin และ logging โดยไม่ย้าย business logic ออกจาก GAS</template>
     </div>

@@ -19,10 +19,16 @@ const previewSession = Object.freeze({
     'session.authenticated', 'system.settings.read', 'system.settings.manage', 'users.manage',
     'organizations.read', 'organizations.manage', 'campaigns.manage', 'qr.manage',
     'retention.read', 'retention.delete.approve', 'audit.read', 'vehicle.lookup', 'vehicle.contact.read',
-    'vehicle.photos.read', 'vehicle.history.read', 'vehicle.list',
+    'vehicle.photos.read', 'vehicle.history.read', 'vehicle.list', 'vehicle.registration.approve', 'vehicle.change.approve',
   ],
   expiresAt: '2026-11-18T18:30:00.000Z', mustChangePassword: false,
 })
+
+// R1: a first visit uses the Cloudflare Worker when the build configured it (origin-locked,
+// operation/payload allowlist); an explicit choice saved on this device always wins.
+export function defaultTransport(workerEndpoint = defaultWorkerEndpoint) {
+  return isValidApiEndpoint(workerEndpoint, 'worker') ? 'worker' : 'direct'
+}
 
 function browserSessionStorage() {
   return globalThis.sessionStorage
@@ -35,7 +41,7 @@ function storedEndpoint(key, fallback, transport) {
 
 export const useSessionStore = defineStore('session', () => {
   const savedTransport = globalThis.localStorage?.getItem(TRANSPORT_KEY)
-  const transport = ref(['direct', 'worker'].includes(savedTransport) ? savedTransport : 'direct')
+  const transport = ref(['direct', 'worker'].includes(savedTransport) ? savedTransport : defaultTransport())
   const directEndpoint = ref(storedEndpoint(DIRECT_ENDPOINT_KEY, defaultDirectEndpoint, 'direct'))
   const workerEndpoint = ref(storedEndpoint(WORKER_ENDPOINT_KEY, defaultWorkerEndpoint, 'worker'))
   const phase = ref('idle')

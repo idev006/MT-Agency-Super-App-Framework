@@ -27,6 +27,7 @@ describe('session and endpoint refresh persistence', () => {
 
   it('restores the last valid GAS and Worker URLs independently', () => {
     const first = useSessionStore(createPinia())
+    first.setTransport('direct')
     first.updateEndpoint(gasEndpoint)
     first.setTransport('worker')
     first.updateEndpoint(workerEndpoint)
@@ -39,6 +40,7 @@ describe('session and endpoint refresh persistence', () => {
 
   it('does not replace the last valid persisted URL with an unfinished edit', () => {
     const first = useSessionStore(createPinia())
+    first.setTransport('direct')
     first.updateEndpoint(gasEndpoint)
     first.updateEndpoint('https://script.google.com/macros/s/')
 
