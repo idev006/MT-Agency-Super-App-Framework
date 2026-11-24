@@ -5,8 +5,10 @@ import {snapshotScriptProperties,inspectScriptProperties} from './RuntimeConfig.
 import {createGasSecurity} from '../infrastructure/security/GasSecurity.js';
 import {createDrivePhotos} from '../infrastructure/media/DrivePhotos.js';
 import { createApiRouter } from "../api/routes/Router.js";
+import {createRequestProfiler,isProfiled} from '../infrastructure/profiling/RequestProfiler.js';
 export function createApplication(deps={}) {
-  const services=()=>({
+  let prof=null; // request-scoped profiler, only for requestId "prof_*"
+  const raw=()=>({
     propertiesService:deps.propertiesService||(typeof PropertiesService!=='undefined'?PropertiesService:null),
     utilities:deps.utilities||(typeof Utilities!=='undefined'?Utilities:null),
     urlFetchApp:deps.urlFetchApp||(typeof UrlFetchApp!=='undefined'?UrlFetchApp:null),
@@ -14,11 +16,16 @@ export function createApplication(deps={}) {
     // Script-scoped CacheService (private to this project): Firestore access token + short session snapshots.
     cache:deps.cache!==undefined?deps.cache:(typeof CacheService!=='undefined'?CacheService.getScriptCache():null)
   });
+  const services=()=>{const s=raw();if(!prof)return s;
+    return {...s,urlFetchApp:prof.wrapUrlFetch(s.urlFetchApp),cache:prof.wrapCache(s.cache),propertiesService:prof.wrapProperties(s.propertiesService)};};
   const router=createApiRouter({readHealthInfo(){
     const s=services(),props=s.propertiesService&&s.propertiesService.getScriptProperties();
     if(!props)return undefined;
     return {persistence:{engine:'firestore',dualWrite:false}};
   },createProtectedDispatcher(){
+    return prof?prof.phase('compose',composeDispatcher):composeDispatcher();
+  }});
+  function composeDispatcher(){
     const s=services();
     // ONE PropertiesService read per request (was one service call per getProperty).
     const snap=snapshotScriptProperties(s.propertiesService),props=snap.props;
@@ -28,17 +35,25 @@ export function createApplication(deps={}) {
     // staging probe) may inject their own store via deps.store; the HTTP entrypoint passes none.
     const store=deps.store||createRuntimeStore({props,services:s,clock});
     const security=createGasSecurity({utilities:s.utilities,urlFetchApp:s.urlFetchApp,propertiesService:snap.service,clock});
-    const sessions=createSessionService({store,security,cache:s.cache});
+    const rawSessions=createSessionService({store,security,cache:s.cache});
+    const sessions=prof?{...rawSessions,authorize:(...a)=>prof.phase('authorize',()=>rawSessions.authorize(...a))}:rawSessions;
     const folderId=props.getProperty('VEHICLE_PHOTOS_FOLDER_ID');
     const drivePhotos=folderId?createDrivePhotos({driveApp:s.driveApp,utilities:s.utilities,folderId}):{
       upload(){throw new Error('DRIVE_NOT_CONFIGURED');},read(){throw new Error('DRIVE_NOT_CONFIGURED');},trash(){throw new Error('DRIVE_NOT_CONFIGURED');}
     };
-    return createOperationController({store,security,sessions,drivePhotos,
+    const controller=createOperationController({store,security,sessions,drivePhotos:prof?prof.wrapDrivePhotos(drivePhotos):drivePhotos,
       allowDestructiveRetention:props.getProperty('VEHICLE_RETENTION_EXECUTE_ENABLED')==='true'});
-  }});
+    return prof?{dispatch:req=>prof.phase('controller',()=>controller.dispatch(req))}:controller;
+  }
 
   return Object.freeze({
-    dispatch:router.dispatch,
+    // Profiled requests (requestId "prof_*") get serverTiming (durations/counts only) appended.
+    dispatch(request,method){
+      if(!isProfiled(request))return router.dispatch(request,method);
+      prof=createRequestProfiler();
+      try{const out=router.dispatch(request,method);return {...out,serverTiming:prof.report()};}
+      finally{prof=null;}
+    },
     // Names-only Script Properties report (no values) for the owner's tidy-up.
     inspectConfig(){return inspectScriptProperties(services().propertiesService.getScriptProperties().getProperties());}
   });

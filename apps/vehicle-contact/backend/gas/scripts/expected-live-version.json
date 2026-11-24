@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.18",
+  "backendVersion": "0.9.19",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-24T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.18 = speed: vehicle view (lookup/detail/QR) writes its access-audit row in the same parallel round as its reads (one round fewer); vehicles.photo reads vehicle+photo in parallel; VehicleView module split. Prior: 0.9.17 (V67)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.19 = request profiler (only requestId prof_*: serverTiming with phase/fetch/cache/props/Drive durations + counts; no data). Prior: 0.9.18 (V68)."
 }
