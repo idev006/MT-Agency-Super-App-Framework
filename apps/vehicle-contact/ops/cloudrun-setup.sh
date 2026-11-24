@@ -17,6 +17,8 @@ PROVIDER="p6vc-repo"
 SECRET="p6vc-auth-pepper"
 
 gcloud config set project "$PROJECT_ID" >/dev/null
+# New service accounts take a few seconds to become visible to IAM; retry instead of failing.
+retry() { local n; for n in 1 2 3 4 5 6; do "$@" && return 0; echo "   (IAM not ready yet, retrying in 10 s: attempt $n/6)"; sleep 10; done; "$@"; }
 PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')"
 RUNTIME_EMAIL="${RUNTIME_SA}@${PROJECT_ID}.iam.gserviceaccount.com"
 DEPLOYER_EMAIL="${DEPLOYER_SA}@${PROJECT_ID}.iam.gserviceaccount.com"
@@ -36,14 +38,14 @@ gcloud iam service-accounts describe "$RUNTIME_EMAIL" >/dev/null 2>&1 || \
 gcloud iam service-accounts describe "$DEPLOYER_EMAIL" >/dev/null 2>&1 || \
   gcloud iam service-accounts create "$DEPLOYER_SA" --display-name="P6VC GitHub deployer"
 # Runtime: read/write Firestore only.
-gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:${RUNTIME_EMAIL}" \
+retry gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:${RUNTIME_EMAIL}" \
   --role="roles/datastore.user" --condition=None >/dev/null
 # Deployer: deploy Cloud Run revisions, push images, act as the runtime SA (nothing else).
-gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:${DEPLOYER_EMAIL}" \
+retry gcloud projects add-iam-policy-binding "$PROJECT_ID" --member="serviceAccount:${DEPLOYER_EMAIL}" \
   --role="roles/run.admin" --condition=None >/dev/null
-gcloud artifacts repositories add-iam-policy-binding "$AR_REPO" --location "$REGION" \
+retry gcloud artifacts repositories add-iam-policy-binding "$AR_REPO" --location "$REGION" \
   --member="serviceAccount:${DEPLOYER_EMAIL}" --role="roles/artifactregistry.writer" >/dev/null
-gcloud iam service-accounts add-iam-policy-binding "$RUNTIME_EMAIL" \
+retry gcloud iam service-accounts add-iam-policy-binding "$RUNTIME_EMAIL" \
   --member="serviceAccount:${DEPLOYER_EMAIL}" --role="roles/iam.serviceAccountUser" >/dev/null
 
 echo "4/6 Keyless GitHub trust (only ${REPO}, only branch main)..."
@@ -54,7 +56,7 @@ gcloud iam workload-identity-pools providers describe "$PROVIDER" --workload-ide
     --issuer-uri="https://token.actions.githubusercontent.com" \
     --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
     --attribute-condition="assertion.repository=='${REPO}' && assertion.ref=='refs/heads/main'"
-gcloud iam service-accounts add-iam-policy-binding "$DEPLOYER_EMAIL" \
+retry gcloud iam service-accounts add-iam-policy-binding "$DEPLOYER_EMAIL" \
   --role="roles/iam.workloadIdentityUser" \
   --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${POOL}/attribute.repository/${REPO}" >/dev/null
 
@@ -69,7 +71,7 @@ else
   unset PEPPER
   echo "   Secret created."
 fi
-gcloud secrets add-iam-policy-binding "$SECRET" --member="serviceAccount:${RUNTIME_EMAIL}" \
+retry gcloud secrets add-iam-policy-binding "$SECRET" --member="serviceAccount:${RUNTIME_EMAIL}" \
   --role="roles/secretmanager.secretAccessor" >/dev/null
 
 echo "6/6 Allow the public endpoint (app-level auth still applies to every operation)..."

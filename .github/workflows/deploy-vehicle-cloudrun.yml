@@ -45,11 +45,11 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Backend tests (same gate as the GAS deploy)
+      - name: Backend build + tests (same gate as the GAS deploy)
         working-directory: apps/vehicle-contact/backend/gas
         run: |
           npm install --no-audit --no-fund
-          npm test
+          npm run check
 
       - name: Authenticate to Google Cloud (keyless)
         uses: google-github-actions/auth@v2
