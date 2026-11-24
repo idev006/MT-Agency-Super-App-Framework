@@ -84,8 +84,25 @@ export function useChangeReview({ repository, detailRepository, permissions }) {
     } catch (error) { capture(error, phase); return false }
   }
 
+  // R5: changes.review is NOT idempotent (a decided request answers INVALID_REQUEST_STATE), so an
+  // uncertain outcome is resolved by re-reading the queue, never by resending the decision.
+  const lastDecision = ref(null)
+  const outcome = ref('')
+
+  async function checkOutcome() {
+    const pending = lastDecision.value
+    if (!pending) return ''
+    if (!(await load())) return ''
+    const listed = changes.value.some((item) => item.requestId === pending.requestId)
+    // Not on this page but other pages exist: it may be elsewhere in the queue, so say "unknown".
+    outcome.value = listed ? 'still-pending' : pagination.value.totalPages > 1 ? 'unknown' : 'decided'
+    if (outcome.value === 'decided') { selected.value = null; currentVehicle.value = null; actionPhase.value = 'idle' }
+    return outcome.value
+  }
+
   async function review({ requestId, decision }) {
     if (!canReview.value) { actionPhase.value = 'forbidden'; return false }
+    lastDecision.value = Object.freeze({ requestId, decision }); outcome.value = ''
     actionPhase.value = 'submitting'; failure.value = null
     try {
       await source.review({ requestId, decision })
@@ -98,7 +115,7 @@ export function useChangeReview({ repository, detailRepository, permissions }) {
 
   return {
     phase, actionPhase, changes, selected, currentVehicle, diffRows, failure, page, pageSize, pagination, canReview,
-    load, inspect, review,
+    lastDecision, outcome, load, inspect, review, checkOutcome,
     clearSelection: () => { selected.value = null; currentVehicle.value = null },
     changePage: (value) => { page.value = value; return load() },
     changePageSize: (value) => { pageSize.value = value; page.value = 1; return load() },
