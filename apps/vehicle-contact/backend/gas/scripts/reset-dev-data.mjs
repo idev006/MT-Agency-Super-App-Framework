@@ -159,6 +159,7 @@ export async function runReset({
     }
     for (const o of (Array.isArray(organizations) ? organizations : [])) {
       if (!isSyntheticOrg(o)) continue;
+      if ((o.status ?? 'ACTIVE') !== 'ACTIVE') continue; // already retired: skip the API round-trip
       const oid = o.organizationId || o.organization_id;
       await step('DISABLE_ORG_' + oid, async () => {
         ok(await request('organizations.disable', {organizationId: oid}, adminToken));
@@ -167,6 +168,7 @@ export async function runReset({
     }
     for (const u of (Array.isArray(users) ? users : [])) {
       if (!isSyntheticUser(u, adminUser)) continue;
+      if (u.status === 'SUSPENDED') continue; // already retired: skip the API round-trip
       await step('SUSPEND_USER_' + u.userId, async () => {
         ok(await request('users.suspend', {userId: u.userId}, adminToken));
         report.retired.users++;
