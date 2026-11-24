@@ -187,3 +187,25 @@ test('DSEQ09-03 executeDeletion partial write removes photos but leaves contacts
  assert.equal(job.status,'DELETION_FAILED','job marked for retry; reconciliation is manual per runbook');
  assert.ok(job.last_error.length>0,'failure reason recorded');
 });
+
+test('G7-RACE-01 a racing same-key submit that reads idempotency BEFORE the winner commits must NOT delete the winner (live bug 2026-11-24)',()=>{
+ const h=createAcceptanceHarness(),ctx=submitContext(h);
+ const first=assertOk(assert,h.call('registrations.submit',ctx.payload),'winner commits');
+ // Simulate the live interleaving: the loser's parallel read sees NO idempotency row (stale),
+ // but its orphan query already sees the winner's committed request (APPLIED journal).
+ const realReadMany=h.store.readMany;
+ let stale=true;
+ h.store.readMany=reqs=>reqs.map(r=>{
+  if(stale&&r.name==='vc_idempotency'){stale=false;return null;}
+  return r.kind==='one'?h.store.one(r.name,r.filter):h.store.list(r.name,r.filter);
+ });
+ const loser=assertOk(assert,h.call('registrations.submit',ctx.payload),'loser replays the winner');
+ h.store.readMany=realReadMany;
+ assert.equal(loser.requestId,first.requestId,'same request returned');
+ const rows=h.read('vc_registration_requests').filter(r=>r.idempotency_key===ctx.idemKey);
+ assert.equal(rows.length,1,'winner request still exists (the bug deleted it)');
+ assert.equal(rows[0].request_id,first.requestId);
+ assert.equal(h.read('vc_photo_staging').filter(p=>p.status==='CLAIMED').length,5,'photos stay CLAIMED');
+ assert.equal(journalOf(h,first.requestId).status,'APPLIED','winner journal untouched');
+ assert.equal(h.read('vc_campaigns').find(c=>c.campaign_id===ctx.campaign.campaignId).submitted_count,1,'quota counted once');
+});

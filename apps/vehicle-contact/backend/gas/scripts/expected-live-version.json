@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.9",
+  "backendVersion": "0.9.10",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-23T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.9 = S1 Google Sheets fully removed (VC-ADR-029): editor admin tools (bootstrap, admin reset, reference seed) on Firestore; Sheets-only tools deleted. API behaviour unchanged. Prior: 0.9.8 (V58)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.10 = G7 fix: registrations.submit legacy-orphan reconciliation never removes a COMMITTED (APPLIED-journal) request; a racing same-key submit replays the winner. Prior: 0.9.9 (V59, S1)."
 }

@@ -106,21 +106,29 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   // idempotency commit, leaving an orphan application + CLAIMED photos. Reverse those partial
   // writes (single-table lookups, no cross-sheet join) so a retry can proceed. Campaign quota
   // cannot be proven incremented from state alone, so it is flagged for the manual runbook.
+  // G7 fix (2026-11-24): since W1 a submit writes its request AND an APPLIED journal in ONE
+  // atomic commit, so a request whose journal is APPLIED is a COMMITTED submit (e.g. a racing
+  // winner with the same key) — never an orphan. Only legacy PREPARED/missing-journal partials
+  // are reconciled. Returns {committed, removedIds} so the caller can replay the winner.
   const orphans=store.list('vc_registration_requests',{idempotency_key:idemKey},5);
-  if(!orphans.length)return;
+  const outcome={committed:false,removedIds:[]};
+  if(!orphans.length)return outcome;
   let blocked=false;
   for(const orphan of orphans){
    const journal=store.one('vc_operation_journal',{entity_id:orphan.request_id,operation:'registrations.submit'});
+   if(journal&&journal.status==='APPLIED'){outcome.committed=true;continue;}
    let photoIds=[];try{photoIds=(JSON.parse(orphan.application_json).photos||[]).map(f=>f.photoId);}catch{}
    const errors=[];const attempt=fn=>{try{fn();}catch(e){errors.push(String(e?.message||'RECOVERY_FAILED').slice(0,64));}};
    for(const pid of photoIds){const st=store.one('vc_photo_staging',{photo_id:pid});if(st&&st.status==='CLAIMED')attempt(()=>store.update('vc_photo_staging',{photo_id:pid},{status:'STAGED',used_at:''}));}
    let removed=false;attempt(()=>{store.remove('vc_registration_requests',{request_id:orphan.request_id});removed=true;});
+   if(removed)outcome.removedIds.push(orphan.request_id);
    if(journal){let detail={};try{detail=JSON.parse(journal.detail_json);}catch{}
     attempt(()=>store.update('vc_operation_journal',{event_id:journal.event_id},{status:'RECOVERY_REQUIRED',
      detail_json:JSON.stringify({...detail,recovery:{requestRemoved:removed,photosRestored:photoIds,quotaCheck:'MANUAL',errors}})}));}
    if(errors.length)blocked=true;
   }
   if(blocked)throw new Error('OPERATION_RECOVERY_REQUIRED');
+  return outcome;
  }
  // W1 (VC-ADR-028): read independent rows in ONE parallel round and apply every business
  // write in ONE commit. Firestore applies a commit all-or-nothing with per-write
@@ -157,13 +165,24 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     return result;
    }
    // Legacy (pre-W1) timed-out partial attempts may have left an orphan request: reconcile it.
-   // Reconciliation restores the orphan's photos to STAGED, so re-read them afterwards.
-   if(orphans.length){reconcileSubmitTimeout(idemKey);staged=readAll(photoReads);}
+   // Reconciliation restores a LEGACY orphan's photos to STAGED, so re-read them afterwards.
+   let removedIds=[];
+   if(orphans.length){
+    const outcome=reconcileSubmitTimeout(idemKey);removedIds=outcome.removedIds;
+    if(outcome.committed){
+     // A concurrent submit with the same key already committed: replay it (never re-create).
+     const winner=store.one('vc_idempotency',{key:idemKey});
+     if(!winner)throw new Error('OPERATION_RECOVERY_REQUIRED');
+     if(winner.request_digest!==digest||winner.status!=='COMPLETED')throw new Error('IDEMPOTENCY_CONFLICT');
+     return JSON.parse(winner.result_json);
+    }
+    staged=readAll(photoReads);
+   }
    if(Number(campaign.submitted_count)>=Number(campaign.max_submissions))throw new Error('CAMPAIGN_INVALID');
    if(!org||org.status!=='ACTIVE')throw new Error('ORGANIZATION_INACTIVE');
    const duplicate=vehicles.some(v=>v.plate_normalized===payload.plate_normalized&&v.province_code===payload.province_code&&v.status!=='INACTIVE');
    // Orphans were just reconciled away, so they no longer count as pending duplicates.
-   const live=pending.filter(r=>!orphans.some(o=>o.request_id===r.request_id));
+   const live=pending.filter(r=>!removedIds.includes(r.request_id));
    if(duplicate||live.some(r=>{const x=JSON.parse(r.application_json);return x.plate_normalized+'|'+x.province_code===key;}))
     throw new Error('DUPLICATE_VEHICLE');
    if(!fivePhotos)throw new Error('FIVE_PHOTOS_REQUIRED');
