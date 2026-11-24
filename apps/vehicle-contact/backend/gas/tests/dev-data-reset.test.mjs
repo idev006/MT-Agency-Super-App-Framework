@@ -143,3 +143,19 @@ test('synthetic classifiers', () => {
   assert.ok(!isSyntheticUser({username: 'admin'}, 'admin'));
   assert.ok(!isSyntheticUser({username: 'realperson', displayName: 'Real'}, 'admin'));
 });
+test('R7 re-seed uses reference-catalog codes and visible synthetic PNGs, and stays recognisably synthetic', async () => {
+  const {seedVehicleFields} = await import('../scripts/reset-dev-data.mjs');
+  const {syntheticVehiclePng} = await import('../scripts/synthetic-vehicle-image.mjs');
+  const {REFERENCE_SEED_V1} = await import('../src/domain/reference/ReferenceSeedV1.js');
+  const has = (catalog, code) => REFERENCE_SEED_V1.rows.some(r => r.catalog === catalog && r.code === code);
+  for (let i = 0; i < 10; i++) {
+    const f = seedVehicleFields(i);
+    assert.ok(isSyntheticVehicle({plate: f.plate, brand: f.brand}), 'ฑฆ prefix keeps it synthetic');
+    for (const [catalog, code] of [['PROVINCE', f.province], ['PLATE_TYPE', f.plateType], ['VEHICLE_TYPE', f.vehicleType], ['COLOR', f.color], ['BRAND', f.brand], ['RELATIONSHIP', f.relationship]])
+      assert.ok(has(catalog, code), catalog + ' ' + code + ' must be a catalog code');
+  }
+  const png = Buffer.from(syntheticVehiclePng({index: 0, slot: 'FRONT'}), 'base64');
+  assert.deepEqual([...png.subarray(0, 8)], [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+  assert.equal(png.readUInt32BE(16), 480); assert.equal(png.readUInt32BE(20), 320);
+  assert.notEqual(syntheticVehiclePng({index: 0, slot: 'FRONT'}), syntheticVehiclePng({index: 0, slot: 'REAR'}), 'slots differ');
+});

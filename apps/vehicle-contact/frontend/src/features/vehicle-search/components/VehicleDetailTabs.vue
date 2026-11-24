@@ -40,11 +40,6 @@ const facts = computed(() => {
     ['เวอร์ชันข้อมูล', props.result.version ? String(props.result.version) : ''],
   ]
 })
-const qrText = computed(() => {
-  const q = vehicle.value.qr
-  if (!q?.known) return ''
-  return q.active ? `ใช้งานอยู่${q.issuedAt ? ' · ออกเมื่อ ' + formatBangkokDateTime(q.issuedAt, '') : ''}` : 'ไม่มี QR ที่ใช้งาน'
-})
 const historyLabels = Object.freeze({
   VEHICLE_UPDATED: 'แก้ไขข้อมูลยานพาหนะ', CONTACT_UPDATED: 'แก้ไขผู้ประสานงาน',
   REGISTRATION_APPROVED: 'อนุมัติการลงทะเบียน', VEHICLE_CANCELLED: 'ยกเลิกยานพาหนะ', PHOTO_REPLACED: 'เปลี่ยนรูปประกอบ',
@@ -73,13 +68,19 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
 <template>
   <div class="space-y-4">
     <section class="card card-border bg-base-100 shadow-none" aria-labelledby="vehicle-result-title">
-      <div class="card-body flex-row flex-wrap items-center gap-4 p-5">
+      <!-- Owner (mobile): plate + text were squeezed side by side and the QR badge text wrapped inside
+           the badge. Phones stack; badges hold short words only, dates go on their own line. -->
+      <div class="card-body flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
         <div class="vehicle-plate" role="group" aria-label="ป้ายทะเบียน"><h2 id="vehicle-result-title" class="text-3xl font-bold leading-tight">{{ vehicle.plate }}</h2><p class="text-lg font-medium">{{ provinceLabel(vehicle.province) || vehicle.province }}</p></div>
-        <div class="min-w-0 flex-1"><p class="text-lg">{{ [vehicle.brand, vehicle.model, vehicle.labels?.color || vehicle.color].filter(Boolean).join(' · ') }}</p><p class="mt-1 flex flex-wrap gap-2"><span class="badge badge-success">ใช้งานอยู่</span><span v-if="qrText" class="badge" :class="vehicle.qr.active ? 'badge-info' : 'badge-warning'">QR {{ qrText }}</span></p></div>
+        <div class="min-w-0 flex-1 space-y-2">
+          <p class="text-lg font-medium">{{ [vehicle.brand, vehicle.model, vehicle.labels?.color || vehicle.color].filter(Boolean).join(' · ') }}</p>
+          <p class="flex flex-wrap items-center gap-2"><span class="badge badge-success whitespace-nowrap">ใช้งานอยู่</span><span v-if="vehicle.qr?.known" class="badge whitespace-nowrap" :class="vehicle.qr.active ? 'badge-info' : 'badge-warning'">{{ vehicle.qr.active ? 'มี QR ใช้งาน' : 'ไม่มี QR' }}</span></p>
+          <p v-if="vehicle.qr?.active && vehicle.qr.issuedAt" class="text-sm text-base-content/80">ออก QR เมื่อ {{ formatBangkokDateTime(vehicle.qr.issuedAt, '') }}</p>
+        </div>
       </div>
     </section>
 
-    <div role="tablist" class="tabs tabs-border overflow-x-auto" aria-label="ข้อมูลยานพาหนะ">
+    <div role="tablist" class="tabs tabs-border flex-nowrap overflow-x-auto" aria-label="ข้อมูลยานพาหนะ">
       <button v-for="tab in tabs" :id="`vt-${tab.id}`" :key="tab.id" role="tab" type="button" class="tab min-h-11 whitespace-nowrap" :class="{ 'tab-active': active === tab.id }" :aria-selected="active === tab.id" :aria-controls="`vp-${tab.id}`" @click="active = tab.id">{{ tab.label }}</button>
     </div>
 

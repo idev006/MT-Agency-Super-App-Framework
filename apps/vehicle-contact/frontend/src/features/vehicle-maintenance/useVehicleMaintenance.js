@@ -2,22 +2,15 @@ import { computed, ref, unref } from 'vue'
 import { assertVehicleMaintenanceRepository } from '../../application/vehicles/vehicle-maintenance-port.js'
 import { assertVehicleDetailRepository } from '../../application/vehicles/vehicle-detail-port.js'
 
+import { compressForUpload } from '../../infrastructure/media/image-compress.js'
 const WRITE_UNCERTAIN = new Set(['TIMEOUT', 'NETWORK_ERROR'])
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp'])
-const MAX_FILE_BYTES = 5_000_000
 
 function permissionList(permissions) {
   return Array.isArray(unref(permissions)) ? unref(permissions) : []
 }
 
 async function fileBase64(file) {
-  if (!file || !ALLOWED_MIME.has(file.type) || file.size < 1 || file.size > MAX_FILE_BYTES) {
-    throw Object.assign(new Error('invalid image'), { code: 'INVALID_MEDIA' })
-  }
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  let binary = ''
-  for (let offset = 0; offset < bytes.length; offset += 32768) binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768))
-  return btoa(binary)
+  return compressForUpload(file)
 }
 
 export function useVehicleMaintenance({ repository, detailRepository, permissions }) {
@@ -96,9 +89,10 @@ export function useVehicleMaintenance({ repository, detailRepository, permission
   async function replacePhoto({ slot, file }) {
     if (!canEdit.value) { actionPhase.value = 'forbidden'; return false }
     let base64Image
-    try { base64Image = await fileBase64(file) } catch (error) { capture(error, actionPhase); return false }
+    let mimeType
+    try { ({ base64Image, mimeType } = await fileBase64(file)) } catch (error) { capture(error, actionPhase); return false }
     return runWrite(async () => {
-      const result = await source.replacePhoto({ vehicleId: vehicleId.value, slot, base64Image, mimeType: file.type })
+      const result = await source.replacePhoto({ vehicleId: vehicleId.value, slot, base64Image, mimeType })
       await load(vehicleId.value)
       return result
     })

@@ -56,10 +56,11 @@ describe('R4 input helpers', () => {
     expect(toE164('12345')).toBe('')
     expect(toE164('')).toBe('')
   })
-  it('flags a bad photo at pick time with a Thai reason', () => {
+  it('flags a bad photo at pick time with a Thai reason (phone photos up to 25 MB are accepted: compressed on device)', () => {
     expect(imageFileProblem(png('x.png'))).toBe('')
-    expect(imageFileProblem(new File(['x'], 'x.gif', { type: 'image/gif' }))).toMatch(/JPEG, PNG/)
-    expect(imageFileProblem(new File([new Uint8Array(5_000_001)], 'big.jpg', { type: 'image/jpeg' }))).toMatch(/5 MB/)
+    expect(imageFileProblem(new File(['x'], 'x.pdf', { type: 'application/pdf' }))).toMatch(/ไม่ใช่รูปภาพ/)
+    expect(imageFileProblem(new File([new Uint8Array(6_000_000)], 'phone.jpg', { type: 'image/jpeg' }))).toBe('')
+    expect(imageFileProblem(new File([new Uint8Array(25_000_001)], 'huge.jpg', { type: 'image/jpeg' }))).toMatch(/25 MB/)
     expect(imageFileProblem(null)).toMatch(/ยังไม่ได้เลือก/)
   })
 })
