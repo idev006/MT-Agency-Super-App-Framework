@@ -12,7 +12,7 @@ export function createRuntimeStore({props,services,clock}){
   const gateway=createFirestoreRestGateway({utilities:services.utilities,urlFetchApp:services.urlFetchApp,
     clientEmail:key.client_email,privateKey:key.private_key,
     projectId:props.getProperty('VEHICLE_FIRESTORE_PROJECT_ID')||key.project_id,
-    databaseId:props.getProperty('VEHICLE_FIRESTORE_DATABASE_ID')||'(default)',clock});
+    databaseId:props.getProperty('VEHICLE_FIRESTORE_DATABASE_ID')||'(default)',clock,tokenCache:services.cache||null});
   return createFirestoreStore({firestore:gateway});
 }
 // The Firestore project the runtime store targets (used as an admin-reset target confirmation).

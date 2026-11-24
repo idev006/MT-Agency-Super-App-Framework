@@ -57,7 +57,8 @@ export function createIdentityOperations({store,security,sessions}) {
   return {changed:true,reauthenticate:true};
  }
  function logout(p,actor){
-  store.sequence(()=>store.update('vc_sessions',{session_id:actor.sessionId},{status:'REVOKED',revoked_at:security.now()}));
+  if(typeof sessions.endSession==='function')sessions.endSession(actor);
+  else store.sequence(()=>store.update('vc_sessions',{session_id:actor.sessionId},{status:'REVOKED',revoked_at:security.now()}));
   return {revoked:true};
  }
  function session(p,actor){return {
@@ -90,14 +91,18 @@ export function createIdentityOperations({store,security,sessions}) {
   return {userId:id};
  }
  function listUsers(p){
+  // Speed: the role and user tables are independent → one parallel round (was two sequential scans).
+  const [roleRows,userRows]=typeof store.readMany==='function'
+   ?store.readMany([{kind:'list',name:'vc_user_roles'},{kind:'list',name:'vc_users'}])
+   :[store.list('vc_user_roles'),store.list('vc_users')];
   const rolesByUser=new Map();
-  for(const r of store.list('vc_user_roles')){
+  for(const r of roleRows){
    if(r.status!=='ACTIVE')continue;
    const uid=String(r.user_id);
    if(!rolesByUser.has(uid))rolesByUser.set(uid,[]);
    rolesByUser.get(uid).push(String(r.role_id));
   }
-  const items=store.list('vc_users').map(u=>({
+  const items=userRows.map(u=>({
    userId:u.user_id,username:u.username_normalized,displayName:u.display_name,organizationId:u.org_id,status:u.status,
    roles:rolesByUser.get(String(u.user_id))||[]
   }));

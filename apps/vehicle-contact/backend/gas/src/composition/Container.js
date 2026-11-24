@@ -10,7 +10,9 @@ export function createApplication(deps={}) {
     propertiesService:deps.propertiesService||(typeof PropertiesService!=='undefined'?PropertiesService:null),
     utilities:deps.utilities||(typeof Utilities!=='undefined'?Utilities:null),
     urlFetchApp:deps.urlFetchApp||(typeof UrlFetchApp!=='undefined'?UrlFetchApp:null),
-    driveApp:deps.driveApp||(typeof DriveApp!=='undefined'?DriveApp:null)
+    driveApp:deps.driveApp||(typeof DriveApp!=='undefined'?DriveApp:null),
+    // Script-scoped CacheService (private to this project): Firestore access token + short session snapshots.
+    cache:deps.cache!==undefined?deps.cache:(typeof CacheService!=='undefined'?CacheService.getScriptCache():null)
   });
   const router=createApiRouter({readHealthInfo(){
     const s=services(),props=s.propertiesService&&s.propertiesService.getScriptProperties();
@@ -26,7 +28,7 @@ export function createApplication(deps={}) {
     // staging probe) may inject their own store via deps.store; the HTTP entrypoint passes none.
     const store=deps.store||createRuntimeStore({props,services:s,clock});
     const security=createGasSecurity({utilities:s.utilities,urlFetchApp:s.urlFetchApp,propertiesService:snap.service,clock});
-    const sessions=createSessionService({store,security});
+    const sessions=createSessionService({store,security,cache:s.cache});
     const folderId=props.getProperty('VEHICLE_PHOTOS_FOLDER_ID');
     const drivePhotos=folderId?createDrivePhotos({driveApp:s.driveApp,utilities:s.utilities,folderId}):{
       upload(){throw new Error('DRIVE_NOT_CONFIGURED');},read(){throw new Error('DRIVE_NOT_CONFIGURED');},trash(){throw new Error('DRIVE_NOT_CONFIGURED');}

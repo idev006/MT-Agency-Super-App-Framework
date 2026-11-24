@@ -59,7 +59,8 @@ export function createOperationController({store,security,sessions,drivePhotos,a
    if(!Object.prototype.hasOwnProperty.call(handlers,op))return apiFailure('NOT_FOUND','Unavailable operation',requestId);
    validateOperationPayload(op,request.payload||{});
    const principal=publicOps.has(op)?null:sessions.authorize(request.sessionToken,permissions[op],{
-    allowPasswordChange:['auth.changePassword','auth.logout','auth.session'].includes(op)
+    allowPasswordChange:['auth.changePassword','auth.logout','auth.session'].includes(op),
+    fresh:['auth.changePassword','auth.linkGoogle'].includes(op) // these verify the stored password hash
    });
    const result=handlers[op](request.payload||{},principal);
    return apiSuccess(result,requestId);
