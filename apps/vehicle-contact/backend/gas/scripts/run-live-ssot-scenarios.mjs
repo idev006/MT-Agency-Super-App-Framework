@@ -28,7 +28,8 @@ export const verdict={
   s1:d=>d.codes.every(c=>c==='FORBIDDEN')&&d.rowsAfter===d.rowsBefore,
   s2:d=>d.code==='UNAUTHENTICATED'&&d.sessionStatus==='REVOKED',
   s3:d=>d.activeSessions===0&&d.oldTokenCode==='UNAUTHENTICATED',
-  s4:d=>d.resolveOk===false&&d.qrStatus==='REVOKED',
+  // A revoked QR resolves with ok:true + data:null (no disclosure) — judge disclosure, not the envelope.
+  s4:d=>d.vehicleDisclosedAfterRevoke===false&&d.qrStatus==='REVOKED'&&d.vehicleDisclosedBefore===true,
   s5:d=>d.auditDelta===1
 };
 
@@ -141,8 +142,9 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
       await must('qr.revoke',{vehicleId:a.vehicleId},admin);
       const after=await call('qr.resolve',{token:a.qrToken},staff);
       const q=(await where('vc_qr_tokens','qr_id',a.qrId))[0]||{};
-      const d={resolveBefore:code(before),resolveAfter:code(after),resolveOk:after.ok===true,qrStatus:q.status};
-      record('S4_QR_REVOKE_RESOLVE',verdict.s4(d)&&before.ok,d);
+      const has=r=>!!(r&&r.ok&&r.data&&r.data.vehicleId);
+      const d={resolveBefore:code(before),resolveAfter:code(after),vehicleDisclosedBefore:has(before),vehicleDisclosedAfterRevoke:has(after),qrStatus:q.status};
+      record('S4_QR_REVOKE_RESOLVE',verdict.s4(d),d);
     });
 
     await tryScenario('S2_LOGOUT_TOKEN_REUSE',async()=>{

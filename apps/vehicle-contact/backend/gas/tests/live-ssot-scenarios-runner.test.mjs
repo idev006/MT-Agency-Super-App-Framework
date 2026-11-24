@@ -16,7 +16,8 @@ test('verdicts fail on any SSOT inconsistency even when the API said OK',()=>{
   assert.equal(verdict.s1({codes:['FORBIDDEN','OK'],rowsBefore:3,rowsAfter:4}),false);
   assert.equal(verdict.s2({code:'UNAUTHENTICATED',sessionStatus:'REVOKED'}),true);
   assert.equal(verdict.s3({activeSessions:1,oldTokenCode:'UNAUTHENTICATED'}),false,'a session survived');
-  assert.equal(verdict.s4({resolveOk:false,qrStatus:'REVOKED'}),true);
+  assert.equal(verdict.s4({vehicleDisclosedBefore:true,vehicleDisclosedAfterRevoke:false,qrStatus:'REVOKED'}),true);
+  assert.equal(verdict.s4({vehicleDisclosedBefore:true,vehicleDisclosedAfterRevoke:true,qrStatus:'REVOKED'}),false,'revoked QR disclosed a vehicle');
   assert.equal(verdict.s5({auditDelta:2}),false,'double audit');
 });
 test('gates block before any network call',async()=>{
