@@ -110,7 +110,8 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     const body={structuredQuery};if(txId)body.transaction=txId;
     return body;
   }
-  const queryRows=rows=>(Array.isArray(rows)?rows:[]).filter(r=>r.document).map(r=>({id:idOf(r.document.name),fields:decodeFields(r.document.fields)}));
+  // updateTime = the document's server version (used for optimistic-concurrency preconditions).
+  const queryRows=rows=>(Array.isArray(rows)?rows:[]).filter(r=>r.document).map(r=>({id:idOf(r.document.name),fields:decodeFields(r.document.fields),updateTime:r.document.updateTime||null}));
   function query(coll,opts={},txId){
     return queryRows(call(base+':runQuery','post',queryBody(coll,opts,txId)));
   }
@@ -152,7 +153,10 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
       if(o.type==='patch'){
         const paths=Object.keys(o.fields||{});
         if(!paths.length||paths.some(p=>!FIELD_PATH.test(p)))throw new Error('INVALID_PATCH');
-        return {update:{name:relName(o.coll,o.id),fields:encodeFields(o.fields)},updateMask:{fieldPaths:paths},currentDocument:{exists:true}};
+        // ifUpdateTime: optimistic concurrency — the write applies only if nobody changed the
+        // document since it was read (Firestore returns FAILED_PRECONDITION otherwise).
+        return {update:{name:relName(o.coll,o.id),fields:encodeFields(o.fields)},updateMask:{fieldPaths:paths},
+          currentDocument:o.ifUpdateTime?{updateTime:o.ifUpdateTime}:{exists:true}};
       }
       return {update:{name:relName(o.coll,o.id),fields:encodeFields(o.fields)},currentDocument:{exists:o.type==='create'?false:true}};
     });

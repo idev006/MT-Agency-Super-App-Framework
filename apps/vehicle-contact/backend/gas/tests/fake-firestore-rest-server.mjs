@@ -66,7 +66,8 @@ const matches=(fields,w)=>{
 export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={}){
   const docs=new Map();
   const txs=new Set();
-  const indexes=new Set(),issued=new Set();
+  const indexes=new Set(),issued=new Set(),versions=new Map();let tick=0;
+  const stamp=full=>{const t=new Date(Date.UTC(2026,10,22)+(++tick)).toISOString().replace('Z','000Z');versions.set(full,t);return t;};
   // rounds = sequential wall-clock rounds (one per fetch OR per fetchAll batch); requests = HTTP calls.
   const state={requests:[],rounds:0,tokenCount:0,issuedToken:null,residue:()=>docs.size,
     seed(coll,id,plain){docs.set(BASE+'/'+coll+'/'+id,encodeFields(plain));},
@@ -121,6 +122,7 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
         const full=API_ROOT+rel,pre=w.currentDocument;
         if(pre&&pre.exists===false&&staged.has(full))return err(409,'ALREADY_EXISTS','document already exists');
         if(pre&&pre.exists===true&&!staged.has(full))return err(404,'NOT_FOUND','document to modify not found');
+        if(pre&&pre.updateTime&&(!docs.has(full)||(versions.get(full)||CLOCK)!==pre.updateTime))return err(400,'FAILED_PRECONDITION','the stored version does not match the required base version');
         if(w.delete)staged.delete(full);else staged.add(full);
       }
       for(const w of body.writes||[]){
@@ -129,10 +131,10 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
           // Real semantics: only masked paths change; a masked path absent from fields is deleted.
           const next={...docs.get(full)};
           for(const p of w.updateMask.fieldPaths||[]){if(w.update.fields&&p in w.update.fields)next[p]=w.update.fields[p];else delete next[p];}
-          docs.set(full,next);writeResults.push({updateTime:CLOCK});
+          docs.set(full,next);writeResults.push({updateTime:stamp(full)});
         }
-        else if(w.update){docs.set(full,w.update.fields);writeResults.push({updateTime:CLOCK});}
-        else{docs.delete(full);writeResults.push({});}
+        else if(w.update){docs.set(full,w.update.fields);writeResults.push({updateTime:stamp(full)});}
+        else{docs.delete(full);versions.delete(full);writeResults.push({});}
       }
       return reply(200,{writeResults,commitTime:CLOCK});
     }
@@ -176,7 +178,7 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
       }
       const lim=sq.limit&&typeof sq.limit==='object'?sq.limit.value:sq.limit;
       if(lim)rows=rows.slice(0,lim);
-      return reply(200,rows.map(([name,fields])=>({document:{name:name.slice(API_ROOT.length),fields:reorder(fields),createTime:CLOCK,updateTime:CLOCK},readTime:CLOCK})));
+      return reply(200,rows.map(([name,fields])=>({document:{name:name.slice(API_ROOT.length),fields:reorder(fields),createTime:CLOCK,updateTime:versions.get(name)||CLOCK},readTime:CLOCK})));
     }
     const [coll,docId]=rest.split('/');
     const name=BASE+'/'+coll+'/'+docId;

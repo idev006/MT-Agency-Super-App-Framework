@@ -33,6 +33,7 @@ export function createFirestoreStore({firestore}){
   const mapCommitError=e=>{
     if(e&&e.code==='ALREADY_EXISTS')return new Error('DUPLICATE_KEY');
     if(e&&e.code==='NOT_FOUND')return new Error('NOT_FOUND');
+    if(e&&e.code==='FAILED_PRECONDITION')return new Error('WRITE_CONFLICT');
     return e;
   };
   const checkRequired=(cols,data)=>{for(const c of cols)if(c.required&&(data[c.name]===undefined||data[c.name]===''))throw new Error('REQUIRED_FIELD:'+c.name);};
@@ -125,7 +126,7 @@ export function createFirestoreStore({firestore}){
           return {type:'create',coll:o.table,id:String(o.data[primaryKey(o.table)]),fields:{...o.data,[SEQ_FIELD]:nextSeq()}};}
         if(!isPk(o.table,o.key))throw new Error('WRITE_REQUIRES_PRIMARY_KEY');
         const id=String(o.key[primaryKey(o.table)]);
-        if(o.op==='update'){checkPatch(cols,o.fields);return {type:'patch',coll:o.table,id,fields:o.fields};}
+        if(o.op==='update'){checkPatch(cols,o.fields);return {type:'patch',coll:o.table,id,fields:o.fields,...(o.ifVersion?{ifUpdateTime:o.ifVersion}:{})};}
         if(o.op==='remove')return {type:'delete',coll:o.table,id};
         throw new Error('INVALID_WRITE');
       });
@@ -145,10 +146,11 @@ export function createFirestoreStore({firestore}){
     // readMany: independent one/list reads in ONE parallel round. reqs: [{kind:'one'|'list',name,filter}].
     function readMany(reqs){
       if(typeof gw.queryMany!=='function')
-        return reqs.map(r=>r.kind==='one'?one(r.name,r.filter):r.kind==='newest'?listNewest(r.name,r.filter,r.limit||1):list(r.name,r.filter));
+        return reqs.map(r=>r.kind==='one'?one(r.name,r.filter):r.kind==='versioned'?{row:one(r.name,r.filter),version:null}
+          :r.kind==='newest'?listNewest(r.name,r.filter,r.limit||1):list(r.name,r.filter));
       const specs=reqs.map(r=>{
         columns(r.name);
-        if(r.kind==='one')return {coll:r.name,where:whereOf(r.filter)};
+        if(r.kind==='one'||r.kind==='versioned')return {coll:r.name,where:whereOf(r.filter)};
         if(r.kind==='list')return {coll:r.name,where:whereOf(r.filter),orderBy:{field:SEQ_FIELD,direction:'asc'},limit:MAX_LIMIT};
         // newest-first window — reuses the existing DESC composite indexes (listNewest).
         if(r.kind==='newest'){const l=r.limit||1;checkLimit(l);return {coll:r.name,where:whereOf(r.filter),orderBy:{field:SEQ_FIELD,direction:'desc'},limit:l};}
@@ -157,6 +159,7 @@ export function createFirestoreStore({firestore}){
       return gw.queryMany(specs).map((hits,i)=>{
         if(reqs[i].kind==='list'||reqs[i].kind==='newest')return hits.map(d=>strip(d.fields));
         if(hits.length>1)throw new Error('DUPLICATE_KEY');
+        if(reqs[i].kind==='versioned')return hits.length?{row:strip(hits[0].fields),version:hits[0].updateTime||null}:{row:null,version:null};
         return hits.length?strip(hits[0].fields):null;
       });
     }

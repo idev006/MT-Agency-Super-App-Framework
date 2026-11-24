@@ -152,3 +152,19 @@ test('V57 regression: registrations.review only issues queries backed by the liv
   // An ASC journal query (the V57 bug) is rejected by this strict fake exactly like live Firestore.
   assert.throws(()=>store.list('vc_operation_journal',{operation:'registrations.review',entity_id:'r1'}),/FAILED_PRECONDITION/);
 });
+
+test('C5 optimistic concurrency: a versioned update applies only if the doc is unchanged since it was read',()=>{
+  const fake=createFakeFirestoreRest();
+  const store=makeStore(fake);
+  store.insert('vc_users',rec('u1'));
+  const [a]=store.readMany([{kind:'versioned',name:'vc_users',filter:{user_id:'u1'}}]);
+  const [b]=store.readMany([{kind:'versioned',name:'vc_users',filter:{user_id:'u1'}}]);
+  assert.ok(a.version&&a.version===b.version,'both readers see the same server version');
+  store.writeMany([{op:'update',table:'vc_users',key:{user_id:'u1'},fields:{display_name:'A'},ifVersion:a.version}]);
+  assert.throws(()=>store.writeMany([{op:'update',table:'vc_users',key:{user_id:'u1'},fields:{display_name:'B'},ifVersion:b.version}]),
+    /WRITE_CONFLICT/,'the stale writer is rejected (was a silent lost update)');
+  assert.equal(store.one('vc_users',{user_id:'u1'}).display_name,'A');
+  const [c]=store.readMany([{kind:'versioned',name:'vc_users',filter:{user_id:'u1'}}]);
+  store.writeMany([{op:'update',table:'vc_users',key:{user_id:'u1'},fields:{display_name:'C'},ifVersion:c.version}]);
+  assert.equal(store.one('vc_users',{user_id:'u1'}).display_name,'C','a fresh re-read succeeds');
+});

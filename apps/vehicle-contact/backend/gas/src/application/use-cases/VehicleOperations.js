@@ -134,7 +134,8 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  // write in ONE commit. Firestore applies a commit all-or-nothing with per-write
  // preconditions, so there is never a partial submit to compensate (no saga, no locks).
  const readAll=reqs=>typeof store.readMany==='function'?store.readMany(reqs)
-  :reqs.map(r=>r.kind==='one'?store.one(r.name,r.filter):r.kind==='newest'?store.listNewest(r.name,r.filter,r.limit||1):store.list(r.name,r.filter));
+  :reqs.map(r=>r.kind==='one'?store.one(r.name,r.filter):r.kind==='versioned'?{row:store.one(r.name,r.filter),version:null}
+   :r.kind==='newest'?store.listNewest(r.name,r.filter,r.limit||1):store.list(r.name,r.filter));
  const writeAll=ops=>{
   if(typeof store.writeMany==='function')return store.writeMany(ops);
   for(const o of ops){if(o.op==='insert')store.insert(o.table,o.data);else if(o.op==='update')store.update(o.table,o.key,o.fields);else store.remove(o.table,o.key);}
@@ -146,11 +147,23 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   const digest=security.sha256(JSON.stringify({...p,campaignToken:undefined}));
   return store.withLock(()=>{
    references.assertRegistration(p);
-   const campaign=campaigns.getCampaign(p.campaignToken,{requireCapacity:false});
-   const idemKey=security.sha256('registration:'+campaign.campaign_id+':'+idem);
+   const tokenCampaign=campaigns.getCampaign(p.campaignToken,{requireCapacity:false});
+   const idemKey=security.sha256('registration:'+tokenCampaign.campaign_id+':'+idem);
+   // C5 (2026-11-24): the quota is a read-modify-write on the campaign doc. Concurrent submits
+   // used to overwrite each other's count and overshoot max_submissions. The campaign is now
+   // read WITH its server version and the count is written only if that version is unchanged
+   // (optimistic concurrency); a conflicting submit re-reads and retries.
+   for(let attempt=1;;attempt++){
+    try{return submitOnce(idemKey);}
+    catch(error){if(error&&error.message==='WRITE_CONFLICT'&&attempt<4)continue;
+     if(error&&error.message==='WRITE_CONFLICT')throw new Error('CAMPAIGN_BUSY');throw error;}
+   }
+  });
+  function submitOnce(idemKey){
    const fivePhotos=validateFivePhotos(p.photos);
    const photoReads=fivePhotos?p.photos.map(x=>({kind:'one',name:'vc_photo_staging',filter:{photo_id:need(x.photoId,'PHOTO_ID')}})):[];
-   let [old,orphans,org,vehicles,pending,...staged]=readAll([
+   let [versioned,old,orphans,org,vehicles,pending,...staged]=readAll([
+    {kind:'versioned',name:'vc_campaigns',filter:{token_digest:security.sha256(p.campaignToken.toLowerCase())}},
     {kind:'one',name:'vc_idempotency',filter:{key:idemKey}},
     {kind:'list',name:'vc_registration_requests',filter:{idempotency_key:idemKey}},
     {kind:'one',name:'vc_organizations',filter:{organization_id:payload.organization_id}},
@@ -178,19 +191,27 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     }
     staged=readAll(photoReads);
    }
+   const campaign=versioned.row;
+   if(!campaign||campaign.status!=='ACTIVE'||campaign.revoked_at)throw new Error('CAMPAIGN_INVALID');
    if(Number(campaign.submitted_count)>=Number(campaign.max_submissions))throw new Error('CAMPAIGN_INVALID');
    if(!org||org.status!=='ACTIVE')throw new Error('ORGANIZATION_INACTIVE');
    const duplicate=vehicles.some(v=>v.plate_normalized===payload.plate_normalized&&v.province_code===payload.province_code&&v.status!=='INACTIVE');
+   // A same-key retry racing the winner can read a stale "no idempotency row" yet see the
+   // winner's committed effects (its pending request / CLAIMED photos). Before rejecting on
+   // such state, re-read the idempotency row and replay the winner (G7 C1, 2026-11-24).
+   const replayOrThrow=code=>{
+    const winner=store.one('vc_idempotency',{key:idemKey});
+    if(winner&&winner.request_digest===digest&&winner.status==='COMPLETED')return JSON.parse(winner.result_json);
+    throw new Error(code);
+   };
    // Orphans were just reconciled away, so they no longer count as pending duplicates.
    const live=pending.filter(r=>!removedIds.includes(r.request_id));
    if(duplicate||live.some(r=>{const x=JSON.parse(r.application_json);return x.plate_normalized+'|'+x.province_code===key;}))
-    throw new Error('DUPLICATE_VEHICLE');
+    return replayOrThrow('DUPLICATE_VEHICLE');
    if(!fivePhotos)throw new Error('FIVE_PHOTOS_REQUIRED');
-   const media=p.photos.map((x,i)=>{
-    const file=staged[i];
-    if(!file||file.campaign_id!==campaign.campaign_id||file.status!=='STAGED'||file.slot!==x.slot)throw new Error('PHOTO_NOT_STAGED');
-    return file;
-   });
+   if(p.photos.some((x,i)=>{const f=staged[i];return !f||f.campaign_id!==campaign.campaign_id||f.status!=='STAGED'||f.slot!==x.slot;}))
+    return replayOrThrow('PHOTO_NOT_STAGED');
+   const media=p.photos.map((x,i)=>staged[i]);
    const requestId=id(),vehicleId=id(),eventId=id(),at=now();
    const snapshot={...payload,photos:media.map(f=>({photoId:f.photo_id,slot:f.slot,storageRef:f.storage_ref,mimeType:f.mime_type,sizeBytes:f.size_bytes}))};
    const journal={operation:'registrations.submit',requestId,vehicleId,campaignId:campaign.campaign_id,idempotencyKey:idemKey,requestDigest:digest};
@@ -202,7 +223,8 @@ export function createVehicleOperations({store,security,campaigns,references}) {
      {op:'insert',table:'vc_registration_requests',data:{request_id:requestId,vehicle_id:vehicleId,campaign_id:campaign.campaign_id,
       status:'PENDING_APPROVAL',submitted_at:at,reviewed_by:'',reviewed_at:'',application_json:JSON.stringify(snapshot),idempotency_key:idemKey}},
      ...media.map(file=>({op:'update',table:'vc_photo_staging',key:{photo_id:file.photo_id},fields:{status:'CLAIMED',used_at:at}})),
-     {op:'update',table:'vc_campaigns',key:{campaign_id:campaign.campaign_id},fields:{submitted_count:Number(campaign.submitted_count)+1}},
+     {op:'update',table:'vc_campaigns',key:{campaign_id:campaign.campaign_id},fields:{submitted_count:Number(campaign.submitted_count)+1},
+      ...(versioned.version?{ifVersion:versioned.version}:{})},
      {op:'insert',table:'vc_idempotency',data:{key:idemKey,operation:'registrations.submit',actor_id:'PUBLIC_CAMPAIGN',request_digest:digest,
       result_json:JSON.stringify(result),status:'COMPLETED',created_at:at}}
     ]);
@@ -219,7 +241,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     throw error;
    }
    return result;
-  });
+  }
  }
  function registrationPending(p){
   const items=store.list('vc_registration_requests',{status:'PENDING_APPROVAL'})
