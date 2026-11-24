@@ -75,9 +75,11 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
  // vehicle; every view is logged in vc_lookup_audit (source PHOTO), not in the change history.
  function vehiclePhoto(p,actor){
   const vehicleId=need(p.vehicleId,'VEHICLE_ID'),photoId=need(p.photoId,'PHOTO_ID');
-  const vehicle=store.one('vc_vehicles',{vehicle_id:vehicleId});
+  // Speed: vehicle + photo rows in one parallel round (were two sequential reads).
+  const [vehicle,photo]=typeof store.readMany==='function'
+   ?store.readMany([{kind:'one',name:'vc_vehicles',filter:{vehicle_id:vehicleId}},{kind:'one',name:'vc_vehicle_photos',filter:{photo_id:photoId}}])
+   :[store.one('vc_vehicles',{vehicle_id:vehicleId}),store.one('vc_vehicle_photos',{photo_id:photoId})];
   if(!vehicle||vehicle.status!=='ACTIVE')throw new Error('VEHICLE_NOT_ACTIVE');
-  const photo=store.one('vc_vehicle_photos',{photo_id:photoId});
   if(!photo||photo.vehicle_id!==vehicleId||photo.status!=='ACTIVE')throw new Error('PHOTO_NOT_FOUND');
   const media=drivePhotos.read(photo.storage_ref);
   store.insert('vc_lookup_audit',{audit_id:id(),actor_id:actor.userId,vehicle_id:vehicleId,lookup_source:'PHOTO',result:'FOUND',

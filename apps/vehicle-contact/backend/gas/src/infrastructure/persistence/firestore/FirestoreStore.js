@@ -144,7 +144,14 @@ export function createFirestoreStore({firestore}){
     }
     // Optional port extensions (Sheets and the in-tx store degrade to the sequential port).
     // readMany: independent one/list reads in ONE parallel round. reqs: [{kind:'one'|'list',name,filter}].
-    function readMany(reqs){
+    // opts.inserts: append-only rows ([[table,data],...]) written in the SAME parallel round as the
+    // reads (create, exists:false → atomic, duplicate-safe). Falls back to insert-then-read.
+    function readMany(reqs,opts={}){
+      const inserts=Array.isArray(opts.inserts)?opts.inserts:[];
+      if(inserts.length&&!(fast&&typeof gw.queryManyAndCommit==='function')){
+        for(const [table,data] of inserts)insert(table,data);
+        return readMany(reqs);
+      }
       if(typeof gw.queryMany!=='function')
         return reqs.map(r=>r.kind==='one'?one(r.name,r.filter):r.kind==='versioned'?{row:one(r.name,r.filter),version:null}
           :r.kind==='newest'?listNewest(r.name,r.filter,r.limit||1):list(r.name,r.filter));
@@ -156,7 +163,14 @@ export function createFirestoreStore({firestore}){
         if(r.kind==='newest'){const l=r.limit||1;checkLimit(l);return {coll:r.name,where:whereOf(r.filter),orderBy:{field:SEQ_FIELD,direction:'desc'},limit:l};}
         throw new Error('INVALID_READ');
       });
-      return gw.queryMany(specs).map((hits,i)=>{
+      let results;
+      if(inserts.length){
+        const ops=inserts.map(([table,data])=>{const cols=columns(table);checkRequired(cols,data);
+          return {type:'create',coll:table,id:String(data[primaryKey(table)]),fields:{...data,[SEQ_FIELD]:nextSeq()}};});
+        let out;try{out=gw.queryManyAndCommit(specs,ops);}catch(e){throw mapCommitError(e);}
+        results=out.slice(0,specs.length);
+      }else results=gw.queryMany(specs);
+      return results.map((hits,i)=>{
         if(reqs[i].kind==='list'||reqs[i].kind==='newest')return hits.map(d=>strip(d.fields));
         if(hits.length>1)throw new Error('DUPLICATE_KEY');
         if(reqs[i].kind==='versioned')return hits.length?{row:strip(hits[0].fields),version:hits[0].updateTime||null}:{row:null,version:null};

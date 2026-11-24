@@ -161,7 +161,7 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
   // type 'patch' writes ONLY the given fields (updateMask) on an existing doc — no read,
   // and concurrent writes to other fields (e.g. a session revoke) are never overwritten.
   const FIELD_PATH=/^[A-Za-z_][A-Za-z0-9_]*$/;
-  function commit(ops){
+  function commitBody(ops){
     const writes=ops.map(o=>{
       if(o.type==='delete')return {delete:relName(o.coll,o.id),currentDocument:{exists:true}};
       if(o.type==='patch'){
@@ -174,7 +174,16 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
       }
       return {update:{name:relName(o.coll,o.id),fields:encodeFields(o.fields)},currentDocument:{exists:o.type==='create'?false:true}};
     });
-    return call(base+':commit','post',{writes});
+    return {writes};
+  }
+  function commit(ops){return call(base+':commit','post',commitBody(ops));}
+  // Speed: independent queries AND one independent commit in the SAME parallel round (fetchAll),
+  // e.g. a read view plus its append-only access-audit row. Returns [queryRows..., commitResult].
+  function queryManyAndCommit(specs,ops){
+    const reqs=specs.map(s=>({url:base+':runQuery',method:'post',body:queryBody(s.coll,s)}));
+    reqs.push({url:base+':commit',method:'post',body:commitBody(ops)});
+    const out=callMany(reqs);
+    return [...out.slice(0,specs.length).map(queryRows),out[specs.length]];
   }
   function batchGetMany(coll,ids){return batchGet(coll,ids);}
 
@@ -259,5 +268,5 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     return result;
   }
 
-  return Object.freeze({query,queryMany,runTransaction,commit,batchGetMany});
+  return Object.freeze({query,queryMany,queryManyAndCommit,runTransaction,commit,batchGetMany});
 }

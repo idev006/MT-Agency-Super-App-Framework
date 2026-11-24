@@ -1,6 +1,7 @@
 import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition} from '../../domain/policies/VehicleLifecycle.js';
 import {paginate} from '../pagination/Pagination.js';
 import {createChangeReview} from './ChangeReviewOperation.js';
+import {createVehicleView} from './VehicleView.js';
 export function createVehicleOperations({store,security,campaigns,references}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -143,6 +144,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   return true;
  };
  const changeReview=createChangeReview({store,need,now,id,readAll,writeAll});
+ const vehicleView=createVehicleView({store,now,id});
  function registrationSubmit(p){
   const payload=body(p),key=payload.plate_normalized+'|'+payload.province_code;
   const idem=need(p.idempotencyKey,'IDEMPOTENCY_KEY',100);
@@ -339,50 +341,6 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   const result={requestId:request.request_id,vehicleId:request.vehicle_id,status:reviewStatus(detail.decision)};
   if(approve){result.qrToken=token;result.qrId=detail.qrId;}
   return result;
- }
- function vehicleView(v,actor,source) {
-  if(!v||v.status!=='ACTIVE')return null;
-  lookupAudit(actor,v.vehicle_id,source,'FOUND');
-  const response={vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,status:v.status,
-   vehicleType:v.vehicle_type,plateType:v.plate_type,brand:v.make,model:v.model,color:v.color,version:Number(v.version)};
-  // Contacts and photos are independent reads: fetched in ONE parallel round when the store
-  // supports readMany (Firestore), sequentially otherwise. Permission gating is unchanged.
-  const wantContacts=actor.permissions.includes('vehicle.contact.read');
-  const wantPhotos=actor.permissions.includes('vehicle.photos.read');
-  const reads=[];
-  if(wantContacts)reads.push({kind:'list',name:'vc_vehicle_contacts',filter:{vehicle_id:v.vehicle_id}});
-  if(wantPhotos)reads.push({kind:'list',name:'vc_vehicle_photos',filter:{vehicle_id:v.vehicle_id}});
-  // E2E 2026-11-24: search roles saw codes (RY01/WHITE/OWNER) and an empty history. Labels are read
-  // by reference id and history by entity id (live index exists) in the same parallel round.
-  const wantHistory=actor.permissions.includes('vehicle.history.read');
-  if(wantHistory)reads.push({kind:'list',name:'vc_change_audit',filter:{entity_id:v.vehicle_id}});
-  const refKeys=[['VEHICLE_TYPE',v.vehicle_type],['COLOR',v.color],['PLATE_TYPE',v.plate_type]]
-   .filter(([,code])=>code);
-  for(const [catalog,code] of refKeys)reads.push({kind:'one',name:'vc_reference_values',filter:{reference_id:'REF-'+catalog+'-'+code}});
-  // R7 (owner: "ข้อมูลอื่นๆ เพื่อประกอบการพิจารณาครบมั้ย"): agency + active QR, equality-only reads.
-  const extra=reads.length;
-  if(v.organization_id)reads.push({kind:'one',name:'vc_organizations',filter:{organization_id:v.organization_id}});
-  reads.push({kind:'one',name:'vc_qr_tokens',filter:{vehicle_id:v.vehicle_id,status:'ACTIVE'}});
-  const rows=typeof store.readMany==='function'?store.readMany(reads)
-   :reads.map(r=>r.kind==='one'?(typeof store.one==='function'?store.one(r.name,r.filter):(store.list(r.name,r.filter)||[])[0]||null):store.list(r.name,r.filter));
-  const tail=rows.splice(extra); // [organization?, activeQr]
-  const qrRow=tail.pop(),orgRow=v.organization_id?tail.pop():null;
-  const contactRows=wantContacts?rows.shift():[],photoRows=wantPhotos?rows.shift():[],historyRows=wantHistory?rows.shift():[];
-  const label={};for(const ref of rows)if(ref&&ref.label_th)label[ref.catalog+'|'+ref.code]=ref.label_th;
-  response.organization={id:v.organization_id||'',name:orgRow&&orgRow.name||''};
-  response.registeredAt=v.created_at||'';response.updatedAt=v.updated_at||'';
-  response.qr={active:Boolean(qrRow),issuedAt:qrRow&&qrRow.issued_at||''};
-  const labelOf=(catalog,code)=>label[catalog+'|'+code]||'';
-  response.labels={vehicleType:labelOf('VEHICLE_TYPE',v.vehicle_type),color:labelOf('COLOR',v.color),plateType:labelOf('PLATE_TYPE',v.plate_type)};
-  if(wantContacts)
-   response.contacts=contactRows.filter(c=>c.status==='ACTIVE')
-    .map(c=>({name:c.display_name,phone:c.phone_e164,relationship:c.relationship,isPrimary:c.is_primary}));
-  if(wantPhotos)
-   response.photos=photoRows.filter(x=>x.status==='ACTIVE')
-    .map(x=>({photoId:x.photo_id,slot:x.slot,storageRef:x.storage_ref,mimeType:x.mime_type}));
-  if(wantHistory)response.history=historyRows.slice(-100)
-   .map(x=>({audit_id:x.audit_id,action:x.action,redacted_summary:x.redacted_summary,created_at:x.created_at}));
-  return response;
  }
  function vehicleLookup(p,a){
   const [plate,province]=vehicleBusinessKey(p.plate,p.province).split('|');
