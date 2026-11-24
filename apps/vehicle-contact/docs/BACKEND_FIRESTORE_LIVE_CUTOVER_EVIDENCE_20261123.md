@@ -397,3 +397,11 @@ Owner approved the admin-reset security change and typed `PUSH_VEHICLE_GAS` (202
 
 Pre-existing residue cleanup (owner approved): 4 synthetic suite users from the V54 run-2 network failure suspended via `users.suspend`; independent Firestore read-back 4/4 `SUSPENDED`, 0 active sessions. One older suite user (`p6vc_reg_mwsi6knk`, 07:05 +07) left untouched pending owner decision. Pepper: owner accepted deferral — DEV keeps the current pepper; **production MUST use a freshly generated pepper** (release precondition).
 
+### 5.11 Firestore DEV data re-initialization (owner: "คุณจะ init data ใหม่ทั้งหมดก็ได้", scope chosen via AskUserQuestion: wipe transactional data, keep accounts/config)
+
+1. **Backup first:** full REST dump of every collection — **3,436 docs** → `test-results/firestore-dev-backup-20261123T133608Z.json` (gitignored, synthetic only).
+2. **Wipe (2026-11-23 ~13:40Z): 2,598 docs deleted** from 17 transactional collections (vehicles, contacts, photos, staging, QR, registrations, change requests, campaigns, sessions, idempotency, journals, audits, security events, retention jobs, lookup audit, legacy `vc_migration_journal`, retired `__p6vc_seq`). The wiper deletes only docs present in the backup. **Kept (838):** `vc_users` 83, `vc_user_roles` 84, `vc_organizations` 24, `vc_settings` 2, `vc_reference_values` 645; re-inventory confirmed only these remain.
+3. **Seed (API lifecycle, `reset-dev-data.mjs --count=10`):** attempts 1–2 aborted on client-side `fetch failed` (local network; per-op timing probe right after: all ops 4–10 s, none hanging) — no partial business data; attempt 3 **PASS: 10 vehicles seeded + verified, cleanup 2/2**. Tooling fix: the reset no longer re-suspends already-suspended users / re-disables inactive orgs. Independent Firestore read-back: **10 ACTIVE vehicles (ฑฆ1000–ฑฆ1009), 10/10 complete** (1 contact · 5 photos · 1 active QR).
+4. **G6 on the fresh data (2026-11-24, V59/0.9.9): PASS 103/103** — authenticated 72/72, 56/56 ops, cleanup 0 failed, **DATA_PROOF 6/6** (`TST78968486`); p50 6,472 · p95 13,952 · max 16,767 ms.
+5. Earlier in the session: all 5 residual synthetic suite users suspended (read-back SUSPENDED, 0 active sessions). Drive photo files referenced by the wiped rows remain in the Drive folder (orphaned, synthetic).
+
