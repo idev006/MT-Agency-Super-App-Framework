@@ -21,8 +21,8 @@ describe('P1.1 one-time secrets', () => {
     expect(campaignState({ ...base, submittedCount: 5 }, now).label).toBe('เต็มโควตา')
     expect(campaignState(base, now).label).toBe('เปิดรับอยู่')
   })
-  it('campaign and approval pages guard leaving while a one-time secret is shown; campaign token has a copy button', () => {
-    expect(read('../src/pages/CampaignAdministrationPage.vue')).toContain('useOneTimeSecretGuard(administration.oneTimeToken)')
+  it('the approval page guards leaving while the one-time QR is shown; campaigns no longer need it (VC-ADR-031: always copyable)', () => {
+    expect(read('../src/pages/CampaignAdministrationPage.vue')).not.toContain('useOneTimeSecretGuard')
     expect(read('../src/pages/RegistrationReviewPage.vue')).toContain('useOneTimeSecretGuard(work.oneTimeQr)')
     expect(read('../src/features/campaigns/components/CampaignAdministrationPanel.vue')).toContain('คัดลอกรหัส')
   })

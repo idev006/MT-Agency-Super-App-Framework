@@ -12,10 +12,11 @@ sequenceDiagram
     API->>Campaign: Generate opaque campaign token
     Campaign->>DB: Store SHA-256 token digest and metadata
     Campaign->>DB: Append campaign audit
-    API-->>FE: campaignId and one-time campaignToken
+    API-->>FE: campaignId, campaignToken, name
     FE->>API: campaigns.list
     API->>DB: Read bounded campaign list
-    API-->>FE: No raw token in list
+    API-->>FE: Items with name and campaignToken (VC-ADR-031)
+    Admin->>FE: Copy link / share / show QR
     Admin->>FE: Revoke a campaign
     FE->>API: campaigns.revoke(campaignId)
     API->>DB: Mark REVOKED, revoked_at + audit

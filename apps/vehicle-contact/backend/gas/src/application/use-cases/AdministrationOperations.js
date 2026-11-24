@@ -67,19 +67,24 @@ export function createAdministrationOperations({store,security}) {
   const start=Date.parse(p.startsAt),end=Date.parse(p.endsAt),now=Date.parse(security.now()),max=p.maxSubmissions;
   if(!Number.isFinite(start)||!Number.isFinite(end)||start>=end||end<=now
    ||!Number.isSafeInteger(max)||max<1||max>100000)throw new Error('INVALID_CAMPAIGN');
+  // VC-ADR-031: a name helps admins tell campaigns apart; the code is stored so it can be copied at any time.
+  const name=p.name===undefined?'':String(p.name).trim();
+  if(name.length>120)throw new Error('INVALID_CAMPAIGN');
   const id=security.secretToken(),token=security.secretToken();
   store.sequence(()=>{
    store.insert('vc_campaigns',{campaign_id:id,token_digest:security.sha256(token),
     starts_at:new Date(start).toISOString(),ends_at:new Date(end).toISOString(),
-    max_submissions:max,submitted_count:0,revoked_at:'',status:'ACTIVE',created_by:a.userId,created_at:security.now()});
+    max_submissions:max,submitted_count:0,revoked_at:'',status:'ACTIVE',created_by:a.userId,created_at:security.now(),
+    campaign_name:name,campaign_token:token});
    audit(a,'CAMPAIGN_CREATED',id);
   });
-  return {campaignId:id,campaignToken:token};
+  return {campaignId:id,campaignToken:token,name};
  }
  function listCampaigns(p){
   const items=store.list('vc_campaigns').map(x=>({
    campaignId:x.campaign_id,startsAt:x.starts_at,endsAt:x.ends_at,maxSubmissions:Number(x.max_submissions),
-   submittedCount:Number(x.submitted_count),status:x.status
+   submittedCount:Number(x.submitted_count),status:x.status,name:x.campaign_name||'',
+   campaignToken:x.campaign_token||'',createdAt:x.created_at||'',revokedAt:x.revoked_at||''
   })).reverse(); // R6 (E2E P3): newest first — a new campaign was landing on the last page.
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }

@@ -996,6 +996,22 @@
           "key": null,
           "classification": "internal",
           "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "campaign_name",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "VC-ADR-031: admin-facing display name (1-120 chars); empty for campaigns created before 0.9.20"
+        },
+        {
+          "name": "campaign_token",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "VC-ADR-031 (owner 2026-11-25: campaign code is not a secret): the shareable registration code, readable by campaign admins at any time; lookup still uses token_digest. Empty for campaigns created before 0.9.20 (unrecoverable)"
         }
       ]
     },

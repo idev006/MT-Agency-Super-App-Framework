@@ -19,7 +19,7 @@ const SCHEMAS={
  'organizations.create':[{name:'s',type:'s'},{parentId:'s'}],
  'organizations.update':[{organizationId:'s'},{name:'s',parentId:'s'}],
  'organizations.disable':[{organizationId:'s'},{}],
- 'campaigns.create':[{startsAt:'s',endsAt:'s',maxSubmissions:'n'},{}],
+ 'campaigns.create':[{startsAt:'s',endsAt:'s',maxSubmissions:'n'},{name:'s'}],
  'campaigns.list':[{}, {limit:'n',page:'n',pageSize:'n'}],
  'campaigns.validate':[{campaignToken:'s'},{}],
  'campaigns.revoke':[{campaignId:'s'},{}],

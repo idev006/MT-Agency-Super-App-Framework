@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.19",
+  "backendVersion": "0.9.20",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-24T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.19 = request profiler (only requestId prof_*: serverTiming with phase/fetch/cache/props/Drive durations + counts; no data). Prior: 0.9.18 (V68)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.20 = VC-ADR-031 campaign code copyable at any time + campaign name (vc_campaigns.campaign_token/campaign_name). Prior: 0.9.19 request profiler (V69)."
 }
