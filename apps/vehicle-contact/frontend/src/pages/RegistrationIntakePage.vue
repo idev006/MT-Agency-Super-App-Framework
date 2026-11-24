@@ -152,9 +152,9 @@ watch(referenceVersion, reconcileSelections)
 
       <fieldset v-show="step === 0" :ref="(el) => { stepPanels[0] = el }" class="fieldset rounded-box border border-base-300 bg-base-100 p-5 sm:p-6" :disabled="editingLocked">
         <legend class="fieldset-legend text-lg font-semibold">1. แคมเปญรับลงทะเบียน</legend>
-        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+        <div class="p6-form-row md:grid-cols-[minmax(0,1fr)_auto]">
           <label class="field-stack"><span class="label-text font-semibold">รหัสแคมเปญ (64 ตัวอักษร)</span><input v-model.trim="campaignToken" class="input input-bordered w-full font-mono" type="password" autocomplete="off" required minlength="64" maxlength="64" placeholder="วางรหัสแคมเปญที่ได้รับ" /><span class="label-text-alt">ใช้ตรวจสอบแคมเปญเท่านั้น ระบบไม่บันทึกรหัสใน browser</span></label>
-          <button class="btn min-h-11" type="button" :disabled="busy || campaignToken.length !== 64" @click="work.validateCampaign(campaignToken)"><span v-if="work.phase.value === 'validating'" class="loading loading-spinner loading-sm"></span>ตรวจสอบแคมเปญ</button>
+          <div class="p6-row-action"><button class="btn w-full" type="button" :disabled="busy || campaignToken.length !== 64" @click="work.validateCampaign(campaignToken)"><span v-if="work.phase.value === 'validating'" class="loading loading-spinner loading-sm"></span>ตรวจสอบแคมเปญ</button></div>
         </div>
         <div v-if="campaignReady" class="alert alert-success mt-3">แคมเปญพร้อมรับคำขอ</div>
         <div v-else-if="work.phase.value === 'error' && step === 0" class="alert alert-error mt-3" role="alert"><span>ตรวจสอบแคมเปญไม่ผ่าน ({{ work.failure.value?.code }})</span></div>

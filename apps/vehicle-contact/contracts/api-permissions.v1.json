@@ -256,6 +256,13 @@
       "enabled": false
     },
     {
+      "id": "VC-VEHICLES-008",
+      "operation": "vehicles.photo",
+      "requiredPermission": "vehicle.photos.read",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
       "id": "VC-CONTACTS-001",
       "operation": "contacts.read",
       "requiredPermission": "vehicle.contact.read",

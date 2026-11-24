@@ -40,16 +40,16 @@ onBeforeUnmount(() => { work.clearSensitive(); scanner.destroy() })
       <form autocomplete="off" @submit.prevent="submit">
         <fieldset class="fieldset gap-4" :disabled="work.phase.value === 'loading'">
           <legend class="sr-only">กรอกรหัส QR</legend>
-          <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+          <div class="p6-form-row md:grid-cols-[minmax(0,1fr)_auto]">
             <label class="field-stack">
               <span class="label font-medium text-base-content">รหัส QR (64 ตัวอักษร)</span>
               <input v-model.trim="token" class="input input-bordered min-h-11 w-full font-mono" type="password" inputmode="text" minlength="64" maxlength="64" pattern="[A-Fa-f0-9]{64}" autocomplete="off" autocapitalize="none" spellcheck="false" required aria-describedby="qr-token-help">
               <span id="qr-token-help" class="text-sm text-base-content/80">ใช้เมื่อสแกนไม่ได้ ระบบใช้ token ในหน่วยความจำระหว่างคำขอเท่านั้น และไม่บันทึกลง URL หรือ browser storage</span>
             </label>
-            <button class="btn btn-primary min-h-11 md:mt-8" type="submit" :disabled="token.length !== 64 || work.phase.value === 'loading'">
+            <div class="p6-row-action"><button class="btn btn-primary w-full px-6" type="submit" :disabled="token.length !== 64 || work.phase.value === 'loading'">
               <span v-if="work.phase.value === 'loading'" class="loading loading-spinner loading-sm" aria-hidden="true"></span>
               ตรวจสอบ QR
-            </button>
+            </button></div>
           </div>
         </fieldset>
       </form>

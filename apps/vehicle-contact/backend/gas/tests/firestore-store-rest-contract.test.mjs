@@ -94,7 +94,7 @@ test('vehicles.detail round-trips minimized: lookup audit is a plain append-only
   const actor={userId:'u1',permissions:['vehicle.lookup','vehicle.contact.read','vehicle.photos.read']};
   const n=count(),r0=fake.state.rounds;
   const result=ops['vehicles.detail']({vehicleId:'v1'},actor);
-  const calls=count()-n,rounds=fake.state.rounds-r0,refReads=3;
+  const calls=count()-n,rounds=fake.state.rounds-r0,refReads=3+2; // + agency + active QR (R7)
   assert.equal(result.vehicleId,'v1');
   // activeVehicle runQuery(1) + lookupAudit insert(2: prefetch batchGet w/ newTransaction + commit)
   //   + contacts runQuery(1) + photos runQuery(1) = 5.

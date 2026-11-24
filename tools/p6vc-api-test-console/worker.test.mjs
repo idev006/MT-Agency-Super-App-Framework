@@ -529,3 +529,17 @@ test('versioned health catalog is accepted by the same suite runner',async()=>{
   assert.equal(report.executed,2);
  }finally{mock.restore();}
 });
+
+test('frontend gateway allows vehicles.photo only with the exact DTO (R7 vehicle evidence photos)',async()=>{
+ const fake=await fakeGAS(body=>envelope(true,{operation:body.group+'.'+body.action}));
+ try{
+  const ok=await worker.fetch(frontendRequest({apiVersion:'v1',group:'vehicles',action:'photo',payload:{vehicleId:'vehicle-1',photoId:'photo-1'},requestId:'request_123',sessionToken:TOKEN}),env());
+  assert.equal(ok.status,200);
+  assert.deepEqual(fake.calls.map(({group,action,payload})=>({operation:group+'.'+action,payload})),[{operation:'vehicles.photo',payload:{vehicleId:'vehicle-1',photoId:'photo-1'}}]);
+  for(const payload of [{vehicleId:'vehicle-1'},{vehicleId:'vehicle-1',photoId:'photo-1',storageRef:'x'}]){
+   const denied=await worker.fetch(frontendRequest({apiVersion:'v1',group:'vehicles',action:'photo',payload,requestId:'request_123',sessionToken:TOKEN}),env());
+   assert.equal(denied.status,403);
+   assert.equal((await denied.json()).error,'INVALID_OPERATION_PAYLOAD');
+  }
+ }finally{fake.restore();}
+});

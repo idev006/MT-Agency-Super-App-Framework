@@ -18,7 +18,7 @@ const permissions={
  'contacts.read':'vehicle.contact.read','contacts.update':'vehicle.update',
  'changes.submit':'vehicle.change.submit','changes.listPending':'vehicle.change.approve','changes.review':'vehicle.change.approve','changes.listMine':'vehicle.own.read',
  'qr.resolve':'vehicle.lookup','qr.issue':'qr.manage','qr.revoke':'qr.manage','qr.replace':'qr.manage',
- 'photos.list':'vehicle.photos.read','photos.replace':'vehicle.update',
+ 'photos.list':'vehicle.photos.read','vehicles.photo':'vehicle.photos.read','photos.replace':'vehicle.update',
  'retention.listDue':'retention.read','retention.listExecutable':'retention.worker','retention.approve':'retention.delete.approve','retention.execute':'retention.worker','retention.jobStatus':'retention.read',
  'audit.query':'audit.read','audit.export':'audit.read'
 };
@@ -48,7 +48,7 @@ export function createOperationController({store,security,sessions,drivePhotos,a
  };
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
- if(entries.length!==55||DTO_OPERATIONS.length!==55||entries.some(op=>!DTO_OPERATIONS.includes(op))
+ if(entries.length!==56||DTO_OPERATIONS.length!==56||entries.some(op=>!DTO_OPERATIONS.includes(op))
   ||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
   throw new Error('INCOMPLETE_API_DISPATCH');
  function dispatch(request){

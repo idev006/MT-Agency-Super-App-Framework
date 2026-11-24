@@ -41,7 +41,7 @@ export function useVehicleDetail({ repository, permissions }) {
         history = response.history
         historyRequestId = response.requestId
       }
-      result.value = { vehicle: detail.vehicle, history, requestIds: { lookup: detail.requestId, history: historyRequestId } }
+      result.value = { vehicle: detail.vehicle, version: detail.version, history, requestIds: { lookup: detail.requestId, history: historyRequestId } }
       phase.value = 'success'
       return true
     } catch (error) { captureFailure(error); return false }

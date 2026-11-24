@@ -31,6 +31,7 @@ const SCHEMAS={
  'registrations.detail':[{requestId:'s'},{}],
  'registrations.review':[{requestId:'s',decision:'s'},{platePhotoVerified:'b'}],
  'registrations.photo':[{requestId:'s',photoId:'s'},{}],
+ 'vehicles.photo':[{vehicleId:'s',photoId:'s'},{}],
  'vehicles.lookup':[{plate:'s',province:'s'},{}],
  'vehicles.detail':[{vehicleId:'s'},{}],
  'vehicles.update':[{vehicleId:'s',expectedVersion:'n'},
