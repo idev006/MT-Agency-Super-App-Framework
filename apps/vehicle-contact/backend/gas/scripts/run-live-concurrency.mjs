@@ -45,7 +45,7 @@ export function evaluateApproveRace(responses,data){
 }
 
 // ---- Firestore REST read-back (independent of the API) ----
-async function firestoreReader(env){
+export async function firestoreReader(env){
   const key=JSON.parse(fs.readFileSync(env.GOOGLE_APPLICATION_CREDENTIALS,'utf8'));
   const project=env.FIRESTORE_PROJECT_ID||key.project_id,db=env.FIRESTORE_DATABASE_ID||'(default)';
   const base=`https://firestore.googleapis.com/v1/projects/${project}/databases/${db}/documents`;
