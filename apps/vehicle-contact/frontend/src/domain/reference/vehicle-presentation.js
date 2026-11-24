@@ -28,3 +28,12 @@ export function telHref(e164) {
 export function orderContacts(contacts = []) {
   return [...contacts].sort((a, b) => Number(b.isPrimary === true) - Number(a.isPrimary === true))
 }
+
+// R4: staff type Thai numbers the way they read them (081-234-5678); the API stores E.164.
+// Returns '' when the input is neither a Thai national number nor already E.164.
+export function toE164(input) {
+  const compact = String(input || '').replace(/[\s-]/g, '')
+  if (/^0\d{8,9}$/.test(compact)) return `+66${compact.slice(1)}`
+  if (/^\+[1-9]\d{6,14}$/.test(compact)) return compact
+  return ''
+}

@@ -85,7 +85,8 @@ describe('registration intake state and page contracts', () => {
     expect(page).toContain('<OperationalContextStrip')
     expect(page).toContain('type="file"')
     expect(page).toContain('capture="environment"')
-    expect(page).toContain('<ConfirmDialog')
+    expect(page).toContain('ตรวจทานก่อนส่ง') // R4: the review step is the confirmation
+    expect(page).not.toContain('<ConfirmDialog')
     expect(page).not.toContain('localStorage')
     expect(page).not.toContain('sessionStorage')
     expect(page).not.toContain('fetch(')
