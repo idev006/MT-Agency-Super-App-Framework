@@ -26,3 +26,10 @@ test('FAIL on missing, trashed, wrong folder, mime/size mismatch and staging→p
   assert.equal(r.status,'FAIL');
   assert.deepEqual(r.issues,{missing:1,trashed:1,wrongFolder:1,mimeMismatch:1,sizeMismatch:1,stagingRefMismatch:1});
 });
+
+test('photos.replace history (version 2, old file trashed, CLAIMED staging on the old file) is NOT a defect',()=>{
+  const files=[{id:'old',mime:'image/png',size:1,trashed:true},{id:'new',mime:'image/png',size:2}];
+  const r=auditDrivePhotos({store:store([{photo_id:'p1',storage_ref:'new',status:'ACTIVE',version:2,mime_type:'image/png',size_bytes:2}],
+    [{photo_id:'p1',storage_ref:'old',status:'CLAIMED',mime_type:'image/png',size_bytes:1}]),driveApp:fakeDrive(files,'FOLDER'),folderId:'FOLDER'});
+  assert.equal(r.status,'PASS');assert.equal(r.checked.replacedPhotos,1);
+});

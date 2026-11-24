@@ -125,15 +125,6 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
       record('S1_RBAC_DENY_STAFF',verdict.s1(d)&&d.orgCreated===0,d);
     });
 
-    await tryScenario('S5_LOOKUP_AUDIT_ONE_ROW',async()=>{
-      const vid=vehicles[0];if(!vid)throw new Error('NO_VEHICLE_FROM_C3b');
-      const v=(await where('vc_vehicles','vehicle_id',vid))[0];
-      const before=(await where('vc_lookup_audit','vehicle_id',vid)).length;
-      const r=await call('vehicles.lookup',{plate:v.plate_normalized,province:'TH-10'},staff);
-      const d={lookup:code(r),auditDelta:(await where('vc_lookup_audit','vehicle_id',vid)).length-before};
-      record('S5_LOOKUP_AUDIT_ONE_ROW',verdict.s5(d)&&r.ok,d);
-    });
-
     await tryScenario('S4_QR_REVOKE_RESOLVE',async()=>{
       const p=plate(3),ph=await stage(main);
       const s=await must('registrations.submit',reg(main,p,ph,'ss-'+tag+'-q'));
@@ -145,6 +136,15 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
       const has=r=>!!(r&&r.ok&&r.data&&r.data.vehicleId);
       const d={resolveBefore:code(before),resolveAfter:code(after),vehicleDisclosedBefore:has(before),vehicleDisclosedAfterRevoke:has(after),qrStatus:q.status};
       record('S4_QR_REVOKE_RESOLVE',verdict.s4(d),d);
+    });
+
+    await tryScenario('S5_LOOKUP_AUDIT_ONE_ROW',async()=>{
+      const vid=vehicles[vehicles.length-1];if(!vid)throw new Error('NO_VEHICLE_AVAILABLE');
+      const v=(await where('vc_vehicles','vehicle_id',vid))[0];
+      const before=(await where('vc_lookup_audit','vehicle_id',vid)).length;
+      const r=await call('vehicles.lookup',{plate:v.plate_normalized,province:'TH-10'},staff);
+      const d={lookup:code(r),auditDelta:(await where('vc_lookup_audit','vehicle_id',vid)).length-before};
+      record('S5_LOOKUP_AUDIT_ONE_ROW',verdict.s5(d)&&r.ok,d);
     });
 
     await tryScenario('S2_LOGOUT_TOKEN_REUSE',async()=>{
