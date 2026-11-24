@@ -60,3 +60,35 @@ Cloud Run in `asia-southeast3` (Bangkok) should be equal or faster: the server s
 6. **Out of spike scope:**
    - Photos: Drive → Cloud Storage (Bangkok).
    - Campaign/registration writes: these need the real pepper and the lock semantics re-checked. Firestore transactions already provide them.
+
+## 4. Cloud Run service (owner chose GitHub Actions deploy)
+
+**What exists:**
+- [backend/cloudrun/](../backend/cloudrun/) contains:
+  - `runtime.mjs`: GAS-shaped adapters for env config, synchronous fetch, `node:crypto` utilities and the service-identity token. There is **no session cache** and **no key file**.
+  - `http-handler.mjs`: same v1 envelope as GAS; never returns internal error text.
+  - `server.mjs` and a `Dockerfile` (`node:22-slim`, no npm dependencies, runs as user `node`).
+  - Tests: `CLOUDRUN-01..03`. They prove env config with a required pepper, read-only config with a names-only report, Firestore called with the identity token, and a second request reading Firestore again (no cache).
+- The container layout was simulated locally (the same files the Dockerfile copies): imports resolve and health returns `ready`. Docker Desktop was not running, so the real image build happens in CI.
+- [.github/workflows/deploy-vehicle-cloudrun.yml](../../../.github/workflows/deploy-vehicle-cloudrun.yml):
+  - Manual only; confirmation phrase `DEPLOY_VEHICLE_CLOUDRUN`; `main` branch only.
+  - Gate: backend tests.
+  - Keyless auth via Workload Identity Federation.
+  - Builds and pushes to Artifact Registry `asia-southeast3`, then deploys `p6vc-api` with: concurrency 1, 0–10 instances, 512 Mi, 60 s timeout, runtime SA, pepper from Secret Manager, `(default)` database.
+  - Finishes with a health probe.
+- [ops/cloudrun-setup.sh](../ops/cloudrun-setup.sh): run once by the **owner** in Cloud Shell. Idempotent. It sets up:
+  - APIs and the Artifact Registry repository.
+  - Runtime SA with `datastore.user` only.
+  - Deployer SA with `run.admin`, `artifactregistry.writer` on the repository, and `serviceAccountUser` on the runtime SA only.
+  - The OIDC provider, accepting **only** `idev006/MT-Agency-Super-App-Framework` on `refs/heads/main`.
+  - The pepper secret: hidden input, never printed, stored in Bangkok, readable by the runtime SA only.
+
+**Security posture:**
+- The Cloud Run URL is public, like the GAS `/exec` URL today. Every non-public operation still requires a session and permission (unchanged application).
+- The Worker remains the frontend's gateway until switch-over.
+
+**Risk to check at the first deploy:** whether Cloud Run is available in `asia-southeast3`. If the region is refused, fall back to `asia-southeast1` (Singapore); Firestore stays in Bangkok.
+
+**Not switched:**
+- The Worker and frontend still point to GAS.
+- Switching any path to Cloud Run happens only after a live G6 run against the Cloud Run URL and owner approval.

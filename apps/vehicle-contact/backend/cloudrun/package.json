@@ -1,0 +1,6 @@
+{
+  "name": "p6vc-cloudrun-api",
+  "private": true,
+  "type": "module",
+  "description": "Cloud Run host for the unchanged P6VC application (VC-ADR-033). No runtime dependencies."
+}
