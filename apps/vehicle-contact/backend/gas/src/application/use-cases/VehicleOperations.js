@@ -258,15 +258,24 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  function registrationReview(p,a){
   const requestId=need(p.requestId,'REQUEST_ID');
   if(!['APPROVE','REJECT'].includes(p.decision))throw new Error('INVALID_DECISION');
+  // C4 (2026-11-24, live V62): APPROVE ∥ REJECT both committed (request update had no precondition)
+  // → REJECTED request with an ACTIVE vehicle + QR. The request is now read WITH its version and the
+  // commit is guarded by it; a WRITE_CONFLICT re-runs the review (replay same decision / refuse other).
+  for(let attempt=1;;attempt++){
+   try{return reviewOnce();}
+   catch(error){if(!error||error.message!=='WRITE_CONFLICT')throw error;if(attempt>=3)throw new Error('BUSY');}
+  }
+  function reviewOnce(){
   return store.withLock(()=>{
    // W1: request + latest journal (+ vehicles for the duplicate check) in ONE parallel round.
    const decision=p.decision;
-   let [r,journals,vehicles]=readAll([
-    {kind:'one',name:'vc_registration_requests',filter:{request_id:requestId}},
+   let [versioned,journals,vehicles]=readAll([
+    {kind:'versioned',name:'vc_registration_requests',filter:{request_id:requestId}},
     // Newest-first (DESC) query: the live DB only has the DESC composite index for this
     // filter; an ASC orderBy fails FAILED_PRECONDITION (the V57 regression).
     {kind:'newest',name:'vc_operation_journal',filter:{operation:'registrations.review',entity_id:requestId},limit:1},
     ...(decision==='APPROVE'?[{kind:'list',name:'vc_vehicles'}]:[])]);
+   let r=versioned&&versioned.row;
    if(!r)throw new Error('INVALID_REQUEST_STATE');
    const app=JSON.parse(r.application_json),previous=journals[0]||null,prior=parseJournal(previous);
    if(decision==='APPROVE'&&p.platePhotoVerified!==true)throw new Error('PLATE_PHOTO_NOT_VERIFIED');
@@ -292,13 +301,14 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    if(r.status!=='PENDING_APPROVAL')throw new Error('INVALID_REQUEST_STATE');
    const eventId=id(),detail={operation:'registrations.review',requestId,vehicleId:r.vehicle_id,decision,actorId:a.userId,
     contactId:id(),qrId:decision==='APPROVE'?id():'',auditId:id(),correlationId:id().slice(0,16)};
-   return commitReview(eventId,detail,r,app,vehicles||[]);
+   return commitReview(eventId,detail,r,app,vehicles||[],versioned.version);
   });
+  }
  }
  // W1 fresh review: every write in ONE all-or-nothing commit — nothing partial to compensate.
  // A concurrent approval of the same request collides on the vehicle/QR create preconditions,
  // so only one approval can ever land.
- function commitReview(eventId,detail,request,app,vehicles){
+ function commitReview(eventId,detail,request,app,vehicles,requestVersion){
   const at=now(),approve=detail.decision==='APPROVE',token=approve?reviewToken(eventId,request.request_id):'';
   if(approve&&vehicles.some(v=>v.vehicle_id!==request.vehicle_id&&v.plate_normalized===app.plate_normalized&&v.province_code===app.province_code&&v.status==='ACTIVE'))
    throw new Error('DUPLICATE_VEHICLE');
@@ -316,12 +326,14 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     issued_at:at,revoked_at:'',issued_by:detail.actorId,reason:'REGISTRATION_APPROVED',status:'ACTIVE'}});
   }
   writes.push({op:'update',table:'vc_registration_requests',key:{request_id:request.request_id},
-   fields:{status:reviewStatus(detail.decision),reviewed_by:detail.actorId,reviewed_at:at}});
+   fields:{status:reviewStatus(detail.decision),reviewed_by:detail.actorId,reviewed_at:at},...(requestVersion?{ifVersion:requestVersion}:{})});
   writes.push({op:'insert',table:'vc_change_audit',data:{audit_id:detail.auditId,actor_id:detail.actorId,entity_type:'registration',
    entity_id:request.request_id,action:reviewAction(detail.decision),redacted_summary:reviewAction(detail.decision),
    correlation_id:detail.correlationId,created_at:at}});
   try{writeAll(writes);}
-  catch(error){if(error&&error.message==='DUPLICATE_KEY')throw new Error('INVALID_REQUEST_STATE');throw error;}
+  // A create collision means a concurrent review of this request committed first: re-read
+  // (WRITE_CONFLICT) so the same decision replays and a different one is refused.
+  catch(error){if(error&&error.message==='DUPLICATE_KEY')throw new Error('WRITE_CONFLICT');throw error;}
   const result={requestId:request.request_id,vehicleId:request.vehicle_id,status:reviewStatus(detail.decision)};
   if(approve){result.qrToken=token;result.qrId=detail.qrId;}
   return result;
@@ -361,7 +373,11 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  function vehicleUpdate(p,a){
   const idValue=need(p.vehicleId,'VEHICLE_ID');
   return store.withLock(()=>{
-   const v=activeVehicle(idValue),version=Number(v.version);
+   // expectedVersion was checked against a read but the write had no precondition, so two
+   // updates with the same expectedVersion could both land (lost update). Now ONE guarded commit.
+   const [read]=readAll([{kind:'versioned',name:'vc_vehicles',filter:{vehicle_id:idValue}}]);
+   const v=read&&read.row;if(!v||v.status!=='ACTIVE')throw new Error('VEHICLE_NOT_ACTIVE');
+   const version=Number(v.version);
    if(!Number.isInteger(p.expectedVersion)||p.expectedVersion!==version)throw new Error('VERSION_CONFLICT');
    const patch={updated_at:now(),updated_by:a.userId,version:version+1};
    for(const [client,field] of [['brand','make'],['model','model'],['color','color'],['plateType','plate_type'],['vehicleType','vehicle_type']]){
@@ -378,7 +394,10 @@ export function createVehicleOperations({store,security,campaigns,references}) {
      throw new Error('DUPLICATE_VEHICLE');
     patch.plate_normalized=plate;patch.province_code=province;
    }
-   store.update('vc_vehicles',{vehicle_id:idValue},patch);audit(a,'vehicle',idValue,'VEHICLE_UPDATED');
+   try{writeAll([{op:'update',table:'vc_vehicles',key:{vehicle_id:idValue},fields:patch,...(read.version?{ifVersion:read.version}:{})},
+    {op:'insert',table:'vc_change_audit',data:{audit_id:id(),actor_id:a.userId,entity_type:'vehicle',entity_id:idValue,action:'VEHICLE_UPDATED',
+     redacted_summary:'VEHICLE_UPDATED',correlation_id:id().slice(0,16),created_at:now()}}]);}
+   catch(error){if(error&&error.message==='WRITE_CONFLICT')throw new Error('VERSION_CONFLICT');throw error;}
    return {vehicleId:idValue,version:version+1};
   });
  }
