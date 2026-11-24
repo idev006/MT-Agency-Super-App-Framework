@@ -19,9 +19,9 @@ Extends [TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md](TEST_AUTOMATION_INTEGRA
 | L1 Use-case | 5-role acceptance, journals, failures, atomic commit, strict-index fake, race interleavings (G7-RACE-01) | offline (harness + fake REST) | fake store read-back | DONE |
 | L2 Compiled bundle | real `dist/*.gs` in a VM: login → protected op → logout → token rejected | offline VM + fake Firestore | fake read-back | DONE |
 | L3 Live inventory | 56/56 ops × 5 roles (G6, 103 cases) | live GAS + Worker | **Firestore DATA_PROOF** | DONE |
-| L4 Live file proof | each photo `storage_ref` exists in Drive, is not trashed, has the right MIME type, size and content hash; no orphan files | live | **Drive** | **BLOCKED (owner: enable Drive API + share folder to SA)** |
-| L5 Live concurrency | C1 same-key submit · C2 approve race · C3 same plate · C4 approve-vs-reject · C5 quota at capacity · C6 change-request version race | live | Firestore | C1–C3 BUILT (found bug); C4–C6 NEW |
-| L6 Live security negatives | RBAC deny sample per role · revoked/logged-out token · password change revokes other sessions · suspended user · QR revoked token | live | Firestore (sessions/QR status) | NEW |
+| L4 Live file proof | each photo `storage_ref` exists in Drive, is not trashed, right folder/MIME/size; orphan inventory | GAS editor `verifyDrivePhotosFromEditor` (owner session, DriveApp) | **Drive** | **DONE (2026-11-24, evidence §5.12)** |
+| L5 Live concurrency | C1 same-key submit · C2 approve race · C3 same plate · C4 approve-vs-reject · C5 quota at capacity · C6 change-request version race | live | Firestore | C1–C5 PASS on V61 (2 defects found + fixed); C6 NEW |
+| L6 Live security negatives | RBAC deny sample per role · revoked/logged-out token · password change revokes other sessions · suspended user · QR revoked token | live | Firestore (sessions/QR status) | S1–S5 PASS on V61 |
 | L7 Resilience | runner retry/`NO_RESPONSE` classification; GAS 6-min limit behaviour | runners | — | NEW |
 | L8 Performance | per-op latency budget + store round-trip regression tests | live + offline | — | DONE (p50/p95 guard, round tests) |
 | L9 FE E2E | after the UI/UX redesign: every page × role, checked against Firestore + Drive | browser | Firestore + Drive | after step 3 |

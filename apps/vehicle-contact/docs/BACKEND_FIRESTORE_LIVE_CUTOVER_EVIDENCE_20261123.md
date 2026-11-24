@@ -405,3 +405,17 @@ Pre-existing residue cleanup (owner approved): 4 synthetic suite users from the 
 4. **G6 on the fresh data (2026-11-24, V59/0.9.9): PASS 103/103** — authenticated 72/72, 56/56 ops, cleanup 0 failed, **DATA_PROOF 6/6** (`TST78968486`); p50 6,472 · p95 13,952 · max 16,767 ms.
 5. Earlier in the session: all 5 residual synthetic suite users suspended (read-back SUSPENDED, 0 active sessions). Drive photo files referenced by the wiped rows remain in the Drive folder (orphaned, synthetic).
 
+### 5.12 SSOT-verified test suite (owner step 2, 2026-11-24) — defects found by DB/Drive read-back, fixed, re-proven
+
+Design: [TEST_SUITE_SSOT_DESIGN_20261124.md](TEST_SUITE_SSOT_DESIGN_20261124.md). Every verdict below comes from an independent Firestore REST read-back (own SA credentials) or a direct DriveApp audit — never from API status.
+
+| Run | Deploy | Result |
+|---|---|---|
+| G7 #1 | V59 / 0.9.9 | **C1 FAIL — real defect:** 4 identical concurrent submits all OK, but the request row was **deleted** (photos back to STAGED, idempotency + quota kept). Cause: legacy orphan reconciliation treated the racing winner's committed request as an orphan. C2 failed as a consequence. |
+| G6 + G7 #2 | **V60 / 0.9.10** (#164: committed = APPLIED journal, never an orphan) | G6 **103/103**; C1 data **correct**, but 2/4 losers got `DUPLICATE_VEHICLE`/`PHOTO_NOT_STAGED` instead of the replay; C2 **PASS**. |
+| SSOT scenarios #1 | V60 | C3b/C4/S1/S2/S3/S5 PASS; **C5 FAIL — real defect:** max=2, 4 concurrent submits → 4 accepted, `submitted_count`=1 (lost updates). S4 flagged = scenario bug (revoked QR returns `ok:true,data:null`, nothing disclosed). |
+| G6 + G7 #3 + scenarios #2/#3 | **V61 / 0.9.11** (#166: same-key replay + campaign optimistic concurrency via `updateTime` precondition, live-probed) | G6 **103/103** (DATA_PROOF, p50 6,268 / p95 12,098 ms) · G7 **PASS** (C1 4/4 same id, 1 row, quota +1, 5 CLAIMED; C2 1 vehicle/1 QR/5 photos/1 contact/1 journal) · scenarios **8/8 PASS**: C5 2 accepted + 2 `CAMPAIGN_INVALID`, count=2, rows=2; C4 consistent both ways observed (REJECTED+0 vehicles / APPROVED+1 vehicle); C3b duplicate now blocked at submit (campaign OCC serialises same-campaign submits — the C3 "2 pendings" limitation no longer reproduces within one campaign); S1 3× FORBIDDEN, no rows; S2/S3 sessions REVOKED; S4 revoked QR discloses nothing, QR REVOKED; S5 exactly 1 audit row. Cleanup 0 failed. |
+
+**Drive SSOT audit (L4)** — `verifyDrivePhotosFromEditor` run in the GAS editor (owner session) on V61 HEAD, 08:37–08:39 +07: live photos 100, live staging 234 · missing 0 · wrong folder 0 · MIME mismatch 0 · size mismatch 0 · trashed 3 + staging-ref drift 3 → investigated via Firestore: all 3 are `photos.replace` history (photo version 2 on the new file, old file retired/trashed by design, CLAIMED staging row still points at the old file) → audit rule corrected (replace history exempt; test added). Folder: 484 files scanned, **250 unreferenced** (storage-leak inventory: rows wiped by the DEV re-init + staged-never-submitted uploads) → product decision needed: a retention rule for stale staged uploads/orphan files (ties to C5 retention, still BLOCKED on D5+B3).
+Independent spot-check via the owner's Google Drive connector: newest suite PNGs (68 bytes) present in the photos folder.
+
