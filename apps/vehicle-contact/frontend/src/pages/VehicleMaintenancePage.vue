@@ -105,7 +105,7 @@ async function confirmCancel() {
       <div v-else-if="work.actionPhase.value === 'uncertain'" class="alert alert-warning mb-5" role="alert"><span>ไม่ทราบผลการบันทึกแน่ชัด ห้ามกดซ้ำ ให้โหลดข้อมูลใหม่และตรวจสถานะก่อน</span></div>
       <div v-else-if="work.actionPhase.value === 'error'" class="alert alert-error mb-5"><span>บันทึกไม่สำเร็จ ({{ work.failure.value?.code }})</span></div>
 
-      <div role="tablist" class="tabs tabs-border mb-4 overflow-x-auto" aria-label="แก้ไขยานพาหนะ">
+      <div role="tablist" class="tabs tabs-border mb-4 flex-nowrap overflow-x-auto" aria-label="แก้ไขยานพาหนะ">
         <button v-for="[id, label] in mTabs" :id="`mt-${id}`" :key="id" role="tab" type="button" class="tab min-h-11 whitespace-nowrap" :class="{ 'tab-active': mTab === id, 'text-error': id === 'cancel' }" :aria-selected="mTab === id" :aria-controls="`mp-${id}`" @click="mTab = id">{{ label }}</button>
       </div>
       <div class="grid gap-5">

@@ -1,31 +1,19 @@
 import { computed, ref, unref } from 'vue'
 import { assertRegistrationIntakeRepository } from '../../application/registrations/registration-intake-port.js'
+import { compressForUpload, sourceImageProblem } from '../../infrastructure/media/image-compress.js'
 
 export const REGISTRATION_PHOTO_SLOTS = Object.freeze([
   { id: 'FRONT', label: 'ด้านหน้า' }, { id: 'REAR', label: 'ด้านหลัง' },
   { id: 'LEFT', label: 'ด้านซ้าย' }, { id: 'RIGHT', label: 'ด้านขวา' },
   { id: 'FRONT_ANGLE', label: 'มุมเฉียงด้านหน้า' },
 ])
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp'])
-const MAX_FILE_BYTES = 5_000_000
 const UNCERTAIN = new Set(['TIMEOUT', 'NETWORK_ERROR'])
 
 // R4: checked when the photo is picked, so the user learns at once (same rules as upload).
+// Photos are compressed on the device before upload (see image-compress.js), so any phone photo
+// up to 25 MB is accepted here.
 export function imageFileProblem(file) {
-  if (!file) return 'ยังไม่ได้เลือกภาพ'
-  if (!ALLOWED_MIME.has(file.type)) return 'รองรับเฉพาะ JPEG, PNG หรือ WebP'
-  if (file.size < 1 || file.size > MAX_FILE_BYTES) return 'ขนาดภาพต้องไม่เกิน 5 MB'
-  return ''
-}
-
-async function fileBase64(file) {
-  if (!file || !ALLOWED_MIME.has(file.type) || file.size < 1 || file.size > MAX_FILE_BYTES) {
-    throw Object.assign(new Error('invalid image'), { code: 'INVALID_MEDIA' })
-  }
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  let binary = ''
-  for (let offset = 0; offset < bytes.length; offset += 32768) binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768))
-  return btoa(binary)
+  return sourceImageProblem(file)
 }
 
 export function useRegistrationIntake({ repository, permissions }) {
@@ -73,8 +61,8 @@ export function useRegistrationIntake({ repository, permissions }) {
       // the slots that failed.
       const pending = REGISTRATION_PHOTO_SLOTS.filter((slot) => uploaded.value[slot.id]?.file !== files[slot.id])
       const outcomes = await Promise.allSettled(pending.map(async (slot) => {
-        const base64Image = await fileBase64(files[slot.id])
-        const photo = await source.uploadPhoto({ campaignToken, slot: slot.id, base64Image, mimeType: files[slot.id].type })
+        const { base64Image, mimeType } = await compressForUpload(files[slot.id])
+        const photo = await source.uploadPhoto({ campaignToken, slot: slot.id, base64Image, mimeType })
         uploaded.value = { ...uploaded.value, [slot.id]: { file: files[slot.id], photoId: photo.photoId } }
       }))
       const failed = outcomes.find((outcome) => outcome.status === 'rejected')
