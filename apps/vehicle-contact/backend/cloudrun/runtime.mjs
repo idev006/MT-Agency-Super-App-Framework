@@ -10,10 +10,12 @@
 // - Utilities          -> node:crypto
 // - CacheService       -> none. A per-instance cache cannot be revoked across instances, which
 //                         would break immediate logout/revocation (VC-ADR-030/033).
-// - DriveApp           -> not configured yet (photos move to Cloud Storage in a later slice).
+// - Photos             -> the owner's Google Drive through the signed GAS media bridge (VC-ADR-034);
+//                         fails closed (DRIVE_NOT_CONFIGURED) when the bridge env is absent.
 import {createHash, createHmac, createSign, generateKeyPairSync, randomUUID} from 'node:crypto';
 import {createApplication} from '../gas/src/composition/Container.js';
 import {createSyncFetch} from './sync-fetch.mjs';
+import {createMediaBridgePhotos} from './media-bridge-client.mjs';
 
 export const TOKEN_ENDPOINT = 'https://oauth2.googleapis.com/token';
 export const METADATA_TOKEN_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token';
@@ -71,11 +73,16 @@ export function runtimeProperties(env) {
 
 export function createCloudRunApplication({env = process.env, fetchSync} = {}) {
   const transport = fetchSync || createSyncFetch().fetch;
+  const utilities = nodeUtilities();
+  const drivePhotos = env.MEDIA_BRIDGE_URL && env.P6VC_MEDIA_BRIDGE_SECRET
+    ? createMediaBridgePhotos({fetchSync: transport, url: env.MEDIA_BRIDGE_URL, secret: env.P6VC_MEDIA_BRIDGE_SECRET, utilities})
+    : undefined;
   return createApplication({
     propertiesService: runtimeProperties(env),
-    utilities: nodeUtilities(),
+    utilities,
     urlFetchApp: withMetadataToken(transport),
     driveApp: null,
     cache: null,
+    drivePhotos,
   });
 }

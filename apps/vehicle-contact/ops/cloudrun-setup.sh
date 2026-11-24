@@ -15,6 +15,7 @@ DEPLOYER_SA="p6vc-github-deployer"
 POOL="github"
 PROVIDER="p6vc-repo"
 SECRET="p6vc-auth-pepper"
+BRIDGE_SECRET="p6vc-media-bridge-secret"
 
 gcloud config set project "$PROJECT_ID" >/dev/null
 # New service accounts take a few seconds to become visible to IAM; retry instead of failing.
@@ -23,16 +24,16 @@ PROJECT_NUMBER="$(gcloud projects describe "$PROJECT_ID" --format='value(project
 RUNTIME_EMAIL="${RUNTIME_SA}@${PROJECT_ID}.iam.gserviceaccount.com"
 DEPLOYER_EMAIL="${DEPLOYER_SA}@${PROJECT_ID}.iam.gserviceaccount.com"
 
-echo "1/6 Enabling APIs (Cloud Run, Artifact Registry, Secret Manager, IAM Credentials, STS)..."
+echo "1/7 Enabling APIs (Cloud Run, Artifact Registry, Secret Manager, IAM Credentials, STS)..."
 gcloud services enable run.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com \
   iamcredentials.googleapis.com sts.googleapis.com firestore.googleapis.com
 
-echo "2/6 Artifact Registry repository ${AR_REPO} in ${REGION}..."
+echo "2/7 Artifact Registry repository ${AR_REPO} in ${REGION}..."
 gcloud artifacts repositories describe "$AR_REPO" --location "$REGION" >/dev/null 2>&1 || \
   gcloud artifacts repositories create "$AR_REPO" --repository-format=docker --location "$REGION" \
     --description="P6VC API images"
 
-echo "3/6 Service accounts..."
+echo "3/7 Service accounts..."
 gcloud iam service-accounts describe "$RUNTIME_EMAIL" >/dev/null 2>&1 || \
   gcloud iam service-accounts create "$RUNTIME_SA" --display-name="P6VC API runtime (Cloud Run)"
 gcloud iam service-accounts describe "$DEPLOYER_EMAIL" >/dev/null 2>&1 || \
@@ -48,7 +49,7 @@ retry gcloud artifacts repositories add-iam-policy-binding "$AR_REPO" --location
 retry gcloud iam service-accounts add-iam-policy-binding "$RUNTIME_EMAIL" \
   --member="serviceAccount:${DEPLOYER_EMAIL}" --role="roles/iam.serviceAccountUser" >/dev/null
 
-echo "4/6 Keyless GitHub trust (only ${REPO}, only branch main)..."
+echo "4/7 Keyless GitHub trust (only ${REPO}, only branch main)..."
 gcloud iam workload-identity-pools describe "$POOL" --location=global >/dev/null 2>&1 || \
   gcloud iam workload-identity-pools create "$POOL" --location=global --display-name="GitHub Actions"
 gcloud iam workload-identity-pools providers describe "$PROVIDER" --workload-identity-pool="$POOL" --location=global >/dev/null 2>&1 || \
@@ -60,7 +61,7 @@ retry gcloud iam service-accounts add-iam-policy-binding "$DEPLOYER_EMAIL" \
   --role="roles/iam.workloadIdentityUser" \
   --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${POOL}/attribute.repository/${REPO}" >/dev/null
 
-echo "5/6 Auth pepper secret (${SECRET})..."
+echo "5/7 Auth pepper secret (${SECRET})..."
 if gcloud secrets describe "$SECRET" >/dev/null 2>&1; then
   echo "   Secret already exists - left unchanged."
 else
@@ -74,7 +75,19 @@ fi
 retry gcloud secrets add-iam-policy-binding "$SECRET" --member="serviceAccount:${RUNTIME_EMAIL}" \
   --role="roles/secretmanager.secretAccessor" >/dev/null
 
-echo "6/6 Allow the public endpoint (app-level auth still applies to every operation)..."
+echo "6/7 Drive media bridge secret (${BRIDGE_SECRET}, VC-ADR-034)..."
+if gcloud secrets describe "$BRIDGE_SECRET" >/dev/null 2>&1; then
+  echo "   Secret already exists - left unchanged."
+else
+  openssl rand -hex 32 | tr -d '\n' | gcloud secrets create "$BRIDGE_SECRET" --replication-policy=user-managed --locations="$REGION" --data-file=-
+  echo "   Secret created (random, 64 hex characters)."
+fi
+retry gcloud secrets add-iam-policy-binding "$BRIDGE_SECRET" --member="serviceAccount:${RUNTIME_EMAIL}" \
+  --role="roles/secretmanager.secretAccessor" >/dev/null
+echo "   NEXT (owner, once): copy this value into GAS Script Property VEHICLE_MEDIA_BRIDGE_SECRET:"
+echo "     gcloud secrets versions access latest --secret=${BRIDGE_SECRET}; echo"
+
+echo "7/7 Allow the public endpoint (app-level auth still applies to every operation)..."
 echo "   (Cloud Run grants allUsers invoker at first deploy via --allow-unauthenticated.)"
 
 echo

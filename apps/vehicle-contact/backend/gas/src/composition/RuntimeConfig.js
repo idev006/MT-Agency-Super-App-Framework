@@ -8,6 +8,7 @@ export const SCRIPT_PROPERTIES=Object.freeze({
   VEHICLE_AUTH_PEPPER:{kind:'required',note:'secret, >=32 chars; password hashing + token MAC'},
   VEHICLE_FIRESTORE_SA_KEY:{kind:'required',note:'secret, service-account JSON key (runtime datastore)'},
   VEHICLE_PHOTOS_FOLDER_ID:{kind:'optional',note:'Drive folder for photos; photo ops fail closed without it'},
+  VEHICLE_MEDIA_BRIDGE_SECRET:{kind:'optional',note:'secret, >=32 chars; Cloud Run -> Drive photo bridge (VC-ADR-034); bridge disabled without it'},
   VEHICLE_GOOGLE_CLIENT_ID:{kind:'optional',note:'OIDC audience for auth.googleLogin'},
   VEHICLE_FIRESTORE_PROJECT_ID:{kind:'optional',note:'defaults to project_id inside the SA key'},
   VEHICLE_FIRESTORE_DATABASE_ID:{kind:'optional',note:"defaults to '(default)'"},
