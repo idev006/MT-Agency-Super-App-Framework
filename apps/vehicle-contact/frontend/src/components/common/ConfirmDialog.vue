@@ -2,6 +2,7 @@
 import { nextTick, ref, useId, watch } from 'vue'
 
 const props = defineProps({
+  cancelLabel: { type: String, default: 'ยกเลิก' },
   open: { type: Boolean, default: false }, title: { type: String, required: true },
   message: { type: String, required: true }, confirmLabel: { type: String, default: 'ยืนยัน' },
   busy: { type: Boolean, default: false },
@@ -40,7 +41,7 @@ function cancel(event) {
         <h2 :id="titleId" class="text-xl font-semibold">{{ title }}</h2>
         <p class="mt-3 leading-7 text-base-content/70">{{ message }}</p>
         <div class="modal-action">
-          <button ref="cancelButton" class="btn min-h-11" type="button" :disabled="busy" @click="cancel">ยกเลิก</button>
+          <button ref="cancelButton" class="btn min-h-11" type="button" :disabled="busy" @click="cancel">{{ cancelLabel }}</button>
           <button class="btn btn-error" type="button" :disabled="busy" @click="$emit('confirm')">
             <span v-if="busy" class="loading loading-spinner loading-sm"></span>{{ confirmLabel }}
           </button>

@@ -69,12 +69,10 @@ export function useRegistrationReview({ repository, permissions }) {
     }
   }
 
+  // P2: the 5 evidence photos loaded one by one (≈30 s live); load them in parallel instead.
+  // loadPhoto already ignores results that arrive after the selection changed.
   async function loadPhotos(photos) {
-    const token = photoLoadToken
-    for (const photo of photos) {
-      if (token !== photoLoadToken) return
-      await loadPhoto(photo.photoId)
-    }
+    await Promise.all(photos.map((photo) => loadPhoto(photo.photoId)))
   }
 
   function selectPhoto(photoId) {

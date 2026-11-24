@@ -48,9 +48,16 @@ export function mapVehicleResponse(value, permissions) {
     province: requiredText(value.province),
     status: requiredText(value.status),
     vehicleType: optionalText(value.vehicleType),
+    plateType: optionalText(value.plateType),
     brand: optionalText(value.brand),
     model: optionalText(value.model),
     color: optionalText(value.color),
+    // Backend ≥0.9.14: Thai labels for reference codes ('' when unknown → the UI shows the code).
+    labels: Object.freeze({
+      vehicleType: optionalText(value.labels?.vehicleType),
+      color: optionalText(value.labels?.color),
+      plateType: optionalText(value.labels?.plateType),
+    }),
     contacts: mapContacts(value.contacts, permissions.has(READ_CONTACT)),
     photos: mapPhotos(value.photos, permissions.has(READ_PHOTOS)),
   }
@@ -83,7 +90,12 @@ export function createGasVehicleSearchRepository({ callOperation }) {
 
       let history = []
       let historyRequestId = ''
-      if (permissionSet.has(READ_HISTORY)) {
+      // P2/P1.3: backend ≥0.9.14 embeds history in the lookup (one round trip instead of two,
+      // and it includes the registration events). Older backends: fall back to vehicles.history.
+      if (permissionSet.has(READ_HISTORY) && Array.isArray(lookup.data?.history)) {
+        history = mapVehicleHistory(lookup.data.history)
+        historyRequestId = lookup.requestId
+      } else if (permissionSet.has(READ_HISTORY)) {
         const response = await callOperation('vehicles.history', { vehicleId: vehicle.vehicleId }, { signal })
         history = mapVehicleHistory(response.data)
         historyRequestId = response.requestId

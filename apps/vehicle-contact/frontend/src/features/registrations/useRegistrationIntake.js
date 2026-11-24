@@ -68,12 +68,17 @@ export function useRegistrationIntake({ repository, permissions }) {
         campaign.value = { ...(await source.validateCampaign(campaignToken)), token: campaignToken }
       }
       phase.value = 'uploading'
-      for (const slot of REGISTRATION_PHOTO_SLOTS) {
-        if (uploaded.value[slot.id]?.file === files[slot.id]) continue
+      // P2 (E2E 2026-11-24): uploads ran one after another (≈7–9 s each, ≈46 s total live). They
+      // are independent, so they now run in parallel. Each success is kept, so a retry only resends
+      // the slots that failed.
+      const pending = REGISTRATION_PHOTO_SLOTS.filter((slot) => uploaded.value[slot.id]?.file !== files[slot.id])
+      const outcomes = await Promise.allSettled(pending.map(async (slot) => {
         const base64Image = await fileBase64(files[slot.id])
         const photo = await source.uploadPhoto({ campaignToken, slot: slot.id, base64Image, mimeType: files[slot.id].type })
         uploaded.value = { ...uploaded.value, [slot.id]: { file: files[slot.id], photoId: photo.photoId } }
-      }
+      }))
+      const failed = outcomes.find((outcome) => outcome.status === 'rejected')
+      if (failed) throw failed.reason
       phase.value = 'submitting'
       if (!idempotencyKey.value) idempotencyKey.value = globalThis.crypto?.randomUUID?.() || `web-${Date.now()}`
       result.value = await source.submit({

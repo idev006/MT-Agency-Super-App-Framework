@@ -14,7 +14,10 @@ export function createGasQrResolveRepository({ callOperation }) {
 
       let history = []
       let historyRequestId = ''
-      if (permissionSet.has(READ_HISTORY)) {
+      if (permissionSet.has(READ_HISTORY) && Array.isArray(response.data?.history)) {
+        history = mapVehicleHistory(response.data.history)
+        historyRequestId = response.requestId
+      } else if (permissionSet.has(READ_HISTORY)) {
         const historyResponse = await callOperation('vehicles.history', { vehicleId: vehicle.vehicleId }, { signal })
         history = mapVehicleHistory(historyResponse.data)
         historyRequestId = historyResponse.requestId

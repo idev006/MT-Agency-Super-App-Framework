@@ -12,6 +12,7 @@ import { provinceLabel } from '../domain/reference/provinces.js'
 import { formatThaiPhone, photoSlotLabel } from '../domain/reference/vehicle-presentation.js'
 import { useRegistrationReferenceStore } from '../stores/registration-reference.js'
 import { useSessionStore } from '../stores/session.js'
+import { useOneTimeSecretGuard } from '../features/common/useOneTimeSecretGuard.js'
 
 const auth = useSessionStore()
 const { roles, permissions, session, transport } = storeToRefs(auth)
@@ -57,6 +58,7 @@ async function copyRequestId() {
 }
 
 onMounted(work.load)
+useOneTimeSecretGuard(work.oneTimeQr)
 
 function requestDecision(decision) {
   if (!work.selected.value) return
