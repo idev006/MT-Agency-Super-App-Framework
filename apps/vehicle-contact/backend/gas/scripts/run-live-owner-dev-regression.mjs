@@ -292,11 +292,12 @@ if(isCli){
  const url=process.env.P6VC_GAS_EXEC_URL;
  const username=process.env.P6VC_TEST_USERNAME;
  const testPassword=process.env.P6VC_TEST_PASSWORD;
- assert.match(url||'',/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/);
+ // GAS Web App, or the project's Cloud Run API (VC-ADR-033) — same v1 envelope.
+ assert.match(url||'',/^(https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec|https:\/\/p6vc-api-[0-9]+\.asia-southeast3\.run\.app)$/);
  assert.ok(username&&testPassword,'P6VC test credentials are required');
  assert.equal(process.env.P6VC_ALLOW_OWNER_DEV_WRITES,'RUN_SYNTHETIC_OWNER_DEV');
 
- const report={status:'RUNNING',environment:'OWNER_SELECTED_DEVELOPMENT_GAS',target:url,
+ const report={status:'RUNNING',environment:/run\.app$/.test(url)?'OWNER_SELECTED_DEVELOPMENT_CLOUD_RUN':'OWNER_SELECTED_DEVELOPMENT_GAS',target:url,
   startedAt:new Date().toISOString(),tests:[],coverage:[],cleanup:[],secretsExposed:false};
  const tag=Date.now().toString(36);
  let activeRequestController=null,interruptedBy=null;
