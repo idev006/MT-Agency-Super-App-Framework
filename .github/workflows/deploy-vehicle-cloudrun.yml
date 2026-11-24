@@ -27,6 +27,8 @@ env:
   SERVICE: p6vc-api
   REPOSITORY: p6vc
   RUNTIME_SA: p6vc-api-runtime@mt-iam-core-2026.iam.gserviceaccount.com
+  # VC-ADR-034: photos stay in the owner's Drive via the signed GAS media bridge (not a secret URL).
+  MEDIA_BRIDGE_URL: https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec
 
 jobs:
   deploy:
@@ -80,8 +82,8 @@ jobs:
             --concurrency 1 --min-instances 0 --max-instances 10 \
             --cpu 1 --memory 512Mi --timeout 60 \
             --allow-unauthenticated \
-            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),RUNTIME_SA_EMAIL=${RUNTIME_SA}" \
-            --set-secrets "P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest" \
+            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),RUNTIME_SA_EMAIL=${RUNTIME_SA},MEDIA_BRIDGE_URL=${MEDIA_BRIDGE_URL}" \
+            --set-secrets "P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest,P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest" \
             --labels "app=p6vc,commit=${GITHUB_SHA::12}" \
             --quiet
 

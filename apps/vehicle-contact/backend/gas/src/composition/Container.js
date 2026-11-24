@@ -38,7 +38,8 @@ export function createApplication(deps={}) {
     const rawSessions=createSessionService({store,security,cache:s.cache});
     const sessions=prof?{...rawSessions,authorize:(...a)=>prof.phase('authorize',()=>rawSessions.authorize(...a))}:rawSessions;
     const folderId=props.getProperty('VEHICLE_PHOTOS_FOLDER_ID');
-    const drivePhotos=folderId?createDrivePhotos({driveApp:s.driveApp,utilities:s.utilities,folderId}):{
+    // deps.drivePhotos: the Cloud Run host injects the signed Drive bridge (VC-ADR-034).
+    const drivePhotos=deps.drivePhotos?deps.drivePhotos:folderId?createDrivePhotos({driveApp:s.driveApp,utilities:s.utilities,folderId}):{
       upload(){throw new Error('DRIVE_NOT_CONFIGURED');},read(){throw new Error('DRIVE_NOT_CONFIGURED');},trash(){throw new Error('DRIVE_NOT_CONFIGURED');}
     };
     const controller=createOperationController({store,security,sessions,drivePhotos:prof?prof.wrapDrivePhotos(drivePhotos):drivePhotos,

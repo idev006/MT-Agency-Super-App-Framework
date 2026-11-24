@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.20",
+  "backendVersion": "0.9.21",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-24T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.20 = VC-ADR-031 campaign code copyable at any time + campaign name (vc_campaigns.campaign_token/campaign_name). Prior: 0.9.19 request profiler (V69)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.21 = VC-ADR-034 signed Drive media bridge for the Cloud Run API (doPost accepts {bridge:media} HMAC-signed upload/read/trash; disabled without VEHICLE_MEDIA_BRIDGE_SECRET). Prior: 0.9.20 VC-ADR-031 campaign code + name (V70)."
 }

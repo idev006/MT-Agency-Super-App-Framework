@@ -8,6 +8,7 @@ import {createRuntimeStore,runtimeProjectId} from '../composition/StoreSelector.
 import {auditDrivePhotos} from '../infrastructure/media/DrivePhotoAudit.js';
 import { createApplication } from "../composition/Container.js";
 import { apiFailure } from "../api/responses/ResponseFactory.js";
+import {createMediaBridgeServer,isMediaBridgeRequest} from "../infrastructure/media/MediaBridgeServer.js";
 function gasJson(value) {
   return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);
 }
@@ -19,6 +20,9 @@ export function doPost(e) {
     return gasJson(apiFailure("BAD_REQUEST","Missing or oversized request",null));
   try {
     const request=JSON.parse(e.postData.contents);
+    // VC-ADR-034: signed Drive bridge for the Cloud Run API (not part of the public API).
+    if(isMediaBridgeRequest(request))
+      return gasJson(createMediaBridgeServer({propertiesService:PropertiesService,utilities:Utilities,driveApp:DriveApp}).handle(request));
     const isMedia=request&&request.group==='photos'&&['upload','replace'].includes(request.action);
     if(!isMedia&&e.postData.contents.length>8192)return gasJson(apiFailure("BAD_REQUEST","Oversized request",null));
     return gasJson(createApplication().dispatch(request,"POST"));
