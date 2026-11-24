@@ -419,3 +419,28 @@ Design: [TEST_SUITE_SSOT_DESIGN_20261124.md](TEST_SUITE_SSOT_DESIGN_20261124.md)
 **Drive SSOT audit (L4)** — `verifyDrivePhotosFromEditor` run in the GAS editor (owner session) on V61 HEAD, 08:37–08:39 +07: live photos 100, live staging 234 · missing 0 · wrong folder 0 · MIME mismatch 0 · size mismatch 0 · trashed 3 + staging-ref drift 3 → investigated via Firestore: all 3 are `photos.replace` history (photo version 2 on the new file, old file retired/trashed by design, CLAIMED staging row still points at the old file) → audit rule corrected (replace history exempt; test added). Folder: 484 files scanned, **250 unreferenced** (storage-leak inventory: rows wiped by the DEV re-init + staged-never-submitted uploads) → product decision needed: a retention rule for stale staged uploads/orphan files (ties to C5 retention, still BLOCKED on D5+B3).
 Independent spot-check via the owner's Google Drive connector: newest suite PNGs (68 bytes) present in the photos folder.
 
+
+### 5.13 C6 — `changes.review` made atomic, version-guarded and idempotent (0.9.12, offline-proven; live proof pending deploy)
+
+**Found:** while designing the FE R5 retry ([FRONTEND_REDESIGN_R5_EVIDENCE_20261124.md](FRONTEND_REDESIGN_R5_EVIDENCE_20261124.md) §2), by reading the code.
+- `changeReview` made 3 separate unguarded writes: the vehicle (`version+1`), the primary contact, and the request status.
+- **Risk 1 (double apply):** two concurrent approvals both passed the `PENDING` check and applied twice.
+- **Risk 2 (lost update):** a change on a stale vehicle row could overwrite another change.
+- **Risk 3 (partial write):** a failure mid-way left the vehicle changed while the request stayed `PENDING`.
+
+**Fix:** a new module `ChangeReviewOperation.js`.
+- It reads the request and the vehicle **with their server versions** (`readMany` kind `versioned`).
+- It writes vehicle + contact + request + audit in **ONE** `writeMany` commit, guarded by `ifVersion` on the request and the vehicle.
+- On `WRITE_CONFLICT` it re-reads:
+  - same decision already applied → **replay** (`replayed:true`, no second write)
+  - a different decision → `INVALID_REQUEST_STATE`
+  - still `PENDING` (another change moved the vehicle) → retry, up to 4 times, then `BUSY`
+
+**Other changes:** `CAMPAIGN_BUSY` added to the safe error codes (it was surfacing as a generic failure). `backendVersion` 0.9.12.
+
+| Proof | Result |
+|---|---|
+| `tests/change-review-occ.test.mjs` (real use case + real Firestore adapter/REST gateway + fake server enforcing `updateTime` preconditions) | **6/6 PASS**: one commit, version +1 once · same-decision replay, other refused · race same request → applied once, loser replays · APPROVE∥REJECT → one outcome · two different changes on one vehicle → both applied, version +2, no lost update · failing write → nothing applied |
+| Mutation check (same tests on the old code) | **4 FAIL** (C6-01/02/03/06). C6-04/05 pass on the old code only because it never used `readMany`, so the stale-read injection cannot reach it. Those two races need the live proof below. |
+| `npm run check` | EXIT 0 (node:test 207 pass). Compiled `VehicleOperations.gs` is 749 lines (the 800 bound was hit, hence the module split). |
+| Live **C6_CHANGE_REVIEW_RACE** (added to `run-live-ssot-scenarios.mjs`) | **PENDING** deploy. Scenario: approve change A twice + change B, all concurrent on one vehicle. Verdict from Firestore: both APPROVED, version +2 exactly, model and colour both applied, one `CHANGE_APPROVE` audit row each. |

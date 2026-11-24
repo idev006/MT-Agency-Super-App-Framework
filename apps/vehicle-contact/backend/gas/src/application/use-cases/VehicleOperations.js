@@ -1,5 +1,6 @@
 import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition} from '../../domain/policies/VehicleLifecycle.js';
 import {paginate} from '../pagination/Pagination.js';
+import {createChangeReview} from './ChangeReviewOperation.js';
 export function createVehicleOperations({store,security,campaigns,references}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -141,6 +142,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   for(const o of ops){if(o.op==='insert')store.insert(o.table,o.data);else if(o.op==='update')store.update(o.table,o.key,o.fields);else store.remove(o.table,o.key);}
   return true;
  };
+ const changeReview=createChangeReview({store,need,now,id,readAll,writeAll});
  function registrationSubmit(p){
   const payload=body(p),key=payload.plate_normalized+'|'+payload.province_code;
   const idem=need(p.idempotencyKey,'IDEMPOTENCY_KEY',100);
@@ -427,30 +429,6 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   const items=store.list('vc_change_requests',{status:'PENDING'})
    .map(r=>({requestId:r.change_id,vehicleId:r.vehicle_id,submittedAt:r.submitted_at,proposedDelta:JSON.parse(r.proposed_delta)}));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
- }
- function changeReview(p,a){
-  const requestId=need(p.requestId,'REQUEST_ID');
-  if(!['APPROVE','REJECT'].includes(p.decision))throw new Error('INVALID_DECISION');
-  return store.withLock(()=>{
-   const r=store.one('vc_change_requests',{change_id:requestId});
-   if(!r||r.status!=='PENDING')throw new Error('INVALID_REQUEST_STATE');
-   if(p.decision==='APPROVE'){
-    const delta=JSON.parse(r.proposed_delta),v=activeVehicle(r.vehicle_id);
-    const patch={updated_at:now(),updated_by:a.userId,version:Number(v.version)+1};
-    for(const [client,field] of [['brand','make'],['model','model'],['color','color']])if(delta[client]!==undefined)patch[field]=delta[client];
-    store.update('vc_vehicles',{vehicle_id:v.vehicle_id},patch);
-    if(delta.contactName!==undefined||delta.contactPhone!==undefined){
-     const c=store.list('vc_vehicle_contacts',{vehicle_id:v.vehicle_id}).find(x=>x.status==='ACTIVE'&&x.is_primary===true);
-     if(!c)throw new Error('CONTACT_NOT_FOUND');
-     const changes={updated_at:now()};
-     if(delta.contactName!==undefined)changes.display_name=delta.contactName;
-     if(delta.contactPhone!==undefined)changes.phone_e164=delta.contactPhone;
-     store.update('vc_vehicle_contacts',{contact_id:c.contact_id},changes);
-    }
-   }
-   store.update('vc_change_requests',{change_id:requestId},{status:p.decision==='APPROVE'?'APPROVED':'REJECTED',reviewed_by:a.userId,reviewed_at:now()});
-   audit(a,'change',requestId,'CHANGE_'+p.decision);return {requestId,status:p.decision};
-  });
  }
  function vehicleListMine(p,a){
   // OWNER-scoped read: filter strictly by the server session identity, never a client-supplied owner id.

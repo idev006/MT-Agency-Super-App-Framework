@@ -36,7 +36,7 @@ Extends [TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md](TEST_AUTOMATION_INTEGRA
 | C3b | approve both pendings from C3 | exactly 1 ACTIVE vehicle for the plate; 2nd → `DUPLICATE_VEHICLE` | duplicate check reads vehicles non-atomically |
 | C4 | APPROVE ∥ REJECT same request | final state consistent: either (APPROVED + vehicle) or (REJECTED + no vehicle) | **suspected inconsistency**: no precondition on the request status |
 | C5 | N submits, different keys, campaign at capacity-1 | `submitted_count` ≤ max; accepted requests = count delta | read-modify-write quota |
-| C6 | 2× change approval on one vehicle version | one wins; vehicle `version` +1 exactly once | optimistic version check |
+| C6 | 2× change approval on one vehicle version | one wins; vehicle `version` +1 exactly once | **defect confirmed by code read (3 unguarded writes) → fixed in 0.9.12 (atomic + `ifVersion` + replay); offline 6/6; live scenario added, pending deploy** |
 | S1 | each role calls 3 forbidden ops | `FORBIDDEN`/`UNAUTHENTICATED`; no new rows in Firestore | live deny proof (G4) |
 | S2 | logout then reuse token | `UNAUTHENTICATED`; session REVOKED in Firestore | — |
 | S3 | change password | other sessions of the user REVOKED in Firestore | uses `revokeUser` |
