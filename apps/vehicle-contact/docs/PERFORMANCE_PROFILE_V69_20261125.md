@@ -43,3 +43,35 @@ Moving Firestore to a US region would cut the per-query cost, but it moves Thai 
 - Move the **officer read path** first: lookup, detail and QR resolve, with the access-audit write.
 - Do this behind the existing Worker contract, with a measured spike before committing to the full migration.
 - Keep GAS for admin and lower-traffic operations until then.
+
+## 5. Result: Firestore moved next to GAS (2026-11-25, owner direction)
+
+Owner: "สร้างฐานข้อมูลใหม่ โดยให้ไปอยู่ที่เดียวกับ GAS หรือใกล้เคียง ดำเนินการได้". **Synthetic DEV only**: a US location for real personal data still needs the DPO / legal-counsel decision (#55 unchanged).
+
+**What was done:**
+- Created Firestore `p6vc-us` (Native, Standard, region **us-east1**, restrictive rules) in the Cloud Console.
+- Copied `(default)` → `p6vc-us` with [copy-firestore-database.mjs](../backend/gas/scripts/copy-firestore-database.mjs) (gate `P6VC_ALLOW_DB_COPY`; refuses a missing or non-empty target; create-only writes; tests `DBCOPY-01..03`).
+  - Result `PASS`: 4,061 documents, 26/26 collections with equal counts, 16/16 composite indexes `READY`.
+- The owner set Script Property `VEHICLE_FIRESTORE_DATABASE_ID=p6vc-us`.
+  - SSOT check: one login created a session in `p6vc-us` (189 → 190) and none in `(default)` (189 → 189).
+- **Rollback:** set the property back. `(default)` is untouched and still holds the pre-switch data.
+
+**Correctness on `p6vc-us` (V69 / 0.9.19, local read-back with `FIRESTORE_DATABASE_ID=p6vc-us`):**
+- G6: **104/104** (HEALTH_VERSION_MATCH, PUBLIC_SMOKE, FULL_SUITE_WITH_DATA_PROOF).
+- SSOT scenarios: **9/9** (C3b, C4, C5, C6, S1–S5).
+- Cleanup failures: 0.
+
+**Speed (same profile script as §1, medians of 5, ms):**
+
+| Operation | Client before (Bangkok DB) | Client after (`p6vc-us`) | Server after | Firestore time after |
+|---|---|---|---|---|
+| `vehicles.lookup` | 5,200 | **2,588** | 891 | 693 (2 rounds) |
+| `vehicles.detail` | 4,087 (V67) | **2,790** | 730 | 609 |
+| `registrations.listPending` | 2,137 (V67) | **2,086** | 204 | 84 |
+| `vehicles.photo` | 7,027 (V67) | **3,105** | 1,345 | 275 (+ Drive) |
+| `users.list` | 7,058 (V67) | **2,034** | 343 | 184 |
+| `auth.session` | about 1,900 | 1,843 | 95 (cache) | 0 |
+
+- Single query: 320–370 ms → **77–128 ms**. Single commit: about 1.5 s → **144–187 ms**.
+- G6 latency: p50 5,252–5,916 → **2,571 ms**; p95 13,793–14,942 → **5,997 ms**.
+- **What is left:** about 1.7 s per call is GAS platform and network overhead (health alone takes 2.1 s). Only plan B (§4) removes it.
