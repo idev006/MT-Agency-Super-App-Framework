@@ -52,3 +52,24 @@ describe('R6 QR management', () => {
     expect(read('pages/VehicleDetailPage.vue')).toContain("permissionSet.has('qr.manage')")
   })
 })
+
+describe('R7 owner feedback', () => {
+  it('inline form rows align the action button with the inputs (no guessed md:mt-8 offsets)', () => {
+    for (const p of ['features/vehicle-search/components/VehicleSearchForm.vue', 'pages/QrResolvePage.vue', 'pages/RegistrationIntakePage.vue']) {
+      const src = read(p)
+      expect(src, p).toContain('p6-form-row')
+      expect(src, p).toContain('p6-row-action')
+      expect(src, p).not.toMatch(/md:mt-8/)
+    }
+  })
+  it('vehicle detail uses tabs and loads evidence photos through vehicles.photo', () => {
+    const tabs = read('features/vehicle-search/components/VehicleDetailTabs.vue')
+    expect(tabs).toContain('role="tablist"')
+    expect(tabs).toContain("watch(active, (tab) => { if (tab === 'photos') openPhotos() })")
+    expect(read('infrastructure/vehicles/gas-vehicle-detail-repository.js')).toContain("callOperation('vehicles.photo'")
+    expect(read('pages/VehicleDetailPage.vue')).toContain("route.query.from === 'registry'")
+  })
+  it('registry is a table on wide screens', () => {
+    expect(read('pages/VehicleRegistryPage.vue')).toMatch(/<table class="table/)
+  })
+})

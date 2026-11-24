@@ -58,6 +58,11 @@ export function mapVehicleResponse(value, permissions) {
       color: optionalText(value.labels?.color),
       plateType: optionalText(value.labels?.plateType),
     }),
+    // R7: facts for the decision-support detail page (backend ≥0.9.16; empty when absent).
+    organization: Object.freeze({ id: optionalText(value.organization?.id), name: optionalText(value.organization?.name) }),
+    registeredAt: optionalText(value.registeredAt),
+    updatedAt: optionalText(value.updatedAt),
+    qr: Object.freeze({ known: typeof value.qr?.active === 'boolean', active: value.qr?.active === true, issuedAt: optionalText(value.qr?.issuedAt) }),
     contacts: mapContacts(value.contacts, permissions.has(READ_CONTACT)),
     photos: mapPhotos(value.photos, permissions.has(READ_PHOTOS)),
   }

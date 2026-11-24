@@ -28,6 +28,9 @@ const vehicleForm = ref({ plate: '', province: '', plateType: '', vehicleType: '
 const contactForm = ref({ contactName: '', contactPhone: '' })
 const photoFiles = ref({})
 const confirmingCancel = ref(false)
+// R7 (owner: "ใช้ tabs"): one task at a time instead of four long sections.
+const mTab = ref('vehicle')
+const mTabs = [['vehicle', 'ข้อมูลรถ'], ['contact', 'ผู้ประสานงาน'], ['photos', 'รูปประกอบ'], ['cancel', 'ยกเลิกรถ']]
 // P1.4 (E2E 2026-11-24): codes were edited as free text and a save showed no confirmation.
 const { lists } = storeToRefs(useRegistrationReferenceStore())
 const listFor = (key) => (key === 'provinces' ? PROVINCES : (lists.value?.[key] || []))
@@ -102,8 +105,11 @@ async function confirmCancel() {
       <div v-else-if="work.actionPhase.value === 'uncertain'" class="alert alert-warning mb-5" role="alert"><span>ไม่ทราบผลการบันทึกแน่ชัด ห้ามกดซ้ำ ให้โหลดข้อมูลใหม่และตรวจสถานะก่อน</span></div>
       <div v-else-if="work.actionPhase.value === 'error'" class="alert alert-error mb-5"><span>บันทึกไม่สำเร็จ ({{ work.failure.value?.code }})</span></div>
 
+      <div role="tablist" class="tabs tabs-border mb-4 overflow-x-auto" aria-label="แก้ไขยานพาหนะ">
+        <button v-for="[id, label] in mTabs" :id="`mt-${id}`" :key="id" role="tab" type="button" class="tab min-h-11 whitespace-nowrap" :class="{ 'tab-active': mTab === id, 'text-error': id === 'cancel' }" :aria-selected="mTab === id" :aria-controls="`mp-${id}`" @click="mTab = id">{{ label }}</button>
+      </div>
       <div class="grid gap-5">
-        <fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-5">
+        <fieldset v-show="mTab === 'vehicle'" id="mp-vehicle" role="tabpanel" aria-labelledby="mt-vehicle" class="fieldset rounded-box border border-base-300 bg-base-100 p-5">
           <legend class="fieldset-legend text-lg font-semibold">ข้อมูลยานพาหนะ</legend>
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="field-stack"><span class="label-text font-semibold">เลขทะเบียน</span><input v-model.trim="vehicleForm.plate" class="input input-bordered w-full" maxlength="24" /></label>
@@ -118,7 +124,7 @@ async function confirmCancel() {
           <div class="mt-4 flex justify-end"><button class="btn btn-primary" type="button" :disabled="work.actionPhase.value === 'submitting'" @click="saveVehicle"><span v-if="work.actionPhase.value === 'submitting'" class="loading loading-spinner loading-xs"></span>บันทึกข้อมูลยานพาหนะ</button></div>
         </fieldset>
 
-        <fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-5">
+        <fieldset v-show="mTab === 'contact'" id="mp-contact" role="tabpanel" aria-labelledby="mt-contact" class="fieldset rounded-box border border-base-300 bg-base-100 p-5">
           <legend class="fieldset-legend text-lg font-semibold">ผู้ประสานงานหลัก</legend>
           <div class="grid gap-3 sm:grid-cols-2">
             <label class="field-stack"><span class="label-text font-semibold">ชื่อผู้ประสานงาน</span><input v-model.trim="contactForm.contactName" class="input input-bordered w-full" maxlength="100" /></label>
@@ -127,7 +133,7 @@ async function confirmCancel() {
           <div class="mt-4 flex justify-end"><button class="btn btn-primary" type="button" :disabled="work.actionPhase.value === 'submitting'" @click="saveContact">บันทึกผู้ประสานงาน</button></div>
         </fieldset>
 
-        <fieldset class="fieldset rounded-box border border-base-300 bg-base-100 p-5">
+        <fieldset v-show="mTab === 'photos'" id="mp-photos" role="tabpanel" aria-labelledby="mt-photos" class="fieldset rounded-box border border-base-300 bg-base-100 p-5">
           <legend class="fieldset-legend text-lg font-semibold">เปลี่ยนรูปประกอบ</legend>
           <p class="mb-3 text-sm text-base-content/80">แต่ละตำแหน่งต้องมีรูปที่ใช้งานอยู่เดิม 1 รูป ระบบจะแทนที่รูปเดิมและบันทึก audit (JPEG/PNG/WebP ไม่เกิน 5MB)</p>
           <ul class="grid gap-3 sm:grid-cols-2">
@@ -139,7 +145,7 @@ async function confirmCancel() {
           </ul>
         </fieldset>
 
-        <fieldset class="fieldset rounded-box border border-error/40 bg-base-100 p-5">
+        <fieldset v-show="mTab === 'cancel'" id="mp-cancel" role="tabpanel" aria-labelledby="mt-cancel" class="fieldset rounded-box border border-error/40 bg-base-100 p-5">
           <legend class="fieldset-legend text-lg font-semibold text-error">ยกเลิกยานพาหนะ</legend>
           <p class="text-sm text-base-content/80">การยกเลิกจะปิดใช้งานยานพาหนะ เพิกถอน QR ที่ใช้งานอยู่ และสร้างงานเก็บรักษาข้อมูลตามนโยบาย การดำเนินการนี้ไม่สามารถย้อนกลับจากหน้าจอนี้ได้</p>
           <div class="mt-4 flex justify-end"><button class="btn btn-error" type="button" :disabled="work.cancelled.value || work.actionPhase.value === 'submitting'" @click="confirmingCancel = true">ยกเลิกยานพาหนะ</button></div>

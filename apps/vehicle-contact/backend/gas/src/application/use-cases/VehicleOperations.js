@@ -359,10 +359,19 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   const refKeys=[['VEHICLE_TYPE',v.vehicle_type],['COLOR',v.color],['PLATE_TYPE',v.plate_type]]
    .filter(([,code])=>code);
   for(const [catalog,code] of refKeys)reads.push({kind:'one',name:'vc_reference_values',filter:{reference_id:'REF-'+catalog+'-'+code}});
+  // R7 (owner: "ข้อมูลอื่นๆ เพื่อประกอบการพิจารณาครบมั้ย"): agency + active QR, equality-only reads.
+  const extra=reads.length;
+  if(v.organization_id)reads.push({kind:'one',name:'vc_organizations',filter:{organization_id:v.organization_id}});
+  reads.push({kind:'one',name:'vc_qr_tokens',filter:{vehicle_id:v.vehicle_id,status:'ACTIVE'}});
   const rows=typeof store.readMany==='function'?store.readMany(reads)
    :reads.map(r=>r.kind==='one'?(typeof store.one==='function'?store.one(r.name,r.filter):(store.list(r.name,r.filter)||[])[0]||null):store.list(r.name,r.filter));
+  const tail=rows.splice(extra); // [organization?, activeQr]
+  const qrRow=tail.pop(),orgRow=v.organization_id?tail.pop():null;
   const contactRows=wantContacts?rows.shift():[],photoRows=wantPhotos?rows.shift():[],historyRows=wantHistory?rows.shift():[];
   const label={};for(const ref of rows)if(ref&&ref.label_th)label[ref.catalog+'|'+ref.code]=ref.label_th;
+  response.organization={id:v.organization_id||'',name:orgRow&&orgRow.name||''};
+  response.registeredAt=v.created_at||'';response.updatedAt=v.updated_at||'';
+  response.qr={active:Boolean(qrRow),issuedAt:qrRow&&qrRow.issued_at||''};
   const labelOf=(catalog,code)=>label[catalog+'|'+code]||'';
   response.labels={vehicleType:labelOf('VEHICLE_TYPE',v.vehicle_type),color:labelOf('COLOR',v.color),plateType:labelOf('PLATE_TYPE',v.plate_type)};
   if(wantContacts)

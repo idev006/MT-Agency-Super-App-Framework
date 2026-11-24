@@ -48,3 +48,35 @@ test('VIEW-02 no history permission → no history field; unknown codes → empt
   assert.equal(view.labels.color,'');
   assert.equal(view.labels.vehicleType,'รถยนต์นั่งส่วนบุคคลไม่เกิน 7 คน');
 });
+
+import {createMediaRetentionOperations} from '../src/application/use-cases/MediaRetentionOperations.js';
+test('VIEW-03 vehicles.photo returns an ACTIVE photo of an ACTIVE vehicle, logs the view as an access (not history)',()=>{
+  const {store,ops}=boot();
+  ops['registrations.review']({requestId:'r1',decision:'APPROVE',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
+  const reads=[];
+  const drivePhotos={read:ref=>{reads.push(ref);return {mime_type:'image/jpeg',base64Image:'AAAA'};}};
+  const media=createMediaRetentionOperations({store,security:{now:()=>AT,secretToken:()=>'x'+Math.random().toString(16).slice(2).padEnd(63,'0')},drivePhotos,campaigns:{}});
+  const viewer={userId:'staff',permissions:['vehicle.photos.read']};
+  const out=media['vehicles.photo']({vehicleId:'v1',photoId:'p0'},viewer);
+  assert.deepEqual(out,{photoId:'p0',slot:'FRONT',mimeType:'image/jpeg',base64Image:'AAAA'});
+  assert.deepEqual(reads,['ref0'],'reads the stored Drive ref');
+  assert.equal(store.list('vc_lookup_audit',{vehicle_id:'v1'}).filter(a=>a.lookup_source==='PHOTO').length,1,'view logged');
+  assert.equal(store.list('vc_change_audit',{entity_id:'v1'}).length,1,'history untouched (only the approval)');
+  assert.throws(()=>media['vehicles.photo']({vehicleId:'v1',photoId:'nope'},viewer),/PHOTO_NOT_FOUND/);
+  store.update('vc_vehicles',{vehicle_id:'v1'},{status:'INACTIVE'});
+  assert.throws(()=>media['vehicles.photo']({vehicleId:'v1',photoId:'p0'},viewer),/VEHICLE_NOT_ACTIVE/);
+});
+
+test('VIEW-04 view carries agency name, registration/update dates and active-QR status (equality reads only)',()=>{
+  const {store,ops}=boot();
+  store.insert('vc_organizations',{organization_id:'o',name:'สภ.เมืองพิษณุโลก',org_type:'POLICE',parent_id:'',status:'ACTIVE',created_at:AT,updated_at:AT});
+  ops['registrations.review']({requestId:'r1',decision:'APPROVE',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
+  const view=ops['vehicles.detail']({vehicleId:'v1'},reader);
+  assert.deepEqual(view.organization,{id:'o',name:'สภ.เมืองพิษณุโลก'});
+  assert.equal(view.registeredAt,AT);
+  assert.equal(view.qr.active,true);
+  store.update('vc_qr_tokens',{qr_id:store.list('vc_qr_tokens',{vehicle_id:'v1'})[0].qr_id},{status:'REVOKED'});
+  assert.equal(ops['vehicles.detail']({vehicleId:'v1'},reader).qr.active,false);
+  assert.deepEqual(view.labels.color,'ขาว','labels still mapped after the extra reads');
+  assert.deepEqual(view.history.map(h=>h.action),['REGISTRATION_APPROVED']);
+});

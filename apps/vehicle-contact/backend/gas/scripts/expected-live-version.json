@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.15",
+  "backendVersion": "0.9.16",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-24T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.15 = campaigns.list newest first (R6, UI E2E P3). Prior: 0.9.14 (V64)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.16 = new op vehicles.photo (vehicle.photos.read, view audited) + vehicle view carries agency, registration/update dates, active-QR status (R7). Prior: 0.9.15 (V65)."
 }

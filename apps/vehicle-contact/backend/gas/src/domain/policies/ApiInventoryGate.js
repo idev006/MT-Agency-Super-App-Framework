@@ -10,6 +10,6 @@ export function auditApiInventory(inventory, supportedOperations) {
     missing: declared.filter(name => !supported.has(name)),
     extra: [...supported].filter(name => !declared.includes(name)),
     duplicates: [...new Set(duplicates)],
-    ready: declared.length === 55 && duplicates.length === 0 && declared.every(name => supported.has(name)) && [...supported].every(name => declared.includes(name))
+    ready: declared.length === 56 && duplicates.length === 0 && declared.every(name => supported.has(name)) && [...supported].every(name => declared.includes(name))
   });
 }

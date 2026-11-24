@@ -76,7 +76,7 @@ describe('vehicle detail page and route contracts', () => {
     expect(router).toContain("name: 'vehicle-detail'")
     expect(router).toContain("path: 'vehicles/detail/:vehicleId'")
     expect(router).toContain("requiredPermissions: ['vehicle.lookup']")
-    expect(page).toContain('<VehicleSearchResult')
+    expect(page).toContain('<VehicleDetailTabs') // R7: the detail page has its own tabbed decision view
     expect(page).toContain('<PageTemplateComponent')
     expect(page).toContain('<OperationalContextStrip')
     expect(page).toContain('route.params.vehicleId')

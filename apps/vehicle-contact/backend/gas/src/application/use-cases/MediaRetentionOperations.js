@@ -70,6 +70,20 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   const media=drivePhotos.read(photo.storageRef);
   return {photoId,slot:photo.slot,mimeType:media.mime_type,base64Image:media.base64Image};
  }
+ // R7 (owner: "ทำไมไม่มีภาพรถ"): approved-vehicle evidence photo bytes for roles holding
+ // vehicle.photos.read (the permission that already lists them). Only an ACTIVE photo of an ACTIVE
+ // vehicle; every view is logged in vc_lookup_audit (source PHOTO), not in the change history.
+ function vehiclePhoto(p,actor){
+  const vehicleId=need(p.vehicleId,'VEHICLE_ID'),photoId=need(p.photoId,'PHOTO_ID');
+  const vehicle=store.one('vc_vehicles',{vehicle_id:vehicleId});
+  if(!vehicle||vehicle.status!=='ACTIVE')throw new Error('VEHICLE_NOT_ACTIVE');
+  const photo=store.one('vc_vehicle_photos',{photo_id:photoId});
+  if(!photo||photo.vehicle_id!==vehicleId||photo.status!=='ACTIVE')throw new Error('PHOTO_NOT_FOUND');
+  const media=drivePhotos.read(photo.storage_ref);
+  store.insert('vc_lookup_audit',{audit_id:id(),actor_id:actor.userId,vehicle_id:vehicleId,lookup_source:'PHOTO',result:'FOUND',
+   correlation_id:id().slice(0,16),created_at:now()});
+  return {photoId,slot:photo.slot,mimeType:media.mime_type,base64Image:media.base64Image};
+ }
  function dueJobs(p){
   const cutoff=Date.parse(now()),items=store.list('vc_retention_jobs').filter(j=>
    j.status==='WAITING_RETENTION'&&Date.parse(j.due_at)<=cutoff&&j.legal_hold!==true&&String(j.legal_hold)!=='true')
@@ -140,7 +154,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
  }
  return Object.freeze({
   'photos.upload':uploadPhoto,'photos.list':photosList,'photos.replace':replacePhoto,
-  'registrations.photo':registrationPhoto,
+  'registrations.photo':registrationPhoto,'vehicles.photo':vehiclePhoto,
   'retention.listDue':dueJobs,'retention.listExecutable':executableJobs,'retention.approve':approveDeletion,
   'retention.execute':executeDeletion,'retention.jobStatus':status,
   'audit.query':queryAudit,'audit.export':p=>({format:'JSON',rows:queryAudit({...(p.vehicleId?{vehicleId:p.vehicleId}:{}),limit:100})})

@@ -12,6 +12,13 @@ export function createGasVehicleDetailRepository({ callOperation }) {
       const history = Array.isArray(response.data?.history) ? mapVehicleHistory(response.data.history) : null
       return { vehicle, version, history, requestId: response.requestId }
     },
+    // R7: approved-vehicle evidence photo (bytes stay in memory; every view is audited server-side).
+    async photo({ vehicleId, photoId }, { signal } = {}) {
+      const response = await callOperation('vehicles.photo', { vehicleId: String(vehicleId || '').trim(), photoId: String(photoId || '').trim() }, { signal })
+      const data = response.data || {}
+      if (typeof data.base64Image !== 'string' || !/^image\/(jpeg|png|webp)$/.test(data.mimeType || '')) throw Object.assign(new Error('invalid photo'), { code: 'INVALID_ENVELOPE' })
+      return { photoId: data.photoId, slot: data.slot, dataUrl: `data:${data.mimeType};base64,${data.base64Image}` }
+    },
     async history(vehicleId, { signal } = {}) {
       const response = await callOperation('vehicles.history', { vehicleId: String(vehicleId || '').trim() }, { signal })
       return { history: mapVehicleHistory(response.data), requestId: response.requestId }

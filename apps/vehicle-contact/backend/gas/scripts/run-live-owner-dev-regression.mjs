@@ -180,6 +180,12 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
   await test('PHOTOS.LIST','photos.list',async()=>{
    assert.equal(ok(await request('photos.list',{vehicleId:state.approved.vehicleId},state.tokens.staff)).length,5);
   });
+  await test('VEHICLES.PHOTO','vehicles.photo',async()=>{
+   const list=ok(await request('photos.list',{vehicleId:state.approved.vehicleId},state.tokens.staff));
+   const photo=ok(await request('vehicles.photo',{vehicleId:state.approved.vehicleId,photoId:list[0].photoId},state.tokens.staff));
+   assert.equal(photo.photoId,list[0].photoId);assert.equal(photo.slot,list[0].slot);
+   assert.ok(typeof photo.base64Image==='string'&&photo.base64Image.length>0);
+  });
   await test('CONTACTS.READ','contacts.read',async()=>{
    assert.ok(ok(await request('contacts.read',{vehicleId:state.approved.vehicleId},state.tokens.staff)).length>0);
   });
