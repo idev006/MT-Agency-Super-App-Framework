@@ -121,3 +121,66 @@ test('C6-06 a failing write leaves NOTHING applied (no vehicle change while the 
   assert.equal(Number(store.one('vc_vehicles',{vehicle_id:'v1'}).version),1);
   assert.equal(store.one('vc_change_requests',{change_id:'c1'}).status,'PENDING');
 });
+
+// ---- C4 (live V62 2026-11-24): APPROVE ∥ REJECT on one registration request ----
+function seedRequest(store){
+  const photos=['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'].map((slot,i)=>({photoId:'p'+i,slot,storageRef:'ref'+i,mimeType:'image/png',sizeBytes:10}));
+  store.insert('vc_registration_requests',{request_id:'r1',vehicle_id:'v9',campaign_id:'c1',status:'PENDING_APPROVAL',submitted_at:AT,
+    reviewed_by:'',reviewed_at:'',idempotency_key:'k1',application_json:JSON.stringify({plate_normalized:'TST9',province_code:'10',plate_type:'P',
+    vehicle_type:'CAR',make:'M',model:'X',color:'W',organization_id:'o',relationship:'OWNER',contactName:'N',contactPhone:'+66810000001',photos})});
+}
+const regReview=(ops,decision,user)=>ops['registrations.review']({requestId:'r1',decision,platePhotoVerified:true},{userId:user,permissions:['vehicle.registration.approve']});
+const reviewReads=withVehicles=>[{kind:'versioned',name:'vc_registration_requests',filter:{request_id:'r1'}},
+  {kind:'newest',name:'vc_operation_journal',filter:{operation:'registrations.review',entity_id:'r1'},limit:1},
+  ...(withVehicles?[{kind:'list',name:'vc_vehicles'}]:[])];
+
+test('C4-01 approve wins, a stale concurrent REJECT is refused → APPROVED + vehicle, never REJECTED + vehicle',()=>{
+  const ctx=boot(),{store,ops}=ctx;seedRequest(store);
+  const race=staleReads(ctx,1);
+  race.capture(reviewReads(false));              // the rejecter read PENDING ...
+  regReview(ops,'APPROVE','approver');           // ... the approver commits ...
+  race.arm();
+  assert.throws(()=>regReview(ops,'REJECT','rejecter'),/INVALID_REQUEST_STATE/);
+  race.restore();
+  assert.equal(store.one('vc_registration_requests',{request_id:'r1'}).status,'APPROVED');
+  assert.equal(store.one('vc_vehicles',{vehicle_id:'v9'}).status,'ACTIVE');
+});
+
+test('C4-02 reject wins, a stale concurrent APPROVE is refused and creates NO vehicle/QR',()=>{
+  const ctx=boot(),{store,ops}=ctx;seedRequest(store);
+  const race=staleReads(ctx,1);
+  race.capture(reviewReads(true));
+  regReview(ops,'REJECT','rejecter');
+  race.arm();
+  assert.throws(()=>regReview(ops,'APPROVE','approver'),/INVALID_REQUEST_STATE/);
+  race.restore();
+  assert.equal(store.one('vc_registration_requests',{request_id:'r1'}).status,'REJECTED');
+  assert.equal(store.one('vc_vehicles',{vehicle_id:'v9'}),null,'the live V62 bug left an ACTIVE vehicle here');
+  assert.equal(store.list('vc_qr_tokens',{vehicle_id:'v9'}).length,0);
+});
+
+test('C4-03 two stale APPROVEs: the loser replays the winner (same QR), one vehicle',()=>{
+  const ctx=boot(),{store,ops}=ctx;seedRequest(store);
+  const race=staleReads(ctx,1);
+  race.capture(reviewReads(true));
+  const first=regReview(ops,'APPROVE','a');
+  race.arm();
+  const second=regReview(ops,'APPROVE','b');
+  race.restore();
+  assert.equal(second.qrToken,first.qrToken);assert.equal(second.qrId,first.qrId);
+  assert.equal(store.list('vc_qr_tokens',{vehicle_id:'v9'}).length,1);
+});
+
+test('VU-01 vehicles.update: two updates with the same expectedVersion → one lands, the stale one is VERSION_CONFLICT',()=>{
+  const ctx=boot(),{store,ops}=ctx;
+  const upd=(model,user)=>ops['vehicles.update']({vehicleId:'v1',expectedVersion:1,model},{userId:user,permissions:['vehicle.update']});
+  const race=staleReads(ctx,1);
+  race.capture([{kind:'versioned',name:'vc_vehicles',filter:{vehicle_id:'v1'}}]);
+  upd('A','first');
+  race.arm();
+  assert.throws(()=>upd('B','second'),/VERSION_CONFLICT/);
+  race.restore();
+  const v=store.one('vc_vehicles',{vehicle_id:'v1'});
+  assert.equal(v.model,'A','no lost update');assert.equal(Number(v.version),2);
+  assert.equal(store.list('vc_change_audit',{entity_id:'v1'}).filter(x=>x.action==='VEHICLE_UPDATED').length,1);
+});

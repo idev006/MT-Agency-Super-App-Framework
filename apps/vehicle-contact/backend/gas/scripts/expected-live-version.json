@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.11",
+  "backendVersion": "0.9.13",
   "persistenceEngine": "firestore",
   "dualWrite": false,
-  "updatedAt": "2026-11-23T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.11 = live-test fixes: same-key retry replays the winner instead of DUPLICATE_VEHICLE/PHOTO_NOT_STAGED (G7 C1) + campaign quota via optimistic concurrency (updateTime precondition, retry; C5). Prior: 0.9.10 (V60)."
+  "updatedAt": "2026-11-24T00:00:00Z",
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.13 = C4 (registration review commit guarded by the request version; a concurrent different decision is refused, the same decision replays) + vehicles.update guarded by the vehicle version. Prior: 0.9.12 (V62, C6 change review)."
 }

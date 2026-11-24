@@ -444,3 +444,34 @@ Independent spot-check via the owner's Google Drive connector: newest suite PNGs
 | Mutation check (same tests on the old code) | **4 FAIL** (C6-01/02/03/06). C6-04/05 pass on the old code only because it never used `readMany`, so the stale-read injection cannot reach it. Those two races need the live proof below. |
 | `npm run check` | EXIT 0 (node:test 207 pass). Compiled `VehicleOperations.gs` is 749 lines (the 800 bound was hit, hence the module split). |
 | Live **C6_CHANGE_REVIEW_RACE** (added to `run-live-ssot-scenarios.mjs`) | **PENDING** deploy. Scenario: approve change A twice + change B, all concurrent on one vehicle. Verdict from Firestore: both APPROVED, version +2 exactly, model and colour both applied, one `CHANGE_APPROVE` audit row each. |
+
+### 5.14 V62 / 0.9.12 live: G6 GREEN, C4 race defect caught live → fixed in 0.9.13 (with `vehicles.update`)
+
+| Run | Result |
+|---|---|
+| Publish | `clasp update-deployment … -V 62` (main `06762fe`). Health probe: `backendVersion 0.9.12`, firestore. |
+| G6 run 1 | 96/97. The only FAIL was `USERS.LIST`: the test read `users.list {limit:100}`, but Firestore DEV holds **102** users (1 active + 101 suspended suite users, counted by an independent SA read). The newly created suite users fell outside the first window. **Test-harness defect, not a product defect**: the regression runner now pages through `{page,pageSize:100}`. Tooling only, so live evidence stays valid. |
+| G6 run 2 | **103/103 PASS** (72/72 authenticated, 56/56 ops covered, DATA_PROOF PASS, cleanup 0 failed). p50 6,427 / p95 12,897 ms. |
+| SSOT scenarios | 7 PASS, **C4 FAIL**, C6 ERROR. |
+
+**C4 FAIL (real defect, live).** Concurrent `registrations.review` APPROVE ∥ REJECT both answered OK.
+- Firestore read-back: request **REJECTED** while the vehicle was **ACTIVE** with 1 **ACTIVE QR**. On V61 the race had not interleaved this way.
+- **Root cause:** the W1 review commit updated the request row with **no precondition**. Approve (journal + vehicle + contact + photos + QR + request) and reject (journal + request) touch different journal documents, so both commits succeeded, and the later one overwrote the status.
+- **Fix (0.9.13):**
+  - The request is read `versioned`, and the commit's request update carries `ifVersion`.
+  - A `WRITE_CONFLICT`, or a create collision from a concurrent same-request approval, re-runs the review. Its idempotent path replays the same decision (same deterministic QR) or refuses a different one (`INVALID_REQUEST_STATE`).
+  - After 3 conflicts the call returns `BUSY`.
+- **Residue check (SSOT):** 22 REJECTED requests, **0** with an ACTIVE vehicle or QR. The scenario cleanup had already cancelled the inconsistent vehicle and revoked its QR.
+
+**`vehicles.update`** had the same class of bug: `expectedVersion` was compared against a read, then written without a precondition (lost update). It is now one commit (vehicle + audit) guarded by `ifVersion`; a conflict returns `VERSION_CONFLICT`.
+
+**C6 ERROR** was my scenario: `changes.submit` needs `vehicle.change.submit` (OWNER) plus ownership, and admin got `FORBIDDEN`. The scenario now creates a synthetic OWNER, assigns vehicle ownership (`vehicles.update ownerUserId`), submits as the owner, then races the reviews as admin.
+
+| Offline proof (0.9.13) | Result |
+|---|---|
+| `change-review-occ.test.mjs` | **10/10**: C6-01…06 + C4-01 approve-wins/reject refused · C4-02 reject-wins/approve refused, **no vehicle/QR** (the live V62 state) · C4-03 two approves → loser replays the same QR, 1 QR · VU-01 stale update → `VERSION_CONFLICT`, no lost update |
+| `npm run check` | EXIT 0 (node:test 211 pass). `VehicleOperations.gs` 777/800 lines. |
+
+**Also:** the `firestore-frontend-bridge.mjs` pre-clean deleted **every document of every collection** of the shared Firestore DEV DB (accounts and config included, and the data the live GAS serves). It also wrote fake-Drive `storage_ref`s into real Firestore. It now refuses to start unless `P6VC_BRIDGE_WIPE_ALL=WIPE_ALL_DOCUMENTS_OF_DISPOSABLE_FIRESTORE_DEV`. It was **not run**.
+
+**Pending:** deploy 0.9.13 (owner `PUSH_VEHICLE_GAS`), then G6 + scenarios (C4 + C6 live).

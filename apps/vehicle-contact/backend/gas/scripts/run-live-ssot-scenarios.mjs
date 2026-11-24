@@ -108,9 +108,19 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
       const p=plate(20),ph=await stage(main);
       const s=await must('registrations.submit',reg(main,p,ph,'ss-'+tag+'-6'));
       const a=await must('registrations.review',{requestId:s.requestId,decision:'APPROVE',platePhotoVerified:true},admin);vehicles.push(a.vehicleId);
+      // changes.submit needs vehicle.change.submit (OWNER role) + ownership: create a synthetic
+      // OWNER, make them the vehicle owner, and submit as them (V62 run 1: admin got FORBIDDEN).
+      const oname='p6vc_owner_c6'+tag,otemp='Synthetic-Temp-'+tag+'-Cc3!',opass='Synthetic-Pass-'+tag+'-Dd4!';
+      const ou=await must('users.create',{username:oname,displayName:'P6VC Automated C6 owner',temporaryPassword:otemp},admin);users.push(ou.userId);
+      await must('users.assignRoles',{userId:ou.userId,roles:['OWNER']},admin);
+      const ot=(await must('auth.login',{username:oname,password:otemp})).sessionToken;
+      await must('auth.changePassword',{oldPassword:otemp,newPassword:opass},ot);
+      const owner=(await must('auth.login',{username:oname,password:opass})).sessionToken;
+      const v0=(await where('vc_vehicles','vehicle_id',a.vehicleId))[0]||{};
+      await must('vehicles.update',{vehicleId:a.vehicleId,expectedVersion:Number(v0.version),ownerUserId:ou.userId},admin);
       const before=(await where('vc_vehicles','vehicle_id',a.vehicleId))[0]||{};
-      const ca=await must('changes.submit',{vehicleId:a.vehicleId,model:'C6MODEL'+tag},admin);
-      const cb=await must('changes.submit',{vehicleId:a.vehicleId,color:'C6COLOR'+tag},admin);
+      const ca=await must('changes.submit',{vehicleId:a.vehicleId,model:'C6MODEL'+tag},owner);
+      const cb=await must('changes.submit',{vehicleId:a.vehicleId,color:'C6COLOR'+tag},owner);
       const rs=await Promise.all([call('changes.review',{requestId:ca.requestId,decision:'APPROVE'},admin),
         call('changes.review',{requestId:ca.requestId,decision:'APPROVE'},admin),
         call('changes.review',{requestId:cb.requestId,decision:'APPROVE'},admin)]);

@@ -32,6 +32,16 @@ const {application,store,sdk,security,fullRow,drainAudits}=comp;
 
 // Pre-clean: restarts must not collide with residue from a previous bridge session.
 // NOTE: never run this bridge concurrently with the API pipeline suite (shared DEV DB).
+// SAFETY (2026-11-24): the pre-clean deletes EVERY document of EVERY collection of the shared
+// Firestore DEV database — including the accounts/config the owner asked to keep and the data the
+// live GAS deployment serves — and the bridge stores photos in an in-memory fake Drive while
+// writing their storage_ref into real Firestore. It therefore refuses to start unless the
+// operator explicitly accepts a full wipe of a DISPOSABLE database.
+if(process.env.P6VC_BRIDGE_WIPE_ALL!=='WIPE_ALL_DOCUMENTS_OF_DISPOSABLE_FIRESTORE_DEV'){
+  console.log('BRIDGE_REFUSED: pre-clean would wipe every collection of the shared Firestore DEV DB; '+
+    'set P6VC_BRIDGE_WIPE_ALL=WIPE_ALL_DOCUMENTS_OF_DISPOSABLE_FIRESTORE_DEV only for a disposable database');
+  process.exit(2);
+}
 const {DATABASE_SCHEMA}=await import('../src/domain/ports/SchemaRepository.js');
 for(const coll of [...Object.keys(DATABASE_SCHEMA.tables),'__p6vc_seq']){
   const docs=await sdk.collection(coll).listDocuments();

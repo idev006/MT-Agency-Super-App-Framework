@@ -81,7 +81,14 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
    });
   }
   await test('USERS.LIST','users.list',async()=>{
-   const rows=ok(await request('users.list',{limit:100},adminToken));
+   // Page through the whole directory: DEV accumulates suspended suite users, so the newest
+   // users fall outside a single limit-100 window (G6 V62 false FAIL at 102 users, 2026-11-24).
+   const rows=[];
+   for(let page=1;;page++){
+    const data=ok(await request('users.list',{page,pageSize:100},adminToken));
+    rows.push(...data.items);
+    if(page>=data.totalPages||page>=20)break;
+   }
    assert.ok(Object.values(state.users).every(u=>rows.some(x=>x.userId===u.userId)));
   });
   await test('USERS.UPDATE','users.update',async()=>{
