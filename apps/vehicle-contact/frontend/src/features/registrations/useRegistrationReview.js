@@ -106,14 +106,21 @@ export function useRegistrationReview({ repository, permissions }) {
     } catch (error) { capture(error, phase); return false }
   }
 
+  // R5: registrations.review is idempotent per (request, decision) — the backend replays an
+  // APPLIED decision and returns the same deterministic QR token — so after an uncertain outcome
+  // the safe action is to resend exactly the same decision, never a different one.
+  const lastDecision = ref(null)
+
   async function review({ requestId, decision, platePhotoVerified = false }) {
     if (!canReview.value) { actionPhase.value = 'forbidden'; return false }
+    lastDecision.value = Object.freeze({ requestId, decision, platePhotoVerified })
     actionPhase.value = 'submitting'; failure.value = null; oneTimeQr.value = null
     try {
       const result = await source.review({ requestId, decision, platePhotoVerified })
       if (result.qrToken) oneTimeQr.value = Object.freeze({ token: result.qrToken, qrId: result.qrId, vehicleId: result.vehicleId })
       selected.value = null
       resetPhotos()
+      lastDecision.value = null
       actionPhase.value = 'success'
       await load()
       return true
@@ -123,7 +130,8 @@ export function useRegistrationReview({ repository, permissions }) {
   return {
     phase, actionPhase, registrations, selected, failure, page, pageSize, pagination, oneTimeQr, canReview,
     photoStates, activePhotoId,
-    load, inspect, review, selectPhoto, retryPhoto,
+    lastDecision, load, inspect, review, selectPhoto, retryPhoto,
+    resendDecision: () => (lastDecision.value ? review(lastDecision.value) : Promise.resolve(false)),
     clearOneTimeQr: () => { oneTimeQr.value = null },
     clearSelection: () => { selected.value = null; resetPhotos() },
     changePage: (value) => { page.value = value; return load() },
