@@ -85,3 +85,15 @@ test('SPEED-05 last_seen is written at most once per minute, and idle/expiry che
   advance(31*60e3);
   assert.throws(()=>sessions.authorize(token,'vehicle.lookup'),/SESSION_IDLE_EXPIRED/);
 });
+
+test('SPEED-06 queries + an append-only insert share ONE parallel round; a duplicate insert still fails atomically',()=>{
+  const fake=createFakeFirestoreRest(),store=createFirestoreStore({firestore:gw(fake,memoryCache())});
+  store.insert('vc_users',{user_id:'u9',username_normalized:'u9',display_name:'U9',status:'ACTIVE',created_at:'x',updated_at:'x'});
+  const r0=fake.state.rounds;
+  const row={audit_id:'la1',actor_id:'a',vehicle_id:'v',lookup_source:'DETAIL',result:'FOUND',correlation_id:'c',created_at:'x'};
+  const [u]=store.readMany([{kind:'one',name:'vc_users',filter:{user_id:'u9'}}],{inserts:[['vc_lookup_audit',row]]});
+  assert.equal(u.user_id,'u9');
+  assert.equal(fake.state.rounds-r0,1,'reads + insert in one round');
+  assert.equal(store.list('vc_lookup_audit',{vehicle_id:'v'}).length,1,'audit row persisted');
+  assert.throws(()=>store.readMany([{kind:'one',name:'vc_users',filter:{user_id:'u9'}}],{inserts:[['vc_lookup_audit',row]]}),/DUPLICATE_KEY/);
+});
