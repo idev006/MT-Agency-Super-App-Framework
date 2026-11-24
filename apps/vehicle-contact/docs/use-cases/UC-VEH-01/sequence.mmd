@@ -23,7 +23,7 @@ sequenceDiagram
       Search->>DB: Read active contact and five photo metadata
     end
     API-->>FE: Vehicle DTO with permitted fields
-    FE->>API: vehicles.detail / contacts.read / photos.list
+    FE->>API: vehicles.detail / contacts.read / photos.list / vehicles.photo
     API->>DB: Recheck active vehicle, access and audit
     API-->>FE: Authorized details
     Staff->>FE: Tap phone number to call

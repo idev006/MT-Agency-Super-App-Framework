@@ -406,7 +406,8 @@
         "vehicles.detail",
         "vehicles.history",
         "contacts.read",
-        "photos.list"
+        "photos.list",
+        "vehicles.photo"
       ],
       "tests": [
         "ACTOR-03",
@@ -437,7 +438,8 @@
         "backend/gas/src/application/use-cases/MediaRetentionOperations.js"
       ],
       "testSources": [
-        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs",
+        "backend/gas/tests/vehicle-view-labels-history.test.mjs"
       ],
       "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
     },

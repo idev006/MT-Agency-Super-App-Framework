@@ -4,7 +4,7 @@
 
 ## 1. Authority and scope
 - Business baseline: [Approved requirements](../../APPROVED_REQUIREMENTS_BASELINE_R01_R26.md).
-- API operations: `vehicles.lookup`, `vehicles.list`, `vehicles.detail`, `vehicles.history`, `contacts.read`, `photos.list` (API v1 JSON envelope, GAS POST except public health GET).
+- API operations: `vehicles.lookup`, `vehicles.list`, `vehicles.detail`, `vehicles.history`, `contacts.read`, `photos.list`, `vehicles.photo` (API v1 JSON envelope, GAS POST except public health GET).
 - Implementation: `backend/gas/src/application/use-cases/VehicleOperations.js`, `backend/gas/src/application/use-cases/MediaRetentionOperations.js`; server permission source `backend/gas/src/api/controllers/OperationController.js`.
 - Diagram source: [sequence.mmd](sequence.mmd) (Mermaid, reviewed alongside spec).
 
@@ -67,7 +67,7 @@ sequenceDiagram
       Search->>DB: Read active contact and five photo metadata
     end
     API-->>FE: Vehicle DTO with permitted fields
-    FE->>API: vehicles.detail / contacts.read / photos.list
+    FE->>API: vehicles.detail / contacts.read / photos.list / vehicles.photo
     API->>DB: Recheck active vehicle, access and audit
     API-->>FE: Authorized details
     Staff->>FE: Tap phone number to call
