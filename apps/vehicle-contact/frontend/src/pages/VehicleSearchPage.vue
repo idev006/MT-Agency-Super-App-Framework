@@ -20,15 +20,15 @@ const errorCopy = computed(() => search.phase.value === 'recoverable-error'
 </script>
 
 <template>
-  <PageTemplateComponent eyebrow="งานค้นหา" title="ค้นหายานพาหนะ" description="ระบุทะเบียนและจังหวัดเพื่อดูข้อมูลที่เซสชันนี้ได้รับอนุญาต">
+  <PageTemplateComponent eyebrow="งานค้นหา" title="ค้นหายานพาหนะ" description="ค้นหารถด้วยทะเบียนและจังหวัด แล้วติดต่อผู้ประสานงานได้ทันที">
     <template #breadcrumbs><span class="text-base-content"><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">ค้นหายานพาหนะ</span></span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
     <template #toolbar><VehicleSearchForm :busy="search.phase.value === 'loading'" @search="search.search" /></template>
 
     <section aria-live="polite" aria-atomic="false">
-      <div v-if="search.phase.value === 'idle'" class="alert items-start shadow-none"><div><h2 class="font-medium">พร้อมค้นหา</h2><p class="mt-1">กรอกทะเบียนและรหัสจังหวัดให้ครบ ระบบค้นหาทีละคันเท่านั้น</p></div></div>
+      <div v-if="search.phase.value === 'idle'" class="alert items-start shadow-none"><div><h2 class="font-medium">พร้อมค้นหา</h2><p class="mt-1">กรอกทะเบียนและเลือกจังหวัด ระบบค้นหาทีละคันเท่านั้น</p></div></div>
       <div v-else-if="search.phase.value === 'loading'" class="space-y-4" role="status"><span class="sr-only">กำลังค้นหายานพาหนะ</span><div class="skeleton h-40 w-full"></div><div class="grid gap-4 sm:grid-cols-2"><div class="skeleton h-40"></div><div class="skeleton h-40"></div></div></div>
-      <div v-else-if="search.phase.value === 'empty'" class="alert alert-info items-start shadow-none"><div><h2 class="font-medium">ไม่พบยานพาหนะ</h2><p class="mt-1">ไม่พบรถที่ใช้งานอยู่ตามทะเบียนและรหัสจังหวัดนี้ ตรวจสอบข้อมูลแล้วค้นหาใหม่</p></div></div>
+      <div v-else-if="search.phase.value === 'empty'" class="alert alert-info items-start shadow-none"><div><h2 class="font-medium">ไม่พบยานพาหนะ</h2><p class="mt-1">ไม่พบรถที่ใช้งานอยู่ตามทะเบียนและจังหวัดนี้ ตรวจสอบข้อมูลแล้วค้นหาใหม่</p></div></div>
       <div v-else-if="search.phase.value === 'forbidden'" class="alert alert-warning items-start shadow-none"><div><h2 class="font-medium">ไม่สามารถค้นหาได้</h2><p class="mt-1">เซสชันนี้ไม่ได้รับอนุญาตให้ค้นหายานพาหนะ ไม่มีข้อมูลถูกเปิดเผย</p></div></div>
       <div v-else-if="search.phase.value === 'unauthenticated'" class="alert alert-warning items-start shadow-none"><div><h2 class="font-medium">เซสชันสิ้นสุดแล้ว</h2><p class="mt-1">เข้าสู่ระบบใหม่ก่อนค้นหา ไม่มีข้อมูลถูกเปลี่ยนแปลง</p><RouterLink class="btn btn-sm mt-3" :to="{ name: 'sign-in' }">เข้าสู่ระบบ</RouterLink></div></div>
       <div v-else-if="search.phase.value === 'recoverable-error' || search.phase.value === 'error'" class="alert alert-error items-start shadow-none"><div class="w-full"><h2 class="font-medium">ค้นหาไม่สำเร็จ</h2><p class="mt-1">{{ errorCopy }}</p><button v-if="search.phase.value === 'recoverable-error'" class="btn btn-sm mt-3" type="button" @click="search.retry">ลองอีกครั้ง</button><details v-if="search.failure.value?.requestId" class="collapse collapse-arrow mt-3 bg-base-100 text-base-content"><summary class="collapse-title font-medium">รายละเอียดสำหรับเจ้าหน้าที่สนับสนุน</summary><div class="collapse-content break-all font-mono text-sm">{{ search.failure.value.requestId }}</div></details></div></div>

@@ -30,20 +30,21 @@ onBeforeUnmount(() => { work.clearSensitive(); scanner.destroy() })
 </script>
 
 <template>
-  <PageTemplateComponent eyebrow="งานตรวจสอบ" title="ตรวจสอบ QR ยานพาหนะ" description="กรอก token ที่อ่านจาก QR เพื่อเรียกข้อมูลรถตามสิทธิ์ของเซสชันนี้">
+  <PageTemplateComponent eyebrow="งานตรวจสอบ" title="ตรวจสอบ QR ยานพาหนะ" description="สแกน QR บนรถเพื่อดูข้อมูลและติดต่อผู้ประสานงานตามสิทธิ์ของบัญชีนี้">
     <template #breadcrumbs><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">ตรวจสอบ QR</span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
     <template #toolbar>
       <QrScannerPanel class="mb-5" :reader-id="readerId" :phase="scanner.phase.value" :failure-code="scanner.failure.value?.code" :devices="scanner.devices.value" :selected-device-id="scanner.selectedDeviceId.value" :facing-mode="scanner.facingMode.value" :active-facing-mode="scanner.activeFacingMode.value" :active="scanner.active.value" :busy="scanner.busy.value" @start="scanner.start" @stop="scanner.stop" @switch="scanner.switchCamera" @select-device="scanner.selectDevice" @scan-file="scanner.scanFile" />
       <div class="mb-5 flex justify-end"><RouterLink class="btn btn-ghost" :to="{ name: 'vehicle-search' }">ค้นหาด้วยเลขทะเบียนแทน</RouterLink></div>
-      <form class="card card-border bg-base-100 shadow-none" autocomplete="off" @submit.prevent="submit">
-        <fieldset class="card-body gap-4 p-5 sm:p-6" :disabled="work.phase.value === 'loading'">
-          <legend class="fieldset-legend text-lg font-medium">QR token</legend>
+      <details class="collapse collapse-arrow border border-base-300 bg-base-100"><summary class="collapse-title font-medium">สแกนไม่ได้? กรอกรหัส QR เอง</summary><div class="collapse-content">
+      <form autocomplete="off" @submit.prevent="submit">
+        <fieldset class="fieldset gap-4" :disabled="work.phase.value === 'loading'">
+          <legend class="sr-only">กรอกรหัส QR</legend>
           <div class="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
             <label class="field-stack">
-              <span class="label font-medium">Token 64 ตัวอักษร</span>
+              <span class="label font-medium text-base-content">รหัส QR (64 ตัวอักษร)</span>
               <input v-model.trim="token" class="input input-bordered min-h-11 w-full font-mono" type="password" inputmode="text" minlength="64" maxlength="64" pattern="[A-Fa-f0-9]{64}" autocomplete="off" autocapitalize="none" spellcheck="false" required aria-describedby="qr-token-help">
-              <span id="qr-token-help" class="text-sm text-base-content/65">ใช้เป็นทางเลือกเมื่อสแกนไม่ได้ ระบบใช้ token ในหน่วยความจำระหว่างคำขอเท่านั้น และไม่บันทึกลง URL หรือ browser storage</span>
+              <span id="qr-token-help" class="text-sm text-base-content/80">ใช้เมื่อสแกนไม่ได้ ระบบใช้ token ในหน่วยความจำระหว่างคำขอเท่านั้น และไม่บันทึกลง URL หรือ browser storage</span>
             </label>
             <button class="btn btn-primary min-h-11 md:mt-8" type="submit" :disabled="token.length !== 64 || work.phase.value === 'loading'">
               <span v-if="work.phase.value === 'loading'" class="loading loading-spinner loading-sm" aria-hidden="true"></span>
@@ -52,10 +53,11 @@ onBeforeUnmount(() => { work.clearSensitive(); scanner.destroy() })
           </div>
         </fieldset>
       </form>
+      </div></details>
     </template>
 
     <section aria-live="polite">
-      <div v-if="work.phase.value === 'idle'" class="alert items-start shadow-none"><div><h2 class="font-medium">พร้อมตรวจสอบ</h2><p class="mt-1">กรอก token จากเครื่องอ่าน QR โดยไม่ต้องส่ง token ผ่าน URL</p></div></div>
+      <div v-if="work.phase.value === 'idle'" class="alert items-start shadow-none"><div><h2 class="font-medium">พร้อมตรวจสอบ</h2><p class="mt-1">กด “เปิดกล้อง” แล้วหันกล้องไปที่ QR บนรถ</p></div></div>
       <div v-else-if="work.phase.value === 'loading'" class="space-y-4" role="status"><span class="sr-only">กำลังตรวจสอบ QR</span><div class="skeleton h-40 w-full"></div><div class="grid gap-4 sm:grid-cols-2"><div class="skeleton h-40"></div><div class="skeleton h-40"></div></div></div>
       <div v-else-if="work.phase.value === 'invalid'" class="alert alert-warning">รูปแบบ QR token ไม่ถูกต้อง กรุณาอ่าน QR ใหม่</div>
       <div v-else-if="work.phase.value === 'empty'" class="alert alert-info">ไม่พบ QR ที่ใช้งานอยู่ QR อาจไม่ถูกต้อง ถูกเพิกถอน หรือยานพาหนะไม่ได้อยู่ในสถานะใช้งาน</div>
