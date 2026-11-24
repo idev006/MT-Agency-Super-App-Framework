@@ -59,6 +59,7 @@ The permission column is from `contracts/api-permissions.v1.json` and retains **
 | `qr.replace` | `VC-QR-004` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-04 | PASS — authenticated direct-GAS token API; physical QR/device acceptance open |
 | `photos.upload` | `VC-PHOTOS-001` | [UC-PHOTO-01](use-cases/UC-PHOTO-01/specification.md) | `campaign.token.valid` | ACTOR-03 | PASS — campaign-token direct-GAS five-photo workflow; browser/business UAT open |
 | `photos.list` | `VC-PHOTOS-002` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.photos.read` | ACTOR-03 | PASS — authenticated direct-GAS; browser/business UAT open |
+| `vehicles.photo` | `VC-VEHICLES-008` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.photos.read` | ACTOR-03 | OFFLINE PASS (VIEW-03, RBAC matrix, Worker allowlist test) — live G6 pending V66 deploy |
 | `photos.replace` | `VC-PHOTOS-003` | [UC-PHOTO-02](use-cases/UC-PHOTO-02/specification.md) | `vehicle.update` | ACTOR-05 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `retention.listDue` | `VC-RETENTION-001` | [UC-RET-01](use-cases/UC-RET-01/specification.md) | `retention.delete.approve` | ACTOR-06 | PASS — authenticated direct-GAS; destructive retention execution open |
 | `retention.approve` | `VC-RETENTION-002` | [UC-RET-02](use-cases/UC-RET-02/specification.md) | `retention.delete.approve` | ACTOR-06 | PASS — authenticated direct-GAS non-approvable-job negative; successful approval/destructive execution open |
