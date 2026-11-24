@@ -291,3 +291,9 @@ textarea {
   color: #111;
   padding: 0.4rem 1.25rem 0.5rem;
 }
+
+.vehicle-plate--sm {
+  min-width: 7.5rem;
+  border-width: 2px;
+  padding: 0.15rem 0.6rem 0.25rem;
+}

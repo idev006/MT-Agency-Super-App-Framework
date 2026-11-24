@@ -8,6 +8,7 @@ import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import { formatBangkokDateTime } from '../domain/time/bangkok-date-time.js'
 import { useVehicleRegistry } from '../features/vehicle-registry/useVehicleRegistry.js'
 import { useSessionStore } from '../stores/session.js'
+import { provinceLabel } from '../domain/reference/provinces.js'
 
 const auth = useSessionStore()
 const { roles, permissions, session, transport } = storeToRefs(auth)
@@ -36,9 +37,9 @@ onMounted(work.load)
       <ul class="list rounded-box border border-base-300 bg-base-100 [&>li]:py-2 xl:max-h-[calc(100vh-13rem)] xl:overflow-y-auto">
         <li v-for="vehicle in work.vehicles.value" :key="vehicle.vehicleId" class="list-row grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
           <div class="min-w-0">
-            <strong class="block truncate text-base">{{ vehicle.plate }} · {{ vehicle.province }}</strong>
-            <p class="mt-0.5 text-sm text-base-content/65">{{ vehicle.brand }} {{ vehicle.model }} · {{ vehicle.color }}</p>
-            <p class="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-base-content/60">
+            <strong class="block truncate text-base">{{ vehicle.plate }} · {{ provinceLabel(vehicle.province) || vehicle.province }}</strong>
+            <p class="mt-0.5 text-sm text-base-content/80">{{ vehicle.brand }} {{ vehicle.model }} · {{ vehicle.color }}</p>
+            <p class="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-base-content/80">
               <span class="badge badge-sm" :class="statusBadge[vehicle.status] || 'badge-ghost'">{{ statusLabels[vehicle.status] || vehicle.status }}</span>
               <span>อนุมัติเมื่อ {{ formatBangkokDateTime(vehicle.createdAt, '-') }}</span>
             </p>
@@ -49,6 +50,6 @@ onMounted(work.load)
       <PaginationControl class="mt-3" :page="work.page.value" :page-size="work.pageSize.value" :total-items="work.pagination.value.total" :disabled="work.phase.value === 'loading'" label="แบ่งหน้าทะเบียนยานพาหนะ" @update:page="work.changePage" @update:page-size="work.changePageSize" />
     </section>
 
-    <template #footer><p class="text-sm text-base-content/70">สิทธิ์บนหน้าจอช่วยนำทางเท่านั้น GAS จะตรวจสิทธิ์ vehicle.list ซ้ำก่อนส่งรายการ — ข้อมูลผู้ประสานงานดูได้เฉพาะหน้ารายละเอียดตามสิทธิ์</p></template>
+    <template #footer><p class="text-sm text-base-content/80">สิทธิ์บนหน้าจอช่วยนำทางเท่านั้น GAS จะตรวจสิทธิ์ vehicle.list ซ้ำก่อนส่งรายการ — ข้อมูลผู้ประสานงานดูได้เฉพาะหน้ารายละเอียดตามสิทธิ์</p></template>
   </PageTemplateComponent>
 </template>

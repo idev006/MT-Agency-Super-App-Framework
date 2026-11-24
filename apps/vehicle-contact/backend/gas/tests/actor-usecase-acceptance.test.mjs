@@ -154,3 +154,12 @@ test('ACTOR-07 GOOGLE: unlinked sign-in denied; link only after local authentica
  assertError(assert,h.as('staff','auth.linkGoogle',{password:SAMPLE_PASSWORD,idToken:'signed-oidc-for-fixture'}),'IDENTITY_ALREADY_LINKED','duplicate link denied');
  assert.equal(assertOk(assert,h.call('auth.googleLogin',{idToken:'signed-oidc-for-fixture'}),'linked Google sign in').mustChangePassword,false);
 });
+
+test('ACTOR-R6 campaigns.list returns the newest campaign first (E2E P3)',()=>{
+ const h=createAcceptanceHarness();
+ const mk=()=>assertOk(assert,h.as('sys','campaigns.create',{startsAt:'2026-11-17T00:00:00.000Z',endsAt:'2026-11-20T00:00:00.000Z',maxSubmissions:1}),'create');
+ const first=mk(),second=mk();
+ const list=assertOk(assert,h.as('sys','campaigns.list',{page:1,pageSize:1}),'list page 1');
+ assert.equal(list.items[0].campaignId,second.campaignId,'newest on page 1');
+ assert.notEqual(list.items[0].campaignId,first.campaignId);
+});
