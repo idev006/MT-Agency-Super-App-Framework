@@ -1,7 +1,9 @@
 <script setup>
 import { computed } from 'vue'
 const props = defineProps({ items: { type: Array, required: true } })
-const availableItems = computed(() => props.items.filter((item) => item.route))
+// R6 (E2E P3): the home page itself and the developer connection check are not work items.
+const NOT_WORK = new Set(['dashboard', 'connection'])
+const availableItems = computed(() => props.items.filter((item) => item.route && !NOT_WORK.has(item.id)))
 const plannedItems = computed(() => props.items.filter((item) => !item.route))
 </script>
 <template>

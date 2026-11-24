@@ -80,7 +80,7 @@ export function createAdministrationOperations({store,security}) {
   const items=store.list('vc_campaigns').map(x=>({
    campaignId:x.campaign_id,startsAt:x.starts_at,endsAt:x.ends_at,maxSubmissions:Number(x.max_submissions),
    submittedCount:Number(x.submitted_count),status:x.status
-  }));
+  })).reverse(); // R6 (E2E P3): newest first — a new campaign was landing on the last page.
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function validateCampaign(p){

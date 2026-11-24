@@ -24,6 +24,7 @@ import SignInForm from '../components/auth/SignInForm.vue'
           <h2 class="text-3xl font-black">เข้าสู่ระบบ</h2>
           <p class="mt-2 mb-7 leading-7 text-base-content/80">ใช้ชื่อผู้ใช้และรหัสผ่านที่ได้รับจากผู้ดูแลระบบ</p>
           <SignInForm />
+          <p class="mt-4 text-sm text-base-content/80">เพื่อความปลอดภัย การเข้าสู่ระบบแยกตามแท็บ เปิดแท็บใหม่ต้องเข้าสู่ระบบอีกครั้ง</p>
         </div>
       </section>
     </div>
