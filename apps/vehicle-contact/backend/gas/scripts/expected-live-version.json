@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.16",
+  "backendVersion": "0.9.17",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-24T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.16 = new op vehicles.photo (vehicle.photos.read, view audited) + vehicle view carries agency, registration/update dates, active-QR status (R7). Prior: 0.9.15 (V65)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.17 = speed: Firestore access token shared across executions (CacheService), owner-approved 60 s session snapshot (no password hash; revocation clears it), last_seen throttled to 1/min, users.list parallel reads. Prior: 0.9.16 (V66)."
 }

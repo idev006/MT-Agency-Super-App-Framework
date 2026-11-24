@@ -15,7 +15,7 @@ const TOKEN_URL='https://oauth2.googleapis.com/token';
 const DATASTORE_SCOPE='https://www.googleapis.com/auth/datastore';
 const TOKEN_REFRESH_MARGIN_SECONDS=60;
 
-export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,privateKey,projectId,databaseId,clock}){
+export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,privateKey,projectId,databaseId,clock,tokenCache=null}){
   if(typeof clientEmail!=='string'||!clientEmail.includes('@'))throw new Error('INVALID_CLIENT_EMAIL');
   if(typeof privateKey!=='string'||!privateKey.includes('BEGIN PRIVATE KEY'))throw new Error('INVALID_PRIVATE_KEY');
   if(typeof projectId!=='string'||!projectId)throw new Error('INVALID_PROJECT_ID');
@@ -49,9 +49,18 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
   function encodeFields(obj){const out={};for(const k of Object.keys(obj))out[k]=encodeValue(obj[k]);return out;}
   function decodeFields(fields){const out={};for(const k of Object.keys(fields||{}))out[k]=decodeValue(fields[k]);return out;}
 
+  // Speed (owner: "ระบบช้ามาก"): each GAS web request is a new execution, so the in-memory token
+  // was re-minted (RSA sign + token exchange round trip) on EVERY API call. When a shared
+  // tokenCache (GAS script CacheService) is injected, the access token is reused across
+  // executions until its own expiry margin. The cache is private to this script project.
   let cached=null;
+  const CACHE_KEY='p6vc:fs-token:'+clientEmail;
   function token(){
     if(cached&&nowSeconds()<cached.expiresAt)return cached.token;
+    if(tokenCache){
+      try{const hit=JSON.parse(tokenCache.get(CACHE_KEY)||'null');
+        if(hit&&typeof hit.token==='string'&&nowSeconds()<hit.expiresAt){cached=hit;return cached.token;}}catch(_){/* refetch */}
+    }
     const iat=nowSeconds();
     const signingInput=b64url(JSON.stringify({alg:'RS256',typ:'JWT'}))+'.'+b64url(JSON.stringify({
       iss:clientEmail,scope:DATASTORE_SCOPE,aud:TOKEN_URL,iat,exp:iat+3600}));
@@ -63,6 +72,7 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     const body=JSON.parse(resp.getContentText());
     if(typeof body.access_token!=='string'||!body.access_token)throw new Error('NO_ACCESS_TOKEN');
     cached={token:body.access_token,expiresAt:iat+(Number(body.expires_in)||3600)-TOKEN_REFRESH_MARGIN_SECONDS};
+    if(tokenCache){try{tokenCache.put(CACHE_KEY,JSON.stringify(cached),Math.max(60,Math.min(21600,cached.expiresAt-nowSeconds())));}catch(_){/* cache optional */}}
     return cached.token;
   }
 
@@ -71,9 +81,13 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     if(body!==undefined){opts.contentType='application/json';opts.payload=JSON.stringify(body);}
     return opts;
   }
+  // A cached token that Firestore rejects (401) is dropped and the call retried once with a fresh one.
+  function dropToken(){cached=null;if(tokenCache){try{tokenCache.remove(CACHE_KEY);}catch(_){}}}
   function call(url,method,body){
     const {url:_u,...opts}=request(url,method,body);
-    return parse(urlFetchApp.fetch(url,opts));
+    const resp=urlFetchApp.fetch(url,opts);
+    if(tokenCache&&resp.getResponseCode()===401){dropToken();const {url:_r,...again}=request(url,method,body);return parse(urlFetchApp.fetch(url,again));}
+    return parse(resp);
   }
   // Independent requests in ONE wall-clock round (UrlFetchApp.fetchAll runs them in
   // parallel). Falls back to sequential fetch where the transport has no fetchAll.
