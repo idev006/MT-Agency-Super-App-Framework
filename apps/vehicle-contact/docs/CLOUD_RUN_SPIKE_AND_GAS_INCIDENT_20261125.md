@@ -92,3 +92,35 @@ Cloud Run in `asia-southeast3` (Bangkok) should be equal or faster: the server s
 **Not switched:**
 - The Worker and frontend still point to GAS.
 - Switching any path to Cloud Run happens only after a live G6 run against the Cloud Run URL and owner approval.
+
+## 5. First live Cloud Run deployment (2026-11-25)
+
+**Deployment**
+- Workflow run 45455503351 on commit `f92a75f`. Every step passed: build + tests, keyless auth, image push, deploy, health probe.
+- Service: `https://p6vc-api-46858005337.asia-southeast3.run.app`, region **asia-southeast3 (Bangkok)**, backend 0.9.20.
+
+**Measured from Thailand** (medians of 5; GAS measured in the same minute)
+
+| Operation | Cloud Run | GAS |
+|---|---|---|
+| auth.session | **78 ms** (5/5) | 4,514 ms |
+| vehicles.lookup (incl. audit write) | **205 ms** (5/5) | 11,442 ms (1/2 OK) |
+| vehicles.detail | **255 ms** (5/5) | 11,160 ms (1/2) |
+| registrations.listPending | **83 ms** | 2,320 ms |
+| users.list | **194 ms** | 4,301 ms |
+| campaigns.list | **104 ms** | 11,497 ms (1/2) |
+
+**Security checks on Cloud Run**
+- Login works, so the pepper from Secret Manager equals the GAS pepper.
+- A wrong password returns `INVALID_CREDENTIALS`.
+- After logout the same token returns `UNAUTHENTICATED` immediately, so there is no cache across instances.
+- Login takes 2.1–2.9 s. That is PBKDF2 on 1 vCPU, by design (constant-work login).
+
+**Full-inventory regression** against the Cloud Run URL (`run-live-owner-dev-regression.mjs`, which now accepts the project's run.app URL)
+- 73 tests: **41 PASS / 32 FAIL**, 0 cleanup failures. p50 91 ms, p95 4.1 s (login and password changes).
+- **The only root cause is photo storage.** Drive is not wired on Cloud Run, so `photos.upload` fails, then `registrations.submit` fails, and every vehicle/QR/change test that needs the approved vehicle fails after it.
+- Every operation that doesn't depend on photos passed.
+
+**Not yet proven:** the photo path, and therefore the end-to-end registration → approval → QR flow. This is the next slice: photos → Cloud Storage (Bangkok).
+
+**Not switched:** the Worker and frontend still use GAS.
