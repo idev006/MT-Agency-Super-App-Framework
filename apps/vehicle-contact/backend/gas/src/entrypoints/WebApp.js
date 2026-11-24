@@ -5,6 +5,7 @@ import {createOneTimeAdminPasswordReset} from '../infrastructure/security/AdminP
 import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.js';
 import {createReferenceSeedInstaller} from '../infrastructure/reference/ReferenceSeedInstaller.js';
 import {createRuntimeStore,runtimeProjectId} from '../composition/StoreSelector.js';
+import {auditDrivePhotos} from '../infrastructure/media/DrivePhotoAudit.js';
 import { createApplication } from "../composition/Container.js";
 import { apiFailure } from "../api/responses/ResponseFactory.js";
 function gasJson(value) {
@@ -131,4 +132,13 @@ export function inspectVehicleConfigFromEditor() {
  const report=createApplication({propertiesService:PropertiesService}).inspectConfig();
  Logger.log(JSON.stringify(report));
  return report;
+}
+
+// L4 SSOT file proof (read-only, editor-only): Firestore photo rows ↔ Drive files, checked
+// directly with DriveApp (not via the API). Logs counters + short id prefixes only.
+export function verifyDrivePhotosFromEditor() {
+ const folderId=PropertiesService.getScriptProperties().getProperty('VEHICLE_PHOTOS_FOLDER_ID');
+ const result=auditDrivePhotos({store:editorStore(),driveApp:DriveApp,folderId});
+ Logger.log(JSON.stringify(result));
+ return result;
 }
