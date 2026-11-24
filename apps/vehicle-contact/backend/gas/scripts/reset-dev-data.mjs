@@ -13,7 +13,18 @@ export const SYNTHETIC_PLATE_PREFIXES = Object.freeze(['ฑฆ', 'TST', 'DEV', '
 export const RESET_GATE = 'RUN_SYNTHETIC_DEV_RESET';
 export const WRITE_GATE = 'RUN_SYNTHETIC_OWNER_DEV';
 const EXEC_URL = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
-const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/C7sAAAAASUVORK5CYII=';
+import {syntheticVehiclePng} from './synthetic-vehicle-image.mjs';
+// R7 re-seed: reference-catalog codes (Region 6 provinces, STANDARD, RY01, catalog colours/brands,
+// OWNER) so the UI can search and label them, and visible synthetic photos instead of 1×1 px.
+// The ฑฆ plate prefix keeps every seeded vehicle recognisable as synthetic for future resets.
+export const SEED_PROVINCES = Object.freeze(['65', '64', '63', '66', '53']);
+export const SEED_COLORS = Object.freeze(['WHITE', 'BLACK', 'SILVER', 'RED', 'BLUE']);
+export const SEED_BRANDS = Object.freeze([['TOYOTA', 'Yaris'], ['HONDA', 'City'], ['ISUZU', 'D-Max'], ['MITSUBISHI', 'Triton'], ['NISSAN', 'Almera']]);
+export function seedVehicleFields(i) {
+  const [brand, model] = SEED_BRANDS[i % SEED_BRANDS.length];
+  return {plate: 'ฑฆ' + String(1000 + i), province: SEED_PROVINCES[i % SEED_PROVINCES.length], plateType: 'STANDARD',
+    vehicleType: 'RY01', brand, model, color: SEED_COLORS[i % SEED_COLORS.length], relationship: 'OWNER'};
+}
 const PHOTO_SLOTS = ['FRONT', 'REAR', 'LEFT', 'RIGHT', 'FRONT_ANGLE'];
 
 export function isSyntheticVehicle(row) {
@@ -183,23 +194,23 @@ export async function runReset({
       maxSubmissions: count + 10,
     }, adminToken));
     for (let i = 0; i < count; i++) {
-      const plate = 'ฑฆ' + String(1000 + i);
+      const seed = seedVehicleFields(i), plate = seed.plate;
       const photos = [];
       for (const slot of PHOTO_SLOTS) {
-        const data = ok(await request('photos.upload', {campaignToken: seedCampaign.campaignToken, slot, base64Image: PNG, mimeType: 'image/png'}));
+        const data = ok(await request('photos.upload', {campaignToken: seedCampaign.campaignToken, slot, base64Image: syntheticVehiclePng({index: i, slot}), mimeType: 'image/png'}));
         photos.push({slot, photoId: data.photoId});
       }
       const registration = {
-        campaignToken: seedCampaign.campaignToken, plate, province: 'TH-10', plateType: 'PRIVATE',
-        vehicleType: 'SEDAN', brand: 'SYNTHETIC', model: 'AUTOMATED', color: 'WHITE',
-        organizationId: seedOrg.organizationId, relationship: 'REGISTERED_CONTACT',
+        campaignToken: seedCampaign.campaignToken, plate, province: seed.province, plateType: seed.plateType,
+        vehicleType: seed.vehicleType, brand: seed.brand, model: seed.model, color: seed.color,
+        organizationId: seedOrg.organizationId, relationship: seed.relationship,
         contactName: 'Synthetic Reset Contact', contactPhone: '+66810000002', photos,
         idempotencyKey: 'reset-' + runTag + '-' + plate,
       };
       const submitted = ok(await request('registrations.submit', registration));
       const approved = ok(await request('registrations.review', {requestId: submitted.requestId, decision: 'APPROVE', platePhotoVerified: true}, adminToken));
       await step('SEED_VERIFY_' + plate, async () => {
-        const lookup = ok(await request('vehicles.lookup', {plate, province: 'TH-10'}, adminToken));
+        const lookup = ok(await request('vehicles.lookup', {plate, province: seed.province}, adminToken));
         if (lookup.vehicleId !== approved.vehicleId) throw new Error('LOOKUP_MISMATCH');
         const photoList = ok(await request('photos.list', {vehicleId: approved.vehicleId}, adminToken));
         if (photoList.length !== 5) throw new Error('PHOTO_COUNT');
