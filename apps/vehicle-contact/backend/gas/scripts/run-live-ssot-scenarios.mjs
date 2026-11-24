@@ -3,6 +3,8 @@
 //   C3b DUPLICATE_PLATE_APPROVAL  2 pendings for one plate (raced) → approving both yields ONE vehicle
 //   C4  APPROVE_VS_REJECT_RACE    final state must be consistent (APPROVED+vehicle | REJECTED+no vehicle)
 //   C5  QUOTA_AT_CAPACITY_RACE    4 concurrent submits into a max=2 campaign → ≤2 accepted, count ≤ max
+//   C6  CHANGE_REVIEW_RACE        approve change A twice + change B, all concurrent, on ONE vehicle →
+//                                 both applied once, version +2 exactly, one audit row per change
 //   S1  RBAC_DENY_STAFF           STAFF calls 3 admin ops → FORBIDDEN and no rows written
 //   S2  LOGOUT_TOKEN_REUSE        logged-out token → UNAUTHENTICATED; session REVOKED in Firestore
 //   S3  PASSWORD_CHANGE_REVOKES   change password → every session of the user REVOKED in Firestore
@@ -25,6 +27,8 @@ export const verdict={
   c3b:d=>d.activeVehiclesForPlate===1&&d.secondApprovalCode==='DUPLICATE_VEHICLE',
   c4:d=>(d.status==='APPROVED'&&d.vehicles===1)||(d.status==='REJECTED'&&d.vehicles===0),
   c5:d=>d.submittedCount<=d.max&&d.requestRows<=d.max&&d.requestRows===d.okResponses,
+  c6:d=>d.statusA==='APPROVED'&&d.statusB==='APPROVED'&&d.versionDelta===2&&d.modelApplied&&d.colorApplied
+    &&d.auditA===1&&d.auditB===1&&d.codes.every(c=>c==='OK'||c==='BUSY'),
   s1:d=>d.codes.every(c=>c==='FORBIDDEN')&&d.rowsAfter===d.rowsBefore,
   s2:d=>d.code==='UNAUTHENTICATED'&&d.sessionStatus==='REVOKED',
   s3:d=>d.activeSessions===0&&d.oldTokenCode==='UNAUTHENTICATED',
@@ -98,6 +102,25 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
       const d={max:2,okResponses:rs.filter(r=>r.ok).length,codes:rs.map(code),submittedCount:Number(camp.submitted_count),
         requestRows:(await where('vc_registration_requests','campaign_id',c.campaignId)).length};
       record('C5_QUOTA_AT_CAPACITY_RACE',verdict.c5(d),d);
+    });
+
+    await tryScenario('C6_CHANGE_REVIEW_RACE',async()=>{
+      const p=plate(20),ph=await stage(main);
+      const s=await must('registrations.submit',reg(main,p,ph,'ss-'+tag+'-6'));
+      const a=await must('registrations.review',{requestId:s.requestId,decision:'APPROVE',platePhotoVerified:true},admin);vehicles.push(a.vehicleId);
+      const before=(await where('vc_vehicles','vehicle_id',a.vehicleId))[0]||{};
+      const ca=await must('changes.submit',{vehicleId:a.vehicleId,model:'C6MODEL'+tag},admin);
+      const cb=await must('changes.submit',{vehicleId:a.vehicleId,color:'C6COLOR'+tag},admin);
+      const rs=await Promise.all([call('changes.review',{requestId:ca.requestId,decision:'APPROVE'},admin),
+        call('changes.review',{requestId:ca.requestId,decision:'APPROVE'},admin),
+        call('changes.review',{requestId:cb.requestId,decision:'APPROVE'},admin)]);
+      const after=(await where('vc_vehicles','vehicle_id',a.vehicleId))[0]||{};
+      const reqA=(await where('vc_change_requests','change_id',ca.requestId))[0]||{},reqB=(await where('vc_change_requests','change_id',cb.requestId))[0]||{};
+      const d={codes:rs.map(code),statusA:reqA.status,statusB:reqB.status,versionBefore:Number(before.version),versionAfter:Number(after.version),
+        versionDelta:Number(after.version)-Number(before.version),modelApplied:after.model==='C6MODEL'+tag,colorApplied:after.color==='C6COLOR'+tag,
+        auditA:(await where('vc_change_audit','entity_id',ca.requestId)).filter(x=>x.action==='CHANGE_APPROVE').length,
+        auditB:(await where('vc_change_audit','entity_id',cb.requestId)).filter(x=>x.action==='CHANGE_APPROVE').length};
+      record('C6_CHANGE_REVIEW_RACE',verdict.c6(d),d);
     });
 
     // Security negatives with a dedicated synthetic STAFF user.

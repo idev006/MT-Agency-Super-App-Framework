@@ -24,3 +24,14 @@ test('gates block before any network call',async()=>{
   let calls=0;const r=await runScenarios({env:{},fetchImpl:async()=>{calls++;},persist:false});
   assert.equal(r.status,'BLOCKED');assert.equal(calls,0);
 });
+
+test('C6 verdict: both changes applied once, version +2 exactly, one audit row each', () => {
+  const good={codes:['OK','OK','OK'],statusA:'APPROVED',statusB:'APPROVED',versionDelta:2,modelApplied:true,colorApplied:true,auditA:1,auditB:1};
+  assert.equal(verdict.c6(good),true);
+  assert.equal(verdict.c6({...good,codes:['OK','BUSY','OK']}),true,'BUSY after 4 conflicts is an honest refusal');
+  assert.equal(verdict.c6({...good,versionDelta:3}),false,'same change applied twice (the old bug)');
+  assert.equal(verdict.c6({...good,colorApplied:false}),false,'lost update: change B overwritten by a stale row');
+  assert.equal(verdict.c6({...good,auditA:2}),false,'double audit = double apply');
+  assert.equal(verdict.c6({...good,codes:['OK','INVALID_REQUEST_STATE','OK']}),false,'duplicate same-decision call must replay, not fail');
+  assert.equal(verdict.c6({...good,statusB:'PENDING'}),false);
+});
