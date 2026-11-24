@@ -1,0 +1,93 @@
+name: Deploy P6 Vehicle Contact API to Cloud Run (manual only)
+
+# VC-ADR-033: the unchanged application hosted on Cloud Run (Bangkok). Keyless: GitHub OIDC ->
+# Workload Identity Federation -> deployer service account. Nothing here holds a secret; the auth
+# pepper is mounted from Secret Manager by Cloud Run itself.
+# Repository variables (non-secret identifiers, set once after the owner runs
+# apps/vehicle-contact/ops/cloudrun-setup.sh in Cloud Shell): GCP_WIF_PROVIDER, GCP_DEPLOYER_SA.
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type DEPLOY_VEHICLE_CLOUDRUN to authorize deploying a new Cloud Run revision'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-p6-vehicle-cloudrun
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: mt-iam-core-2026
+  REGION: asia-southeast3
+  SERVICE: p6vc-api
+  REPOSITORY: p6vc
+  RUNTIME_SA: p6vc-api-runtime@mt-iam-core-2026.iam.gserviceaccount.com
+
+jobs:
+  deploy:
+    name: Test, build image, deploy revision
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'DEPLOY_VEHICLE_CLOUDRUN'
+    timeout-minutes: 20
+    steps:
+      - name: Checkout canonical source from main
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Backend tests (same gate as the GAS deploy)
+        working-directory: apps/vehicle-contact/backend/gas
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+
+      - name: Authenticate to Google Cloud (keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push image
+        id: image
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPOSITORY}/${SERVICE}:${GITHUB_SHA}"
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker build -f apps/vehicle-contact/backend/cloudrun/Dockerfile -t "$IMAGE" apps/vehicle-contact
+          docker push "$IMAGE"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy revision
+        run: |
+          # concurrency=1: the business code is synchronous (UrlFetch contract); scale out instances.
+          # No session cache across instances (VC-ADR-030/033): revocation stays immediate.
+          gcloud run deploy "$SERVICE" \
+            --project "$PROJECT_ID" --region "$REGION" \
+            --image "${{ steps.image.outputs.image }}" \
+            --service-account "$RUNTIME_SA" \
+            --concurrency 1 --min-instances 0 --max-instances 10 \
+            --cpu 1 --memory 512Mi --timeout 60 \
+            --allow-unauthenticated \
+            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),RUNTIME_SA_EMAIL=${RUNTIME_SA}" \
+            --set-secrets "P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest" \
+            --labels "app=p6vc,commit=${GITHUB_SHA::12}" \
+            --quiet
+
+      - name: Health probe
+        run: |
+          URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')
+          echo "Service URL: $URL"
+          curl -fsS "$URL" | tee /tmp/health.json
+          grep -q '"status":"ready"' /tmp/health.json
