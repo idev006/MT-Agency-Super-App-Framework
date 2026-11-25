@@ -5,6 +5,10 @@
 // editor tool (the files live in the owner's Drive); the plan lists their storage refs.
 //   dry run : node scripts/purge-synthetic-residue.mjs
 //   apply   : P6VC_ALLOW_RESIDUE_PURGE=PURGE_SYNTHETIC_RESIDUE node scripts/purge-synthetic-residue.mjs --apply <plan.json>
+// --init (owner 2026-11-25: "init database คงไว้แต่ ตารางที่เป็น master"): plan = EVERY row of the
+// transactional tables; keeps the master tables (reference values, settings, roles), the admin
+// account (user, roles, permissions, identities, its live sessions) and real organizations
+// (synthetic "P6VC*" / "CR probe*" organizations go). Same dry-run → confirm → --apply flow.
 import './load-env.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -57,6 +61,29 @@ export function classify(rows, {now = Date.now(), adminUsername = ''} = {}) {
   return {ids, kept, driveRefs, rule: {stagingTtlDays: STAGING_TTL_DAYS}};
 }
 
+export const MASTER_TABLES = Object.freeze(['vc_reference_values', 'vc_settings', 'vc_roles', 'vc_role_permissions', 'vc_migration_journal']);
+const USER_TABLES = ['vc_user_roles', 'vc_user_permissions', 'vc_user_identities'];
+export const isSyntheticOrgRow = o => /^(P6VC|CR probe)/.test(String(o.name || ''));
+export function classifyInit(rows, {now = Date.now(), adminUsername = ''} = {}) {
+  if (!adminUsername) throw new Error('ADMIN_USERNAME_REQUIRED');
+  const R = t => rows[t] || [], ids = {};
+  const admins = new Set(R('vc_users').filter(u => String(u.username_normalized) === String(adminUsername).toLowerCase()).map(u => u.user_id));
+  if (admins.size !== 1) throw new Error('ADMIN_NOT_FOUND');
+  for (const t of Object.keys(rows)) {
+    if (MASTER_TABLES.includes(t)) continue;
+    let del;
+    if (t === 'vc_users') del = R(t).filter(u => !admins.has(u.user_id));
+    else if (USER_TABLES.includes(t)) del = R(t).filter(r => !admins.has(r.user_id));
+    else if (t === 'vc_sessions') del = R(t).filter(s => !(admins.has(s.user_id) && s.status === 'ACTIVE' && !s.revoked_at && Date.parse(s.expires_at) > now));
+    else if (t === 'vc_organizations') del = R(t).filter(isSyntheticOrgRow);
+    else del = R(t);
+    if (del.length) ids[t] = del.map(r => String(r[pk(t)])).sort();
+  }
+  const kept = Object.fromEntries(Object.keys(rows).map(t => [t, R(t).length - (ids[t]?.length || 0)]));
+  const driveRefs = [...new Set([...R('vc_vehicle_photos'), ...R('vc_photo_staging')].map(r => String(r.storage_ref || '')).filter(Boolean))].sort();
+  return {ids, kept, driveRefs, rule: {mode: 'INIT_KEEP_MASTER', masterTables: MASTER_TABLES}};
+}
+
 async function client(env) {
   const key = JSON.parse(fs.readFileSync(env.GOOGLE_APPLICATION_CREDENTIALS, 'utf8'));
   const http = await new GoogleAuth({credentials: key, scopes: ['https://www.googleapis.com/auth/datastore']}).getClient();
@@ -82,18 +109,20 @@ export async function main({env = process.env, argv = process.argv.slice(2)} = {
   if (argv.includes('--apply') && env.P6VC_ALLOW_RESIDUE_PURGE !== PURGE_GATE) return {mode: 'BLOCKED', reason: 'MISSING_PURGE_GATE'};
   const c = await client(env);
   const rows = await readAll(c);
-  const plan = classify(rows, {adminUsername: env.P6VC_ADMIN_USER || env.P6VC_TEST_USERNAME || ''});
+  const admin = env.P6VC_ADMIN_USER || env.P6VC_TEST_USERNAME || '';
+  const plan = argv.includes('--init') ? classifyInit(rows, {adminUsername: admin}) : classify(rows, {adminUsername: admin});
   const total = Object.values(plan.ids).reduce((a, l) => a + l.length, 0);
   const summary = {database: c.db, deleteByCollection: Object.fromEntries(Object.entries(plan.ids).map(([t, l]) => [t, l.length])), deleteTotal: total,
     keptByCollection: plan.kept, driveFilesToTrash: plan.driveRefs.length, rule: plan.rule};
   if (!argv.includes('--apply')) {
     fs.mkdirSync('test-results', {recursive: true});
-    const file = path.join('test-results', `residue-purge-plan-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+    const file = path.join('test-results', `${argv.includes('--init') ? 'init' : 'residue'}-purge-plan-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
     fs.writeFileSync(file, JSON.stringify({createdAt: new Date().toISOString(), ...plan}, null, 1));
     return {mode: 'DRY_RUN', planFile: file, ...summary};
   }
   const planFile = argv[argv.indexOf('--apply') + 1];
   const confirmed = JSON.parse(fs.readFileSync(planFile, 'utf8'));
+  if ((confirmed.rule?.mode === 'INIT_KEEP_MASTER') !== argv.includes('--init')) return {mode: 'BLOCKED', reason: 'PLAN_MODE_MISMATCH'};
   let deleted = 0, skipped = 0;
   for (const [t, list] of Object.entries(confirmed.ids)) {
     const still = new Set(plan.ids[t] || []); // re-classified now: only rows that still qualify
