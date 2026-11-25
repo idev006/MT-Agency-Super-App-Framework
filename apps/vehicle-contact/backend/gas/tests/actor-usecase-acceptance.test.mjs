@@ -96,13 +96,13 @@ test('ACTOR-04 REGISTRATION_ADMIN: corrections, duplicate/version guards, owner 
  assert.equal(h.store.list('vc_vehicle_contacts',{vehicle_id:vehicleId})[0].display_name,'Changed Contact');
  assertOk(assert,h.as('reg','contacts.update',{vehicleId,contactPhone:'+66810000002'}),'direct contact edit');
  assert.equal(h.as('reg','vehicles.history',{vehicleId}).ok,true);
- assertError(assert,h.as('reg','qr.issue',{vehicleId}),'QR_ALREADY_ACTIVE','no duplicate active QR');
- const rotated=assertOk(assert,h.as('reg','qr.replace',{vehicleId}),'rotate QR');
+ assertError(assert,h.as('reg','qr.issue',{vehicleId,reason:'NEW'}),'QR_ALREADY_ACTIVE','no duplicate active QR');
+ const rotated=assertOk(assert,h.as('reg','qr.replace',{vehicleId,reason:'DAMAGED'}),'rotate QR');
  assert.equal(h.as('staff','qr.resolve',{token:approved.qrToken}).data,null,'old QR must fail closed');
  assert.equal(assertOk(assert,h.as('staff','qr.resolve',{token:rotated.token}),'new QR').vehicleId,vehicleId);
- assertOk(assert,h.as('sys','qr.revoke',{vehicleId}),'sys QR revoke');
+ assertOk(assert,h.as('sys','qr.revoke',{vehicleId,reason:'ADMIN_REVOKE'}),'sys QR revoke');
  assert.equal(h.as('staff','qr.resolve',{token:rotated.token}).data,null);
- const fresh=assertOk(assert,h.as('reg','qr.issue',{vehicleId}),'fresh QR');
+ const fresh=assertOk(assert,h.as('reg','qr.issue',{vehicleId,reason:'NEW'}),'fresh QR');
  assert.ok(fresh.token);assert.equal(h.read('vc_qr_tokens').filter(q=>q.status==='ACTIVE').length,1);
 });
 test('ACTOR-05 MEDIA: replace slot, retire old file, deny malformed slot and unauthorized staff',()=>{
@@ -193,7 +193,7 @@ test('ACTOR-ADR036 SYSTEM_ADMIN: full vehicle view + QR management without regis
  assert.equal(h.read('vc_lookup_audit').length,auditBefore+1,'every view is still audited');
  const detail=assertOk(assert,h.as('sys','vehicles.detail',{vehicleId:found.vehicleId}),'SYSTEM_ADMIN detail');
  assert.ok(Array.isArray(detail.history),'history visible');
- const rotated=assertOk(assert,h.as('sys','qr.replace',{vehicleId:found.vehicleId}),'SYSTEM_ADMIN can rotate QR');
+ const rotated=assertOk(assert,h.as('sys','qr.replace',{vehicleId:found.vehicleId,reason:'LOST'}),'SYSTEM_ADMIN can rotate QR');
  assert.match(rotated.token,/^[a-f0-9]{64}$/);
  assert.equal(h.read('vc_qr_tokens').filter(q=>q.vehicle_id===found.vehicleId&&q.status==='ACTIVE').length,1,'exactly one active QR');
 
@@ -216,4 +216,43 @@ test('ACTOR-ADR036 SYSTEM_ADMIN: full vehicle view + QR management without regis
  assert.equal(assertOk(assert,h.as('sys','organizations.enable',{organizationId:org}),'enable').enabled,true);
  assert.equal(h.read('vc_organizations').find(o=>o.organization_id===org).status,'ACTIVE');
  assert.ok(h.read('vc_change_audit').some(a=>a.action==='ORG_ENABLED'&&a.entity_id===org),'audited');
+});
+
+test('ACTOR-S3-QR every QR change needs a reason; history keeps who/why/chain; cancel records VEHICLE_CANCELLED; no token in history',()=>{
+ const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
+ const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const vehicleId=h.read('vc_vehicles')[0].vehicle_id;
+ const qrRows=()=>h.read('vc_qr_tokens').filter(q=>q.vehicle_id===vehicleId);
+ // refused requests write nothing
+ for(const bad of [{},{reason:'BECAUSE'},{reason:'OTHER'},{reason:'OTHER',note:'   '},{reason:'NEW',note:'x'.repeat(201)}]){
+  const before=JSON.stringify(qrRows());
+  const res=h.as('sys','qr.replace',{vehicleId,...bad});
+  assert.equal(res.ok,false,'refused '+JSON.stringify(bad).slice(0,40));
+  assert.equal(JSON.stringify(qrRows()),before,'no write on refused reason');
+ }
+ assertError(assert,h.as('sys','qr.revoke',{vehicleId,reason:'NEW'}),'INVALID_QR_REASON','NEW is not a revoke reason');
+ assertOk(assert,h.as('sys','qr.revoke',{vehicleId,reason:'LOST',note:'เจ้าของแจ้งหาย'}),'revoke LOST');
+ assertOk(assert,h.as('reg','qr.issue',{vehicleId,reason:'LOST'}),'issue after loss');
+ assertOk(assert,h.as('sys','qr.replace',{vehicleId,reason:'OTHER',note:'สติ๊กเกอร์ซีด'}),'replace OTHER+note');
+ assertError(assert,h.as('staff','qr.history',{vehicleId}),'FORBIDDEN','staff cannot read QR history');
+ const hist=assertOk(assert,h.as('sys','qr.history',{vehicleId}),'history');
+ assert.equal(hist.items.length,3);
+ assert.deepEqual(hist.items.map(x=>x.reason),['OTHER','LOST','REGISTRATION_APPROVED']);
+ assert.deepEqual(hist.items.map(x=>x.status),['ACTIVE','REVOKED','REVOKED']);
+ assert.equal(hist.items[0].note,'สติ๊กเกอร์ซีด');
+ assert.equal(hist.items[0].replacesQrId,hist.items[1].qrId,'replacement chain');
+ assert.deepEqual(hist.items.slice(1).map(x=>x.revokeReason),['OTHER','LOST']);
+ assert.equal(hist.items[2].revokeNote,'เจ้าของแจ้งหาย');
+ assert.ok(hist.items.slice(1).every(x=>x.revokedBy&&x.revokedByName!==undefined&&x.revokedAt),'who/when');
+ assert.ok(!/token|digest/i.test(JSON.stringify(hist)),'no token or digest');
+ // stored state equals the history (authoritative rows)
+ const stored=qrRows();
+ assert.equal(stored.filter(q=>q.status==='ACTIVE').length,1);
+ assert.ok(stored.filter(q=>q.status==='REVOKED').every(q=>q.revoked_by&&q.revoke_reason));
+ // cancel revokes with the system reason
+ assertOk(assert,h.as('reg','vehicles.cancel',{vehicleId}),'cancel');
+ const last=qrRows().find(q=>q.reason==='OTHER');
+ assert.equal(last.status,'REVOKED');assert.equal(last.revoke_reason,'VEHICLE_CANCELLED');assert.ok(last.revoked_by);
+ assertError(assert,h.as('sys','qr.history',{vehicleId:'no-such-vehicle'}),'NOT_FOUND','unknown vehicle');
 });

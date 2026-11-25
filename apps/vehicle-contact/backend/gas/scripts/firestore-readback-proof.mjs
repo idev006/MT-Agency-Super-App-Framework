@@ -111,6 +111,20 @@ await check('RB-05.CANCEL_LIFECYCLE', async () => {
   return 'post-cleanup status=' + v.status;
 });
 
+// VC-ADR-036 S3 oracle (derived from the suite scenario, read straight from Firestore): the suite vehicle has exactly
+// three QR rows, all REVOKED after the cleanup cancel, each with who + why, chained by replaces_qr_id.
+await check('RB-07.QR_HISTORY', async () => {
+  assert.ok(vehicleId, 'no vehicle from RB-01');
+  const rows = (await db.collection('vc_qr_tokens').where('vehicle_id', '==', vehicleId).get()).docs.map(d => d.data())
+    .sort((a, b) => String(a.issued_at).localeCompare(String(b.issued_at)));
+  assert.equal(rows.length, 3, 'expected 3 QR rows, got ' + rows.length);
+  assert.deepEqual(rows.map(r => r.reason), ['REGISTRATION_APPROVED', 'NEW', 'DAMAGED']);
+  assert.deepEqual(rows.map(r => r.revoke_reason), ['STOLEN', 'DAMAGED', 'VEHICLE_CANCELLED']);
+  assert.ok(rows.every(r => r.status === 'REVOKED' && r.revoked_by && r.revoked_at), 'every row revoked with who/when');
+  assert.equal(rows[2].replaces_qr_id, rows[1].qr_id, 'replacement chain');
+  return 'rows=3 reasons=' + rows.map(r => r.reason + '>' + r.revoke_reason).join(',');
+});
+
 await check('RB-06.NO_NEW_DIVERGENCE', async () => {
   const snap = await db.collection('vc_operation_journal').where('operation', '==', 'dualwrite.divergence').get();
   const open = snap.docs.filter(d => d.data().status === 'OPEN').length;

@@ -704,6 +704,20 @@
       "liveVerified": false
     },
     {
+      "id": "VC-QR-005",
+      "group": "qr",
+      "action": "history",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/qr.history",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
       "id": "VC-PHOTOS-001",
       "group": "photos",
       "action": "upload",

@@ -8,7 +8,7 @@ const inventory=JSON.parse(readFileSync(resolve(root,'contracts/api-inventory.v1
 const routes=Object.entries(API_GROUPS).flatMap(([group,actions])=>actions.map(action=>group+'.'+action));
 const expected=inventory.operations.map(x=>x.group+'.'+x.action);
 const nonHealth=expected.filter(x=>x!=='system.health');
-assert.equal(inventory.operations.length,59);
+assert.equal(inventory.operations.length,60);
 assert.equal(new Set(routes).size,routes.length);
 assert.deepEqual(routes.slice().sort(),expected.slice().sort());
 assert.deepEqual(DTO_OPERATIONS.slice().sort(),nonHealth.slice().sort());
@@ -33,4 +33,4 @@ for(const word of ['createIdentityOperations','createAdministrationOperations','
   assert.ok(controller.includes(word),'Missing API controller dependency: '+word);
 assert.ok(entry.includes('createApplication().dispatch('));
 assert.ok(router.includes('isDeclaredRoute('));
-console.log('All 59 v1 routes match inventory; 58 DTOs wired; composition source links and default-deny path checked (not runtime integration evidence)');
+console.log('All 60 v1 routes match inventory; 59 DTOs wired; composition source links and default-deny path checked (not runtime integration evidence)');

@@ -5,7 +5,8 @@ import { storeToRefs } from 'pinia'
 import { qrGovernanceRepositoryKey } from '../application/qr/qr-governance-port.js'
 import { vehicleSearchRepositoryKey } from '../application/vehicles/vehicle-search-port.js'
 import { vehicleDetailRepositoryKey } from '../application/vehicles/vehicle-detail-port.js'
-import ConfirmDialog from '../components/common/ConfirmDialog.vue'
+import QrHistoryTable from '../features/qr-governance/components/QrHistoryTable.vue'
+import { QR_REASONS, qrReasonLabel, qrReasonProblem } from '../domain/reference/qr-reasons.js'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import VehicleSearchForm from '../features/vehicle-search/components/VehicleSearchForm.vue'
@@ -25,6 +26,9 @@ const vehicle = ref(null)
 const findPhase = ref('idle')
 const findCode = ref('')
 const pendingAction = ref('')
+const reasonForm = ref({ reason: '', note: '' })
+const reasonProblem = computed(() => (pendingAction.value ? qrReasonProblem(pendingAction.value, reasonForm.value.reason, reasonForm.value.note) : ''))
+function openAction(action) { reasonForm.value = { reason: action === 'issue' ? 'NEW' : '', note: '' }; pendingAction.value = action }
 const copied = ref(false)
 const labels = { issue: 'ออก QR ใหม่', replace: 'เปลี่ยน QR', revoke: 'เพิกถอน QR' }
 const warnings = {
@@ -41,6 +45,7 @@ async function runFind(load) {
     const found = await load()
     vehicle.value = found || null
     findPhase.value = found ? 'found' : 'empty'
+    if (found) work.loadHistory(found.vehicleId)
   } catch (error) { findCode.value = error?.code || 'UNEXPECTED_ERROR'; findPhase.value = 'error' }
 }
 function searchPlate(criteria) {
@@ -52,7 +57,7 @@ onMounted(() => {
 })
 async function confirm() {
   const action = pendingAction.value; pendingAction.value = ''; copied.value = false
-  await work.execute(action, vehicle.value.vehicleId)
+  await work.execute(action, vehicle.value.vehicleId, { ...reasonForm.value })
 }
 async function copyToken() { copied.value = await copySecret(token.value) }
 </script>
@@ -76,10 +81,12 @@ async function copyToken() { copied.value = await copySecret(token.value) }
           </div>
           <div class="grid gap-3 sm:grid-cols-3">
             <div v-for="action in ['issue', 'replace', 'revoke']" :key="action" class="rounded-box border border-base-300 p-3">
-              <button class="btn min-h-11 w-full" :class="action === 'revoke' ? 'btn-error' : action === 'issue' ? 'btn-primary' : ''" type="button" :disabled="work.phase.value === 'submitting'" @click="pendingAction = action">{{ labels[action] }}</button>
+              <button class="btn min-h-11 w-full" :class="action === 'revoke' ? 'btn-error' : action === 'issue' ? 'btn-primary' : ''" type="button" :disabled="work.phase.value === 'submitting'" @click="openAction(action)">{{ labels[action] }}</button>
               <p class="mt-2 text-sm text-base-content/80">{{ warnings[action] }}</p>
             </div>
           </div>
+          <div class="divider">ประวัติ QR ของรถคันนี้</div>
+          <QrHistoryTable :items="work.history.value" :phase="work.historyPhase.value" />
         </div>
       </div>
     </section>
@@ -91,5 +98,16 @@ async function copyToken() { copied.value = await copySecret(token.value) }
     <div v-else-if="work.phase.value === 'uncertain'" class="alert alert-warning mt-5">ไม่ทราบผลแน่ชัด ค้นหารถคันนี้อีกครั้งเพื่อตรวจสถานะก่อนดำเนินการซ้ำ</div>
     <div v-else-if="work.phase.value === 'error'" class="alert alert-error mt-5">ดำเนินการไม่สำเร็จ ({{ work.failure.value?.code }})</div>
   </PageTemplateComponent>
-  <ConfirmDialog :open="Boolean(pendingAction)" :title="`${labels[pendingAction]}หรือไม่`" :message="warnings[pendingAction] || ''" :confirm-label="labels[pendingAction]" cancel-label="ไม่ใช่ กลับไป" :busy="work.phase.value === 'submitting'" @cancel="pendingAction = ''" @confirm="confirm" />
+  <dialog class="modal" :open="Boolean(pendingAction)" aria-labelledby="qr-reason-title">
+    <div v-if="pendingAction" class="modal-box">
+      <h2 id="qr-reason-title" class="text-lg font-semibold">{{ labels[pendingAction] }}</h2>
+      <p class="mt-1 text-sm text-base-content/80">{{ warnings[pendingAction] }}</p>
+      <label class="field-stack mt-4"><span class="label-text font-semibold">เหตุผล (บันทึกในประวัติ QR)</span>
+        <select v-model="reasonForm.reason" class="select select-bordered w-full"><option value="" disabled>เลือกเหตุผล</option><option v-for="code in QR_REASONS[pendingAction]" :key="code" :value="code">{{ qrReasonLabel(code) }}</option></select></label>
+      <label class="field-stack mt-3"><span class="label-text font-semibold">หมายเหตุ{{ reasonForm.reason === 'OTHER' ? ' (จำเป็น)' : ' (ถ้ามี)' }}</span>
+        <textarea v-model="reasonForm.note" class="textarea textarea-bordered w-full" maxlength="200" rows="2"></textarea></label>
+      <p v-if="reasonProblem" class="mt-2 text-sm text-error">{{ reasonProblem }}</p>
+      <div class="modal-action"><button class="btn" type="button" :disabled="work.phase.value === 'submitting'" @click="pendingAction = ''">ไม่ใช่ กลับไป</button><button class="btn" :class="pendingAction === 'revoke' ? 'btn-error' : 'btn-primary'" type="button" :disabled="Boolean(reasonProblem) || work.phase.value === 'submitting'" @click="confirm">{{ labels[pendingAction] }}</button></div>
+    </div>
+  </dialog>
 </template>

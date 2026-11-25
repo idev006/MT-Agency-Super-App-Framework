@@ -10,7 +10,7 @@ const GROUPS=Object.freeze({
  vehicles:Object.freeze(['lookup','detail','update','cancel','history','listMine','list','photo']),
  contacts:Object.freeze(['read','update']),
  changes:Object.freeze(['submit','listPending','review','listMine']),
- qr:Object.freeze(['resolve','issue','revoke','replace']),
+ qr:Object.freeze(['resolve','issue','revoke','replace','history']),
  photos:Object.freeze(['upload','list','replace']),
  retention:Object.freeze(['listDue','listExecutable','approve','execute','jobStatus']),
  audit:Object.freeze(['query','export'])

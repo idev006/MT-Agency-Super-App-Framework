@@ -57,7 +57,7 @@ test('EDGE-06 QR invalid token, unknown valid-shaped token and multiple-active Q
  assert.equal(assertOk(assert,h.as('staff','qr.resolve',{token:'f'.repeat(64)}),'unregistered QR'),null);
  h.seed('vc_qr_tokens',[{qr_id:'qr-duplicate-test',vehicle_id:approved.vehicleId,token_digest:'invalid-digest-synthetic',
   status:'ACTIVE',issued_at:h.now(),revoked_at:'',issued_by:'u-reg',reason:'FAULT_TEST'}]);
- assertError(assert,h.as('reg','qr.replace',{vehicleId:approved.vehicleId}),'MULTIPLE_ACTIVE_QR','two active QR rows');
+ assertError(assert,h.as('reg','qr.replace',{vehicleId:approved.vehicleId,reason:'DAMAGED'}),'MULTIPLE_ACTIVE_QR','two active QR rows');
 });
 test('EDGE-07 legal hold prevents retention approval even after due',()=>{
  const h=createAcceptanceHarness();

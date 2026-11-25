@@ -15,7 +15,7 @@ const schema=JSON.parse(txt(app+'schema/database.schema.json'));
 const ops=inventory.operations.map(o=>o.group+'.'+o.action);
 const known=new Set(ops),seen=new Map(),ids=new Set();
 assert(catalog.cases.length===20,'Sequence catalog must contain 20 use cases');
-assert(ops.length===59,'Phase-1 API inventory unexpectedly changed from 59 operations (update agreed coverage mapping)'); // R7: +vehicles.photo; VC-ADR-036: +users.reactivate, +organizations.enable
+assert(ops.length===60,'Phase-1 API inventory unexpectedly changed from 60 operations (update agreed coverage mapping)'); // R7: +vehicles.photo; VC-ADR-036: +users.reactivate, +organizations.enable
 assert(new Set(ops).size===ops.length,'Duplicate API inventory operation');
 assert(policy.operations.length===ops.length,'Permission contract/inventory length drift');
 assert(policy.operations.every(p=>known.has(p.operation)),'Unknown permission-contract operation');

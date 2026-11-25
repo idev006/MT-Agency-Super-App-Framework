@@ -247,10 +247,23 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
    assert.equal(ok(await request('qr.resolve',{token:state.approved.qrToken},state.tokens.staff)).vehicleId,state.approved.vehicleId);
   });
   await test('QR.REVOKE','qr.revoke',async()=>{
-   assert.equal(ok(await request('qr.revoke',{vehicleId:state.approved.vehicleId},state.tokens.reg)).revoked,true);
+   assert.equal(ok(await request('qr.revoke',{vehicleId:state.approved.vehicleId,reason:'STOLEN',note:'synthetic suite'},state.tokens.reg)).revoked,true);
   });
-  await test('QR.ISSUE','qr.issue',async()=>{state.qr=ok(await request('qr.issue',{vehicleId:state.approved.vehicleId},state.tokens.reg));assert.ok(state.qr.token);});
-  await test('QR.REPLACE','qr.replace',async()=>{state.qr=ok(await request('qr.replace',{vehicleId:state.approved.vehicleId},state.tokens.reg));assert.ok(state.qr.token);});
+  await test('QR.ISSUE','qr.issue',async()=>{state.qr=ok(await request('qr.issue',{vehicleId:state.approved.vehicleId,reason:'NEW'},state.tokens.reg));assert.ok(state.qr.token);});
+  await test('QR.REPLACE','qr.replace',async()=>{state.qr=ok(await request('qr.replace',{vehicleId:state.approved.vehicleId,reason:'DAMAGED'},state.tokens.reg));assert.ok(state.qr.token);});
+  // VC-ADR-036 S3: the history is complete (approval, revoke STOLEN, NEW, replace DAMAGED), carries who/why, never a token;
+  // a reason outside the vocabulary is refused.
+  await test('QR.HISTORY','qr.history',async()=>{
+   const h=ok(await request('qr.history',{vehicleId:state.approved.vehicleId},adminToken));
+   assert.equal(h.items.length,3,'three issuances');
+   assert.deepEqual(h.items.map(x=>x.reason),['DAMAGED','NEW','REGISTRATION_APPROVED'],'newest first');
+   assert.deepEqual(h.items.map(x=>x.status),['ACTIVE','REVOKED','REVOKED']);
+   assert.equal(h.items[1].revokeReason,'DAMAGED');assert.equal(h.items[2].revokeReason,'STOLEN');
+   assert.ok(h.items.slice(1).every(x=>x.revokedBy&&x.revokedAt),'who/when recorded');
+   assert.equal(h.items[0].replacesQrId,h.items[1].qrId,'replacement chain');
+   assert.ok(!JSON.stringify(h).match(/token|digest/i),'no token or digest in history');
+   denied(await request('qr.revoke',{vehicleId:state.approved.vehicleId,reason:'BECAUSE'},state.tokens.reg),'INVALID_QR_REASON');
+  });
   await test('PHOTOS.REPLACE','photos.replace',async()=>{
    assert.equal(ok(await request('photos.replace',{vehicleId:state.approved.vehicleId,slot:'FRONT',base64Image:png,mimeType:'image/png'},state.tokens.reg)).replaced,true);
   });

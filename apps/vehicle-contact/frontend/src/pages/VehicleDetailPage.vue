@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject, onMounted, watch } from 'vue'
+import { qrGovernanceRepositoryKey } from '../application/qr/qr-governance-port.js'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { vehicleDetailRepositoryKey } from '../application/vehicles/vehicle-detail-port.js'
@@ -15,6 +16,9 @@ const { roles, permissions, session, transport } = storeToRefs(auth)
 const detailRepository = inject(vehicleDetailRepositoryKey)
 const detail = useVehicleDetail({ repository: detailRepository, permissions })
 const loadPhoto = typeof detailRepository?.photo === 'function' ? (args) => detailRepository.photo(args) : null
+const qrRepository = inject(qrGovernanceRepositoryKey, null)
+// VC-ADR-036 S3: QR history tab only for qr.manage holders (server enforces the same permission)
+const loadQrHistory = computed(() => (permissionSet.value.has('qr.manage') && typeof qrRepository?.history === 'function' ? (id) => qrRepository.history(id) : null))
 // R7: breadcrumb follows where the user came from (registry vs search).
 const fromRegistry = computed(() => route.query.from === 'registry')
 const permissionSet = computed(() => new Set(permissions.value))
@@ -38,7 +42,7 @@ watch(() => route.params.vehicleId, (id) => { if (route.name === 'vehicle-detail
       <div v-else-if="detail.phase.value === 'forbidden'" class="alert alert-warning items-start shadow-none"><div><h2 class="font-medium">ไม่สามารถดูรายละเอียดได้</h2><p class="mt-1">เซสชันนี้ไม่ได้รับอนุญาตให้ค้นหายานพาหนะ ไม่มีข้อมูลถูกเปิดเผย</p></div></div>
       <div v-else-if="detail.phase.value === 'unauthenticated'" class="alert alert-warning items-start shadow-none"><div><h2 class="font-medium">เซสชันสิ้นสุดแล้ว</h2><p class="mt-1">เข้าสู่ระบบใหม่ก่อนดูรายละเอียด ไม่มีข้อมูลถูกเปลี่ยนแปลง</p><RouterLink class="btn btn-sm mt-3" :to="{ name: 'sign-in' }">เข้าสู่ระบบ</RouterLink></div></div>
       <div v-else-if="detail.phase.value === 'recoverable-error' || detail.phase.value === 'error'" class="alert alert-error items-start shadow-none"><div class="w-full"><h2 class="font-medium">โหลดรายละเอียดไม่สำเร็จ</h2><p class="mt-1">{{ errorCopy }}</p><button v-if="detail.phase.value === 'recoverable-error'" class="btn btn-sm mt-3" type="button" @click="detail.retry">ลองอีกครั้ง</button><details v-if="detail.failure.value?.requestId" class="collapse collapse-arrow mt-3 bg-base-100 text-base-content"><summary class="collapse-title font-medium">รายละเอียดสำหรับเจ้าหน้าที่สนับสนุน</summary><div class="collapse-content break-all font-mono text-sm">{{ detail.failure.value.requestId }}</div></details></div></div>
-      <VehicleDetailTabs v-else-if="detail.phase.value === 'success'" :result="detail.result.value" :load-photo="loadPhoto" :can-read-contacts="permissionSet.has('vehicle.contact.read')" :can-read-photos="permissionSet.has('vehicle.photos.read')" :can-read-history="permissionSet.has('vehicle.history.read')" />
+      <VehicleDetailTabs v-else-if="detail.phase.value === 'success'" :result="detail.result.value" :load-photo="loadPhoto" :load-qr-history="loadQrHistory" :can-read-contacts="permissionSet.has('vehicle.contact.read')" :can-read-photos="permissionSet.has('vehicle.photos.read')" :can-read-history="permissionSet.has('vehicle.history.read')" />
     </section>
   </PageTemplateComponent>
 </template>

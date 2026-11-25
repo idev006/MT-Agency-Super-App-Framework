@@ -165,7 +165,7 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
       const s=await must('registrations.submit',reg(main,p,ph,'ss-'+tag+'-q'));
       const a=await must('registrations.review',{requestId:s.requestId,decision:'APPROVE',platePhotoVerified:true},admin);vehicles.push(a.vehicleId);
       const before=await call('qr.resolve',{token:a.qrToken},staff);
-      await must('qr.revoke',{vehicleId:a.vehicleId},admin);
+      await must('qr.revoke',{vehicleId:a.vehicleId,reason:'ADMIN_REVOKE'},admin);
       const after=await call('qr.resolve',{token:a.qrToken},staff);
       const q=(await where('vc_qr_tokens','qr_id',a.qrId))[0]||{};
       const has=r=>!!(r&&r.ok&&r.data&&r.data.vehicleId);
