@@ -285,6 +285,116 @@
         }
       ],
       "purpose": "S2-B Vehicle 360: newest 50 access-log rows (SYSTEM_ADMIN)"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "plate_normalized",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "province_code",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "TUNEUP R1 (2026-11-25): equality query instead of a full collection read"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "TUNEUP R1 (2026-11-25): equality query instead of a full collection read"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "owner_user_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "TUNEUP R1 (2026-11-25): equality query instead of a full collection read"
+    },
+    {
+      "collection": "vc_change_requests",
+      "fields": [
+        {
+          "fieldPath": "submitted_by",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "TUNEUP R1 (2026-11-25): equality query instead of a full collection read"
+    },
+    {
+      "collection": "vc_retention_jobs",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "TUNEUP R1 (2026-11-25): equality query instead of a full collection read"
+    },
+    {
+      "collection": "vc_change_audit",
+      "fields": [
+        {
+          "fieldPath": "entity_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "DESCENDING"
+        }
+      ],
+      "purpose": "TUNEUP R1 (2026-11-25): equality query instead of a full collection read"
+    },
+    {
+      "collection": "vc_organizations",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "TUNEUP R1 (2026-11-25): equality query instead of a full collection read"
     }
   ]
 }

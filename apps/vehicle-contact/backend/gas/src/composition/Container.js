@@ -6,15 +6,23 @@ import {createGasSecurity} from '../infrastructure/security/GasSecurity.js';
 import {createDrivePhotos} from '../infrastructure/media/DrivePhotos.js';
 import { createApiRouter } from "../api/routes/Router.js";
 import {createRequestProfiler,isProfiled} from '../infrastructure/profiling/RequestProfiler.js';
+export function createProcessMemo(ttlMs,nowMs=()=>Date.now()){
+  let entry=null;
+  return {get:()=>(entry&&nowMs()<entry.exp?entry.value:undefined),put:value=>{entry={value,exp:nowMs()+ttlMs};},clear:()=>{entry=null;}};
+}
 export function createApplication(deps={}) {
   let prof=null; // request-scoped profiler, only for requestId "prof_*"
+  // TUNEUP R2: process-lifetime memo for reference rows (Cloud Run passes referenceCacheMs; GAS: off).
+  const referenceMemo=deps.referenceCacheMs>0?createProcessMemo(deps.referenceCacheMs):null;
   const raw=()=>({
     propertiesService:deps.propertiesService||(typeof PropertiesService!=='undefined'?PropertiesService:null),
     utilities:deps.utilities||(typeof Utilities!=='undefined'?Utilities:null),
     urlFetchApp:deps.urlFetchApp||(typeof UrlFetchApp!=='undefined'?UrlFetchApp:null),
     driveApp:deps.driveApp||(typeof DriveApp!=='undefined'?DriveApp:null),
     // Script-scoped CacheService (private to this project): Firestore access token + short session snapshots.
-    cache:deps.cache!==undefined?deps.cache:(typeof CacheService!=='undefined'?CacheService.getScriptCache():null)
+    cache:deps.cache!==undefined?deps.cache:(typeof CacheService!=='undefined'?CacheService.getScriptCache():null),
+    // TUNEUP R3: access-token cache only (never sessions). Cloud Run passes a process cache; GAS uses CacheService.
+    tokenCache:deps.tokenCache||null
   });
   const services=()=>{const s=raw();if(!prof)return s;
     return {...s,urlFetchApp:prof.wrapUrlFetch(s.urlFetchApp),cache:prof.wrapCache(s.cache),propertiesService:prof.wrapProperties(s.propertiesService)};};
@@ -43,7 +51,7 @@ export function createApplication(deps={}) {
       upload(){throw new Error('DRIVE_NOT_CONFIGURED');},read(){throw new Error('DRIVE_NOT_CONFIGURED');},trash(){throw new Error('DRIVE_NOT_CONFIGURED');}
     };
     const controller=createOperationController({store,security,sessions,drivePhotos:prof?prof.wrapDrivePhotos(drivePhotos):drivePhotos,
-      allowDestructiveRetention:props.getProperty('VEHICLE_RETENTION_EXECUTE_ENABLED')==='true'});
+      allowDestructiveRetention:props.getProperty('VEHICLE_RETENTION_EXECUTE_ENABLED')==='true',referenceMemo});
     return prof?{dispatch:req=>prof.phase('controller',()=>controller.dispatch(req))}:controller;
   }
 

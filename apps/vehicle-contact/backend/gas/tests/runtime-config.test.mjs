@@ -11,8 +11,8 @@ test('inspection reports NAMES only and never any value',()=>{
   assert.equal(JSON.stringify(report).includes(SECRET),false);
   assert.equal(report.ok,true);
   assert.deepEqual(report.missingRequired,[]);
-  assert.deepEqual(report.retiredPresent,['VEHICLE_PERSISTENCE_BACKEND']);
-  assert.deepEqual(report.gatesLeftOn,['VEHICLE_FIRESTORE_POC_APPROVED']);
+  assert.deepEqual(report.retiredPresent,['VEHICLE_FIRESTORE_POC_APPROVED','VEHICLE_PERSISTENCE_BACKEND']);
+  assert.deepEqual(report.gatesLeftOn,[]);
   assert.deepEqual(report.unknown,['SOMETHING_ELSE']);
 });
 

@@ -45,10 +45,10 @@ function loadGAS(order) {
 // GAS file ordering is implementation detail, not an architectural dependency.
 for(const order of [gasFiles,[...gasFiles].reverse()]){
  const context=loadGAS(order);
- for(const name of ['doGet','doPost','previewVehicleReferenceSeedFromEditor','applyVehicleReferenceSeedFromEditor','recoverVehicleReferenceSeedFromEditor','bootstrapVehicleAdminFromEditor','benchmarkVehiclePasswordHashFromEditor','inspectVehicleAdminResetFromEditor','resetVehicleAdminPasswordFromEditor','pocFirestoreRestFromEditor','pocFirestoreCrudFromEditor','inspectVehicleConfigFromEditor','verifyDrivePhotosFromEditor'])
+ for(const name of ['doGet','doPost','previewVehicleReferenceSeedFromEditor','applyVehicleReferenceSeedFromEditor','recoverVehicleReferenceSeedFromEditor','bootstrapVehicleAdminFromEditor','benchmarkVehiclePasswordHashFromEditor','inspectVehicleAdminResetFromEditor','resetVehicleAdminPasswordFromEditor','inspectVehicleConfigFromEditor','verifyDrivePhotosFromEditor'])
    assert.equal(typeof context[name],'function',name);
  // S1: no Google Sheets editor tool survives in the bundle.
- for(const gone of ['verifyVehicleSchemaFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor','runVehicleStagingAuthTestsFromEditor','resetDevDataFromEditor','repairVehicleDisplayErrorsFromEditor','normalizeVehicleNumberFormatsFromEditor'])
+ for(const gone of ['pocFirestoreRestFromEditor','pocFirestoreCrudFromEditor','verifyVehicleSchemaFromEditor','migrateVehicleSchemaFromEditor','applyVehicleSchemaFromEditor','runVehicleStagingAuthTestsFromEditor','resetDevDataFromEditor','repairVehicleDisplayErrorsFromEditor','normalizeVehicleNumberFormatsFromEditor'])
    assert.equal(typeof context[gone],'undefined',gone);
  assert.equal(JSON.parse(context.doGet({}).value).data.status,'ready');
  assert.equal(JSON.parse(context.doPost({postData:{contents:'not JSON'}}).value).ok,false);
