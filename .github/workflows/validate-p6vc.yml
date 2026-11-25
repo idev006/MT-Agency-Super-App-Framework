@@ -22,7 +22,7 @@ jobs:
   validate:
     name: SSOT, frontend, Worker and GAS contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,6 +48,22 @@ jobs:
           npm ci
           npm test
           npm run build
+      - name: Frontend E2E (real browser, mocked API, desktop + phone)
+        working-directory: apps/vehicle-contact/frontend
+        env:
+          CI: 'true'
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
+      - name: Upload E2E report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p6vc-e2e-report
+          path: |
+            apps/vehicle-contact/frontend/e2e-report
+            apps/vehicle-contact/frontend/e2e-results
+          retention-days: 7
       - name: Test Cloudflare gateway contract and security boundaries
         run: |
           node --check tools/p6vc-api-test-console/worker.mjs

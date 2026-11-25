@@ -13,7 +13,7 @@ const { menuItems } = storeToRefs(auth)
 <template>
   <aside class="flex min-h-full w-[17rem] flex-col border-r border-base-300 bg-base-100 p-4">
     <RouterLink class="mb-6 flex min-h-14 items-center gap-3 rounded-box px-2" :to="{ name: 'dashboard' }" @click="ui.closeNavigation">
-      <span class="p6-brand-mark grid size-11 place-items-center rounded-box bg-neutral text-lg font-semibold text-neutral-content">P6</span>
+      <span class="p6-brand-mark grid size-11 place-items-center rounded-box bg-base-content text-lg font-semibold text-base-100">P6</span>
       <span class="min-w-0"><strong class="block truncate font-semibold">Vehicle Contact</strong><small class="text-base-content/60">ศูนย์ประสานข้อมูลยานพาหนะ</small></span>
     </RouterLink>
     <div class="mb-3 flex items-center justify-between px-2">

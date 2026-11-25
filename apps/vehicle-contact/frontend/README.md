@@ -65,3 +65,16 @@ Pages workflow เดิม build SPA และรวม `dist/` เข้า ar
 ```
 
 URL หลัง merge เข้า `main` คือ `https://idev006.github.io/MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/` โดยใช้ workflow เดิมเพียงตัวเดียวเพื่อไม่ให้ deployment แข่งขันกัน
+
+## End-to-end tests (Playwright)
+
+`npm run test:e2e` starts the app on port 4317 and drives a real Chromium browser at **desktop 1280×800**
+and **phone 375×812** against an in-memory **mock API** (`e2e/mock-api.js`). Every test gets the mock
+automatically and every other host is blocked, so nothing reaches the live system and no credentials are
+needed. First time: `npx playwright install chromium`.
+
+Covered: sign-in, admin lists (server filters, drawers, create dialogs), audit, vehicle detail tabs, QR
+card, QR print page, the sticker link `#/q/<code>` (no API call before sign-in), the owner's table rules
+(every column ≤ 350px, short values never wrap, no sideways page scroll) and axe accessibility
+(serious/critical). CI runs it on every pull request (`validate-p6vc.yml`); on failure the HTML report
+and traces are uploaded as the `p6vc-e2e-report` artifact.
