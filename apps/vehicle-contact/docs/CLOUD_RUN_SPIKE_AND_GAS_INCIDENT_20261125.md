@@ -124,3 +124,40 @@ Cloud Run in `asia-southeast3` (Bangkok) should be equal or faster: the server s
 **Not yet proven:** the photo path, and therefore the end-to-end registration → approval → QR flow. This is the next slice: photos → Cloud Storage (Bangkok).
 
 **Not switched:** the Worker and frontend still use GAS.
+
+## 6. Photos through the Drive media bridge: full regression 73/73 (2026-11-25)
+
+**What is live**
+- GAS V71 = 0.9.21 (commit `8bd4b0e`): the signed media bridge (VC-ADR-034).
+- Cloud Run redeployed with `MEDIA_BRIDGE_URL` and the bridge secret from Secret Manager.
+- Probe with a deliberately wrong signature → `BRIDGE_UNAUTHORIZED`. This proves the GAS-side secret is set, without revealing it.
+
+**Full-inventory regression against the Cloud Run URL**
+
+| Run | Result | Notes |
+|---|---|---|
+| 1 | 42/73 | One `fetch failed` on `organizations.create`; the rest cascaded from it |
+| 2 | 72/73 | One `fetch failed` on `audit.export`; **57/57 operations covered** |
+| 3 (after the runner records the transport error cause) | **73/73 PASS, 57/57 covered, 0 cleanup failures** | |
+
+**Photo SSOT check**
+- Firestore `vc_vehicle_photos` has the 5 new slot rows of each run, each holding a Drive file id.
+- Drive metadata (checked directly through the owner's Drive connector) for each file: in the photos folder, **owner = the project owner account**, created during the run, not trashed.
+
+**Server-side view (Cloud Run request logs, read-only access granted by the owner)**
+- Every request returned **200**. No warnings or errors. No instance crash: one instance start per deploy or idle period.
+- Typical server latency is 50–250 ms. Slow requests are only:
+  - logins: PBKDF2, 2–4 s, by design;
+  - bridge photo operations: 4–14 s, because GAS time is the accepted trade-off of VC-ADR-034.
+- Earlier "7 s lookup" figures were test-case durations that included several calls plus a login, not one lookup.
+
+**The intermittent `fetch failed`**
+- Those requests never reached Cloud Run (no log entry).
+- It could not be reproduced: 18/18 calls OK at idle gaps of 2–65 s.
+- Most likely a transient network path issue between the test machine and Google's front end.
+- The runner now records the cause (`NETWORK_<code>` / `CLIENT_TIMEOUT_40S`).
+- Browser clients already treat a network error as an uncertain outcome (reload before retrying).
+
+**Found (pre-existing, not caused by this work):** photo files are `UNLISTED` ("anyone with the link"), inherited from the folder sharing. File links are never returned by the API, but the folder should be set to **Restricted**. That is an owner action, and the bridge keeps working because GAS acts as the owner.
+
+**Not switched yet:** the Worker and frontend still call GAS. Switching needs SSOT scenarios + G6 against Cloud Run and owner approval.
