@@ -274,6 +274,14 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
    assert.ok(!JSON.stringify(h).match(/token|digest/i),'no token or digest in history');
    denied(await request('qr.revoke',{vehicleId:state.approved.vehicleId,reason:'BECAUSE'},state.tokens.reg),'INVALID_QR_REASON');
   });
+  // S5 / VC-ADR-032 B: qr.export returns the ACTIVE code (the one just replaced) of the selected vehicle;
+  // a vehicle without an active QR / unknown id is reported, never guessed.
+  await test('QR.EXPORT','qr.export',async()=>{
+   const x=ok(await request('qr.export',{vehicleIds:[state.approved.vehicleId,'no-such-vehicle']},state.tokens.reg));
+   assert.equal(x.items[0].status,'READY');assert.equal(x.items[0].token,state.qr.token,'the active code');
+   assert.equal(x.items[1].status,'NOT_FOUND');assert.equal(x.ready,1);
+   denied(await request('qr.export',{vehicleIds:[state.approved.vehicleId]},state.tokens.staff),'FORBIDDEN');
+  });
   await test('PHOTOS.REPLACE','photos.replace',async()=>{
    assert.equal(ok(await request('photos.replace',{vehicleId:state.approved.vehicleId,slot:'FRONT',base64Image:png,mimeType:'image/png'},state.tokens.reg)).replaced,true);
   });

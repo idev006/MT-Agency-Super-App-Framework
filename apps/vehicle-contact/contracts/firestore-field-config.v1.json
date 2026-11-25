@@ -2,20 +2,67 @@
   "schema": "p6vc.firestore-field-config.v1",
   "note": "T2 (owner 2026-11-25 'Start T2'). Field-level Firestore config, applied add-only by backend/gas/scripts/ensure-firestore-field-config.mjs. ttl = Firestore deletes the document by itself once the timestamp field expire_at (written by FirestoreStore, TTL_RULES) has passed: no read, no job. indexExemptions = long text fields that are never filtered or sorted, so no single-field index is kept for them (less storage, cheaper writes). A field used in a where/orderBy must never be listed here.",
   "ttl": [
-    {"collection": "vc_sessions", "field": "expire_at", "purpose": "session expiry + 1 day"},
-    {"collection": "vc_idempotency", "field": "expire_at", "purpose": "replay window 30 days"},
-    {"collection": "vc_security_events", "field": "expire_at", "purpose": "login-attempt history 90 days"},
-    {"collection": "vc_operation_journal", "field": "expire_at", "purpose": "recovery journal 180 days"}
+    {
+      "collection": "vc_sessions",
+      "field": "expire_at",
+      "purpose": "session expiry + 1 day"
+    },
+    {
+      "collection": "vc_idempotency",
+      "field": "expire_at",
+      "purpose": "replay window 30 days"
+    },
+    {
+      "collection": "vc_security_events",
+      "field": "expire_at",
+      "purpose": "login-attempt history 90 days"
+    },
+    {
+      "collection": "vc_operation_journal",
+      "field": "expire_at",
+      "purpose": "recovery journal 180 days"
+    }
   ],
   "indexExemptions": [
-    {"collection": "vc_registration_requests", "field": "application_json"},
-    {"collection": "vc_change_requests", "field": "proposed_delta"},
-    {"collection": "vc_idempotency", "field": "result_json"},
-    {"collection": "vc_operation_journal", "field": "detail_json"},
-    {"collection": "vc_change_audit", "field": "redacted_summary"},
-    {"collection": "vc_users", "field": "password_hash"},
-    {"collection": "vc_users", "field": "password_salt"},
-    {"collection": "vc_campaigns", "field": "campaign_token"},
-    {"collection": "vc_sessions", "field": "access_json"}
+    {
+      "collection": "vc_registration_requests",
+      "field": "application_json"
+    },
+    {
+      "collection": "vc_change_requests",
+      "field": "proposed_delta"
+    },
+    {
+      "collection": "vc_idempotency",
+      "field": "result_json"
+    },
+    {
+      "collection": "vc_operation_journal",
+      "field": "detail_json"
+    },
+    {
+      "collection": "vc_change_audit",
+      "field": "redacted_summary"
+    },
+    {
+      "collection": "vc_users",
+      "field": "password_hash"
+    },
+    {
+      "collection": "vc_users",
+      "field": "password_salt"
+    },
+    {
+      "collection": "vc_campaigns",
+      "field": "campaign_token"
+    },
+    {
+      "collection": "vc_sessions",
+      "field": "access_json"
+    },
+    {
+      "collection": "vc_qr_tokens",
+      "field": "qr_token"
+    }
   ]
 }

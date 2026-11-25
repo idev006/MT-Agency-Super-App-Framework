@@ -5,6 +5,7 @@ import {paginate,readPage} from '../pagination/Pagination.js';
 const activeByPlate=(store,plate,province)=>store.list('vc_vehicles',{plate_normalized:String(plate),province_code:String(province),status:'ACTIVE'});
 import {createChangeReview} from './ChangeReviewOperation.js';
 import {createQrHistory} from './QrHistoryOperation.js';
+import {createQrExport} from './QrExportOperation.js';
 import {createVehicle360} from './Vehicle360.js';
 import {createVehicleView} from './VehicleView.js';
 export function createVehicleOperations({store,security,campaigns,references}) {
@@ -70,7 +71,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     for(const f of app.photos)store.insert('vc_vehicle_photos',{photo_id:f.photoId,vehicle_id:request.vehicle_id,
      slot:f.slot,storage_ref:f.storageRef,mime_type:f.mimeType,size_bytes:f.sizeBytes,status:'ACTIVE',version:1,created_at:now()});
     const token=reviewToken(journal.event_id,request.request_id);
-    store.insert('vc_qr_tokens',{qr_id:detail.qrId,vehicle_id:request.vehicle_id,token_digest:security.sha256(token),
+    store.insert('vc_qr_tokens',{qr_id:detail.qrId,vehicle_id:request.vehicle_id,token_digest:security.sha256(token),qr_token:token,
      issued_at:now(),revoked_at:'',issued_by:detail.actorId,reason:'REGISTRATION_APPROVED',status:'ACTIVE'});
    }
    store.update('vc_registration_requests',{request_id:request.request_id},{status:reviewStatus(detail.decision),reviewed_by:detail.actorId,reviewed_at:now()});
@@ -329,7 +330,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     phone_e164:app.contactPhone,relationship:app.relationship,is_primary:true,status:'ACTIVE',verified_at:at,created_at:at,updated_at:at}});
    for(const f of app.photos)writes.push({op:'insert',table:'vc_vehicle_photos',data:{photo_id:f.photoId,vehicle_id:request.vehicle_id,
     slot:f.slot,storage_ref:f.storageRef,mime_type:f.mimeType,size_bytes:f.sizeBytes,status:'ACTIVE',version:1,created_at:at}});
-   writes.push({op:'insert',table:'vc_qr_tokens',data:{qr_id:detail.qrId,vehicle_id:request.vehicle_id,token_digest:security.sha256(token),
+   writes.push({op:'insert',table:'vc_qr_tokens',data:{qr_id:detail.qrId,vehicle_id:request.vehicle_id,token_digest:security.sha256(token),qr_token:token,
     issued_at:at,revoked_at:'',issued_by:detail.actorId,reason:'REGISTRATION_APPROVED',status:'ACTIVE'}});
   }
   writes.push({op:'update',table:'vc_registration_requests',key:{request_id:request.request_id},
@@ -493,7 +494,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     revoked_by:a.userId,revoke_reason:why.reason,revoke_note:why.note});
    if(mode==='revoke'){audit(a,'qr',vehicleId,'QR_REVOKED');return {vehicleId,revoked:true};}
    const token=id(),qrId=id();
-   store.insert('vc_qr_tokens',{qr_id:qrId,vehicle_id:vehicleId,token_digest:security.sha256(token),issued_at:now(),
+   store.insert('vc_qr_tokens',{qr_id:qrId,vehicle_id:vehicleId,token_digest:security.sha256(token),qr_token:token,issued_at:now(),
     revoked_at:'',issued_by:a.userId,reason:why.reason,issue_note:why.note,
     replaces_qr_id:mode==='replace'&&active[0]?active[0].qr_id:'',status:'ACTIVE'});
    audit(a,'qr',vehicleId,mode==='replace'?'QR_REPLACED':'QR_ISSUED');
@@ -501,6 +502,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   });
  }
  const qrHistory=createQrHistory({store,need});
+ const qrExport=createQrExport({store,need,id,now});
  const vehicle360=createVehicle360({store});
  return Object.freeze({
   'registrations.submit':registrationSubmit,'registrations.listPending':registrationPending,
@@ -509,7 +511,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   'vehicles.cancel':vehicleCancel,'vehicles.history':vehicleHistory,'vehicles.listMine':vehicleListMine,'vehicles.list':vehicleList,
   'contacts.read':contactRead,'contacts.update':contactUpdate,
   'changes.submit':changeSubmit,'changes.listPending':changePending,'changes.review':changeReview,'changes.listMine':changeListMine,
-  'qr.resolve':resolveQr,'qr.issue':(p,a)=>manageQr(p,a,'issue'),'qr.history':qrHistory,
+  'qr.resolve':resolveQr,'qr.issue':(p,a)=>manageQr(p,a,'issue'),'qr.history':qrHistory,'qr.export':qrExport,
   'qr.revoke':(p,a)=>manageQr(p,a,'revoke'),'qr.replace':(p,a)=>manageQr(p,a,'replace')
  });
 }

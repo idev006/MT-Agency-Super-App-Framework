@@ -13,7 +13,7 @@ describe('permission-driven menu SSOT', () => {
     const ids = items.map((item) => item.id)
     expect(ids).toEqual([
       'dashboard', 'about', 'account-security', 'vehicle-search', 'qr-resolve', 'vehicle-registry', 'user-admin', 'organizations',
-      'campaigns', 'qr-governance', 'system-settings', 'retention', 'audit',
+      'campaigns', 'qr-governance', 'qr-print', 'system-settings', 'retention', 'audit',
     ])
     expect(ids).not.toContain('registration-review')
     expect(ids).not.toContain('my-vehicles')
@@ -41,14 +41,14 @@ describe('permission-driven menu SSOT', () => {
     ['system.settings.read', 'system-settings'],
     ['organizations.read', 'organizations'],
     ['campaigns.manage', 'campaigns'],
-    ['qr.manage', 'qr-governance'],
+    ['qr.manage', ['qr-governance', 'qr-print']],
     ['retention.delete.approve', 'retention'],
     ['audit.read', 'audit'],
     ['vehicle.change.approve', 'change-review'],
     ['vehicle.list', 'vehicle-registry'],
   ])('maps %s to only its authorized capability group', (permission, expectedId) => {
     const ids = menuForPermissions([permission]).map((item) => item.id)
-    expect(ids).toEqual(['dashboard', 'about', expectedId])
+    expect(ids).toEqual(['dashboard', 'about', ...[expectedId].flat()])
   })
 
   it('does not manufacture permissions from a role code', () => {

@@ -1,13 +1,15 @@
 <script setup>
 import { computed } from 'vue'
 import { qrImageDataUrl } from '../../../infrastructure/media/qr-image.js'
+import { vehicleQrLink } from '../../../domain/qr/vehicle-qr-link.js'
 
 // Owner 2026-11-25: the vehicle QR could only be copied as text, so there was nothing to scan with a
 // real phone. Shown together with the one-time code (same one-time rule: not stored anywhere); the
 // QR holds exactly the 64-character code the scanner accepts. Printing files are S5.
 const props = defineProps({ token: { type: String, required: true }, label: { type: String, default: '' } })
-// Upper-case hex = QR alphanumeric mode (version 4, 33×33): easier to scan; the scanner accepts any case.
-const image = computed(() => (/^[a-f0-9]{64}$/i.test(props.token) ? qrImageDataUrl(props.token.toUpperCase(), { mode: 'Alphanumeric', cellSize: 10 }) : ''))
+// VC-ADR-032 (A): the QR is a link to this app (#/q/<code>) so any phone camera opens it; the app's own
+// scanner reads the same link. Printed stickers use the same content (QrStickerSheet).
+const image = computed(() => { const link = vehicleQrLink(props.token); return link ? qrImageDataUrl(link, { cellSize: 8 }) : '' })
 </script>
 
 <template>

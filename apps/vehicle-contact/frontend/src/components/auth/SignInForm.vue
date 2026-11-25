@@ -1,11 +1,13 @@
 <script setup>
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { loadRememberedCredentials, saveRememberedCredentials } from '../../application/auth/remembered-credentials.js'
 import { useSessionStore } from '../../stores/session.js'
 import { signInMessage } from '../../application/auth/sign-in-messages.js'
+import { safeRedirect } from '../../application/auth/safe-redirect.js'
 const router = useRouter()
+const route = useRoute()
 const auth = useSessionStore()
 const { busy, phase, endpointValid, error, transport } = storeToRefs(auth)
 const form = reactive({ ...loadRememberedCredentials() })
@@ -19,7 +21,8 @@ async function submit() {
   if (!(await auth.signIn(form.username.trim(), form.password))) return
   saveRememberedCredentials({ ...form, password: passwordForStorage })
   form.password = form.rememberPassword ? passwordForStorage : ''
-  await router.replace({ name: 'dashboard' })
+  const back = safeRedirect(route.query.redirect)
+  await router.replace(back || { name: 'dashboard' })
 }
 </script>
 <template>

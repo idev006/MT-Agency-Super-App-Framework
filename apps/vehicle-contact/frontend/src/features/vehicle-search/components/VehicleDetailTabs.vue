@@ -4,6 +4,7 @@ import { provinceLabel } from '../../../domain/reference/provinces.js'
 import { formatThaiPhone, orderContacts, photoSlotLabel, relationshipLabel, telHref } from '../../../domain/reference/vehicle-presentation.js'
 import { formatBangkokDateTime } from '../../../domain/time/bangkok-date-time.js'
 import QrHistoryTable from '../../qr-governance/components/QrHistoryTable.vue'
+import VehicleQrImage from '../../qr-governance/components/VehicleQrImage.vue'
 
 // R7 (owner: "ทำไมไม่มีภาพรถ และข้อมูลอื่นๆ เพื่อประกอบการพิจารณาครบมั้ย" + "ใช้ tabs บ้าง"):
 // the full vehicle record for decision making, split into tabs. Photos load only when their tab
@@ -16,13 +17,15 @@ const props = defineProps({
   loadPhoto: { type: Function, default: null },
   // VC-ADR-036 S3: QR history tab for qr.manage holders
   loadQrHistory: { type: Function, default: null },
+  // S5: the current QR (image + print link) for qr.manage holders
+  loadQrCode: { type: Function, default: null },
 })
 const tabs = computed(() => [
   { id: 'facts', label: 'ข้อมูลรถ' },
   { id: 'contacts', label: `ผู้ประสานงาน (${props.result.vehicle.contacts.length})`, hidden: !props.canReadContacts },
   { id: 'photos', label: `ภาพหลักฐาน (${props.result.vehicle.photos.length})`, hidden: !props.canReadPhotos },
   { id: 'history', label: 'ประวัติ', hidden: !props.canReadHistory },
-  { id: 'qr', label: 'ประวัติ QR', hidden: !props.loadQrHistory },
+  { id: 'qr', label: 'QR และประวัติ QR', hidden: !props.loadQrHistory },
   // VC-ADR-036 S2: shown only when the server sent the dimension
   { id: 'origin', label: 'ที่มาและคำขอ', hidden: !extras.value.hasAdmin },
   { id: 'access', label: 'การเข้าดู', hidden: !extras.value.accessLog },
@@ -81,13 +84,21 @@ async function openPhotos() {
 }
 const qrHistory = ref([])
 const qrHistoryPhase = ref('idle')
+const qrCode = ref(null)
+const qrCodePhase = ref('idle')
+async function openQrCode() {
+  if (!props.loadQrCode || qrCodePhase.value === 'loading' || qrCodePhase.value === 'ready') return
+  qrCodePhase.value = 'loading'
+  try { qrCode.value = await props.loadQrCode(vehicle.value.vehicleId); qrCodePhase.value = 'ready' } catch { qrCodePhase.value = 'error' }
+}
 async function openQrHistory() {
+  openQrCode()
   if (!props.loadQrHistory || qrHistoryPhase.value === 'loading') return
   qrHistoryPhase.value = 'loading'
   try { qrHistory.value = await props.loadQrHistory(vehicle.value.vehicleId); qrHistoryPhase.value = 'ready' } catch { qrHistoryPhase.value = 'error' }
 }
 watch(active, (tab) => { if (tab === 'photos') openPhotos(); if (tab === 'qr') openQrHistory() })
-watch(() => vehicle.value.vehicleId, () => { photos.value = {}; activePhoto.value = ''; active.value = 'facts'; qrHistory.value = []; qrHistoryPhase.value = 'idle' })
+watch(() => vehicle.value.vehicleId, () => { photos.value = {}; activePhoto.value = ''; active.value = 'facts'; qrHistory.value = []; qrHistoryPhase.value = 'idle'; qrCode.value = null; qrCodePhase.value = 'idle' })
 const current = computed(() => photos.value[activePhoto.value])
 const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId === activePhoto.value)?.slot || '')
 </script>
@@ -162,7 +173,20 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
       </div>
     </section>
     <section v-if="loadQrHistory" v-show="active === 'qr'" id="vp-qr" role="tabpanel" aria-labelledby="vt-qr" class="card card-border bg-base-100 shadow-none">
-      <div class="card-body p-5"><QrHistoryTable :items="qrHistory" :phase="qrHistoryPhase === 'idle' ? 'loading' : qrHistoryPhase" /></div>
+      <div class="card-body gap-4 p-5">
+        <div v-if="loadQrCode" class="rounded-box border border-base-300 p-4" data-current-qr>
+          <h3 class="font-semibold">QR ปัจจุบัน</h3>
+          <div v-if="qrCodePhase === 'loading' || qrCodePhase === 'idle'" class="skeleton mt-2 h-24 w-40" role="status"><span class="sr-only">กำลังโหลด QR</span></div>
+          <p v-else-if="qrCodePhase === 'error'" class="mt-2 text-sm text-error">โหลด QR ไม่สำเร็จ</p>
+          <template v-else-if="qrCode?.status === 'READY'">
+            <VehicleQrImage :token="qrCode.token" :label="vehicle.plate" />
+            <RouterLink class="btn btn-sm mt-2" :to="{ name: 'qr-print', query: { vehicle: vehicle.vehicleId } }">พิมพ์ QR คันนี้</RouterLink>
+          </template>
+          <p v-else class="mt-2 text-sm">{{ qrCode?.status === 'REISSUE_NEEDED' ? 'QR นี้ออกก่อนระบบเก็บรหัส จึงแสดงภาพไม่ได้ ออก QR ใหม่เพื่อพิมพ์' : 'ยังไม่มี QR ที่ใช้งานอยู่' }}
+            <RouterLink class="link ml-1" :to="{ name: 'qr-governance', query: { vehicleId: vehicle.vehicleId } }">ไปจัดการ QR</RouterLink></p>
+        </div>
+        <QrHistoryTable :items="qrHistory" :phase="qrHistoryPhase === 'idle' ? 'loading' : qrHistoryPhase" />
+      </div>
     </section>
     <section v-if="extras.hasAdmin" v-show="active === 'origin'" id="vp-origin" role="tabpanel" aria-labelledby="vt-origin" class="card card-border bg-base-100 shadow-none">
       <div class="card-body gap-4 p-5">

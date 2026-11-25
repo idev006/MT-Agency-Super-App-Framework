@@ -336,6 +336,14 @@
           "key": null,
           "classification": "internal",
           "notes": "VC-ADR-036 S3: free-text note for the revoke reason (<=200)"
+        },
+        {
+          "name": "qr_token",
+          "key": null,
+          "type": "string",
+          "required": false,
+          "classification": "restricted",
+          "notes": "S5 / VC-ADR-032 B: the QR code itself, stored so admins can show and reprint it; returned only by qr.export (qr.manage)"
         }
       ]
     },
