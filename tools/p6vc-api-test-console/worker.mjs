@@ -6,6 +6,13 @@
  */
 const JSON_HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY"};
 const TARGET=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
+// VC-ADR-033 switch-over: when P6VC_API_URL is set the gateway forwards to the project's Cloud Run
+// API (same v1 envelope); otherwise to the GAS Web App. Rollback = remove P6VC_API_URL and redeploy.
+const CLOUD_RUN_TARGET=/^https:\/\/p6vc-api-[0-9]+\.asia-southeast3\.run\.app$/;
+function upstream(env){
+ if(env.P6VC_API_URL!==undefined&&env.P6VC_API_URL!=="")return CLOUD_RUN_TARGET.test(env.P6VC_API_URL)?env.P6VC_API_URL:"";
+ return TARGET.test(env.P6VC_GAS_EXEC_URL||"")?env.P6VC_GAS_EXEC_URL:"";
+}
 const READ_ONLY_OPERATIONS=new Set(["system.health","system.config.get","users.list","organizations.list","campaigns.list","registrations.listPending","vehicles.lookup","vehicles.history","changes.listPending","retention.jobStatus"]);
 const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "system.health":[[],[]],
@@ -82,7 +89,7 @@ async function gas(env,group,action,payload={},token=null,method="POST",requestI
   options.body=JSON.stringify({apiVersion:"v1",group,action,payload,...(token?{sessionToken:token}:{}),...(requestId?{requestId}:{})});
  }
  let r;
- try{r=await fetch(env.P6VC_GAS_EXEC_URL,options);}catch{throw Error("GAS_NETWORK_ERROR");}
+ try{r=await fetch(upstream(env),options);}catch{throw Error("GAS_NETWORK_ERROR");}
  if(r.status!==200)throw Error("GAS_HTTP_ERROR");
  let j;try{j=await r.json();}catch{throw Error("GAS_NON_JSON");}
  if(!j||typeof j.ok!=="boolean"||!Object.hasOwn(j,"data")||!Object.hasOwn(j,"error"))
@@ -543,13 +550,13 @@ export default {async fetch(request,env){
   if(!origin)return reply({error:"ORIGIN_NOT_ALLOWED"},403);
   if(request.method==="OPTIONS")return new Response(null,{status:204,headers:frontendHeaders(origin)});
   if(request.method!=="POST")return frontendReply(origin,{error:"METHOD_NOT_ALLOWED"},405);
-  if(!TARGET.test(env.P6VC_GAS_EXEC_URL||""))return frontendReply(origin,{error:"GATEWAY_NOT_CONFIGURED"},503);
+  if(!upstream(env))return frontendReply(origin,{error:"GATEWAY_NOT_CONFIGURED"},503);
   return frontendGateway(request,env,origin);
  }
  const jobMatch=/^\/api\/jobs\/(job_[0-9a-f]{32})$/.exec(path);
  const postAllowed=request.method==="POST"&&["/api/health","/api/auth-suite","/api/probe","/api/run-tests","/api/jobs"].includes(path);
  if(!postAllowed&&!(request.method==="GET"&&jobMatch))return reply({error:"NOT_FOUND"},404);
- if(!TARGET.test(env.P6VC_GAS_EXEC_URL||"")||!env.BRIDGE_ACCESS_KEY||env.BRIDGE_ACCESS_KEY.length<32)return reply({error:"BRIDGE_NOT_CONFIGURED"},503);
+ if(!upstream(env)||!env.BRIDGE_ACCESS_KEY||env.BRIDGE_ACCESS_KEY.length<32)return reply({error:"BRIDGE_NOT_CONFIGURED"},503);
  const header=request.headers.get("authorization")||"";
  const m=/^Bearer (\S+)$/.exec(header);
  if(!m||!(await sameKey(m[1],env.BRIDGE_ACCESS_KEY)))return reply({error:"UNAUTHORIZED"},401);

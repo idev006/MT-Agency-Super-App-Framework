@@ -543,3 +543,22 @@ test('frontend gateway allows vehicles.photo only with the exact DTO (R7 vehicle
   }
  }finally{fake.restore();}
 });
+
+test('WORKER-CR01 P6VC_API_URL switches the upstream to the project Cloud Run API; unset falls back to GAS; foreign URLs fail closed',async()=>{
+ const CR='https://p6vc-api-46858005337.asia-southeast3.run.app';
+ const seen=[];const original=globalThis.fetch;
+ globalThis.fetch=async url=>{seen.push(String(url));return envelope(true,{status:'ready'});};
+ try{
+  const body={apiVersion:'v1',group:'system',action:'health',payload:{},requestId:'req_cr01'};
+  const origin='https://idev006.github.io';
+  const call=e=>worker.fetch(frontendRequest(body,origin),{...env(),FRONTEND_ALLOWED_ORIGINS:origin,...e});
+  assert.equal((await call({P6VC_API_URL:CR})).status,200);
+  assert.equal(seen.at(-1),CR,'forwarded to Cloud Run');
+  assert.equal((await call({})).status,200);
+  assert.equal(seen.at(-1),GAS,'no P6VC_API_URL: forwarded to GAS (rollback path)');
+  const n=seen.length;
+  const foreign=await call({P6VC_API_URL:'https://evil.example.run.app'});
+  assert.equal(foreign.status,503,'a URL that is not the project Cloud Run API is refused');
+  assert.equal(seen.length,n,'nothing was forwarded');
+ }finally{globalThis.fetch=original;}
+});
