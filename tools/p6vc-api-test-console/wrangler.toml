@@ -6,6 +6,8 @@ preview_urls = false
 [vars]
 FRONTEND_ALLOWED_ORIGINS = "https://idev006.github.io"
 P6VC_GAS_EXEC_URL = "https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec"
+# VC-ADR-033 switch-over (owner 2026-11-25: "พร้อมสลับหน้าเว็บไป Cloud Run"). Rollback: delete this line and redeploy.
+P6VC_API_URL = "https://p6vc-api-46858005337.asia-southeast3.run.app"
 TEST_LOGIN_USERNAME = "admin"
 
 [observability]

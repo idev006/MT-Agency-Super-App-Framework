@@ -44,7 +44,8 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
   if(env.P6VC_ALLOW_OWNER_DEV_WRITES!==WRITE_GATE)return blocked('MISSING_WRITE_GATE');
   if(env.P6VC_ALLOW_FIRESTORE_DEV_PROBE!==PROBE_GATE||!env.GOOGLE_APPLICATION_CREDENTIALS)return blocked('MISSING_FIRESTORE_PROBE_GATE');
   const url=env.P6VC_GAS_EXEC_URL;
-  if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url||''))return blocked('INVALID_EXEC_URL');
+  // GAS Web App or the project's Cloud Run API (VC-ADR-033) — same v1 envelope.
+  if(!/^(https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec|https:\/\/p6vc-api-[0-9]+\.asia-southeast3\.run\.app)$/.test(url||''))return blocked('INVALID_EXEC_URL');
   if(!env.P6VC_ADMIN_USER||!env.P6VC_ADMIN_PASS)return blocked('MISSING_ADMIN_CREDENTIALS');
   const call=async(op,payload={},sessionToken)=>{const [group,...a]=op.split('.');
     try{const r=await fetchImpl(url,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},
