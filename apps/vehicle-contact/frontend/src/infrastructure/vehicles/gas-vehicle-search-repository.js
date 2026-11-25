@@ -27,6 +27,7 @@ function mapContacts(value, allowed) {
     phone: optionalText(item?.phone),
     relationship: optionalText(item?.relationship),
     isPrimary: item?.isPrimary === true,
+    verifiedAt: optionalText(item?.verifiedAt),
   }))
 }
 
@@ -36,6 +37,7 @@ function mapPhotos(value, allowed) {
     photoId: requiredText(item?.photoId),
     slot: requiredText(item?.slot),
     mimeType: optionalText(item?.mimeType),
+    createdAt: optionalText(item?.createdAt),
   }))
 }
 

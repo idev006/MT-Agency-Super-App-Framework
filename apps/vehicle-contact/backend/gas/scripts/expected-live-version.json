@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.23",
+  "backendVersion": "0.9.24",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-24T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.23 = VC-ADR-036 S3: QR reasons required (issue/replace/revoke), revoked_by/revoke_reason/replaces_qr_id, qr.history. Prior: 0.9.22 S1 SYSTEM_ADMIN full vehicle view + reactivate/enable (V72)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.24 = VC-ADR-036 S2: Vehicle 360 (owner/creator/updater, registration origin, change requests, retention for vehicle.list; access log for audit.read), registry colour/type labels, contacts verifiedAt + photos createdAt. Needs the 4 composite indexes in contracts/firestore-indexes.v1.json. Prior: 0.9.23 S3 QR history (V73)."
 }

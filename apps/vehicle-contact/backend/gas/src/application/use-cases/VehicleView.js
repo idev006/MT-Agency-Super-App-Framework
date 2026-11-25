@@ -43,10 +43,10 @@ export function createVehicleView({store,now,id}){
   response.labels={vehicleType:labelOf('VEHICLE_TYPE',v.vehicle_type),color:labelOf('COLOR',v.color),plateType:labelOf('PLATE_TYPE',v.plate_type)};
   if(wantContacts)
    response.contacts=contactRows.filter(c=>c.status==='ACTIVE')
-    .map(c=>({name:c.display_name,phone:c.phone_e164,relationship:c.relationship,isPrimary:c.is_primary}));
+    .map(c=>({name:c.display_name,phone:c.phone_e164,relationship:c.relationship,isPrimary:c.is_primary,verifiedAt:c.verified_at||''}));
   if(wantPhotos)
    response.photos=photoRows.filter(x=>x.status==='ACTIVE')
-    .map(x=>({photoId:x.photo_id,slot:x.slot,storageRef:x.storage_ref,mimeType:x.mime_type}));
+    .map(x=>({photoId:x.photo_id,slot:x.slot,storageRef:x.storage_ref,mimeType:x.mime_type,createdAt:x.created_at||''}));
   if(wantHistory)response.history=historyRows.slice(-100)
    .map(x=>({audit_id:x.audit_id,action:x.action,redacted_summary:x.redacted_summary,created_at:x.created_at}));
   return response;

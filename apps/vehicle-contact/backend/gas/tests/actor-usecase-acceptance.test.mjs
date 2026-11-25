@@ -256,3 +256,32 @@ test('ACTOR-S3-QR every QR change needs a reason; history keeps who/why/chain; c
  assert.equal(last.status,'REVOKED');assert.equal(last.revoke_reason,'VEHICLE_CANCELLED');assert.ok(last.revoked_by);
  assertError(assert,h.as('sys','qr.history',{vehicleId:'no-such-vehicle'}),'NOT_FOUND','unknown vehicle');
 });
+
+test('ACTOR-S2-360 vehicle detail dimensions are permission-gated on the server (admin / auditor / staff)',()=>{
+ const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
+ const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const vehicleId=h.read('vc_vehicles')[0].vehicle_id;
+ const ADMIN_KEYS=['owner','createdByName','updatedByName','registration','changeRequests','retention'];
+ // SYSTEM_ADMIN: admin dimensions + access log (audit.read)
+ const sys=assertOk(assert,h.as('sys','vehicles.detail',{vehicleId}),'sys detail');
+ for(const k of ADMIN_KEYS)assert.ok(k in sys,'sys has '+k);
+ assert.equal(sys.registration.status,'APPROVED');assert.equal(sys.registration.viaCampaign,true);
+ assert.ok(sys.registration.reviewedByName!==undefined);
+ assert.ok(Array.isArray(sys.changeRequests));
+ assert.ok(Array.isArray(sys.accessLog)&&sys.accessLog.length>=1,'access log includes this view');
+ assert.equal(sys.accessLog[0].source,'DETAIL');
+ assert.ok(!/token|digest|password/i.test(JSON.stringify(sys)),'no secrets in the 360 view');
+ assert.equal(sys.contacts[0].verifiedAt!==undefined,true);assert.equal(sys.photos[0].createdAt!==undefined,true);
+ // REGISTRATION_ADMIN: admin dimensions, but NO access log (owner decision: SYSTEM_ADMIN only)
+ const reg=assertOk(assert,h.as('reg','vehicles.detail',{vehicleId}),'reg detail');
+ for(const k of ADMIN_KEYS)assert.ok(k in reg,'reg has '+k);
+ assert.equal(reg.accessLog,undefined,'registration admin does not see who viewed');
+ // STAFF: none of the 360 admin dimensions
+ const staff=assertOk(assert,h.as('staff','vehicles.detail',{vehicleId}),'staff detail');
+ for(const k of [...ADMIN_KEYS,'accessLog'])assert.equal(staff[k],undefined,'staff must not receive '+k);
+ // registry rows carry display labels
+ const list=assertOk(assert,h.as('sys','vehicles.list',{limit:100}),'list');
+ const rows=Array.isArray(list)?list:list.items;
+ assert.ok('colorLabel' in rows[0]&&'vehicleTypeLabel' in rows[0]);
+});

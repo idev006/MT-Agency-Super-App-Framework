@@ -1,0 +1,290 @@
+{
+  "schema": "p6vc.firestore-indexes.v1",
+  "note": "Composite indexes the application needs (equality filters + _seq order). Applied with backend/gas/scripts/ensure-firestore-indexes.mjs (adds only, never deletes). A new query shape must be added here in the same PR.",
+  "indexes": [
+    {
+      "collection": "vc_change_audit",
+      "fields": [
+        {
+          "fieldPath": "entity_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_change_requests",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_lookup_audit",
+      "fields": [
+        {
+          "fieldPath": "vehicle_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_operation_journal",
+      "fields": [
+        {
+          "fieldPath": "operation",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "entity_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "DESCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_photo_staging",
+      "fields": [
+        {
+          "fieldPath": "campaign_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_qr_tokens",
+      "fields": [
+        {
+          "fieldPath": "vehicle_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_registration_requests",
+      "fields": [
+        {
+          "fieldPath": "idempotency_key",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_registration_requests",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_security_events",
+      "fields": [
+        {
+          "fieldPath": "username_digest",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "DESCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_sessions",
+      "fields": [
+        {
+          "fieldPath": "user_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_user_permissions",
+      "fields": [
+        {
+          "fieldPath": "user_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_user_roles",
+      "fields": [
+        {
+          "fieldPath": "user_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_users",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_users",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "DESCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_vehicle_contacts",
+      "fields": [
+        {
+          "fieldPath": "vehicle_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_vehicle_photos",
+      "fields": [
+        {
+          "fieldPath": "vehicle_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "existing (live READY 2026-11-25)"
+    },
+    {
+      "collection": "vc_registration_requests",
+      "fields": [
+        {
+          "fieldPath": "vehicle_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "S2-B Vehicle 360: registration origin"
+    },
+    {
+      "collection": "vc_change_requests",
+      "fields": [
+        {
+          "fieldPath": "vehicle_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "S2-B Vehicle 360: change requests"
+    },
+    {
+      "collection": "vc_retention_jobs",
+      "fields": [
+        {
+          "fieldPath": "vehicle_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "S2-B Vehicle 360: retention status"
+    },
+    {
+      "collection": "vc_lookup_audit",
+      "fields": [
+        {
+          "fieldPath": "vehicle_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "DESCENDING"
+        }
+      ],
+      "purpose": "S2-B Vehicle 360: newest 50 access-log rows (SYSTEM_ADMIN)"
+    }
+  ]
+}

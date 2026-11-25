@@ -29,6 +29,8 @@ function mapVehicle(value) {
     brand: optionalText(value.brand),
     model: optionalText(value.model),
     color: optionalText(value.color),
+    colorLabel: optionalText(value.colorLabel),
+    vehicleTypeLabel: optionalText(value.vehicleTypeLabel),
     createdAt: optionalText(value.createdAt),
     version: Number.isSafeInteger(value.version) ? value.version : 0,
   })

@@ -422,10 +422,11 @@
         "REG-02",
         "REG-03",
         "REG-04",
-        "REG-05"
+        "REG-05",
+        "ACTOR-S2-360"
       ],
       "pre": "Valid server session; permissions vehicle.lookup, vehicle.contact.read, vehicle.photos.read and optionally vehicle.history.read; admin registry requires vehicle.list; vehicle ACTIVE.",
-      "success": "Search normalized Thai plate+province across organizations; show permitted contact and 5 photo references with lookup audit. C6 vehicles.list returns a paginated ACTIVE-only minimal non-PII registry DTO from one bounded vc_vehicles snapshot; FE registry/search/detail are wired.",
+      "success": "Search normalized Thai plate+province across organizations; show permitted contact and 5 photo references with lookup audit. C6 vehicles.list returns a paginated ACTIVE-only minimal non-PII registry DTO from one bounded vc_vehicles snapshot; FE registry/search/detail are wired. VC-ADR-036 S2 (Vehicle 360): vehicles.detail adds, by permission on the server, owner/creator/updater names, registration origin (campaign, reviewer), change requests and retention status for vehicle.list holders, and the newest 50 access-log rows for audit.read holders (SYSTEM_ADMIN); STAFF receives none of these.",
       "failure": "Unknown/inactive vehicle, missing permission, revoked session, ambiguous active duplicate and client status/ownerUserId spoof filters fail safely; don't expose a public contact directory.",
       "tables": [
         "vc_vehicles",
