@@ -167,16 +167,16 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
     <section v-if="extras.hasAdmin" v-show="active === 'origin'" id="vp-origin" role="tabpanel" aria-labelledby="vt-origin" class="card card-border bg-base-100 shadow-none">
       <div class="card-body gap-4 p-5">
         <h3 class="font-semibold">การลงทะเบียน</h3>
-        <div v-if="extras.registration" class="overflow-x-auto"><table class="table table-sm"><tbody>
-          <tr><th class="w-48 font-medium">ช่องทาง</th><td>{{ extras.registration.viaCampaign ? `แคมเปญ ${extras.registration.campaignName || '(ไม่มีชื่อ)'}` : 'บันทึกโดยเจ้าหน้าที่' }}</td></tr>
-          <tr><th class="font-medium">ยื่นคำขอเมื่อ</th><td>{{ when(extras.registration.submittedAt) }}</td></tr>
-          <tr><th class="font-medium">ผลการพิจารณา</th><td>{{ REQUEST_LABELS[extras.registration.status] || extras.registration.status }} · {{ when(extras.registration.reviewedAt) }} · {{ extras.registration.reviewedByName || '—' }}</td></tr>
+        <div v-if="extras.registration" class="p6-table-wrap"><table class="p6-table"><tbody>
+          <tr><th>ช่องทาง</th><td>{{ extras.registration.viaCampaign ? `แคมเปญ ${extras.registration.campaignName || '(ไม่มีชื่อ)'}` : 'บันทึกโดยเจ้าหน้าที่' }}</td></tr>
+          <tr><th>ยื่นคำขอเมื่อ</th><td>{{ when(extras.registration.submittedAt) }}</td></tr>
+          <tr><th>ผลการพิจารณา</th><td>{{ REQUEST_LABELS[extras.registration.status] || extras.registration.status }} · {{ when(extras.registration.reviewedAt) }} · {{ extras.registration.reviewedByName || '—' }}</td></tr>
         </tbody></table></div>
         <p v-else class="text-base-content/80">ไม่พบคำขอลงทะเบียนของรถคันนี้</p>
         <h3 class="font-semibold">คำขอเปลี่ยนแปลงจากเจ้าของ ({{ extras.changeRequests.length }})</h3>
-        <div v-if="extras.changeRequests.length" class="overflow-x-auto"><table class="table table-sm">
+        <div v-if="extras.changeRequests.length" class="p6-table-wrap"><table class="p6-table">
           <thead><tr><th>ยื่นเมื่อ</th><th>ผู้ยื่น</th><th>รายการที่ขอแก้</th><th>สถานะ</th><th>พิจารณาโดย</th></tr></thead>
-          <tbody><tr v-for="(c, i) in extras.changeRequests" :key="i"><td class="whitespace-nowrap">{{ when(c.submittedAt) }}</td><td>{{ c.submittedByName || '—' }}</td><td>{{ c.fields.map((f) => FIELD_LABELS[f] || f).join(', ') || '—' }}</td><td class="whitespace-nowrap">{{ REQUEST_LABELS[c.status] || c.status }}</td><td>{{ c.reviewedByName ? `${c.reviewedByName} · ${when(c.reviewedAt)}` : '—' }}</td></tr></tbody>
+          <tbody><tr v-for="(c, i) in extras.changeRequests" :key="i"><td class="whitespace-nowrap">{{ when(c.submittedAt) }}</td><td>{{ c.submittedByName || '—' }}</td><td class="p6-col-text">{{ c.fields.map((f) => FIELD_LABELS[f] || f).join(', ') || '—' }}</td><td class="whitespace-nowrap">{{ REQUEST_LABELS[c.status] || c.status }}</td><td>{{ c.reviewedByName ? `${c.reviewedByName} · ${when(c.reviewedAt)}` : '—' }}</td></tr></tbody>
         </table></div>
         <p v-else class="text-base-content/80">ยังไม่มีคำขอเปลี่ยนแปลง</p>
         <template v-if="extras.retention"><h3 class="font-semibold">การเก็บรักษาข้อมูล</h3><p>{{ extras.retention.status }} · ครบกำหนด {{ when(extras.retention.dueAt) }}<span v-if="extras.retention.legalHold"> · ระงับการลบตามกฎหมาย</span></p></template>
@@ -185,7 +185,7 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
     <section v-if="extras.accessLog" v-show="active === 'access'" id="vp-access" role="tabpanel" aria-labelledby="vt-access" class="card card-border bg-base-100 shadow-none">
       <div class="card-body gap-3 p-5">
         <p class="text-sm text-base-content/80">ผู้ที่ค้นหาหรือเปิดดูรถคันนี้ ล่าสุด {{ extras.accessLog.length }} ครั้ง (เห็นเฉพาะผู้ดูแลระบบ)</p>
-        <div class="overflow-x-auto"><table class="table table-sm" aria-label="ประวัติการเข้าดู">
+        <div class="p6-table-wrap"><table class="p6-table" aria-label="ประวัติการเข้าดู">
           <thead><tr><th>เมื่อ</th><th>ผู้ใช้</th><th>ช่องทาง</th></tr></thead>
           <tbody><tr v-for="(a, i) in extras.accessLog" :key="i"><td class="whitespace-nowrap">{{ when(a.at) }}</td><td>{{ a.actorName || '—' }}</td><td>{{ SOURCE_LABELS[a.source] || a.source }}</td></tr></tbody>
         </table></div>

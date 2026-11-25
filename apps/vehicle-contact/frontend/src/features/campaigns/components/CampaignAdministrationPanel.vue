@@ -10,11 +10,11 @@ import { campaignState, copySecret } from '../../common/useOneTimeSecretGuard.js
 defineProps({ campaigns: { type: Array, required: true }, total: { type: Number, default: 0 }, lastCreatedId: { type: String, default: '' } })
 const emit = defineEmits(['manage'])
 const columns = [
-  { key: 'name', label: 'ชื่อแคมเปญ' },
-  { key: 'period', label: 'ช่วงเวลา (เวลาไทย)' },
-  { key: 'quota', label: 'รับแล้ว / สูงสุด' },
-  { key: 'state', label: 'สถานะ' },
-  { key: 'actions', label: 'การจัดการ', srOnly: true, class: 'text-right' },
+  { key: 'name', label: 'ชื่อแคมเปญ', kind: 'name' },
+  { key: 'period', label: 'ช่วงเวลา (เวลาไทย)', kind: 'date' },
+  { key: 'quota', label: 'รับแล้ว / สูงสุด', kind: 'number' },
+  { key: 'state', label: 'สถานะ', kind: 'status' },
+  { key: 'actions', label: 'การจัดการ', srOnly: true, kind: 'actions' },
 ]
 const formatDate = (value) => formatBangkokDateTime(value)
 const copied = ref('')

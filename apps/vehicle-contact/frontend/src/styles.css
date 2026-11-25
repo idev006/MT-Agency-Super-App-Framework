@@ -313,3 +313,28 @@ textarea {
 .tabs .tab { color: color-mix(in oklab, var(--color-base-content) 80%, transparent); opacity: 1; }
 .tabs .tab.tab-active { color: var(--color-base-content); font-weight: 600; }
 .tabs .tab.text-error { color: var(--color-error); }
+
+/* Owner 2026-11-25: one table look for every data table. Columns size to their content but are never
+   wider than 350px (long text wraps inside the column); the table scrolls sideways (overflow-x) on any
+   screen instead of squeezing columns. Column kinds: name / text / date / status / number / code / actions. */
+.p6-table-wrap { width: fit-content; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--color-base-300); border-radius: var(--radius-box); background: var(--color-base-100); }
+.p6-table { width: max-content; max-width: none; border-collapse: separate; border-spacing: 0; font-size: 0.9375rem; line-height: 1.5; }
+.p6-table th, .p6-table td { max-width: 350px; padding: 0.625rem 0.875rem; text-align: left; vertical-align: top; white-space: normal; overflow-wrap: break-word; border-bottom: 1px solid var(--color-base-300); }
+.p6-table td > .p6-cell { max-width: calc(350px - 1.75rem); }
+.p6-table thead th { position: sticky; top: 0; z-index: 2; background: var(--color-base-200); color: color-mix(in oklab, var(--color-base-content) 82%, transparent); font-size: 0.8125rem; font-weight: 600; white-space: nowrap; }
+.p6-table tbody td { background: var(--color-base-100); }
+.p6-table tbody tr:nth-child(even) td { background: color-mix(in oklab, var(--color-base-200) 45%, var(--color-base-100)); }
+.p6-table tbody tr:hover td { background: var(--color-base-200); }
+.p6-table tbody tr:last-child td { border-bottom: 0; }
+.p6-table .p6-col-sticky { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--color-base-300); }
+.p6-table thead .p6-col-sticky { z-index: 3; }
+.p6-table .p6-col-name { min-width: 9rem; font-weight: 600; }
+.p6-table .p6-col-text { min-width: 12rem; }
+.p6-table .p6-col-date, .p6-table .p6-col-status, .p6-table .p6-col-nowrap { white-space: nowrap; }
+.p6-table .p6-col-number { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.p6-table .p6-col-code { min-width: 8rem; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8125rem; overflow-wrap: anywhere; }
+.p6-table .p6-col-actions { width: 1%; text-align: right; white-space: nowrap; }
+.p6-table .p6-col-sub { display: block; margin-top: 0.125rem; font-size: 0.75rem; color: color-mix(in oklab, var(--color-base-content) 75%, transparent); }
+.p6-table tbody th { min-width: 9rem; background: inherit; font-weight: 600; text-align: left; }
+.p6-table tbody tr th { background: var(--color-base-100); }
+.p6-table tbody tr:nth-child(even) th { background: color-mix(in oklab, var(--color-base-200) 45%, var(--color-base-100)); }

@@ -56,8 +56,8 @@ const safeguards = Object.freeze([
             <h2 id="about-system" class="card-title text-lg">สถานะและเวอร์ชัน</h2>
             <span class="flex items-center gap-2 text-sm"><span class="status" :class="statusTone" aria-hidden="true"></span>{{ statusLabel }}</span>
           </div>
-          <div class="overflow-x-auto"><table class="table table-sm"><tbody>
-            <tr v-for="[label, value] in systemRows" :key="label"><th class="w-40 font-medium">{{ label }}</th><td>{{ value }}</td></tr>
+          <div class="p6-table-wrap"><table class="p6-table"><tbody>
+            <tr v-for="[label, value] in systemRows" :key="label"><th>{{ label }}</th><td class="p6-col-text">{{ value }}</td></tr>
           </tbody></table></div>
           <div class="card-actions justify-end"><button class="btn btn-sm" type="button" :disabled="busy" @click="auth.checkConnection"><span v-if="phase === 'checking'" class="loading loading-spinner loading-sm"></span>ตรวจสถานะอีกครั้ง</button></div>
         </div>
@@ -65,8 +65,8 @@ const safeguards = Object.freeze([
       <section class="card card-border bg-base-100 shadow-none" aria-labelledby="about-session">
         <div class="card-body gap-3 p-5">
           <h2 id="about-session" class="card-title text-lg">เซสชันของคุณ</h2>
-          <div class="overflow-x-auto"><table class="table table-sm"><tbody>
-            <tr v-for="[label, value] in sessionRows" :key="label"><th class="w-40 font-medium">{{ label }}</th><td>{{ value }}</td></tr>
+          <div class="p6-table-wrap"><table class="p6-table"><tbody>
+            <tr v-for="[label, value] in sessionRows" :key="label"><th>{{ label }}</th><td class="p6-col-text">{{ value }}</td></tr>
           </tbody></table></div>
         </div>
       </section>
@@ -74,9 +74,9 @@ const safeguards = Object.freeze([
     <section class="card card-border mt-6 bg-base-100 shadow-none" aria-labelledby="about-safeguards">
       <div class="card-body gap-3 p-5">
         <h2 id="about-safeguards" class="card-title text-lg">การคุ้มครองข้อมูลและความปลอดภัย</h2>
-        <div class="overflow-x-auto"><table class="table table-sm">
-          <thead><tr><th class="w-48">เรื่อง</th><th>ระบบทำอย่างไร</th></tr></thead>
-          <tbody><tr v-for="[topic, detail] in safeguards" :key="topic"><th class="font-medium">{{ topic }}</th><td>{{ detail }}</td></tr></tbody>
+        <div class="p6-table-wrap"><table class="p6-table">
+          <thead><tr><th>เรื่อง</th><th>ระบบทำอย่างไร</th></tr></thead>
+          <tbody><tr v-for="[topic, detail] in safeguards" :key="topic"><th>{{ topic }}</th><td class="p6-col-text">{{ detail }}</td></tr></tbody>
         </table></div>
       </div>
     </section>

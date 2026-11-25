@@ -6,11 +6,11 @@ import StatusBadge from '../../../components/common/StatusBadge.vue'
 defineProps({ organizations: { type: Array, required: true }, total: { type: Number, default: 0 }, canManage: Boolean })
 const emit = defineEmits(['manage'])
 const columns = [
-  { key: 'name', label: 'ชื่อหน่วยงาน' },
-  { key: 'type', label: 'ประเภท' },
-  { key: 'parentName', label: 'หน่วยงานแม่' },
-  { key: 'status', label: 'สถานะ' },
-  { key: 'actions', label: 'การจัดการ', srOnly: true, class: 'text-right' },
+  { key: 'name', label: 'ชื่อหน่วยงาน', kind: 'name' },
+  { key: 'type', label: 'ประเภท', kind: 'nowrap' },
+  { key: 'parentName', label: 'หน่วยงานแม่', kind: 'text' },
+  { key: 'status', label: 'สถานะ', kind: 'status' },
+  { key: 'actions', label: 'การจัดการ', srOnly: true, kind: 'actions' },
 ]
 const typeLabel = (type) => type === 'POLICE' ? 'หน่วยงานตำรวจ' : 'หน่วยงานภายนอก'
 </script>

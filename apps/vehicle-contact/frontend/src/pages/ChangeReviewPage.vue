@@ -100,12 +100,12 @@ async function confirmDecision() {
               <p class="text-sm text-base-content/80">{{ work.currentVehicle.value.brand }} {{ work.currentVehicle.value.model }} · {{ work.currentVehicle.value.color }}</p>
             </div>
 
-            <div class="mt-5 overflow-x-auto">
-              <table class="table table-zebra">
+            <div class="p6-table-wrap mt-5">
+              <table class="p6-table" aria-label="รายการที่ขอเปลี่ยน">
                 <thead><tr><th>รายการ</th><th>ค่าปัจจุบัน</th><th>ค่าที่เสนอ</th></tr></thead>
                 <tbody>
                   <tr v-for="row in work.diffRows.value" :key="row.field">
-                    <td class="font-medium">{{ row.label }}</td>
+                    <td class="p6-col-name">{{ row.label }}</td>
                     <td><span class="line-through decoration-2">{{ showValue(row.field, row.current) || '—' }}</span></td>
                     <td class="font-semibold">→ {{ showValue(row.field, row.proposed) }}</td>
                   </tr>
