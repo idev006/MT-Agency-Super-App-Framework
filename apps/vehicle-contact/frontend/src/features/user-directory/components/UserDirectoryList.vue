@@ -7,12 +7,12 @@ import { roleLabels } from '../../../domain/identity/role-presentation.js'
 defineProps({ users: { type: Array, required: true }, total: { type: Number, default: 0 } })
 const emit = defineEmits(['manage'])
 const columns = [
-  { key: 'displayName', label: 'ชื่อที่แสดง' },
-  { key: 'username', label: 'ชื่อผู้ใช้' },
-  { key: 'organizationName', label: 'หน่วยงาน' },
-  { key: 'roles', label: 'บทบาท' },
-  { key: 'status', label: 'สถานะ' },
-  { key: 'actions', label: 'การจัดการ', srOnly: true, class: 'text-right' },
+  { key: 'displayName', label: 'ชื่อที่แสดง', kind: 'name' },
+  { key: 'username', label: 'ชื่อผู้ใช้', kind: 'code' },
+  { key: 'organizationName', label: 'หน่วยงาน', kind: 'text' },
+  { key: 'roles', label: 'บทบาท', kind: 'text' },
+  { key: 'status', label: 'สถานะ', kind: 'status' },
+  { key: 'actions', label: 'การจัดการ', srOnly: true, kind: 'actions' },
 ]
 </script>
 

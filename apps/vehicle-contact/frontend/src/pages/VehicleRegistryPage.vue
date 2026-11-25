@@ -35,9 +35,9 @@ function closeDetail() {
 }
 const drawerTitle = computed(() => (openVehicle.value ? `${openVehicle.value.plate} ${provinceLabel(openVehicle.value.province) || ''}`.trim() : 'รายละเอียดยานพาหนะ'))
 const columns = [
-  { key: 'plate', label: 'ทะเบียน' }, { key: 'province', label: 'จังหวัด' }, { key: 'model', label: 'ยี่ห้อ / รุ่น' },
-  { key: 'color', label: 'สี' }, { key: 'status', label: 'สถานะ' }, { key: 'createdAt', label: 'อนุมัติเมื่อ', class: 'whitespace-nowrap' },
-  { key: 'actions', label: 'การดำเนินการ', srOnly: true, class: 'text-right' },
+  { key: 'plate', label: 'ทะเบียน', kind: 'name' }, { key: 'province', label: 'จังหวัด', kind: 'nowrap' }, { key: 'model', label: 'ยี่ห้อ / รุ่น', kind: 'text' },
+  { key: 'color', label: 'สี', kind: 'nowrap' }, { key: 'status', label: 'สถานะ', kind: 'status' }, { key: 'createdAt', label: 'อนุมัติเมื่อ', kind: 'date' },
+  { key: 'actions', label: 'การดำเนินการ', srOnly: true, kind: 'actions' },
 ]
 
 onMounted(work.load)
