@@ -21,7 +21,7 @@ const props = defineProps({
   loadQrCode: { type: Function, default: null },
 })
 const tabs = computed(() => [
-  { id: 'facts', label: 'ข้อมูลรถ' },
+  { id: 'facts', label: 'ภาพรวม' },
   { id: 'contacts', label: `ผู้ประสานงาน (${props.result.vehicle.contacts.length})`, hidden: !props.canReadContacts },
   { id: 'photos', label: `ภาพหลักฐาน (${props.result.vehicle.photos.length})`, hidden: !props.canReadPhotos },
   { id: 'history', label: 'ประวัติ', hidden: !props.canReadHistory },
@@ -44,14 +44,20 @@ const SOURCE_LABELS = Object.freeze({ DETAIL: 'เปิดรายละเอ
 const REQUEST_LABELS = Object.freeze({ PENDING_APPROVAL: 'รอตรวจ', PENDING: 'รอตรวจ', APPROVED: 'อนุมัติแล้ว', REJECTED: 'ปฏิเสธ' })
 const FIELD_LABELS = Object.freeze({ brand: 'ยี่ห้อ', model: 'รุ่น', color: 'สี', plateType: 'ประเภทป้าย', vehicleType: 'ประเภทรถ', contactName: 'ชื่อผู้ประสานงาน', contactPhone: 'เบอร์โทร', relationship: 'ความสัมพันธ์' })
 const when = (v) => formatBangkokDateTime(v, '—')
-const facts = computed(() => {
+// Owner 2026-11-25 ("หน้ารายละเอียดของรถ มีตารางและข้อมูลมาก จง refac/redesign"): an overview first —
+// what the vehicle is, who to contact, who registered it — as labelled values (label above value, never a
+// squeezed two-column table); dense lists (history, requests, access, QR) stay tables in their own tabs.
+const vehicleFacts = computed(() => {
   const v = vehicle.value
   return [
-    ['ทะเบียน', `${v.plate} · ${provinceLabel(v.province) || v.province}`],
-    ['ประเภทรถ', v.labels?.vehicleType || v.vehicleType],
-    ['ประเภทป้าย', v.labels?.plateType || v.plateType],
-    ['ยี่ห้อ / รุ่น', [v.brand, v.model].filter(Boolean).join(' ')],
-    ['สี', v.labels?.color || v.color],
+    ['ทะเบียน', v.plate], ['จังหวัด', provinceLabel(v.province) || v.province],
+    ['ประเภทรถ', v.labels?.vehicleType || v.vehicleType], ['ประเภทป้าย', v.labels?.plateType || v.plateType],
+    ['ยี่ห้อ', v.brand], ['รุ่น', v.model], ['สี', v.labels?.color || v.color],
+  ]
+})
+const recordFacts = computed(() => {
+  const v = vehicle.value
+  return [
     ['หน่วยงานที่รับลงทะเบียน', v.organization?.name || v.organization?.id],
     ['ลงทะเบียน (อนุมัติ) เมื่อ', formatBangkokDateTime(v.registeredAt, '')],
     ['แก้ไขล่าสุด', formatBangkokDateTime(v.updatedAt, '')],
@@ -63,6 +69,7 @@ const facts = computed(() => {
     ] : []),
   ]
 })
+const primaryContact = computed(() => contacts.value[0] || null)
 const historyLabels = Object.freeze({
   VEHICLE_UPDATED: 'แก้ไขข้อมูลยานพาหนะ', CONTACT_UPDATED: 'แก้ไขผู้ประสานงาน',
   REGISTRATION_APPROVED: 'อนุมัติการลงทะเบียน', VEHICLE_CANCELLED: 'ยกเลิกยานพาหนะ', PHOTO_REPLACED: 'เปลี่ยนรูปประกอบ',
@@ -106,26 +113,50 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
 <template>
   <div class="space-y-4">
     <section class="card card-border bg-base-100 shadow-none" aria-labelledby="vehicle-result-title">
-      <!-- Owner (mobile): plate + text were squeezed side by side and the QR badge text wrapped inside
-           the badge. Phones stack; badges hold short words only, dates go on their own line. -->
-      <div class="card-body flex-col items-start gap-3 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5">
-        <div class="vehicle-plate" role="group" aria-label="ป้ายทะเบียน"><h2 id="vehicle-result-title" class="text-3xl font-bold leading-tight">{{ vehicle.plate }}</h2><p class="text-lg font-medium">{{ provinceLabel(vehicle.province) || vehicle.province }}</p></div>
-        <div class="min-w-0 flex-1 space-y-2">
-          <p class="text-lg font-medium">{{ [vehicle.brand, vehicle.model, vehicle.labels?.color || vehicle.color].filter(Boolean).join(' · ') }}</p>
-          <p class="flex flex-wrap items-center gap-2"><span class="badge badge-success whitespace-nowrap">ใช้งานอยู่</span><span v-if="vehicle.qr?.known" class="badge whitespace-nowrap" :class="vehicle.qr.active ? 'badge-info' : 'badge-warning'">{{ vehicle.qr.active ? 'มี QR ใช้งาน' : 'ไม่มี QR' }}</span></p>
-          <p v-if="vehicle.qr?.active && vehicle.qr.issuedAt" class="text-sm text-base-content/80">ออก QR เมื่อ {{ formatBangkokDateTime(vehicle.qr.issuedAt, '') }}</p>
+      <div class="card-body gap-4 p-4 sm:p-5">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div class="vehicle-plate shrink-0" role="group" aria-label="ป้ายทะเบียน"><h2 id="vehicle-result-title" class="text-3xl font-bold leading-tight">{{ vehicle.plate }}</h2><p class="text-lg font-medium">{{ provinceLabel(vehicle.province) || vehicle.province }}</p></div>
+          <div class="min-w-0 flex-1 space-y-2">
+            <p class="text-xl font-semibold">{{ [vehicle.brand, vehicle.model].filter(Boolean).join(' ') || 'ไม่ระบุยี่ห้อ/รุ่น' }}</p>
+            <p class="flex flex-wrap items-center gap-2">
+              <span class="badge badge-success whitespace-nowrap">ใช้งานอยู่</span>
+              <span v-if="vehicle.qr?.known" class="badge whitespace-nowrap" :class="vehicle.qr.active ? 'badge-info' : 'badge-warning'">{{ vehicle.qr.active ? 'มี QR ใช้งาน' : 'ไม่มี QR ใช้งาน' }}</span>
+              <span v-if="vehicle.labels?.vehicleType || vehicle.vehicleType" class="badge badge-ghost whitespace-nowrap">{{ vehicle.labels?.vehicleType || vehicle.vehicleType }}</span>
+              <span v-if="vehicle.labels?.color || vehicle.color" class="badge badge-ghost whitespace-nowrap">สี{{ vehicle.labels?.color || vehicle.color }}</span>
+            </p>
+          </div>
         </div>
+        <dl class="vd-meta">
+          <div><dt>หน่วยงาน</dt><dd>{{ vehicle.organization?.name || '—' }}</dd></div>
+          <div><dt>อนุมัติเมื่อ</dt><dd>{{ formatBangkokDateTime(vehicle.registeredAt, '—') }}</dd></div>
+          <div v-if="vehicle.qr?.active && vehicle.qr.issuedAt"><dt>ออก QR เมื่อ</dt><dd>{{ formatBangkokDateTime(vehicle.qr.issuedAt, '—') }}</dd></div>
+        </dl>
       </div>
     </section>
 
-    <div role="tablist" class="tabs tabs-border flex-nowrap overflow-x-auto" aria-label="ข้อมูลยานพาหนะ">
+    <div role="tablist" class="vd-tabs tabs tabs-border sticky top-0 z-10 flex-nowrap overflow-x-auto bg-base-200" aria-label="ข้อมูลยานพาหนะ">
       <button v-for="tab in tabs" :id="`vt-${tab.id}`" :key="tab.id" role="tab" type="button" class="tab min-h-11 whitespace-nowrap" :class="{ 'tab-active': active === tab.id }" :aria-selected="active === tab.id" :aria-controls="`vp-${tab.id}`" @click="active = tab.id">{{ tab.label }}</button>
     </div>
 
-    <section v-show="active === 'facts'" id="vp-facts" role="tabpanel" aria-labelledby="vt-facts" class="card card-border bg-base-100 shadow-none">
-      <dl class="card-body grid gap-x-8 gap-y-3 p-5 sm:grid-cols-2">
-        <div v-for="[label, value] in facts" :key="label" class="flex justify-between gap-3 border-b border-base-200 pb-2"><dt class="text-base-content/80">{{ label }}</dt><dd class="text-right font-medium">{{ value || '—' }}</dd></div>
-      </dl>
+    <section v-show="active === 'facts'" id="vp-facts" role="tabpanel" aria-labelledby="vt-facts" class="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div class="card card-border bg-base-100 shadow-none"><div class="card-body gap-3 p-5">
+        <h3 class="font-semibold">ข้อมูลรถ</h3>
+        <dl class="vd-facts"><div v-for="[label, value] in vehicleFacts" :key="label"><dt>{{ label }}</dt><dd>{{ value || '—' }}</dd></div></dl>
+      </div></div>
+      <div class="grid content-start gap-4">
+        <div v-if="canReadContacts" class="card card-border bg-base-100 shadow-none"><div class="card-body gap-3 p-5">
+          <div class="flex items-center justify-between gap-2"><h3 class="font-semibold">ผู้ติดต่อหลัก</h3><button v-if="contacts.length > 1" class="btn btn-ghost btn-xs" type="button" @click="active = 'contacts'">ดูทั้งหมด ({{ contacts.length }})</button></div>
+          <p v-if="!primaryContact" class="text-base-content/80">ไม่มีผู้ประสานงานที่ใช้งานอยู่</p>
+          <div v-else class="flex flex-wrap items-center justify-between gap-3">
+            <div class="min-w-0"><p class="text-lg font-semibold">{{ primaryContact.name }}</p><p class="text-sm text-base-content/80">{{ relationshipLabel(primaryContact.relationship) || 'ไม่ระบุความสัมพันธ์' }} · <span class="whitespace-nowrap">{{ formatThaiPhone(primaryContact.phone) }}</span></p></div>
+            <a v-if="telHref(primaryContact.phone)" class="btn btn-primary min-h-11" :href="telHref(primaryContact.phone)" :aria-label="`โทรหา ${primaryContact.name}`">โทร</a>
+          </div>
+        </div></div>
+        <div class="card card-border bg-base-100 shadow-none"><div class="card-body gap-3 p-5">
+          <h3 class="font-semibold">การลงทะเบียนและการแก้ไข</h3>
+          <dl class="vd-facts vd-facts--stack"><div v-for="[label, value] in recordFacts" :key="label"><dt>{{ label }}</dt><dd>{{ value || '—' }}</dd></div></dl>
+        </div></div>
+      </div>
     </section>
 
     <section v-if="canReadContacts" v-show="active === 'contacts'" id="vp-contacts" role="tabpanel" aria-labelledby="vt-contacts" class="card card-border bg-base-100 shadow-none">
@@ -167,9 +198,10 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
     <section v-if="canReadHistory" v-show="active === 'history'" id="vp-history" role="tabpanel" aria-labelledby="vt-history" class="card card-border bg-base-100 shadow-none">
       <div class="card-body p-5">
         <div v-if="!result.history.length" class="alert shadow-none">ยังไม่มีประวัติ (รถที่ลงทะเบียนก่อนเวอร์ชัน 0.9.14 จะไม่มีเหตุการณ์อนุมัติในประวัตินี้)</div>
-        <ul v-else class="timeline timeline-vertical timeline-compact">
-          <li v-for="(entry, index) in result.history" :key="entry.id"><hr v-if="index"><div class="timeline-middle"><span class="status status-neutral" aria-hidden="true"></span></div><div class="timeline-end mb-4"><strong class="font-medium">{{ historyLabels[entry.action] || 'บันทึกการเปลี่ยนแปลง' }}</strong><p class="text-sm text-base-content/80">{{ formatBangkokDateTime(entry.occurredAt, '-') }}</p></div><hr v-if="index < result.history.length - 1"></li>
-        </ul>
+        <div v-else class="p6-table-wrap"><table class="p6-table" aria-label="ประวัติการเปลี่ยนแปลง">
+          <thead><tr><th>เมื่อ</th><th>รายการ</th></tr></thead>
+          <tbody><tr v-for="entry in result.history" :key="entry.id"><td class="p6-col-date">{{ formatBangkokDateTime(entry.occurredAt, '-') }}</td><td class="p6-col-text">{{ historyLabels[entry.action] || 'บันทึกการเปลี่ยนแปลง' }}</td></tr></tbody>
+        </table></div>
       </div>
     </section>
     <section v-if="loadQrHistory" v-show="active === 'qr'" id="vp-qr" role="tabpanel" aria-labelledby="vt-qr" class="card card-border bg-base-100 shadow-none">
@@ -191,11 +223,13 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
     <section v-if="extras.hasAdmin" v-show="active === 'origin'" id="vp-origin" role="tabpanel" aria-labelledby="vt-origin" class="card card-border bg-base-100 shadow-none">
       <div class="card-body gap-4 p-5">
         <h3 class="font-semibold">การลงทะเบียน</h3>
-        <div v-if="extras.registration" class="p6-table-wrap"><table class="p6-table"><tbody>
-          <tr><th>ช่องทาง</th><td>{{ extras.registration.viaCampaign ? `แคมเปญ ${extras.registration.campaignName || '(ไม่มีชื่อ)'}` : 'บันทึกโดยเจ้าหน้าที่' }}</td></tr>
-          <tr><th>ยื่นคำขอเมื่อ</th><td>{{ when(extras.registration.submittedAt) }}</td></tr>
-          <tr><th>ผลการพิจารณา</th><td>{{ REQUEST_LABELS[extras.registration.status] || extras.registration.status }} · {{ when(extras.registration.reviewedAt) }} · {{ extras.registration.reviewedByName || '—' }}</td></tr>
-        </tbody></table></div>
+        <dl v-if="extras.registration" class="vd-facts">
+          <div><dt>ช่องทาง</dt><dd>{{ extras.registration.viaCampaign ? `แคมเปญ ${extras.registration.campaignName || '(ไม่มีชื่อ)'}` : 'บันทึกโดยเจ้าหน้าที่' }}</dd></div>
+          <div><dt>ยื่นคำขอเมื่อ</dt><dd>{{ when(extras.registration.submittedAt) }}</dd></div>
+          <div><dt>ผลการพิจารณา</dt><dd>{{ REQUEST_LABELS[extras.registration.status] || extras.registration.status }}</dd></div>
+          <div><dt>พิจารณาเมื่อ</dt><dd>{{ when(extras.registration.reviewedAt) }}</dd></div>
+          <div><dt>ผู้พิจารณา</dt><dd>{{ extras.registration.reviewedByName || '—' }}</dd></div>
+        </dl>
         <p v-else class="text-base-content/80">ไม่พบคำขอลงทะเบียนของรถคันนี้</p>
         <h3 class="font-semibold">คำขอเปลี่ยนแปลงจากเจ้าของ ({{ extras.changeRequests.length }})</h3>
         <div v-if="extras.changeRequests.length" class="p6-table-wrap"><table class="p6-table">
@@ -217,3 +251,17 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
     </section>
   </div>
 </template>
+
+<style>
+/* Vehicle detail: labelled values — label (small, muted) above the value, columns as wide as the screen
+   allows (min 11rem each), so short values never wrap and nothing is squeezed. */
+.vd-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: 0.875rem 1rem; }
+.vd-facts--stack { grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); }
+.vd-facts dt, .vd-meta dt { font-size: 0.8125rem; color: color-mix(in oklab, var(--color-base-content) 70%, transparent); }
+.vd-facts dd { margin: 0.125rem 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.vd-meta { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; border-top: 1px solid var(--color-base-300); padding-top: 0.75rem; }
+.vd-meta dd { margin: 0; font-weight: 500; white-space: nowrap; }
+/* tabs scroll sideways on narrow screens without a heavy scrollbar */
+.vd-tabs { scrollbar-width: none; }
+.vd-tabs::-webkit-scrollbar { display: none; }
+</style>
