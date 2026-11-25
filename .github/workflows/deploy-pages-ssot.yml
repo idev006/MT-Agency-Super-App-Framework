@@ -33,7 +33,6 @@ jobs:
         env:
           VITE_BASE_PATH: /MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/
           VITE_WORKER_API_URL: https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/frontend
-          VITE_GAS_API_URL: https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec
         run: npm run build
       - name: Build disposable Pages artifact
         run: node scripts/build-pages.mjs _site

@@ -40,6 +40,5 @@ watch(() => route.params.vehicleId, (id) => { if (route.name === 'vehicle-detail
       <div v-else-if="detail.phase.value === 'recoverable-error' || detail.phase.value === 'error'" class="alert alert-error items-start shadow-none"><div class="w-full"><h2 class="font-medium">โหลดรายละเอียดไม่สำเร็จ</h2><p class="mt-1">{{ errorCopy }}</p><button v-if="detail.phase.value === 'recoverable-error'" class="btn btn-sm mt-3" type="button" @click="detail.retry">ลองอีกครั้ง</button><details v-if="detail.failure.value?.requestId" class="collapse collapse-arrow mt-3 bg-base-100 text-base-content"><summary class="collapse-title font-medium">รายละเอียดสำหรับเจ้าหน้าที่สนับสนุน</summary><div class="collapse-content break-all font-mono text-sm">{{ detail.failure.value.requestId }}</div></details></div></div>
       <VehicleDetailTabs v-else-if="detail.phase.value === 'success'" :result="detail.result.value" :load-photo="loadPhoto" :can-read-contacts="permissionSet.has('vehicle.contact.read')" :can-read-photos="permissionSet.has('vehicle.photos.read')" :can-read-history="permissionSet.has('vehicle.history.read')" />
     </section>
-    <template #footer><p class="text-sm text-base-content/70">ระบบส่วนกลางตรวจสอบเซสชัน สิทธิ์ ขอบเขตข้อมูล และบันทึกการเปิดรายละเอียดทุกครั้ง</p></template>
   </PageTemplateComponent>
 </template>

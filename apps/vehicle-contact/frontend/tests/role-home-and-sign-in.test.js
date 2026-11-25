@@ -49,10 +49,10 @@ describe('R1 sign-in', () => {
     expect(signInMessage(null)).toBe('')
   })
 
-  it('no developer wording on the sign-in screen; connection settings are tucked away', () => {
+  it('no developer wording and no connection settings on the sign-in screen (owner 2026-11-25)', () => {
     const view = src('views/SignInView.vue'), form = src('components/auth/SignInForm.vue')
     for (const word of ['APPLICATION SHELL', 'ยืนยันตัวตนกับ GAS', 'บัญชี development', 'route-mini']) expect(view).not.toContain(word)
-    expect(form).toMatch(/<details[^>]*:open="!endpointValid"/)
-    expect(form.indexOf('<TransportSelector')).toBeGreaterThan(form.indexOf('<details'))
+    for (const word of ['TransportSelector', 'ตั้งค่าการเชื่อมต่อ', 'GAS', 'Cloudflare']) expect(form).not.toContain(word)
+    expect(form).toContain('กรุณาติดต่อผู้ดูแลระบบ')
   })
 })

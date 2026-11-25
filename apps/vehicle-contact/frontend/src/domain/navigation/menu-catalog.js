@@ -1,6 +1,6 @@
 export const menuCatalog = Object.freeze([
   { id: 'dashboard', icon: 'dashboard', label: 'ภาพรวม', description: 'งานที่คุณได้รับสิทธิ์และสถานะการใช้งาน', route: 'dashboard', shared: true },
-  { id: 'connection', icon: 'connection', label: 'ตรวจสอบการเชื่อมต่อ', description: 'ตรวจสอบเส้นทางเชื่อมต่อระบบส่วนกลาง', route: 'connection-test', shared: true },
+  { id: 'about', icon: 'connection', label: 'เกี่ยวกับระบบ', description: 'สถานะ เวอร์ชัน และการคุ้มครองข้อมูลของระบบ', route: 'about', shared: true },
   { id: 'account-security', icon: 'account', label: 'บัญชีและความปลอดภัย', description: 'เปลี่ยนรหัสผ่านและจัดการการเชื่อมโยงบัญชี', route: 'account-security', permissionsAny: ['session.authenticated'] },
   { id: 'vehicle-search', label: 'ค้นหายานพาหนะ', description: 'ค้นหาทะเบียนและข้อมูลผู้ประสานงาน', route: 'vehicle-search', permissionsAny: ['vehicle.lookup'] },
   { id: 'qr-resolve', icon: 'qr', label: 'ตรวจสอบ QR ยานพาหนะ', description: 'ตรวจสอบ QR และดูข้อมูลรถตามสิทธิ์', route: 'qr-resolve', permissionsAny: ['vehicle.lookup'] },

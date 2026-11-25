@@ -90,7 +90,6 @@ async function copyToken() { copied.value = await copySecret(token.value) }
     </div></div>
     <div v-else-if="work.phase.value === 'uncertain'" class="alert alert-warning mt-5">ไม่ทราบผลแน่ชัด ค้นหารถคันนี้อีกครั้งเพื่อตรวจสถานะก่อนดำเนินการซ้ำ</div>
     <div v-else-if="work.phase.value === 'error'" class="alert alert-error mt-5">ดำเนินการไม่สำเร็จ ({{ work.failure.value?.code }})</div>
-    <template #footer><p class="text-sm text-base-content/80">ทุกการค้นหาและการดำเนินการกับ QR ถูกบันทึก audit · ระบบไม่เก็บรหัส QR ใน browser storage</p></template>
   </PageTemplateComponent>
   <ConfirmDialog :open="Boolean(pendingAction)" :title="`${labels[pendingAction]}หรือไม่`" :message="warnings[pendingAction] || ''" :confirm-label="labels[pendingAction]" cancel-label="ไม่ใช่ กลับไป" :busy="work.phase.value === 'submitting'" @cancel="pendingAction = ''" @confirm="confirm" />
 </template>

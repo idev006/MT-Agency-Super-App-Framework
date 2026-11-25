@@ -33,7 +33,6 @@ onMounted(() => administration.load())
       <OrganizationAdministrationPanel :organizations="administration.organizations.value" :can-manage="administration.canManage.value" :busy="administration.actionPhase.value === 'submitting'" @create="administration.create" @update="administration.update" @disable="disableTarget = $event" />
       <PaginationControl v-if="administration.pagination.value.total" class="mt-4" :page="administration.page.value" :page-size="administration.pageSize.value" :total-items="administration.pagination.value.total" :disabled="administration.phase.value === 'loading'" label="แบ่งหน้ารายการหน่วยงาน" @update:page="administration.changePage" @update:page-size="administration.changePageSize" />
     </template>
-    <template #footer><p class="text-sm text-base-content/70">การปิดใช้งานไม่ลบประวัติเดิม และ GAS จะตรวจสิทธิ์ซ้ำทุกคำขอ</p></template>
   </PageTemplateComponent>
   <ConfirmDialog :open="Boolean(disableTarget)" title="ปิดใช้งานหน่วยงานหรือไม่" :message="`หน่วยงาน ${disableTarget?.name || ''} จะไม่พร้อมสำหรับงานใหม่ แต่ประวัติเดิมยังคงอยู่`" confirm-label="ปิดใช้งาน" :busy="administration.actionPhase.value === 'submitting'" @cancel="disableTarget = null" @confirm="disableConfirmed" />
 </template>

@@ -5,14 +5,14 @@ import { menuForPermissions } from '../src/domain/navigation/menu-catalog.js'
 describe('permission-driven menu SSOT', () => {
   it('shows shared and vehicle lookup menus without admin-only items', () => {
     const ids = menuForPermissions(['session.authenticated', 'vehicle.lookup']).map((item) => item.id)
-    expect(ids).toEqual(['dashboard', 'connection', 'account-security', 'vehicle-search', 'qr-resolve'])
+    expect(ids).toEqual(['dashboard', 'about', 'account-security', 'vehicle-search', 'qr-resolve'])
   })
 
   it('covers the GAS SYSTEM_ADMIN baseline without implicit operational access', () => {
     const items = menuForPermissions(ROLE_PERMISSIONS.SYSTEM_ADMIN)
     const ids = items.map((item) => item.id)
     expect(ids).toEqual([
-      'dashboard', 'connection', 'account-security', 'vehicle-registry', 'user-admin', 'organizations',
+      'dashboard', 'about', 'account-security', 'vehicle-registry', 'user-admin', 'organizations',
       'campaigns', 'qr-governance', 'system-settings', 'retention', 'audit',
     ])
     expect(ids).not.toContain('vehicle-search')
@@ -25,7 +25,7 @@ describe('permission-driven menu SSOT', () => {
 
   it('unions permission overrides without relying on a role name', () => {
     const ids = menuForPermissions(['vehicle.change.submit', 'vehicle.lookup']).map((item) => item.id)
-    expect(ids).toEqual(['dashboard', 'connection', 'vehicle-search', 'qr-resolve', 'my-vehicles'])
+    expect(ids).toEqual(['dashboard', 'about', 'vehicle-search', 'qr-resolve', 'my-vehicles'])
   })
 
   it('gives the combined system and registration administrator a routed review menu', () => {
@@ -50,10 +50,10 @@ describe('permission-driven menu SSOT', () => {
     ['vehicle.list', 'vehicle-registry'],
   ])('maps %s to only its authorized capability group', (permission, expectedId) => {
     const ids = menuForPermissions([permission]).map((item) => item.id)
-    expect(ids).toEqual(['dashboard', 'connection', expectedId])
+    expect(ids).toEqual(['dashboard', 'about', expectedId])
   })
 
   it('does not manufacture permissions from a role code', () => {
-    expect(menuForPermissions(['SYSTEM_ADMIN']).map((item) => item.id)).toEqual(['dashboard', 'connection'])
+    expect(menuForPermissions(['SYSTEM_ADMIN']).map((item) => item.id)).toEqual(['dashboard', 'about'])
   })
 })

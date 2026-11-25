@@ -28,6 +28,5 @@ const pending = usePendingWork(permissions)
       <div class="mb-5"><h2 class="text-2xl font-semibold">งานทั้งหมดของคุณ</h2><p class="mt-1 leading-7 text-base-content/70">แสดงเฉพาะงานที่บัญชีนี้มีสิทธิ์</p></div>
       <RoleMenuGrid :items="menuItems" />
     </section>
-    <template #footer><p class="text-sm text-base-content/70">ระบบส่วนกลางจะตรวจสอบสิทธิ์อีกครั้งก่อนเปิดเผยข้อมูลหรือบันทึกการเปลี่ยนแปลง</p></template>
   </PageTemplateComponent>
 </template>

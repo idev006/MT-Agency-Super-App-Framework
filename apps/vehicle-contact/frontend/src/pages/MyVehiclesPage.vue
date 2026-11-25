@@ -139,7 +139,6 @@ async function confirmSubmit() {
 
     <div v-if="work.actionPhase.value === 'uncertain'" class="alert alert-warning mt-5">ไม่ทราบผลการส่งคำขอแน่ชัด อย่าเพิ่งส่งซ้ำ ดูรายการ “คำขอของฉัน” ก่อน ถ้าไม่มีคำขอใหม่ค่อยส่งอีกครั้ง</div>
     <div v-else-if="work.actionPhase.value === 'error'" class="alert alert-error mt-5">ส่งคำขอไม่สำเร็จ ({{ work.failure.value?.code }})</div>
-    <template #footer><p class="text-sm text-base-content/80">สิทธิ์บนหน้าจอช่วยนำทางเท่านั้น GAS จะตรวจความเป็นเจ้าของและสิทธิ์อีกครั้งก่อนรับคำขอ</p></template>
   </PageTemplateComponent>
 
   <ConfirmDialog :open="confirming" title="ส่งคำขอเปลี่ยนแปลงหรือไม่" :message="`ระบบจะส่ง ${filledCount} รายการที่กรอกให้ผู้ตรวจสอบพิจารณา ข้อมูลจริงจะเปลี่ยนเมื่อได้รับอนุมัติเท่านั้น`" confirm-label="ยืนยันการส่งคำขอ" :busy="work.actionPhase.value === 'submitting'" @cancel="confirming = false" @confirm="confirmSubmit" />

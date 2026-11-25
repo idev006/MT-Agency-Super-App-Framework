@@ -112,7 +112,7 @@ async function confirmDecision() {
                 </tbody>
               </table>
             </div>
-            <p class="mt-2 text-xs text-base-content/80">ค่าปัจจุบันดึงจาก GAS ตามสิทธิ์ของเซสชัน การอนุมัติจะปรับปรุงยานพาหนะและผู้ประสานงานหลักทันที</p>
+            <p class="mt-2 text-xs text-base-content/80">ค่าปัจจุบันจากระบบ ตามสิทธิ์ของเซสชัน การอนุมัติจะปรับปรุงยานพาหนะและผู้ประสานงานหลักทันที</p>
 
             <div class="sticky bottom-0 z-10 mt-5 flex flex-col-reverse gap-3 border-t border-base-300 bg-base-100 py-3 sm:static sm:flex-row sm:justify-end sm:border-0 sm:py-0"><button class="btn" type="button" @click="requestDecision('REJECT')">ปฏิเสธคำขอ</button><button class="btn btn-primary" type="button" @click="requestDecision('APPROVE')">อนุมัติการเปลี่ยนแปลง</button></div>
           </template>
@@ -123,7 +123,6 @@ async function confirmDecision() {
     <div v-if="work.actionPhase.value === 'uncertain'" class="alert alert-warning mt-5" role="alert"><div><p class="font-semibold">ไม่ทราบผลแน่ชัด (การเชื่อมต่อขาดระหว่างบันทึก)</p><p class="text-sm">ห้ามกดอนุมัติหรือปฏิเสธซ้ำทันที กด “ตรวจสถานะคำขอ” เพื่ออ่านคิวล่าสุดจากระบบก่อน</p><p v-if="work.outcome.value === 'still-pending'" class="mt-1 text-sm font-semibold">คำขอยังรอตรวจ — ยังไม่ถูกบันทึกผล ตัดสินใจใหม่ได้</p><p v-else-if="work.outcome.value === 'unknown'" class="mt-1 text-sm font-semibold">ไม่พบคำขอในหน้านี้ แต่คิวมีหลายหน้า — ตรวจหน้าอื่นก่อนตัดสินใจ</p></div><button class="btn btn-sm" type="button" @click="work.checkOutcome">ตรวจสถานะคำขอ</button></div>
     <div v-else-if="work.outcome.value === 'decided'" class="alert alert-success mt-5" role="status">คำขอไม่อยู่ในคิวรอแล้ว — ระบบบันทึกผลการตัดสินใจไปแล้ว</div>
     <div v-else-if="work.actionPhase.value === 'error'" class="alert alert-error mt-5">บันทึกผลไม่สำเร็จ ({{ work.failure.value?.code }})</div>
-    <template #footer><p class="text-sm text-base-content/80">สิทธิ์บนหน้าจอช่วยนำทางเท่านั้น GAS จะตรวจสิทธิ์และสถานะคำขออีกครั้งก่อนบันทึกผล</p></template>
   </PageTemplateComponent>
 
   <ConfirmDialog :open="Boolean(pendingDecision)" :title="pendingDecision?.decision === 'APPROVE' ? 'อนุมัติการเปลี่ยนแปลงหรือไม่' : 'ปฏิเสธคำขอหรือไม่'" :message="pendingDecision?.decision === 'APPROVE' ? 'ระบบจะปรับปรุงข้อมูลยานพาหนะและผู้ประสานงานหลักตามค่าที่เสนอทันที' : 'คำขอนี้จะถูกปฏิเสธและไม่สามารถอนุมัติซ้ำจากคิวเดิมได้'" :confirm-label="pendingDecision?.decision === 'APPROVE' ? 'ยืนยันการอนุมัติ' : 'ยืนยันการปฏิเสธ'" :busy="work.actionPhase.value === 'submitting'" @cancel="pendingDecision = null" @confirm="confirmDecision" />

@@ -25,27 +25,14 @@ describe('session and endpoint refresh persistence', () => {
     globalThis.sessionStorage = memoryStorage()
   })
 
-  it('restores the last valid GAS and Worker URLs independently', () => {
-    const first = useSessionStore(createPinia())
-    first.setTransport('direct')
-    first.updateEndpoint(gasEndpoint)
-    first.setTransport('worker')
-    first.updateEndpoint(workerEndpoint)
-
-    const refreshed = useSessionStore(createPinia())
-    expect(refreshed.transport).toBe('worker')
-    expect(refreshed.directEndpoint).toBe(gasEndpoint)
-    expect(refreshed.workerEndpoint).toBe(workerEndpoint)
-  })
-
-  it('does not replace the last valid persisted URL with an unfinished edit', () => {
-    const first = useSessionStore(createPinia())
-    first.setTransport('direct')
-    first.updateEndpoint(gasEndpoint)
-    first.updateEndpoint('https://script.google.com/macros/s/')
-
-    const refreshed = useSessionStore(createPinia())
-    expect(refreshed.directEndpoint).toBe(gasEndpoint)
+  it('the build decides the channel: saved channel/URL overrides from older versions are ignored and removed', () => {
+    globalThis.localStorage.setItem('p6vc-api-transport', 'direct')
+    globalThis.localStorage.setItem('p6vc-gas-endpoint', 'https://script.google.com/macros/s/attacker-chosen/exec')
+    globalThis.localStorage.setItem('p6vc-worker-endpoint', 'https://evil.example/api/frontend')
+    const store = useSessionStore(createPinia())
+    expect(store.directEndpoint).not.toContain('attacker-chosen')
+    expect(store.workerEndpoint).not.toContain('evil.example')
+    for (const key of ['p6vc-api-transport', 'p6vc-gas-endpoint', 'p6vc-worker-endpoint']) expect(globalThis.localStorage.getItem(key)).toBeNull()
   })
 
   it('keeps a previously authenticated session during a transient refresh failure', async () => {

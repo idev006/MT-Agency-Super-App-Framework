@@ -9,7 +9,6 @@ const props = defineProps({
 })
 
 const presentedRoles = computed(() => labelsForRoles(props.roles).join(' · ') || 'ยังไม่ได้กำหนดบทบาท')
-const connectionLabel = computed(() => props.transport === 'worker' ? 'ผ่าน Cloudflare' : 'เชื่อม GAS โดยตรง')
 const expiryTime = computed(() => {
   if (!props.expiresAt || Number.isNaN(Date.parse(props.expiresAt))) return ''
   return new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit' }).format(new Date(props.expiresAt))
@@ -30,7 +29,7 @@ const expiryLabel = computed(() => {
       <span class="font-medium">{{ presentedRoles }}</span><span v-if="expiryTime" class="text-base-content/80"> · ใช้ได้ถึง {{ expiryTime }} น.</span>
     </summary>
     <div class="collapse-content text-sm">
-      <p>เส้นทางเชื่อมต่อ: {{ connectionLabel }} <span class="status status-success" aria-hidden="true"></span> พร้อมใช้งาน</p>
+      <p><span class="status status-success" aria-hidden="true"></span> ระบบพร้อมใช้งาน</p>
       <p>เซสชันสิ้นสุด: {{ expiryLabel }} (เวลาไทย)</p>
       <p class="sr-only">รหัสบทบาท {{ roles.join(', ') }}</p>
     </div>
@@ -42,8 +41,8 @@ const expiryLabel = computed(() => {
       <div class="stat-desc sr-only">รหัสบทบาท {{ roles.join(', ') }}</div>
     </div>
     <div class="stat min-w-0">
-      <div class="stat-title">เส้นทางเชื่อมต่อ</div>
-      <div class="stat-value text-base font-semibold">{{ connectionLabel }}</div>
+      <div class="stat-title">สถานะระบบ</div>
+      <div class="stat-value text-base font-semibold">เชื่อมต่อแล้ว</div>
       <div class="stat-desc flex items-center gap-2"><span class="status status-success" aria-hidden="true"></span>พร้อมใช้งาน</div>
     </div>
     <div class="stat min-w-0">

@@ -29,6 +29,5 @@ onMounted(() => systemSettings.load())
       <div v-else-if="systemSettings.savePhase.value === 'success'" class="alert alert-success mb-4"><span>บันทึกการตั้งค่าระบบแล้ว</span></div>
       <SystemSettingsForm :settings="systemSettings.settings.value" :can-manage="systemSettings.canManage.value" :busy="systemSettings.savePhase.value === 'submitting'" @save="systemSettings.save" />
     </template>
-    <template #footer><p class="text-sm text-base-content/70">GAS ตรวจช่วงค่าและบันทึก audit ของการเปลี่ยนแปลงทุกครั้ง</p></template>
   </PageTemplateComponent>
 </template>

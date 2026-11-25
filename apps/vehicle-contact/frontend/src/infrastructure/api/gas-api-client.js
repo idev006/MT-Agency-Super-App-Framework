@@ -62,7 +62,7 @@ export class GasApiClient {
       })
 
       if (!response.ok) {
-        throw new GasApiError(`GAS ตอบกลับด้วย HTTP ${response.status}`, {
+        throw new GasApiError(`ระบบตอบกลับผิดปกติ (HTTP ${response.status})`, {
           code: `HTTP_${response.status}`,
           requestId,
         })
@@ -72,7 +72,7 @@ export class GasApiClient {
       try {
         envelope = await response.json()
       } catch (cause) {
-        throw new GasApiError('GAS ไม่ได้ตอบกลับเป็น JSON', {
+        throw new GasApiError('ระบบตอบกลับในรูปแบบที่ไม่ถูกต้อง', {
           code: 'INVALID_JSON',
           requestId,
           cause,
@@ -80,14 +80,14 @@ export class GasApiClient {
       }
 
       if (!envelope || typeof envelope.ok !== 'boolean' || !('data' in envelope) || !('error' in envelope)) {
-        throw new GasApiError('รูปแบบข้อมูลตอบกลับจาก GAS ไม่ตรงตามสัญญา', {
+        throw new GasApiError('รูปแบบข้อมูลตอบกลับจากระบบไม่ตรงตามสัญญา', {
           code: 'INVALID_ENVELOPE',
           requestId: envelope?.requestId || requestId,
         })
       }
 
       if (!envelope.ok) {
-        throw new GasApiError(envelope.error?.message || 'GAS ปฏิเสธคำขอ', {
+        throw new GasApiError(envelope.error?.message || 'ระบบปฏิเสธคำขอ', {
           code: envelope.error?.code || 'API_ERROR',
           requestId: envelope.requestId || requestId,
         })
@@ -106,7 +106,7 @@ export class GasApiClient {
           cause: error,
         })
       }
-      throw new GasApiError('เบราว์เซอร์เชื่อมต่อ GAS ไม่สำเร็จ', {
+      throw new GasApiError('เชื่อมต่อระบบไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่', {
         code: 'NETWORK_ERROR',
         requestId,
         cause: error,

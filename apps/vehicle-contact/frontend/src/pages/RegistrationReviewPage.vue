@@ -169,7 +169,6 @@ async function confirmDecision() {
 
     <div v-if="work.actionPhase.value === 'uncertain'" class="alert alert-warning mt-3" role="alert"><div><p class="font-semibold">ไม่ทราบผลแน่ชัด (การเชื่อมต่อขาดระหว่างบันทึก)</p><p class="text-sm">กด “ส่งการตัดสินใจเดิมซ้ำ” ได้อย่างปลอดภัย ถ้าบันทึกไปแล้ว ระบบจะคืนผลเดิม (รวม QR เดิม) และไม่สร้างซ้ำ ห้ามเปลี่ยนเป็นการตัดสินใจอื่น</p></div><button class="btn btn-sm" type="button" @click="work.resendDecision">ส่งการตัดสินใจเดิมซ้ำ ({{ work.lastDecision.value?.decision === 'APPROVE' ? 'อนุมัติ' : 'ปฏิเสธ' }})</button></div>
     <div v-else-if="work.actionPhase.value === 'error'" class="alert alert-error mt-3">บันทึกผลไม่สำเร็จ ({{ work.failure.value?.code }})</div>
-    <template #footer><p class="text-sm text-base-content/80">สิทธิ์บนหน้าจอช่วยนำทางเท่านั้น GAS จะตรวจสิทธิ์และสถานะคำขออีกครั้งก่อนบันทึกผล</p></template>
   </PageTemplateComponent>
 
   <ConfirmDialog :open="Boolean(pendingDecision)" :title="pendingDecision?.decision === 'APPROVE' ? 'อนุมัติการลงทะเบียนหรือไม่' : 'ปฏิเสธคำขอหรือไม่'" :message="pendingDecision?.decision === 'APPROVE' ? 'ระบบจะสร้างข้อมูลยานพาหนะ ผู้ประสานงาน ภาพ และ QR จากคำขอนี้' : 'คำขอนี้จะถูกปฏิเสธและไม่สามารถอนุมัติซ้ำจากคิวเดิมได้'" :confirm-label="pendingDecision?.decision === 'APPROVE' ? 'ยืนยันการอนุมัติ' : 'ยืนยันการปฏิเสธ'" :busy="work.actionPhase.value === 'submitting'" @cancel="pendingDecision = null" @confirm="confirmDecision" />

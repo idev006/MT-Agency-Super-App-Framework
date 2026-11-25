@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { loadRememberedCredentials, saveRememberedCredentials } from '../../application/auth/remembered-credentials.js'
 import { useSessionStore } from '../../stores/session.js'
-import TransportSelector from './TransportSelector.vue'
 import { signInMessage } from '../../application/auth/sign-in-messages.js'
 const router = useRouter()
 const auth = useSessionStore()
@@ -42,9 +41,6 @@ async function submit() {
     <button class="btn btn-primary w-full" type="submit" :disabled="busy || !endpointValid || !form.username.trim() || !form.password">
       <span v-if="phase === 'signing-in'" class="loading loading-spinner loading-sm"></span>{{ phase === 'signing-in' ? 'กำลังเข้าสู่ระบบ' : 'เข้าสู่ระบบ' }}
     </button>
-    <details class="collapse collapse-arrow border border-base-300 bg-base-100" :open="!endpointValid">
-      <summary class="collapse-title text-sm font-medium">ตั้งค่าการเชื่อมต่อ (สำหรับผู้ดูแลระบบ)<span class="ml-2 badge badge-ghost badge-sm">{{ transport === 'worker' ? 'ผ่าน Cloudflare' : 'ตรงไป GAS' }}</span></summary>
-      <div class="collapse-content"><TransportSelector /></div>
-    </details>
+    <p v-if="!endpointValid" class="alert alert-warning text-sm" role="alert">ยังไม่ได้กำหนดการเชื่อมต่อระบบในรุ่นนี้ กรุณาติดต่อผู้ดูแลระบบ</p>
   </form>
 </template>
