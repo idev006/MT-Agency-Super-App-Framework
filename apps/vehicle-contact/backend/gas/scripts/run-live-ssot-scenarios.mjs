@@ -14,6 +14,7 @@
 //   P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE \
 //     node scripts/run-live-ssot-scenarios.mjs
 import './load-env.mjs';
+import {resolveApiBaseUrl} from './trusted-endpoint.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import {pathToFileURL} from 'node:url';
@@ -43,9 +44,9 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
   const blocked=r=>{report.status='BLOCKED';report.reason=r;save();return report;};
   if(env.P6VC_ALLOW_OWNER_DEV_WRITES!==WRITE_GATE)return blocked('MISSING_WRITE_GATE');
   if(env.P6VC_ALLOW_FIRESTORE_DEV_PROBE!==PROBE_GATE||!env.GOOGLE_APPLICATION_CREDENTIALS)return blocked('MISSING_FIRESTORE_PROBE_GATE');
-  const url=env.P6VC_GAS_EXEC_URL;
-  // GAS Web App or the project's Cloud Run API (VC-ADR-033) — same v1 envelope.
-  if(!/^(https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec|https:\/\/p6vc-api-[0-9]+\.asia-southeast3\.run\.app)$/.test(url||''))return blocked('INVALID_EXEC_URL');
+  // SIVP section 10: exact match against contracts/trusted-endpoints.v1.json; conflicting config fails closed.
+  let target;try{target=resolveApiBaseUrl(env);}catch(e){return blocked('INVALID_EXEC_URL:'+e.message);}
+  const url=target.url;report.endpointId=target.id;report.endpointKind=target.kind;
   if(!env.P6VC_ADMIN_USER||!env.P6VC_ADMIN_PASS)return blocked('MISSING_ADMIN_CREDENTIALS');
   const call=async(op,payload={},sessionToken)=>{const [group,...a]=op.split('.');
     try{const r=await fetchImpl(url,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},

@@ -7,6 +7,7 @@ import './load-env.mjs';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import {resolveApiBaseUrl} from './trusted-endpoint.mjs';
 
 const inventory=JSON.parse(fs.readFileSync(new URL('../../../contracts/api-inventory.v1.json',import.meta.url),'utf8'));
 const expectedOperations=new Set(inventory.operations.map(x=>x.group+'.'+x.action));
@@ -289,11 +290,10 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 const isCli=process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url);
 if(isCli){
- const url=process.env.P6VC_GAS_EXEC_URL;
+ // SIVP section 10: exact match against contracts/trusted-endpoints.v1.json; conflicting config fails closed.
+ const target=resolveApiBaseUrl(process.env),url=target.url;
  const username=process.env.P6VC_TEST_USERNAME;
  const testPassword=process.env.P6VC_TEST_PASSWORD;
- // GAS Web App, or the project's Cloud Run API (VC-ADR-033) — same v1 envelope.
- assert.match(url||'',/^(https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec|https:\/\/p6vc-api-[0-9]+\.asia-southeast3\.run\.app)$/);
  assert.ok(username&&testPassword,'P6VC test credentials are required');
  assert.equal(process.env.P6VC_ALLOW_OWNER_DEV_WRITES,'RUN_SYNTHETIC_OWNER_DEV');
 
