@@ -12,18 +12,25 @@ const clean=(value,max=120)=>{
 const missingTable=error=>String(error?.message||'').startsWith('MISSING_TABLE');
 // The three reference reads are independent: ONE parallel round when the store supports
 // readMany (Firestore). The sequential path keeps the Sheets MISSING_TABLE tolerance.
-function loadAll(store){
+// TUNEUP R2: vc_reference_values (645 rows) was read IN FULL on every references.registration and
+// every registration submit/approve. Those rows change only through the offline seed installer, so a
+// host may pass a process memo (Cloud Run: a few minutes); organizations + the enforcement setting
+// stay LIVE (an org disabled now is refused now). Only ACTIVE organizations are read.
+function loadAll(store,memo){
  if(typeof store.readMany==='function'){
-  const [raw,orgRows,setting]=store.readMany([{kind:'list',name:'vc_reference_values'},{kind:'list',name:'vc_organizations'},
-   {kind:'one',name:'vc_settings',filter:{key:'registration_reference_enforcement'}}]);
-  return {raw,orgRows,setting};
+  const cachedRaw=memo?memo.get():undefined;
+  const reqs=[{kind:'list',name:'vc_organizations',filter:{status:'ACTIVE'}},{kind:'one',name:'vc_settings',filter:{key:'registration_reference_enforcement'}}];
+  if(cachedRaw===undefined)reqs.push({kind:'list',name:'vc_reference_values'});
+  const [orgRows,setting,fresh]=store.readMany(reqs);
+  if(cachedRaw===undefined&&memo)memo.put(fresh);
+  return {raw:cachedRaw===undefined?fresh:cachedRaw,orgRows,setting};
  }
  const guard=(fn,fallback)=>{try{return fn();}catch(error){if(missingTable(error))return fallback;throw error;}};
  return {raw:guard(()=>store.list('vc_reference_values'),null),orgRows:guard(()=>store.list('vc_organizations'),[]),
   setting:guard(()=>store.one('vc_settings',{key:'registration_reference_enforcement'}),null)};
 }
-function normalize(store,security){
- const {raw,orgRows,setting}=loadAll(store);
+function normalize(store,security,memo){
+ const {raw,orgRows,setting}=loadAll(store,memo);
  const empty=Object.fromEntries(Object.values(CATALOGS).map(key=>[key,[]]));
  if(raw===null)return {mode:'LEGACY',version:security.sha256('P6VC_REFERENCE_LEGACY'),lists:empty,organizations:[],policies:{}};
  if(!Array.isArray(raw)||raw.length>MAX_ROWS)throw new Error('REFERENCE_DATA_BOUNDS');
@@ -60,8 +67,8 @@ function normalize(store,security){
  const canonical=JSON.stringify({lists,organizations,policies});
  return {mode,version:security.sha256(canonical),lists,organizations,policies};
 }
-export function createReferenceOperations({store,security}){
- const get=()=>normalize(store,security);
+export function createReferenceOperations({store,security,memo=null}){
+ const get=()=>normalize(store,security,memo);
  function assertRegistration(payload){
   const result=get(),supplied=payload.referenceVersion;
   if(result.mode==='LEGACY')return result;

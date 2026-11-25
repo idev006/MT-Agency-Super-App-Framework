@@ -1,6 +1,8 @@
 import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition} from '../../domain/policies/VehicleLifecycle.js';
 import {qrReason,QR_SYSTEM_REASONS} from '../../domain/policies/QrReasonPolicy.js';
-import {paginate} from '../pagination/Pagination.js';
+import {paginate,readPage} from '../pagination/Pagination.js';
+// TUNEUP R1: ACTIVE vehicles with this business key — an equality query (index plate_normalized+province_code+status).
+const activeByPlate=(store,plate,province)=>store.list('vc_vehicles',{plate_normalized:String(plate),province_code:String(province),status:'ACTIVE'});
 import {createChangeReview} from './ChangeReviewOperation.js';
 import {createQrHistory} from './QrHistoryOperation.js';
 import {createVehicle360} from './Vehicle360.js';
@@ -59,7 +61,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   let terminalApplied=false;
   try{
    if(detail.decision==='APPROVE'){
-    if(store.list('vc_vehicles').some(v=>v.vehicle_id!==request.vehicle_id&&v.plate_normalized===app.plate_normalized&&v.province_code===app.province_code&&v.status==='ACTIVE'))throw new Error('DUPLICATE_VEHICLE');
+    if(activeByPlate(store,app.plate_normalized,app.province_code).some(v=>v.vehicle_id!==request.vehicle_id))throw new Error('DUPLICATE_VEHICLE');
     store.insert('vc_vehicles',{vehicle_id:request.vehicle_id,plate_normalized:app.plate_normalized,province_code:app.province_code,
      vehicle_type:app.vehicle_type,make:app.make,model:app.model,color:app.color,status:'ACTIVE',version:1,
      created_at:now(),updated_at:now(),created_by:detail.actorId,updated_by:detail.actorId,plate_type:app.plate_type,organization_id:app.organization_id});
@@ -347,9 +349,9 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  }
  function vehicleLookup(p,a){
   const [plate,province]=vehicleBusinessKey(p.plate,p.province).split('|');
-  // Tolerate legacy rows whose numeric-looking province_code was coerced to a
-  // number by Sheets before the text-preserving write fix; compare as strings.
-  const list=store.list('vc_vehicles').filter(v=>String(v.plate_normalized)===plate&&String(v.province_code)===province&&String(v.status)==='ACTIVE');
+  // TUNEUP R1: equality query on the business key (was a full read of vc_vehicles per lookup).
+  // Firestore holds every plate/province as a string (checked 2026-11-25: 66/66).
+  const list=activeByPlate(store,plate,province);
   if(list.length>1)throw new Error('DUPLICATE_ACTIVE_VEHICLE');
   if(!list.length){lookupAudit(a,'NO_MATCH','PLATE','NOT_FOUND');return null;}
   return vehicleView(list[0],a,'PLATE');
@@ -377,7 +379,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    }
    if(p.plate!==undefined||p.province!==undefined){
     const [plate,province]=vehicleBusinessKey(p.plate??v.plate_normalized,p.province??v.province_code).split('|');
-    if(store.list('vc_vehicles').some(x=>x.vehicle_id!==idValue&&x.plate_normalized===plate&&x.province_code===province&&x.status==='ACTIVE'))
+    if(activeByPlate(store,plate,province).some(x=>x.vehicle_id!==idValue))
      throw new Error('DUPLICATE_VEHICLE');
     patch.plate_normalized=plate;patch.province_code=province;
    }
@@ -439,7 +441,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  function vehicleListMine(p,a){
   // OWNER-scoped read: filter strictly by the server session identity, never a client-supplied owner id.
   // Single bounded snapshot read; no cross-sheet join (minimal vehicle fields only).
-  const items=store.list('vc_vehicles').filter(v=>String(v.owner_user_id)===String(a.userId)&&String(v.status)==='ACTIVE')
+  const items=store.list('vc_vehicles',{owner_user_id:String(a.userId),status:'ACTIVE'})
    .map(v=>({vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,vehicleType:v.vehicle_type,
     brand:v.make,model:v.model,color:v.color,status:v.status,version:Number(v.version)}));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
@@ -447,10 +449,10 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  function vehicleList(p){
   // Admin registry read: all ACTIVE vehicles, minimal non-PII fields (no contacts, no owner id).
   // Single bounded snapshot read; no cross-sheet join. Gated by vehicle.list (admin roles only).
-  const items=store.list('vc_vehicles').filter(v=>String(v.status)==='ACTIVE')
-   .map(v=>({vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,vehicleType:v.vehicle_type,
-    brand:v.make,model:v.model,color:v.color,status:v.status,version:Number(v.version),createdAt:v.created_at}));
-  return withListLabels(paginate(items,p,{defaultLimit:50,maxLegacyLimit:100}));
+  // TUNEUP R1: only the requested window + a COUNT (was the whole collection per page).
+  return withListLabels(readPage(store,{name:'vc_vehicles',filter:{status:'ACTIVE'},
+   map:v=>({vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,vehicleType:v.vehicle_type,
+    brand:v.make,model:v.model,color:v.color,status:v.status,version:Number(v.version),createdAt:v.created_at})},p,{defaultLimit:50,maxLegacyLimit:100}));
  }
  // S2: the registry showed colour/type codes (WHITE) while detail showed labels (ขาว). Labels for the
  // CURRENT page only, by reference id (equality reads, one parallel round).
@@ -465,7 +467,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   return pageResult;
  }
  function changeListMine(p,a){
-  const items=store.list('vc_change_requests').filter(r=>String(r.submitted_by)===String(a.userId))
+  const items=store.list('vc_change_requests',{submitted_by:String(a.userId)})
    .map(r=>({requestId:r.change_id,vehicleId:r.vehicle_id,status:r.status,submittedAt:r.submitted_at,
     reviewedAt:r.reviewed_at,proposedDelta:JSON.parse(r.proposed_delta)}));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});

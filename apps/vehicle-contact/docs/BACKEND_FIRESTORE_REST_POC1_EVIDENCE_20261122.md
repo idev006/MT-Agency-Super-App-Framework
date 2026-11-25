@@ -22,9 +22,9 @@ The [F4 connectivity probe](BACKEND_FIRESTORE_INFRA_F4_EVIDENCE_20261122.md) pas
 
 ## 2. What was built (GAS-compatible, no Node APIs)
 
-- **Module:** [`src/infrastructure/persistence/firestore/FirestoreRestPoc.js`](../backend/gas/src/infrastructure/persistence/firestore/FirestoreRestPoc.js) — `runFirestoreRestPoc({utilities,urlFetchApp,clientEmail,privateKey,projectId,databaseId,clock})`. Self-contained: SA-OAuth JWT builder, Firestore typed-value codec, minimal REST ops (`PATCH`/`GET`/`runQuery`/`beginTransaction`/`commit`/`DELETE`), independent read-backs, sanitized result. **173 compiled lines**, no `import`/`export` in the `.gs`, no SDK/Node reference in `dist/`.
+- **Module:** `src/infrastructure/persistence/firestore/FirestoreRestPoc.js` (removed 2026-11-25 by the tune-up — see git history and [TUNEUP_FIRESTORE_READS_20261125.md](TUNEUP_FIRESTORE_READS_20261125.md)) — `runFirestoreRestPoc({utilities,urlFetchApp,clientEmail,privateKey,projectId,databaseId,clock})`. Self-contained: SA-OAuth JWT builder, Firestore typed-value codec, minimal REST ops (`PATCH`/`GET`/`runQuery`/`beginTransaction`/`commit`/`DELETE`), independent read-backs, sanitized result. **173 compiled lines**, no `import`/`export` in the `.gs`, no SDK/Node reference in `dist/`.
 - **Editor entrypoint:** `pocFirestoreRestFromEditor()` exported from [`src/entrypoints/WebApp.js`](../backend/gas/src/entrypoints/WebApp.js). Trusted **GAS Editor ONLY**, never callable over `doGet`/`doPost`. Fail-closed gate `VEHICLE_FIRESTORE_POC_APPROVED=RUN_SYNTHETIC_FIRESTORE_POC`; reads the SA key from Script Property `VEHICLE_FIRESTORE_SA_KEY` (secret, never in source). `Logger.log` emits **sanitized steps/counters only** — no key, token or PII. Throws on non-PASS.
-- **Offline test:** [`tests/firestore-rest-poc.test.mjs`](../backend/gas/tests/firestore-rest-poc.test.mjs) — wired into `npm test` / `npm run check`.
+- **Offline test:** `tests/firestore-rest-poc.test.mjs` (removed 2026-11-25) — wired into `npm test` / `npm run check`.
 
 ### The GAS production path (proven offline, pending live)
 

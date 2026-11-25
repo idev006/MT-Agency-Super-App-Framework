@@ -38,9 +38,9 @@ const safeErrors=new Set([
  'SELF_DEMOTION_DENIED','SELF_ROLE_EXPANSION_DENIED','SELF_SUSPEND_DENIED','RETENTION_POLICY_NOT_CONFIGURED','OPERATION_DISABLED','OPERATION_RECOVERY_REQUIRED',
  'REFERENCE_DATA_INVALID','REFERENCE_DATA_BOUNDS','REFERENCE_VERSION_STALE','INVALID_REFERENCE_VALUE'
 ]);
-export function createOperationController({store,security,sessions,drivePhotos,allowDestructiveRetention=false}) {
+export function createOperationController({store,security,sessions,drivePhotos,allowDestructiveRetention=false,referenceMemo=null}) {
  const admin=createAdministrationOperations({store,security});
- const references=createReferenceOperations({store,security});
+ const references=createReferenceOperations({store,security,memo:referenceMemo});
  const handlers={
   ...createIdentityOperations({store,security,sessions}),...admin,'references.registration':references['references.registration'],
   ...createVehicleOperations({store,security,campaigns:admin,references}),

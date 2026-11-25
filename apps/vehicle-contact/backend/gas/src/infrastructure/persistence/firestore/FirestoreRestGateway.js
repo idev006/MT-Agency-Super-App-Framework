@@ -130,9 +130,19 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     return queryRows(call(base+':runQuery','post',queryBody(coll,opts,txId)));
   }
   // Non-transactional independent queries in one parallel round. specs: [{coll,where,orderBy,limit}].
-  function queryMany(specs){
-    return callMany(specs.map(s=>({url:base+':runQuery',method:'post',body:queryBody(s.coll,s)}))).map(queryRows);
+  // TUNEUP R1: a spec with count:true is a COUNT aggregation (billed ~1 read per 1,000 index
+  // entries) instead of reading the documents; it returns a number in the same parallel round.
+  function aggregateBody(coll,{where=[]}={}){
+    const structuredQuery={from:[{collectionId:coll}]};
+    const w=whereClause(where);if(w)structuredQuery.where=w;
+    return {structuredAggregationQuery:{structuredQuery,aggregations:[{alias:'n',count:{}}]}};
   }
+  const countOf=rows=>{const r=(Array.isArray(rows)?rows:[]).find(x=>x&&x.result);return Number(r&&r.result.aggregateFields&&r.result.aggregateFields.n&&r.result.aggregateFields.n.integerValue||0);};
+  function queryMany(specs){
+    return callMany(specs.map(s=>s.count?{url:base+':runAggregationQuery',method:'post',body:aggregateBody(s.coll,s)}
+      :{url:base+':runQuery',method:'post',body:queryBody(s.coll,s)})).map((rows,i)=>specs[i].count?countOf(rows):queryRows(rows));
+  }
+  function count(coll,opts={}){return countOf(call(base+':runAggregationQuery','post',aggregateBody(coll,opts)));}
   // txId: read inside an existing transaction. beginNew: start a read-write transaction IN
   // this same request (Firestore newTransaction) — saves the separate :beginTransaction round;
   // the started transaction id comes back on the response stream and is returned as .txId.
@@ -268,5 +278,5 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     return result;
   }
 
-  return Object.freeze({query,queryMany,queryManyAndCommit,runTransaction,commit,batchGetMany});
+  return Object.freeze({query,queryMany,queryManyAndCommit,runTransaction,commit,batchGetMany,count});
 }

@@ -69,7 +69,8 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
   const indexes=new Set(),issued=new Set(),versions=new Map();let tick=0;
   const stamp=full=>{const t=new Date(Date.UTC(2026,10,22)+(++tick)).toISOString().replace('Z','000Z');versions.set(full,t);return t;};
   // rounds = sequential wall-clock rounds (one per fetch OR per fetchAll batch); requests = HTTP calls.
-  const state={requests:[],rounds:0,tokenCount:0,issuedToken:null,residue:()=>docs.size,
+  // billedReads mirrors Firestore billing: a query = max(1, docs returned); COUNT = 1 per 1,000 entries (min 1).
+  const state={requests:[],rounds:0,tokenCount:0,issuedToken:null,billedReads:0,residue:()=>docs.size,
     seed(coll,id,plain){docs.set(BASE+'/'+coll+'/'+id,encodeFields(plain));},
     plain(coll,id){const f=docs.get(BASE+'/'+coll+'/'+id);return f?decodeFields(f):null;},
     addIndex(coll,fields){indexes.add(coll+'|'+fields.map(f=>f.fieldPath+':'+(f.order||'ASCENDING')).join(','));}};
@@ -150,6 +151,14 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
       if(body&&body.newTransaction){const id='tx-'+randomUUID();txs.add(id);if(rows.length)rows[0].transaction=id;else rows.push({transaction:id});}
       return reply(200,rows);
     }
+    if(rest===':runAggregationQuery'){
+      const sq=(body.structuredAggregationQuery||{}).structuredQuery||{};
+      const coll=(sq.from&&sq.from[0]&&sq.from[0].collectionId)||'';
+      let rows=[...docs.entries()].filter(([name])=>name.startsWith(BASE+'/'+coll+'/'));
+      if(sq.where)rows=rows.filter(([,fields])=>matches(fields,sq.where));
+      state.billedReads+=Math.max(1,Math.ceil(rows.length/1000));
+      return reply(200,[{result:{aggregateFields:{n:{integerValue:String(rows.length)}}},readTime:CLOCK}]);
+    }
     if(rest.endsWith(':runQuery')){
       if(rest!==':runQuery')return err(400,'INVALID_ARGUMENT','Invalid JSON payload received. Unknown name "structuredQuery" at \'document\': Cannot find field.');
       if(body.transaction&&!txs.has(body.transaction))return err(400,'INVALID_ARGUMENT','unknown transaction');
@@ -178,6 +187,7 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
       }
       const lim=sq.limit&&typeof sq.limit==='object'?sq.limit.value:sq.limit;
       if(lim)rows=rows.slice(0,lim);
+      state.billedReads+=Math.max(1,rows.length);
       return reply(200,rows.map(([name,fields])=>({document:{name:name.slice(API_ROOT.length),fields:reorder(fields),createTime:CLOCK,updateTime:versions.get(name)||CLOCK},readTime:CLOCK})));
     }
     const [coll,docId]=rest.split('/');

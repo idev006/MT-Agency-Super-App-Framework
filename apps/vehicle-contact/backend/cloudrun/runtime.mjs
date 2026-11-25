@@ -8,8 +8,11 @@
 //                         RSA key generated at start-up is used, and the token request is
 //                         answered by the metadata server instead.
 // - Utilities          -> node:crypto
-// - CacheService       -> none. A per-instance cache cannot be revoked across instances, which
-//                         would break immediate logout/revocation (VC-ADR-030/033).
+// - CacheService       -> none for sessions. A per-instance cache cannot be revoked across instances,
+//                         which would break immediate logout/revocation (VC-ADR-030/033).
+// - Token cache        -> per-process (TUNEUP R3): the Firestore access token was re-minted on EVERY
+//                         request (RSA sign + metadata round). Tokens are not user state; safe to keep.
+// - Reference memo     -> 5 minutes (TUNEUP R2): reference rows change only via the offline seed tool.
 // - Photos             -> the owner's Google Drive through the signed GAS media bridge (VC-ADR-034);
 //                         fails closed (DRIVE_NOT_CONFIGURED) when the bridge env is absent.
 import {createHash, createHmac, createSign, generateKeyPairSync, randomUUID} from 'node:crypto';
@@ -71,6 +74,16 @@ export function runtimeProperties(env) {
   };
 }
 
+export function createMemoryCache(nowMs = () => Date.now()) {
+  const map = new Map();
+  return {
+    get(k) { const e = map.get(k); if (!e) return null; if (nowMs() >= e.exp) { map.delete(k); return null; } return e.v; },
+    put(k, v, ttlSeconds) { map.set(k, {v, exp: nowMs() + Math.max(1, Number(ttlSeconds) || 60) * 1000}); },
+    remove(k) { map.delete(k); },
+  };
+}
+export const REFERENCE_CACHE_MS = 5 * 60 * 1000;
+
 export function createCloudRunApplication({env = process.env, fetchSync} = {}) {
   const transport = fetchSync || createSyncFetch().fetch;
   const utilities = nodeUtilities();
@@ -83,6 +96,8 @@ export function createCloudRunApplication({env = process.env, fetchSync} = {}) {
     urlFetchApp: withMetadataToken(transport),
     driveApp: null,
     cache: null,
+    tokenCache: createMemoryCache(),
+    referenceCacheMs: REFERENCE_CACHE_MS,
     drivePhotos,
   });
 }

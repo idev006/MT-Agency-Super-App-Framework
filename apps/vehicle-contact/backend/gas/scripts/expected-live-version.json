@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.25",
+  "backendVersion": "0.9.26",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-24T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.25 = D2: server-side list filters for users.list (status/role/q + organizationName), organizations.list (status/type/q + parentName), campaigns.list (state/q + state). Prior: 0.9.24 = VC-ADR-036 S2: Vehicle 360 (owner/creator/updater, registration origin, change requests, retention for vehicle.list; access log for audit.read), registry colour/type labels, contacts verifiedAt + photos createdAt. Needs the 4 composite indexes in contracts/firestore-indexes.v1.json. Prior: 0.9.23 S3 QR history (V73)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.26 = TUNEUP: Firestore reads pushed down (audit.query window+COUNT, vehicles.list window+COUNT, lookup/duplicate/listMine/changes.listMine/retention by equality query, upload limit by COUNT), reference rows memoized 5 min on Cloud Run, access token kept per process; editor POCs removed. Needs the 27 indexes in contracts/firestore-indexes.v1.json. Prior: 0.9.25 = D2: server-side list filters for users.list (status/role/q + organizationName), organizations.list (status/type/q + parentName), campaigns.list (state/q + state). Prior: 0.9.24 = VC-ADR-036 S2: Vehicle 360 (owner/creator/updater, registration origin, change requests, retention for vehicle.list; access log for audit.read), registry colour/type labels, contacts verifiedAt + photos createdAt. Needs the 4 composite indexes in contracts/firestore-indexes.v1.json. Prior: 0.9.23 S3 QR history (V73)."
 }

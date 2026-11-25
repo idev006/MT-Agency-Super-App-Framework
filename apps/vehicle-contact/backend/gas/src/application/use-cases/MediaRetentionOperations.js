@@ -1,4 +1,4 @@
-import {paginate} from '../pagination/Pagination.js';
+import {paginate,pageWindow,pageOf} from '../pagination/Pagination.js';
 export function createMediaRetentionOperations({store,security,drivePhotos,campaigns,allowDestructiveRetention=false}) {
  const need=(v,name)=>{if(typeof v!=='string'||!v.trim()||v.length>256)throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -16,7 +16,9 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
    return store.withLock(()=>{
     const current=campaigns.getCampaign(p.campaignToken);
     const maxUploads=Math.min(5000,Math.max(20,Number(current.max_submissions)*10));
-    if(store.list('vc_photo_staging',{campaign_id:current.campaign_id}).length>=maxUploads)
+    // TUNEUP R1: COUNT instead of reading every staged photo of the campaign on each upload.
+    const staged=typeof store.count==='function'?store.count('vc_photo_staging',{campaign_id:current.campaign_id}):store.list('vc_photo_staging',{campaign_id:current.campaign_id}).length;
+    if(staged>=maxUploads)
      throw new Error('PHOTO_UPLOAD_LIMIT');
     store.insert('vc_photo_staging',{photo_id:photoId,campaign_id:current.campaign_id,slot:p.slot,
      storage_ref:item.storage_ref,mime_type:item.mime_type,size_bytes:item.size_bytes,
@@ -87,7 +89,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   return {photoId,slot:photo.slot,mimeType:media.mime_type,base64Image:media.base64Image};
  }
  function dueJobs(p){
-  const cutoff=Date.parse(now()),items=store.list('vc_retention_jobs').filter(j=>
+  const cutoff=Date.parse(now()),items=store.list('vc_retention_jobs',{status:'WAITING_RETENTION'}).filter(j=>
    j.status==='WAITING_RETENTION'&&Date.parse(j.due_at)<=cutoff&&j.legal_hold!==true&&String(j.legal_hold)!=='true')
    .map(j=>({jobId:j.job_id,vehicleId:j.vehicle_id,dueAt:j.due_at,status:j.status}));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
@@ -146,13 +148,22 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
    throw new Error('DELETION_RETRY_REQUIRED');
   }
  }
+ // TUNEUP R1: the two audit trails grow with every lookup/change (1,487 docs on 2026-11-25) and were
+ // read IN FULL on every page. Now: the newest page*pageSize of each (newest-first, _seq DESC) + a
+ // COUNT of each, in ONE parallel round; the merged window is cut to the requested page.
  function queryAudit(p) {
-  const lookup=store.list('vc_lookup_audit',p.vehicleId?{vehicle_id:need(p.vehicleId,'VEHICLE_ID')}:{})
-   .map(x=>({type:'LOOKUP',eventId:x.audit_id,actorId:x.actor_id,vehicleId:x.vehicle_id,action:x.lookup_source,at:x.created_at}));
-  const changes=store.list('vc_change_audit',p.vehicleId?{entity_id:need(p.vehicleId,'VEHICLE_ID')}:{})
-   .map(x=>({type:'CHANGE',eventId:x.audit_id,actorId:x.actor_id,entityId:x.entity_id,action:x.action,at:x.created_at}));
+  const w=pageWindow(p,{defaultLimit:50,maxLegacyLimit:100});
+  const lf=p.vehicleId?{vehicle_id:need(p.vehicleId,'VEHICLE_ID')}:{},cf=p.vehicleId?{entity_id:need(p.vehicleId,'VEHICLE_ID')}:{};
+  let lookupRows,changeRows,total;
+  if(typeof store.readMany==='function'&&typeof store.count==='function'){
+   const [l,c,ln,cn]=store.readMany([{kind:'newest',name:'vc_lookup_audit',filter:lf,limit:w.n},{kind:'newest',name:'vc_change_audit',filter:cf,limit:w.n},
+    {kind:'count',name:'vc_lookup_audit',filter:lf},{kind:'count',name:'vc_change_audit',filter:cf}]);
+   lookupRows=l;changeRows=c;total=ln+cn;
+  }else{lookupRows=store.list('vc_lookup_audit',lf);changeRows=store.list('vc_change_audit',cf);total=lookupRows.length+changeRows.length;}
+  const lookup=lookupRows.map(x=>({type:'LOOKUP',eventId:x.audit_id,actorId:x.actor_id,vehicleId:x.vehicle_id,action:x.lookup_source,at:x.created_at}));
+  const changes=changeRows.map(x=>({type:'CHANGE',eventId:x.audit_id,actorId:x.actor_id,entityId:x.entity_id,action:x.action,at:x.created_at}));
   const items=[...lookup,...changes].sort((a,b)=>String(b.at).localeCompare(String(a.at)));
-  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
+  return pageOf(items.slice(0,w.n),total,w);
  }
  return Object.freeze({
   'photos.upload':uploadPhoto,'photos.list':photosList,'photos.replace':replacePhoto,

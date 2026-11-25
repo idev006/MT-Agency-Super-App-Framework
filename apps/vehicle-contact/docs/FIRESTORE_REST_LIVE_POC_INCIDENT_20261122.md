@@ -33,8 +33,8 @@ A throwaway Node probe (same SA key, synthetic doc only, outside the repo) repla
 
 ## 3. Fix (source + tests)
 
-- [`FirestoreRestPoc.js`](../backend/gas/src/infrastructure/persistence/firestore/FirestoreRestPoc.js): `canon()` order-independent deep-equal (POC-04); `base+':runQuery'` + relative-name match (POC-05); `relName()` in commit `update.name` (POC-06).
-- [`firestore-rest-poc.test.mjs`](../backend/gas/tests/firestore-rest-poc.test.mjs): the offline fake now **enforces the real contract** instead of echoing our assumptions — GET returns recursively reordered keys; `runQuery` accepts only the parent form (collection-suffixed URL → the real 400 message); commit rejects non-`projects/` names with the real 400 message; query rows carry relative names; `limit` accepts number or wrapper. New **POC-OFFLINE-10** asserts the fake reorders keys and read-back still passes; POC-OFFLINE-02 asserts parent-form runQuery URL and relative commit name.
+- `FirestoreRestPoc.js` (removed 2026-11-25, tune-up): `canon()` order-independent deep-equal (POC-04); `base+':runQuery'` + relative-name match (POC-05); `relName()` in commit `update.name` (POC-06).
+- `firestore-rest-poc.test.mjs` (removed 2026-11-25): the offline fake now **enforces the real contract** instead of echoing our assumptions — GET returns recursively reordered keys; `runQuery` accepts only the parent form (collection-suffixed URL → the real 400 message); commit rejects non-`projects/` names with the real 400 message; query rows carry relative names; `limit` accepts number or wrapper. New **POC-OFFLINE-10** asserts the fake reorders keys and read-back still passes; POC-OFFLINE-02 asserts parent-form runQuery URL and relative commit name.
 
 ## 4. Why offline 9/9 missed all three (the mock lesson)
 
