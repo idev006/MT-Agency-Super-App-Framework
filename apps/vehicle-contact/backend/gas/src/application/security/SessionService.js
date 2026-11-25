@@ -35,9 +35,25 @@ export function createSessionService({store,security,cache=null}) {
  function permissionsFor(userId) {
   return accessFrom(store.list('vc_user_roles',{user_id:userId}),store.list('vc_user_permissions',{user_id:userId}));
  }
+ // T2-1 (owner "Start T2"): the session carries its access snapshot (access_json, written at login).
+ // Every path that changes roles/status/password revokes the user's sessions (assignRoles, suspend,
+ // resetPassword, changePassword), so the snapshot can never outlive a change: the check is now
+ // session + user = 2 reads (was 4). Sessions issued before this change fall back to the live read.
+ const accessOf=session=>{
+  try{const a=JSON.parse(session.access_json||'null');
+   if(a&&Array.isArray(a.roles)&&Array.isArray(a.permissions)&&a.roles.every(r=>typeof r==='string')&&a.permissions.every(p=>typeof p==='string'))
+    return {roles:a.roles,permissions:a.permissions};}catch(_){}
+  return null;
+ };
  function load(digest){
   const session=store.one('vc_sessions',{token_digest:digest});
   if(!session||session.status!=='ACTIVE'||session.revoked_at)throw new Error('UNAUTHENTICATED');
+  const snapshot=accessOf(session);
+  if(snapshot){
+   const [user]=readMany([{kind:'one',name:'vc_users',filter:{user_id:session.user_id}}]);
+   if(!user||user.status!=='ACTIVE')throw new Error('UNAUTHENTICATED');
+   return {session,user,access:snapshot};
+  }
   const [user,roleRows,overrideRows]=readMany([
    {kind:'one',name:'vc_users',filter:{user_id:session.user_id}},
    {kind:'list',name:'vc_user_roles',filter:{user_id:session.user_id}},
@@ -88,9 +104,11 @@ export function createSessionService({store,security,cache=null}) {
   const idle=Number(policy&&policy.value);
   if(!Number.isSafeInteger(idle)||idle<1||idle>480)throw new Error('IDLE_POLICY_NOT_CONFIGURED');
   const token=security.secretToken(),date=security.now(),expires=new Date(Date.parse(date)+480*60000).toISOString();
+  const access=permissionsFor(user.user_id);
   store.sequence(()=>store.insert('vc_sessions',{
    session_id:security.secretToken(),user_id:user.user_id,token_digest:security.sha256(token),
-   status:'ACTIVE',issued_at:date,expires_at:expires,last_seen_at:date,idle_timeout_minutes:idle,revoked_at:''
+   status:'ACTIVE',issued_at:date,expires_at:expires,last_seen_at:date,idle_timeout_minutes:idle,revoked_at:'',
+   access_json:JSON.stringify({roles:access.roles,permissions:access.permissions})
   }));
   return {sessionToken:token,expiresAt:expires,mustChangePassword:user.password_change_required===true||String(user.password_change_required)==='true'};
  }

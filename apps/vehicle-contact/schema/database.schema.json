@@ -890,6 +890,14 @@
           "key": null,
           "classification": "internal",
           "notes": "Versioned forward-only extension; deployment approval separate"
+        },
+        {
+          "name": "access_json",
+          "key": null,
+          "type": "string",
+          "required": false,
+          "classification": "internal",
+          "notes": "T2-1: roles/permissions snapshot written at login; every role/status/password change revokes the session"
         }
       ]
     },
