@@ -4,7 +4,7 @@ import { useSessionStore } from '../stores/session.js'
 import SignInView from '../views/SignInView.vue'
 import AppShell from '../layouts/AppShell.vue'
 import DashboardView from '../views/DashboardView.vue'
-import GatewayPocView from '../views/GatewayPocView.vue'
+import AboutPage from '../pages/AboutPage.vue'
 import VehicleSearchPage from '../pages/VehicleSearchPage.vue'
 import VehicleDetailPage from '../pages/VehicleDetailPage.vue'
 import VehicleMaintenancePage from '../pages/VehicleMaintenancePage.vue'
@@ -32,7 +32,8 @@ export const router = createRouter({
       path: '/app', component: AppShell, meta: { requiresAuth: true },
       children: [
         { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: 'ภาพรวม' } },
-        { path: 'connection', name: 'connection-test', component: GatewayPocView, meta: { title: 'ทดสอบการเชื่อมต่อ' } },
+        { path: 'about', name: 'about', component: AboutPage, meta: { title: 'เกี่ยวกับระบบ' } },
+        { path: 'connection', redirect: { name: 'about' } },
         { path: 'vehicles/search', name: 'vehicle-search', component: VehicleSearchPage, meta: { title: 'ค้นหายานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
         { path: 'vehicles/detail/:vehicleId', name: 'vehicle-detail', component: VehicleDetailPage, meta: { title: 'รายละเอียดยานพาหนะ', requiredPermissions: ['vehicle.lookup'] } },
         { path: 'vehicles/maintenance/:vehicleId', name: 'vehicle-maintenance', component: VehicleMaintenancePage, meta: { title: 'แก้ไขข้อมูลยานพาหนะ', requiredPermissions: ['vehicle.update'] } },

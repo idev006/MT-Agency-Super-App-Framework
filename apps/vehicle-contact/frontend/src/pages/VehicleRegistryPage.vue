@@ -63,6 +63,5 @@ onMounted(work.load)
       <PaginationControl class="mt-3" :page="work.page.value" :page-size="work.pageSize.value" :total-items="work.pagination.value.total" :disabled="work.phase.value === 'loading'" label="แบ่งหน้าทะเบียนยานพาหนะ" @update:page="work.changePage" @update:page-size="work.changePageSize" />
     </section>
 
-    <template #footer><p class="text-sm text-base-content/80">สิทธิ์บนหน้าจอช่วยนำทางเท่านั้น GAS จะตรวจสิทธิ์ vehicle.list ซ้ำก่อนส่งรายการ — ข้อมูลผู้ประสานงานดูได้เฉพาะหน้ารายละเอียดตามสิทธิ์</p></template>
   </PageTemplateComponent>
 </template>

@@ -16,7 +16,7 @@ describe('R6 P3 findings', () => {
     expect(header).toContain('roleText')
   })
   it('dashboard work list hides the home page itself and the developer connection check', () => {
-    expect(read('components/dashboard/RoleMenuGrid.vue')).toContain("new Set(['dashboard', 'connection'])")
+    expect(read('components/dashboard/RoleMenuGrid.vue')).toContain("new Set(['dashboard', 'about'])")
   })
   it('sign-in explains per-tab sessions', () => {
     expect(read('views/SignInView.vue')).toContain('เปิดแท็บใหม่ต้องเข้าสู่ระบบอีกครั้ง')

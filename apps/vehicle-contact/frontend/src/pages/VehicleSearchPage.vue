@@ -34,6 +34,5 @@ const errorCopy = computed(() => search.phase.value === 'recoverable-error'
       <div v-else-if="search.phase.value === 'recoverable-error' || search.phase.value === 'error'" class="alert alert-error items-start shadow-none"><div class="w-full"><h2 class="font-medium">ค้นหาไม่สำเร็จ</h2><p class="mt-1">{{ errorCopy }}</p><button v-if="search.phase.value === 'recoverable-error'" class="btn btn-sm mt-3" type="button" @click="search.retry">ลองอีกครั้ง</button><details v-if="search.failure.value?.requestId" class="collapse collapse-arrow mt-3 bg-base-100 text-base-content"><summary class="collapse-title font-medium">รายละเอียดสำหรับเจ้าหน้าที่สนับสนุน</summary><div class="collapse-content break-all font-mono text-sm">{{ search.failure.value.requestId }}</div></details></div></div>
       <VehicleSearchResult v-else-if="search.phase.value === 'success'" :result="search.result.value" :can-read-contacts="permissionSet.has('vehicle.contact.read')" :can-read-photos="permissionSet.has('vehicle.photos.read')" :can-read-history="permissionSet.has('vehicle.history.read')" />
     </section>
-    <template #footer><p class="text-sm text-base-content/70">ระบบส่วนกลางตรวจสอบเซสชัน สิทธิ์ ขอบเขตข้อมูล และบันทึกการค้นหาทุกครั้ง</p></template>
   </PageTemplateComponent>
 </template>

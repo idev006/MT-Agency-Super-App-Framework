@@ -63,6 +63,5 @@ async function runConfirmed(action) {
       />
     </section>
 
-    <template #footer><p class="text-sm text-base-content/70">การระงับ รีเซ็ตรหัสผ่าน และเปลี่ยนบทบาทจะเพิกถอนเซสชันของบัญชีเป้าหมาย</p></template>
   </PageTemplateComponent>
 </template>

@@ -239,6 +239,5 @@ watch(referenceVersion, reconcileSelections)
         <button v-else class="btn btn-primary min-h-11" type="submit" :disabled="editingLocked || !allPhotosReady || !campaignReady"><span v-if="busy" class="loading loading-spinner loading-sm"></span>ส่งคำขอลงทะเบียน</button>
       </div>
     </form>
-    <template #footer><p class="text-sm text-base-content/80">คำขอใหม่จะอยู่ในสถานะรอตรวจสอบ การรับคำขอไม่เท่ากับการอนุมัติยานพาหนะ</p></template>
   </PageTemplateComponent>
 </template>

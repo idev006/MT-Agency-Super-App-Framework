@@ -19,10 +19,13 @@ describe('release and initial-password UX contract', () => {
     expect(store).toContain("items.filter((item) => item.id === 'account-security')")
   })
 
-  it('renders frontend and server-reported backend versions', () => {
-    expect(footer).toContain('Frontend v{{ packageInfo.version }}')
-    expect(footer).toContain("backendRelease?.apiVersion")
-    expect(footer).toContain("backendRelease?.backendVersion")
+  it('versions live on the About page; the footer is one line that links to it (owner 2026-11-25)', () => {
+    const about = readFileSync(new URL('../src/pages/AboutPage.vue', import.meta.url), 'utf8')
+    expect(about).toContain('packageInfo.version')
+    expect(about).toContain('backendRelease.value?.apiVersion')
+    expect(about).toContain('backendRelease.value?.backendVersion')
+    expect(footer).toContain("{ name: 'about' }")
+    expect(footer).not.toMatch(/Cloudflare|GAS|Firestore|endpoint/)
     expect(store).toContain('loadReleaseInfo')
   })
 })

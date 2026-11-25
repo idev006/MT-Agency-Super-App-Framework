@@ -153,7 +153,6 @@ async function confirmCancel() {
       </div>
     </template>
 
-    <template #footer><p class="text-sm text-base-content/80">สิทธิ์บนหน้าจอช่วยนำทางเท่านั้น GAS จะตรวจสิทธิ์ เวอร์ชันข้อมูล และสถานะอีกครั้งก่อนบันทึกทุกครั้ง</p></template>
   </PageTemplateComponent>
 
   <ConfirmDialog :open="confirmingCancel" title="ยกเลิกยานพาหนะหรือไม่" message="ระบบจะปิดใช้งานยานพาหนะ เพิกถอน QR และสร้างงานเก็บรักษาข้อมูลตามนโยบาย ยืนยันเฉพาะเมื่อได้รับอนุญาตให้ดำเนินการ" confirm-label="ยืนยันยกเลิกยานพาหนะ" cancel-label="ไม่ใช่ กลับไป" :busy="work.actionPhase.value === 'submitting'" @cancel="confirmingCancel = false" @confirm="confirmCancel" />

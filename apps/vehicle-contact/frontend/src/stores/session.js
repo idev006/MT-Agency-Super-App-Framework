@@ -24,8 +24,8 @@ const previewSession = Object.freeze({
   expiresAt: '2026-11-18T18:30:00.000Z', mustChangePassword: false,
 })
 
-// R1: a first visit uses the Cloudflare Worker when the build configured it (origin-locked,
-// operation/payload allowlist); an explicit choice saved on this device always wins.
+// Owner 2026-11-25: the channel is decided by the build (the gateway in front of the API), never
+// by the user. Saved channel/URL overrides from older versions are ignored and removed.
 export function defaultTransport(workerEndpoint = defaultWorkerEndpoint) {
   return isValidApiEndpoint(workerEndpoint, 'worker') ? 'worker' : 'direct'
 }
@@ -34,16 +34,12 @@ function browserSessionStorage() {
   return globalThis.sessionStorage
 }
 
-function storedEndpoint(key, fallback, transport) {
-  const saved = globalThis.localStorage?.getItem(key)
-  return isValidApiEndpoint(saved, transport) ? saved : fallback
-}
 
 export const useSessionStore = defineStore('session', () => {
-  const savedTransport = globalThis.localStorage?.getItem(TRANSPORT_KEY)
-  const transport = ref(['direct', 'worker'].includes(savedTransport) ? savedTransport : defaultTransport())
-  const directEndpoint = ref(storedEndpoint(DIRECT_ENDPOINT_KEY, defaultDirectEndpoint, 'direct'))
-  const workerEndpoint = ref(storedEndpoint(WORKER_ENDPOINT_KEY, defaultWorkerEndpoint, 'worker'))
+  for (const key of [TRANSPORT_KEY, DIRECT_ENDPOINT_KEY, WORKER_ENDPOINT_KEY]) globalThis.localStorage?.removeItem(key)
+  const transport = ref(defaultTransport())
+  const directEndpoint = ref(defaultDirectEndpoint)
+  const workerEndpoint = ref(defaultWorkerEndpoint)
   const phase = ref('idle')
   const sessionToken = ref(previewEnabled ? 'development-preview-only' : browserSessionStorage()?.getItem(SESSION_KEY) || '')
   const session = ref(previewEnabled ? previewSession : (sessionToken.value ? loadSessionSummary(browserSessionStorage()) : null))
