@@ -165,3 +165,20 @@ This gap is in the role design, not a bug in one screen. Fixing it means giving 
 - `qr.issue` on a vehicle that already has an active QR → `QR_ALREADY_ACTIVE`, with Firestore active QR count 1 → 1. QR management is reachable, and the rule held without mutation.
 - `registrations.listPending` → FORBIDDEN.
 - Cleanup: account suspended (Firestore status = SUSPENDED).
+
+## 9. S3 live evidence (2026-11-25, BE 0.9.23: GAS V73 + Cloud Run + Worker, commit 3404111; FE 0.9.2 on Pages)
+
+**Full live chain against Cloud Run (--require-authenticated --require-data-proof)**
+- Result: **PASS 108/108**.
+  - Inventory: 76 tests covering **60/60** operations, including `QR.HISTORY` (reasons, order, who/when, replacement chain, no token/digest, `INVALID_QR_REASON` refusal).
+  - **DATA_PROOF 7/7**, started 05:24:19Z, after the suite start at 05:21:50Z (fresh evidence).
+  - **RB-07.QR_HISTORY**, read straight from Firestore: `rows=3 reasons=REGISTRATION_APPROVED>STOLEN,NEW>DAMAGED,DAMAGED>VEHICLE_CANCELLED`. It equals the independent oracle; every revoke has who/when, and the replacement chain holds.
+- 0 cleanup failures.
+
+**Browser** (local FE on the same main commit, synthetic SYSTEM_ADMIN + REGISTRATION_ADMIN account; session handed over by script, logged out at the end)
+- **Vehicle detail → "ประวัติ QR" tab:** loaded in 0.9 s and shows issuer, reason ("ออกเมื่ออนุมัติการลงทะเบียน"), status.
+- **QR management → "เปลี่ยน QR" dialog:**
+  - The options are exactly the replace vocabulary.
+  - Confirm is disabled with no reason ("เลือกเหตุผล") and with OTHER without a note ("ระบุเหตุผลเพิ่มเติม"); it is enabled once a note is entered.
+  - Cancelled, so nothing was changed.
+- **Pages:** the published bundle contains `qr.history`.
