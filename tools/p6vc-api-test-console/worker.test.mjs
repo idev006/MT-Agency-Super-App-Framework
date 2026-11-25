@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import worker from './worker.mjs';
+import worker,{TRUSTED_UPSTREAMS} from './worker.mjs';
 
 const BASE='https://console.example';
-const GAS='https://script.google.com/macros/s/TEST-DEPLOY-ID/exec';
+const GAS='https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec';
 const KEY='a'.repeat(48);
 const PASSWORD='test-password-only-not-real-1234';
 const TOKEN='a'.repeat(64);
@@ -560,5 +560,17 @@ test('WORKER-CR01 P6VC_API_URL switches the upstream to the project Cloud Run AP
   const foreign=await call({P6VC_API_URL:'https://evil.example.run.app'});
   assert.equal(foreign.status,503,'a URL that is not the project Cloud Run API is refused');
   assert.equal(seen.length,n,'nothing was forwarded');
+ }finally{globalThis.fetch=original;}
+});
+
+test('WORKER-SIVP01 the Worker allowlist equals the Configuration SSOT; other GAS deployments are refused',async()=>{
+ const ssot=JSON.parse(await readFile(new URL('../../apps/vehicle-contact/contracts/trusted-endpoints.v1.json',import.meta.url),'utf8'));
+ assert.deepEqual([...TRUSTED_UPSTREAMS].sort(),ssot.endpoints.map(e=>e.url).sort(),'worker.mjs and trusted-endpoints.v1.json drifted');
+ const original=globalThis.fetch;let forwarded=0;globalThis.fetch=async()=>{forwarded++;return envelope(true,{});};
+ try{
+  const origin='https://idev006.github.io';
+  const body={apiVersion:'v1',group:'system',action:'health',payload:{},requestId:'req_sivp01'};
+  const r=await worker.fetch(frontendRequest(body,origin),{...env(),FRONTEND_ALLOWED_ORIGINS:origin,P6VC_GAS_EXEC_URL:'https://script.google.com/macros/s/OtherDeployment/exec'});
+  assert.equal(r.status,503);assert.equal(forwarded,0);
  }finally{globalThis.fetch=original;}
 });

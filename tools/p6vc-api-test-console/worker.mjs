@@ -5,13 +5,15 @@
  * Restriction: allowlisted read-only tests only; never accepts arbitrary URL/action.
  */
 const JSON_HEADERS={"content-type":"application/json; charset=utf-8","cache-control":"no-store","x-content-type-options":"nosniff","referrer-policy":"no-referrer","x-frame-options":"DENY"};
-const TARGET=/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/;
-// VC-ADR-033 switch-over: when P6VC_API_URL is set the gateway forwards to the project's Cloud Run
-// API (same v1 envelope); otherwise to the GAS Web App. Rollback = remove P6VC_API_URL and redeploy.
-const CLOUD_RUN_TARGET=/^https:\/\/p6vc-api-[0-9]+\.asia-southeast3\.run\.app$/;
+// SIVP section 10: exact-match allowlist. MUST equal apps/vehicle-contact/contracts/trusted-endpoints.v1.json
+// (drift test WORKER-SIVP01). P6VC_API_URL set -> Cloud Run API (VC-ADR-035); unset -> GAS (rollback).
+// Any other value fails closed (GATEWAY_NOT_CONFIGURED); nothing is forwarded.
+const TRUSTED_GAS_URL="https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec";
+const TRUSTED_CLOUD_RUN_URL="https://p6vc-api-46858005337.asia-southeast3.run.app";
+export const TRUSTED_UPSTREAMS=Object.freeze([TRUSTED_GAS_URL,TRUSTED_CLOUD_RUN_URL]);
 function upstream(env){
- if(env.P6VC_API_URL!==undefined&&env.P6VC_API_URL!=="")return CLOUD_RUN_TARGET.test(env.P6VC_API_URL)?env.P6VC_API_URL:"";
- return TARGET.test(env.P6VC_GAS_EXEC_URL||"")?env.P6VC_GAS_EXEC_URL:"";
+ if(env.P6VC_API_URL!==undefined&&env.P6VC_API_URL!=="")return env.P6VC_API_URL===TRUSTED_CLOUD_RUN_URL?env.P6VC_API_URL:"";
+ return env.P6VC_GAS_EXEC_URL===TRUSTED_GAS_URL?env.P6VC_GAS_EXEC_URL:"";
 }
 const READ_ONLY_OPERATIONS=new Set(["system.health","system.config.get","users.list","organizations.list","campaigns.list","registrations.listPending","vehicles.lookup","vehicles.history","changes.listPending","retention.jobStatus"]);
 const FRONTEND_PAYLOAD_FIELDS=Object.freeze({

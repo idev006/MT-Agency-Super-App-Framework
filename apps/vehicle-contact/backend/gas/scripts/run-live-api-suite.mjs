@@ -1,5 +1,6 @@
 import './load-env.mjs';
 import {spawn,execFileSync} from 'node:child_process';
+import {resolveApiBaseUrl} from './trusted-endpoint.mjs';
 import fs from 'node:fs';
 import {join,resolve} from 'node:path';
 import {computeLatency} from './latency-math.mjs';
@@ -8,7 +9,11 @@ const repoRoot=resolve(import.meta.dirname,'../../../../..');
 const scriptsRoot=import.meta.dirname;
 const requireAuthenticated=process.argv.includes('--require-authenticated');
 const requireDataProof=process.argv.includes('--require-data-proof');
-const gasUrl=process.env.P6VC_GAS_EXEC_URL||'https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec';
+// SIVP section 10/11: one trusted target for every stage (GAS or Cloud Run). Default (nothing set) =
+// the pinned GAS Web App, as before. P6VC_API_BASE_URL vs P6VC_GAS_EXEC_URL conflict -> fail closed.
+const DEFAULT_GAS_URL='https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec';
+const target=resolveApiBaseUrl(process.env.P6VC_API_BASE_URL||process.env.P6VC_GAS_EXEC_URL?process.env:{P6VC_GAS_EXEC_URL:DEFAULT_GAS_URL});
+const gasUrl=target.url;
 const reportDir=join(repoRoot,'test-results');
 const aggregatePath=join(reportDir,'p6vc-live-api-suite.json');
 let sourceCommit=process.env.GITHUB_SHA||null;
@@ -30,9 +35,11 @@ const counts=report=>{
 };
 async function runStage(id,script,reportName,args=[]){
  const startedAt=new Date().toISOString();
+ // Never read a report left by an earlier run (stale evidence): remove it before the stage starts.
+ fs.rmSync(join(reportDir,reportName),{force:true});
  const exitCode=await new Promise(resolveExit=>{
   const child=spawn(process.execPath,[join(scriptsRoot,script),...args],{
-   cwd:repoRoot,env:{...process.env,P6VC_GAS_EXEC_URL:gasUrl},stdio:'inherit'
+   cwd:repoRoot,env:{...process.env,P6VC_GAS_EXEC_URL:gasUrl,P6VC_API_BASE_URL:gasUrl},stdio:'inherit'
   });
   child.once('error',()=>resolveExit(127));
   child.once('exit',code=>resolveExit(code??1));
@@ -92,7 +99,9 @@ suite.finishedAt=new Date().toISOString();
 suite.passed=suite.stages.reduce((n,x)=>n+x.passed,0);
 suite.failed=suite.stages.reduce((n,x)=>n+x.failed,0);
 suite.status=!preflightPassed||authenticated.status==='FAIL'||authenticated.status.startsWith('BLOCKED')||(requireDataProof&&dataProof.status!=='PASS')?'FAIL':
- authenticated.status==='PASS'?'PASS':'PASS_PUBLIC_ONLY';
+ // SIVP: an authenticated run is PASS only with the independent Firestore read-back (DATA_PROOF);
+ // without it the API results are a claim, not proof -> UNVERIFIED (non-zero exit).
+ authenticated.status==='PASS'?(dataProof.status==='PASS'?'PASS':'UNVERIFIED'):'PASS_PUBLIC_ONLY';
 persist();
 
 if(process.env.GITHUB_STEP_SUMMARY){
@@ -106,3 +115,4 @@ if(process.env.GITHUB_STEP_SUMMARY){
 console.log('LIVE_SUITE '+JSON.stringify({status:suite.status,passed:suite.passed,failed:suite.failed,
  stages:suite.stages.map(x=>({id:x.id,status:x.status})),latency:suite.latency?.n?{p50:suite.latency.p50,p95:suite.latency.p95,budget:suite.latency.budget}:undefined,report:'test-results/p6vc-live-api-suite.json'}));
 if(suite.status==='FAIL')process.exitCode=1;
+else if(suite.status==='UNVERIFIED')process.exitCode=3;

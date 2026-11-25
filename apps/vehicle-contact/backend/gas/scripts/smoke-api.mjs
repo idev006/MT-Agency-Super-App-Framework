@@ -2,9 +2,9 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const url=process.env.P6VC_GAS_EXEC_URL;
-if(!url || !/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(url))
- throw new Error('P6VC_GAS_EXEC_URL is missing or invalid');
+import {resolveApiBaseUrl} from './trusted-endpoint.mjs';
+// SIVP section 10: exact match against contracts/trusted-endpoints.v1.json (GAS or Cloud Run); conflicts fail closed.
+const url=resolveApiBaseUrl(process.env).url;
 const timeoutMs=15000;
 const msg=(group,action,payload={},extra={})=>({apiVersion:'v1',group,action,payload,...extra});
 async function request(name,{method='GET',body}={}){
