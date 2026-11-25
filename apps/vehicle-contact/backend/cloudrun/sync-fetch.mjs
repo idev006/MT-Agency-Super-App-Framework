@@ -2,6 +2,9 @@
 // synchronous). A worker thread performs the real fetch; the caller blocks on Atomics.wait.
 // Shared by the Cloud Run runtime and the DEV scripts. One request at a time per process:
 // Cloud Run runs this service with concurrency=1 and scales out instances.
+// fetchAll (FIX 2026-11-25): the GAS UrlFetchApp.fetchAll contract — independent requests run IN
+// PARALLEL in the worker (Promise.all) and return in order. Without it every "one parallel round"
+// of the application (session check, Vehicle 360, window + COUNT) ran one request at a time.
 import {Worker} from 'node:worker_threads';
 
 const BUF_BYTES=32*1024*1024;
@@ -21,11 +24,11 @@ async function loop(){
     if(state===9)return;
     if(state!==1)continue;
     const req=JSON.parse(decoder.decode(buf.subarray(0,ctrl[1])));
-    let res;
-    try{
-      const resp=await fetch(req.url,{method:req.method,headers:req.headers,body:req.body});
-      res={code:resp.status,text:await resp.text()};
-    }catch(e){res={code:0,text:String(e&&e.message||e)};}
+    const one=async r=>{
+      try{const resp=await fetch(r.url,{method:r.method,headers:r.headers,body:r.body});return {code:resp.status,text:await resp.text()};}
+      catch(e){return {code:0,text:String(e&&e.message||e)};}
+    };
+    const res=Array.isArray(req.many)?{many:await Promise.all(req.many.map(one))}:await one(req);
     const bytes=encoder.encode(JSON.stringify(res));
     if(bytes.length>buf.length){
       const err=encoder.encode(JSON.stringify({code:0,text:'BRIDGE_BUFFER_OVERFLOW'}));
@@ -62,23 +65,40 @@ export function createSyncFetch(){
   let closing=false;
   worker.on('error',e=>{console.error('BRIDGE_WORKER_ERROR '+String(e&&e.message||e));wakeWithFailure(String(e&&e.message||e));});
   worker.on('exit',c=>{if(!closing){console.error('BRIDGE_WORKER_EXIT code='+c);wakeWithFailure('exit code '+c);}});
-  function fetchSync(url,opts={}){
-    if(dead)throw new Error('BRIDGE_WORKER_DEAD '+dead);
+  function toReq(url,opts={}){
     const req={url,method:(opts.method||'get').toUpperCase(),headers:opts.headers||{},
       body:opts.payload!==undefined?String(opts.payload):undefined};
     if(opts.contentType)req.headers=({...req.headers,'Content-Type':opts.contentType});
-    const bytes=encoder.encode(JSON.stringify(req));
+    return req;
+  }
+  const asResponse=res=>({getResponseCode:()=>res.code,getContentText:()=>res.text});
+  // One blocking round-trip to the worker; returns the parsed reply.
+  function exchange(payload){
+    if(dead)throw new Error('BRIDGE_WORKER_DEAD '+dead);
+    const bytes=encoder.encode(JSON.stringify(payload));
     if(bytes.length>buf.length)throw new Error('BRIDGE_REQUEST_TOO_LARGE');
     buf.set(bytes);ctrl[1]=bytes.length;state.bytesOut+=bytes.length;
     Atomics.store(ctrl,0,1);Atomics.notify(ctrl,0);
     const waited=Atomics.wait(ctrl,0,1,120000);
     if(waited==='timed-out')throw new Error('BRIDGE_FETCH_TIMEOUT');
     const res=JSON.parse(decoder.decode(buf.subarray(0,ctrl[2])));
-    state.bytesIn+=ctrl[2];state.calls++;
+    state.bytesIn+=ctrl[2];
     Atomics.store(ctrl,0,0);Atomics.notify(ctrl,0);
-    return {getResponseCode:()=>res.code,getContentText:()=>res.text};
+    return res;
+  }
+  function fetchSync(url,opts={}){
+    const res=exchange(toReq(url,opts));state.calls++;
+    return asResponse(res);
+  }
+  // GAS UrlFetchApp.fetchAll: [{url,...opts}] -> responses in the same order, fetched in parallel.
+  function fetchAll(reqs){
+    if(!reqs.length)return [];
+    const res=exchange({many:reqs.map(({url,...opts})=>toReq(url,opts))});
+    state.calls+=reqs.length;state.rounds=(state.rounds||0)+1;
+    // a worker failure answers with a single error object: fail every request of the round
+    return Array.isArray(res.many)?res.many.map(asResponse):reqs.map(()=>asResponse(res));
   }
   function close(){closing=true;Atomics.store(ctrl,0,9);Atomics.notify(ctrl,0);worker.terminate();}
-  return {fetch:fetchSync,close,state};
+  return {fetch:fetchSync,fetchAll,close,state};
 }
 

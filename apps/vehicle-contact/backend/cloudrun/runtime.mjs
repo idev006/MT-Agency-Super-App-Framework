@@ -43,13 +43,19 @@ export function nodeUtilities() {
 }
 
 // Answers the gateway's JWT token exchange with the service identity's token.
-export function withMetadataToken(fetchSync) {
-  return {
+export function withMetadataToken(fetchSync, fetchAll = null) {
+  const metadata = () => fetchSync(METADATA_TOKEN_URL, {method: 'get', headers: {'Metadata-Flavor': 'Google'}});
+  const t = {
     fetch(url, opts = {}) {
       if (String(url) !== TOKEN_ENDPOINT) return fetchSync(url, opts);
-      return fetchSync(METADATA_TOKEN_URL, {method: 'get', headers: {'Metadata-Flavor': 'Google'}});
+      return metadata();
     },
   };
+  // Parallel rounds (UrlFetchApp.fetchAll contract). A token exchange never rides in a batch; if one
+  // did, it is answered alone first so the batch keeps its order.
+  if (typeof fetchAll === 'function') t.fetchAll = reqs => (reqs.some(r => String(r.url) === TOKEN_ENDPOINT)
+    ? reqs.map(({url, ...opts}) => t.fetch(url, opts)) : fetchAll(reqs));
+  return t;
 }
 
 export function runtimeProperties(env) {
@@ -84,8 +90,10 @@ export function createMemoryCache(nowMs = () => Date.now()) {
 }
 export const REFERENCE_CACHE_MS = 5 * 60 * 1000;
 
-export function createCloudRunApplication({env = process.env, fetchSync} = {}) {
-  const transport = fetchSync || createSyncFetch().fetch;
+export function createCloudRunApplication({env = process.env, fetchSync, fetchAllSync = null} = {}) {
+  const bridge = fetchSync ? null : createSyncFetch();
+  const transport = fetchSync || bridge.fetch;
+  const transportAll = fetchSync ? fetchAllSync : bridge.fetchAll;
   const utilities = nodeUtilities();
   const drivePhotos = env.MEDIA_BRIDGE_URL && env.P6VC_MEDIA_BRIDGE_SECRET
     ? createMediaBridgePhotos({fetchSync: transport, url: env.MEDIA_BRIDGE_URL, secret: env.P6VC_MEDIA_BRIDGE_SECRET, utilities})
@@ -93,7 +101,7 @@ export function createCloudRunApplication({env = process.env, fetchSync} = {}) {
   return createApplication({
     propertiesService: runtimeProperties(env),
     utilities,
-    urlFetchApp: withMetadataToken(transport),
+    urlFetchApp: withMetadataToken(transport, transportAll),
     driveApp: null,
     cache: null,
     tokenCache: createMemoryCache(),
