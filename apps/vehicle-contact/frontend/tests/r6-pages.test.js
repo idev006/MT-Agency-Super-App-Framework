@@ -69,7 +69,12 @@ describe('R7 owner feedback', () => {
     expect(read('infrastructure/vehicles/gas-vehicle-detail-repository.js')).toContain("callOperation('vehicles.photo'")
     expect(read('pages/VehicleDetailPage.vue')).toContain("route.query.from === 'registry'")
   })
-  it('registry is a table on wide screens', () => {
-    expect(read('pages/VehicleRegistryPage.vue')).toMatch(/<table class="table/)
+  it('registry is a table on every screen width (DataTable) and opens detail in a drawer (VC-ADR-037)', () => {
+    const page = read('pages/VehicleRegistryPage.vue')
+    expect(page).toContain('<DataTable')
+    expect(page).toContain('<EntityDrawer')
+    expect(page).toContain('<VehicleDetailPanel')
+    expect(page).toContain('vehicle: vehicle.vehicleId')
+    expect(page).not.toContain('md:hidden')
   })
 })

@@ -76,7 +76,8 @@ describe('vehicle detail page and route contracts', () => {
     expect(router).toContain("name: 'vehicle-detail'")
     expect(router).toContain("path: 'vehicles/detail/:vehicleId'")
     expect(router).toContain("requiredPermissions: ['vehicle.lookup']")
-    expect(page).toContain('<VehicleDetailTabs') // R7: the detail page has its own tabbed decision view
+    expect(page).toContain('<VehicleDetailPanel') // VC-ADR-037: page and registry drawer share the panel
+    expect(readFileSync(new URL('../src/features/vehicle-search/components/VehicleDetailPanel.vue', import.meta.url), 'utf8')).toContain('<VehicleDetailTabs')
     expect(page).toContain('<PageTemplateComponent')
     expect(page).toContain('<OperationalContextStrip')
     expect(page).toContain('route.params.vehicleId')
