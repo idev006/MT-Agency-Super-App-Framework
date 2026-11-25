@@ -94,3 +94,20 @@ test('T2-05 field config as code: gated, dry run lists, apply PATCHes only what 
   assert.ok(FIELD_SSOT.indexExemptions.every(x => !queried.includes(x.field)), 'a queried field is never exempted');
   fs.rmSync(keyFile, {force: true});
 });
+
+import {createRuntimeStore, FREE_TIER_DATABASE} from '../src/composition/StoreSelector.js';
+import {inspectScriptProperties} from '../src/composition/RuntimeConfig.js';
+test('T2-06 the runtime always uses the (default) database (free tier); a stale named-database property is ignored and flagged', () => {
+  assert.equal(FREE_TIER_DATABASE, '(default)');
+  const seen = [];
+  const key = fakeServiceAccountKey();
+  const props = {getProperty: k => ({VEHICLE_FIRESTORE_SA_KEY: JSON.stringify(key), VEHICLE_FIRESTORE_DATABASE_ID: 'p6vc-us'})[k] || null};
+  const urlFetchApp = {fetch: url => { seen.push(String(url));
+    return String(url).includes('oauth2') ? {getResponseCode: () => 200, getContentText: () => JSON.stringify({access_token: 't', expires_in: 3600})}
+      : {getResponseCode: () => 200, getContentText: () => '[]'}; }};
+  const store = createRuntimeStore({props, services: {utilities: makeFakeUtilities(), urlFetchApp}, clock: () => NOW});
+  store.one('vc_settings', {key: 'k'});
+  const fsCalls = seen.filter(u => u.includes('firestore.googleapis.com'));
+  assert.ok(fsCalls.length && fsCalls.every(u => u.includes('/databases/(default)/')), 'never the named database');
+  assert.ok(inspectScriptProperties({VEHICLE_FIRESTORE_DATABASE_ID: 'p6vc-us'}).retiredPresent.includes('VEHICLE_FIRESTORE_DATABASE_ID'));
+});
