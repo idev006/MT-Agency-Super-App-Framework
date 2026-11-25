@@ -395,6 +395,24 @@
         }
       ],
       "purpose": "TUNEUP R1 (2026-11-25): equality query instead of a full collection read"
+    },
+    {
+      "collection": "vc_qr_tokens",
+      "fields": [
+        {
+          "fieldPath": "vehicle_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "S5 qr.export: the ACTIVE QR of each selected vehicle (vehicle_id + status, _seq order)"
     }
   ]
 }
