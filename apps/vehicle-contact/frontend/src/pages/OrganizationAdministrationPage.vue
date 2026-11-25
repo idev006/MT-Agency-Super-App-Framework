@@ -15,6 +15,8 @@ const { roles, permissions, session, transport } = storeToRefs(auth)
 const administration = useOrganizationAdministration({ repository: inject(organizationAdministrationRepositoryKey), permissions })
 const disableTarget = ref(null)
 async function disableConfirmed() { await administration.disable(disableTarget.value.organizationId); disableTarget.value = null }
+const enableTarget = ref(null)
+async function enableConfirmed() { await administration.enable(enableTarget.value.organizationId); enableTarget.value = null }
 onMounted(() => administration.load())
 </script>
 
@@ -30,9 +32,10 @@ onMounted(() => administration.load())
       <div v-if="administration.actionPhase.value === 'uncertain'" class="alert alert-warning mb-4"><span>ไม่สามารถยืนยันผลการบันทึกได้ กรุณาโหลดรายการใหม่ก่อนทำซ้ำ</span></div>
       <div v-else-if="administration.actionPhase.value === 'error'" class="alert alert-error mb-4"><span>บันทึกไม่สำเร็จ ไม่มีการสั่งซ้ำอัตโนมัติ</span></div>
       <div v-else-if="administration.actionPhase.value === 'success'" class="alert alert-success mb-4"><span>บันทึกข้อมูลหน่วยงานแล้ว</span></div>
-      <OrganizationAdministrationPanel :organizations="administration.organizations.value" :can-manage="administration.canManage.value" :busy="administration.actionPhase.value === 'submitting'" @create="administration.create" @update="administration.update" @disable="disableTarget = $event" />
+      <OrganizationAdministrationPanel :organizations="administration.organizations.value" :can-manage="administration.canManage.value" :busy="administration.actionPhase.value === 'submitting'" @create="administration.create" @update="administration.update" @disable="disableTarget = $event" @enable="enableTarget = $event" />
       <PaginationControl v-if="administration.pagination.value.total" class="mt-4" :page="administration.page.value" :page-size="administration.pageSize.value" :total-items="administration.pagination.value.total" :disabled="administration.phase.value === 'loading'" label="แบ่งหน้ารายการหน่วยงาน" @update:page="administration.changePage" @update:page-size="administration.changePageSize" />
     </template>
   </PageTemplateComponent>
   <ConfirmDialog :open="Boolean(disableTarget)" title="ปิดใช้งานหน่วยงานหรือไม่" :message="`หน่วยงาน ${disableTarget?.name || ''} จะไม่พร้อมสำหรับงานใหม่ แต่ประวัติเดิมยังคงอยู่`" confirm-label="ปิดใช้งาน" :busy="administration.actionPhase.value === 'submitting'" @cancel="disableTarget = null" @confirm="disableConfirmed" />
+  <ConfirmDialog :open="Boolean(enableTarget)" title="เปิดใช้งานหน่วยงานอีกครั้งหรือไม่" :message="`หน่วยงาน ${enableTarget?.name || ''} จะกลับมาใช้กับงานใหม่ได้ และบันทึกประวัติการเปิดใช้งาน`" confirm-label="เปิดใช้งานอีกครั้ง" :busy="administration.actionPhase.value === 'submitting'" @cancel="enableTarget = null" @confirm="enableConfirmed" />
 </template>

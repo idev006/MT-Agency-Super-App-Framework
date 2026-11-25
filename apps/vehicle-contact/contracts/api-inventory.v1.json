@@ -200,6 +200,20 @@
       "liveVerified": false
     },
     {
+      "id": "VC-USERS-007",
+      "group": "users",
+      "action": "reactivate",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/users.reactivate",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
       "id": "VC-USERS-005",
       "group": "users",
       "action": "resetPassword",
@@ -278,6 +292,20 @@
       "status": "SOURCE_WRITTEN_UNVERIFIED",
       "protected": true,
       "requestSchemaRef": "#/definitions/requests/organizations.disable",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
+      "id": "VC-ORGANIZATIONS-005",
+      "group": "organizations",
+      "action": "enable",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/organizations.enable",
       "responseSchemaRef": "#/definitions/ApiResponse",
       "implementationVerified": false,
       "integrationVerified": false,
@@ -825,6 +853,7 @@
         "data",
         "error"
       ]
-    }
+    },
+    "requests": {}
   }
 }

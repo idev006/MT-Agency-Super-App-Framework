@@ -8,15 +8,13 @@ describe('permission-driven menu SSOT', () => {
     expect(ids).toEqual(['dashboard', 'about', 'account-security', 'vehicle-search', 'qr-resolve'])
   })
 
-  it('covers the GAS SYSTEM_ADMIN baseline without implicit operational access', () => {
+  it('SYSTEM_ADMIN (VC-ADR-036): vehicle search + QR resolve, but no registration approval or owner work', () => {
     const items = menuForPermissions(ROLE_PERMISSIONS.SYSTEM_ADMIN)
     const ids = items.map((item) => item.id)
     expect(ids).toEqual([
-      'dashboard', 'about', 'account-security', 'vehicle-registry', 'user-admin', 'organizations',
+      'dashboard', 'about', 'account-security', 'vehicle-search', 'qr-resolve', 'vehicle-registry', 'user-admin', 'organizations',
       'campaigns', 'qr-governance', 'system-settings', 'retention', 'audit',
     ])
-    expect(ids).not.toContain('vehicle-search')
-    expect(ids).not.toContain('qr-resolve')
     expect(ids).not.toContain('registration-review')
     expect(ids).not.toContain('my-vehicles')
     expect(items.filter((item) => item.route).map((item) => item.id)).toEqual(ids)

@@ -4,7 +4,7 @@ import { FULL_HUMAN_ADMIN_ROLES, useUserAdministration } from '../src/features/u
 function repository(overrides = {}) {
   return {
     create: vi.fn().mockResolvedValue({ userId: 'u-1' }), update: vi.fn().mockResolvedValue({ updated: true }),
-    suspend: vi.fn().mockResolvedValue({ suspended: true }), resetPassword: vi.fn().mockResolvedValue({ reset: true }),
+    suspend: vi.fn().mockResolvedValue({ suspended: true }), reactivate: vi.fn().mockResolvedValue({ reactivated: true }), resetPassword: vi.fn().mockResolvedValue({ reset: true }),
     assignRoles: vi.fn().mockResolvedValue({ roles: ['STAFF'] }), ...overrides,
   }
 }
@@ -21,9 +21,11 @@ describe('useUserAdministration', () => {
     await expect(admin.createUser({ username: 'staff' })).resolves.toBe(true)
     await expect(admin.updateUser({ userId: 'u-1', displayName: 'Staff' })).resolves.toBe(true)
     await expect(admin.suspendUser('u-1')).resolves.toBe(true)
+    await expect(admin.reactivateUser('u-1')).resolves.toBe(true)
+    expect(source.reactivate).toHaveBeenCalledWith('u-1')
     await expect(admin.resetPassword('u-1', 'temporary-only-123')).resolves.toBe(true)
     await expect(admin.assignRoles('u-1', ['STAFF'])).resolves.toBe(true)
-    expect(reload).toHaveBeenCalledTimes(5)
+    expect(reload).toHaveBeenCalledTimes(6)
     expect(admin.phase.value).toBe('success')
   })
 

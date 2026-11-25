@@ -8,7 +8,7 @@ export function assertUserDirectoryRepository(repository) {
 }
 
 export function assertUserAdministrationRepository(repository) {
-  const required = ['create', 'update', 'suspend', 'resetPassword', 'assignRoles']
+  const required = ['create', 'update', 'suspend', 'reactivate', 'resetPassword', 'assignRoles']
   if (!repository || required.some((method) => typeof repository[method] !== 'function')) {
     throw new TypeError(`user administration repository must implement ${required.join(', ')}`)
   }

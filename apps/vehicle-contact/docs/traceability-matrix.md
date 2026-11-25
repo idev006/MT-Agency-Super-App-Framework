@@ -24,12 +24,14 @@ The permission column is from `contracts/api-permissions.v1.json` and retains **
 | `users.list` | `VC-USERS-002` | [UC-ADMIN-01](use-cases/UC-ADMIN-01/specification.md) | `users.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `users.update` | `VC-USERS-003` | [UC-ADMIN-01](use-cases/UC-ADMIN-01/specification.md) | `users.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `users.suspend` | `VC-USERS-004` | [UC-ADMIN-01](use-cases/UC-ADMIN-01/specification.md) | `users.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
+| `users.reactivate` | `VC-USERS-007` | [UC-ADMIN-01](use-cases/UC-ADMIN-01/specification.md) | `users.manage` | ACTOR-ADR036 | SOURCE + unit tests; live proof pending deploy (VC-ADR-036) |
 | `users.resetPassword` | `VC-USERS-005` | [UC-AUTH-02](use-cases/UC-AUTH-02/specification.md) | `users.manage` | TC-AUTH-04 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `users.assignRoles` | `VC-USERS-006` | [UC-ADMIN-01](use-cases/UC-ADMIN-01/specification.md) | `users.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `organizations.list` | `VC-ORGANIZATIONS-001` | [UC-ADMIN-02](use-cases/UC-ADMIN-02/specification.md) | `organizations.read` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `organizations.create` | `VC-ORGANIZATIONS-002` | [UC-ADMIN-02](use-cases/UC-ADMIN-02/specification.md) | `organizations.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `organizations.update` | `VC-ORGANIZATIONS-003` | [UC-ADMIN-02](use-cases/UC-ADMIN-02/specification.md) | `organizations.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `organizations.disable` | `VC-ORGANIZATIONS-004` | [UC-ADMIN-02](use-cases/UC-ADMIN-02/specification.md) | `organizations.manage` | ACTOR-01 | PASS — authenticated direct-GAS; browser/business UAT open |
+| `organizations.enable` | `VC-ORGANIZATIONS-005` | [UC-ADMIN-02](use-cases/UC-ADMIN-02/specification.md) | `organizations.manage` | ACTOR-ADR036 | SOURCE + unit tests; live proof pending deploy (VC-ADR-036) |
 | `campaigns.create` | `VC-CAMPAIGNS-001` | [UC-CAMP-01](use-cases/UC-CAMP-01/specification.md) | `campaigns.manage` | ACTOR-02 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `campaigns.list` | `VC-CAMPAIGNS-002` | [UC-CAMP-01](use-cases/UC-CAMP-01/specification.md) | `campaigns.manage` | ACTOR-02 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `campaigns.validate` | `VC-CAMPAIGNS-003` | [UC-CAMP-02](use-cases/UC-CAMP-02/specification.md) | PUBLIC | ACTOR-02 | PASS — campaign-token direct-GAS workflow; browser/business UAT open |

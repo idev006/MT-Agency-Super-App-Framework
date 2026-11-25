@@ -30,6 +30,8 @@ export function useUserAdministration({ repository, reload }) {
     createUser: (payload) => execute(() => source.create(payload), 'สร้างบัญชีแล้ว ผู้ใช้ต้องเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบ'),
     updateUser: (payload) => execute(() => source.update(payload), 'บันทึกข้อมูลบัญชีแล้ว'),
     suspendUser: (userId) => execute(() => source.suspend(userId), 'ระงับบัญชีและเพิกถอนเซสชันแล้ว'),
+    // VC-ADR-036: SUSPENDED -> ACTIVE; old sessions stay revoked, the user signs in again.
+    reactivateUser: (userId) => execute(() => source.reactivate(userId), 'เปิดใช้งานบัญชีอีกครั้งแล้ว ผู้ใช้ต้องเข้าสู่ระบบใหม่'),
     resetPassword: (userId, password) => execute(() => source.resetPassword(userId, password), 'รีเซ็ตรหัสผ่านและเพิกถอนเซสชันแล้ว'),
     assignRoles: (userId, roles) => execute(() => source.assignRoles(userId, roles), 'เปลี่ยนบทบาทและเพิกถอนเซสชันแล้ว'),
   }

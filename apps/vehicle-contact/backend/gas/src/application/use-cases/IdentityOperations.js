@@ -122,6 +122,16 @@ export function createIdentityOperations({store,security,sessions}) {
   store.sequence(()=>{store.update('vc_users',{user_id:id},{status:'SUSPENDED',updated_at:security.now()});changed('USER_SUSPENDED',actor.userId,id)});
   sessions.revokeUser(id);return {userId:id,suspended:true};
  }
+ // VC-ADR-036: a suspended account can be re-activated (sessions were revoked at suspension and stay
+ // revoked; the user signs in again with the existing password). Only SUSPENDED -> ACTIVE.
+ function reactivate(p,actor){
+  const id=required(p.userId,'USER_ID');
+  const user=store.one('vc_users',{user_id:id});
+  if(!user)throw new Error('NOT_FOUND');
+  if(user.status!=='SUSPENDED')throw new Error('INVALID_REQUEST_STATE');
+  store.sequence(()=>{store.update('vc_users',{user_id:id},{status:'ACTIVE',updated_at:security.now()});changed('USER_REACTIVATED',actor.userId,id)});
+  return {userId:id,reactivated:true};
+ }
  function resetPassword(p,actor){
   const id=required(p.userId,'USER_ID'),hash=security.hashPassword(p.temporaryPassword);
   store.sequence(()=>{store.update('vc_users',{user_id:id},{password_hash:hash,password_change_required:true,updated_at:security.now()});changed('PASSWORD_RESET',actor.userId,id)});
@@ -182,7 +192,7 @@ export function createIdentityOperations({store,security,sessions}) {
  return Object.freeze({
  'auth.login':login,'auth.googleLogin':googleLogin,'auth.changePassword':changePassword,
  'auth.logout':logout,'auth.session':session,'auth.linkGoogle':linkGoogle,
- 'users.create':createUser,'users.list':listUsers,'users.update':updateUser,'users.suspend':suspend,
+ 'users.create':createUser,'users.list':listUsers,'users.update':updateUser,'users.suspend':suspend,'users.reactivate':reactivate,
  'users.resetPassword':resetPassword,'users.assignRoles':assignRoles
  });
 }

@@ -55,6 +55,15 @@ export function createAdministrationOperations({store,security}) {
   store.sequence(()=>{store.update('vc_organizations',{organization_id:id},{status:'DISABLED',updated_at:security.now()});audit(a,'ORG_DISABLED',id)});
   return {organizationId:id,disabled:true};
  }
+ // VC-ADR-036: a disabled organization can be enabled again (DISABLED -> ACTIVE), audited.
+ function enableOrg(p,a){
+  const id=required(p.organizationId,'ORG_ID');
+  const org=store.one('vc_organizations',{organization_id:id});
+  if(!org)throw new Error('NOT_FOUND');
+  if(org.status!=='DISABLED')throw new Error('INVALID_REQUEST_STATE');
+  store.sequence(()=>{store.update('vc_organizations',{organization_id:id},{status:'ACTIVE',updated_at:security.now()});audit(a,'ORG_ENABLED',id)});
+  return {organizationId:id,enabled:true};
+ }
  function getCampaign(token,{requireCapacity=true}={}){
   if(typeof token!=='string'||!/^[a-f0-9]{64}$/i.test(token))throw new Error('CAMPAIGN_INVALID');
   const row=store.one('vc_campaigns',{token_digest:security.sha256(token.toLowerCase())});
@@ -99,7 +108,7 @@ export function createAdministrationOperations({store,security}) {
  }
  return Object.freeze({
  'system.config.get':getSettings,'system.config.update':updateSettings,
- 'organizations.list':listOrgs,'organizations.create':createOrg,'organizations.update':updateOrg,'organizations.disable':disableOrg,
+ 'organizations.list':listOrgs,'organizations.create':createOrg,'organizations.update':updateOrg,'organizations.disable':disableOrg,'organizations.enable':enableOrg,
  'campaigns.create':createCampaign,'campaigns.list':listCampaigns,'campaigns.validate':validateCampaign,'campaigns.revoke':revokeCampaign,
  getCampaign
  });

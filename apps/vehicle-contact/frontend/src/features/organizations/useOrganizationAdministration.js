@@ -56,5 +56,6 @@ export function useOrganizationAdministration({ repository, permissions }) {
     create: (input) => write('create', () => source.create(input)),
     update: (input) => write('update', () => source.update(input)),
     disable: (organizationId) => write('disable', () => source.disable({ organizationId })),
+    enable: (organizationId) => write('enable', () => source.enable({ organizationId })),
   }
 }

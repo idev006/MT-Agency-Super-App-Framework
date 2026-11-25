@@ -2,7 +2,7 @@
 import { computed, reactive, watch } from 'vue'
 
 const props = defineProps({ organizations: { type: Array, required: true }, canManage: Boolean, busy: Boolean })
-const emit = defineEmits(['create', 'update', 'disable'])
+const emit = defineEmits(['create', 'update', 'disable', 'enable'])
 const form = reactive({ organizationId: '', name: '', type: 'POLICE', parentId: '' })
 const editing = computed(() => Boolean(form.organizationId))
 const activePoliceOrganizations = computed(() => props.organizations.filter((item) => item.type === 'POLICE' && item.status === 'ACTIVE' && item.organizationId !== form.organizationId))
@@ -36,6 +36,7 @@ const typeLabel = (type) => type === 'POLICE' ? 'หน่วยงานตำ�
           <li v-for="item in organizations" :key="item.organizationId" class="list-row grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
             <div class="min-w-0"><strong class="font-medium">{{ item.name }}</strong><p class="mt-1 text-sm text-base-content/65">{{ typeLabel(item.type) }}<span v-if="item.parentId"> · มีหน่วยงานแม่</span></p><span class="badge badge-sm mt-2" :class="item.status === 'ACTIVE' ? 'badge-success' : 'badge-ghost'">{{ item.status === 'ACTIVE' ? 'ใช้งาน' : 'ปิดใช้งาน' }}</span></div>
             <div v-if="canManage && item.status === 'ACTIVE'" class="flex flex-wrap gap-2 sm:justify-end"><button class="btn btn-sm" type="button" :disabled="busy" @click="edit(item)">แก้ไข</button><button class="btn btn-sm btn-error" type="button" :disabled="busy" @click="emit('disable', item)">ปิดใช้งาน</button></div>
+            <div v-else-if="canManage && item.status === 'DISABLED'" class="flex flex-wrap gap-2 sm:justify-end"><button class="btn btn-sm btn-primary" type="button" :disabled="busy" @click="emit('enable', item)">เปิดใช้งานอีกครั้ง</button></div>
           </li>
         </ul>
       </div>
