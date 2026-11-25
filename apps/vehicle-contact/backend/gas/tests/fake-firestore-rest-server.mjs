@@ -73,6 +73,7 @@ export function createFakeFirestoreRest({tokenFails=false,strictIndexes=false}={
   const state={requests:[],rounds:0,tokenCount:0,issuedToken:null,billedReads:0,residue:()=>docs.size,
     seed(coll,id,plain){docs.set(BASE+'/'+coll+'/'+id,encodeFields(plain));},
     plain(coll,id){const f=docs.get(BASE+'/'+coll+'/'+id);return f?decodeFields(f):null;},
+    rawFields(coll,id){return docs.get(BASE+"/"+coll+"/"+id)||null;},
     addIndex(coll,fields){indexes.add(coll+'|'+fields.map(f=>f.fieldPath+':'+(f.order||'ASCENDING')).join(','));}};
   const reply=(code,body)=>({getResponseCode:()=>code,getContentText:()=>body===undefined?'':JSON.stringify(body)});
   const err=(code,status,message)=>reply(code,{error:{code,status,message}});

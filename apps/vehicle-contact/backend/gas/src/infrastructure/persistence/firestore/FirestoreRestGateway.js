@@ -31,6 +31,8 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     if(typeof v==='string')return {stringValue:v};
     if(typeof v==='boolean')return {booleanValue:v};
     if(typeof v==='number')return Number.isInteger(v)?{integerValue:String(v)}:{doubleValue:v};
+    // T2-2: Date = a real Firestore timestamp (TTL policies only act on timestamp fields).
+    if(v instanceof Date)return {timestampValue:v.toISOString()};
     if(Array.isArray(v))return {arrayValue:{values:v.map(encodeValue)}};
     if(typeof v==='object')return {mapValue:{fields:encodeFields(v)}};
     throw new Error('UNSUPPORTED_VALUE_TYPE');
@@ -41,7 +43,7 @@ export function createFirestoreRestGateway({utilities,urlFetchApp,clientEmail,pr
     if('doubleValue' in v)return v.doubleValue;
     if('booleanValue' in v)return v.booleanValue;
     if('nullValue' in v)return null;
-    if('timestampValue' in v)return v.timestampValue;
+    if('timestampValue' in v)return new Date(v.timestampValue); // round-trips as a timestamp (T2-2)
     if('arrayValue' in v)return (v.arrayValue.values||[]).map(decodeValue);
     if('mapValue' in v)return decodeFields(v.mapValue.fields);
     throw new Error('UNSUPPORTED_VALUE_TYPE');

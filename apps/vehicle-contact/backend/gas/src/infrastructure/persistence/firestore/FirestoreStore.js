@@ -11,6 +11,16 @@ import {DATABASE_SCHEMA} from '../../../domain/ports/SchemaRepository.js';
 // test. This module uses no GAS- or Node-specific API, so it bundles unchanged into the
 // GAS artifact; it is the only runtime store since Slice G (VC-ADR-026).
 const SEQ_FIELD='_seq';
+// T2-2 (owner "Start T2"): Firestore TTL deletes expired housekeeping rows by itself — no read, no
+// job. Each listed table gets a timestamp field expire_at = base field + days on insert; the TTL
+// policies are declared in contracts/firestore-ttl.v1.json. Audit trails are NOT listed (PDPA).
+export const TTL_FIELD='expire_at';
+export const TTL_RULES=Object.freeze({
+  vc_sessions:Object.freeze({from:'expires_at',days:1}),
+  vc_idempotency:Object.freeze({from:'created_at',days:30}),
+  vc_security_events:Object.freeze({from:'created_at',days:90}),
+  vc_operation_journal:Object.freeze({from:'created_at',days:180})
+});
 const MAX_LIMIT=5000;
 
 export function createFirestoreStore({firestore}){
@@ -23,7 +33,9 @@ export function createFirestoreStore({firestore}){
   const whereOf=filter=>Object.entries(filter||{}).map(([field,value])=>({field,value}));
   const checkLimit=limit=>{if(!Number.isSafeInteger(limit)||limit<1||limit>MAX_LIMIT)throw new Error('INVALID_LIMIT');};
   // Reads expose canonical columns only; the internal ordering field never leaks out.
-  const strip=fields=>{const out={};for(const k of Object.keys(fields))if(k!==SEQ_FIELD)out[k]=fields[k];return out;};
+  const strip=fields=>{const out={};for(const k of Object.keys(fields))if(k!==SEQ_FIELD&&k!==TTL_FIELD)out[k]=fields[k];return out;};
+  const withTtl=(name,doc)=>{const r=TTL_RULES[name];if(!r)return doc;const base=Date.parse(doc[r.from]);
+    return Number.isFinite(base)?{...doc,[TTL_FIELD]:new Date(base+r.days*86400000)}:doc;};
   // W1a: _seq is a time-ordered integer (epoch-ms*1000 + per-execution counter), strictly
   // increasing within an execution and time-ordered across executions. It needs NO counter
   // read, so an insert is ONE commit. Values (~1.8e15) sort after every legacy counter value
@@ -67,7 +79,7 @@ export function createFirestoreStore({firestore}){
     function insert(name,data){
       const cols=columns(name);checkRequired(cols,data);
       const docId=String(data[primaryKey(name)]);
-      const doc={...data,[SEQ_FIELD]:nextSeq()};
+      const doc=withTtl(name,{...data,[SEQ_FIELD]:nextSeq()});
       if(fast){
         // ONE round: create with exists:false — the server rejects a duplicate key atomically.
         try{gw.commit([{type:'create',coll:name,id:docId,fields:doc}]);}catch(e){throw mapCommitError(e);}
@@ -129,7 +141,7 @@ export function createFirestoreStore({firestore}){
       const writes=ops.map(o=>{
         const cols=columns(o.table);
         if(o.op==='insert'){checkRequired(cols,o.data);
-          return {type:'create',coll:o.table,id:String(o.data[primaryKey(o.table)]),fields:{...o.data,[SEQ_FIELD]:nextSeq()}};}
+          return {type:'create',coll:o.table,id:String(o.data[primaryKey(o.table)]),fields:withTtl(o.table,{...o.data,[SEQ_FIELD]:nextSeq()})};}
         if(!isPk(o.table,o.key))throw new Error('WRITE_REQUIRES_PRIMARY_KEY');
         const id=String(o.key[primaryKey(o.table)]);
         if(o.op==='update'){checkPatch(cols,o.fields);return {type:'patch',coll:o.table,id,fields:o.fields,...(o.ifVersion?{ifUpdateTime:o.ifVersion}:{})};}
@@ -174,7 +186,7 @@ export function createFirestoreStore({firestore}){
       let results;
       if(inserts.length){
         const ops=inserts.map(([table,data])=>{const cols=columns(table);checkRequired(cols,data);
-          return {type:'create',coll:table,id:String(data[primaryKey(table)]),fields:{...data,[SEQ_FIELD]:nextSeq()}};});
+          return {type:'create',coll:table,id:String(data[primaryKey(table)]),fields:withTtl(table,{...data,[SEQ_FIELD]:nextSeq()})};});
         let out;try{out=gw.queryManyAndCommit(specs,ops);}catch(e){throw mapCommitError(e);}
         results=out.slice(0,specs.length);
       }else results=gw.queryMany(specs);

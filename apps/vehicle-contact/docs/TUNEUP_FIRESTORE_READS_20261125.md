@@ -143,3 +143,22 @@ The fake server bills like Firestore: a query costs max(1, docs returned) and a 
 The first run right after the deploy was slower while instances warmed up. Client timings include internet round trips and vary between runs.
 
 **Cost.** Confirm on billing ("Cloud Firestore Read Ops Bangkok") over the next days against the 302,023 baseline.
+
+## 8. T2: Firestore efficiency, phase 2 (owner "Start T2", 2026-11-25, BE 0.9.29)
+
+Billing facts this phase relies on:
+- Firestore bills per document read, written or deleted.
+- A projection / field mask cuts bytes and latency but **not** reads.
+- `offset` still bills every skipped document.
+- COUNT is about 1 read per 1,000 index entries.
+- The `(default)` database has a daily free quota; named databases do not.
+
+| Item | Change | Effect |
+|---|---|---|
+| T2-1 session check | Login writes the roles + permissions snapshot into the session (`access_json`). The check reads the session + the user (still live). Every role, status or password change already revokes the user's sessions, so a snapshot cannot outlive a change. Older sessions fall back to the live read. | 4 → **2 reads per request** (T2-01..03) |
+| T2-2 TTL | `FirestoreStore` writes the timestamp `expire_at` on sessions (expiry + 1 day), idempotency (30 days), security events (90 days) and the operation journal (180 days). It survives transactional updates and is hidden from reads like `_seq`. Audit trails are excluded (PDPA). | Expired rows are deleted by Firestore: no read, no job (T2-04) |
+| T2-3 index exemptions | Long text fields that are never queried keep no single-field index. These are the application/delta/result/detail JSON fields, the audit summary, password hash/salt, the campaign token and the session snapshot. | Less storage, cheaper writes |
+| T2-2/3 as code | `contracts/firestore-field-config.v1.json` + `scripts/ensure-firestore-field-config.mjs`: add-only, gated, dry run by default, waits until each change is live | T2-05 |
+| T2-4 FE cache | Already in place: the registration reference catalog is cached per user and tab in sessionStorage (one call per tab session). The server memo (R2) covers repeated calls. | No change needed |
+| T2-4 budget alert | Owner sets it in GCP Billing → Budgets & alerts | Owner action |
+| T2-5 cursor paging | Deferred. Page *n* still reads n × pageSize rows, which is cheap at the current size (audit page 5 = 50 reads). Switch to `startAfter` when collections grow or the page count passes about 20. | Revisit when data grows |
