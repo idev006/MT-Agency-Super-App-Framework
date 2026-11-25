@@ -53,6 +53,7 @@ const SCHEMAS={
  'qr.revoke':[{vehicleId:'s',reason:'s'},{note:'s'}],
  'qr.replace':[{vehicleId:'s',reason:'s'},{note:'s'}],
  'qr.history':[{vehicleId:'s'},{}],
+ 'qr.export':[{vehicleIds:'a'},{}],
  'photos.upload':[{campaignToken:'s',slot:'s',base64Image:'x',mimeType:'s'},{}],
  'photos.list':[{vehicleId:'s'},{}],
  'photos.replace':[{vehicleId:'s',slot:'s',base64Image:'x',mimeType:'s'},{}],

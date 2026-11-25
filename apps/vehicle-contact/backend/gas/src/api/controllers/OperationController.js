@@ -17,7 +17,7 @@ const permissions={
  'vehicles.lookup':'vehicle.lookup','vehicles.detail':'vehicle.lookup','vehicles.update':'vehicle.update','vehicles.cancel':'vehicle.update','vehicles.history':'vehicle.history.read','vehicles.listMine':'vehicle.own.read','vehicles.list':'vehicle.list',
  'contacts.read':'vehicle.contact.read','contacts.update':'vehicle.update',
  'changes.submit':'vehicle.change.submit','changes.listPending':'vehicle.change.approve','changes.review':'vehicle.change.approve','changes.listMine':'vehicle.own.read',
- 'qr.resolve':'vehicle.lookup','qr.issue':'qr.manage','qr.revoke':'qr.manage','qr.replace':'qr.manage','qr.history':'qr.manage',
+ 'qr.resolve':'vehicle.lookup','qr.issue':'qr.manage','qr.revoke':'qr.manage','qr.replace':'qr.manage','qr.history':'qr.manage','qr.export':'qr.manage',
  'photos.list':'vehicle.photos.read','vehicles.photo':'vehicle.photos.read','photos.replace':'vehicle.update',
  'retention.listDue':'retention.read','retention.listExecutable':'retention.worker','retention.approve':'retention.delete.approve','retention.execute':'retention.worker','retention.jobStatus':'retention.read',
  'audit.query':'audit.read','audit.export':'audit.read'
@@ -32,7 +32,7 @@ const safeErrors=new Set([
  'INVALID_CAMPAIGN','CAMPAIGN_INVALID','FIVE_PHOTOS_REQUIRED','PLATE_PHOTO_NOT_VERIFIED','PHOTO_SLOT_INVARIANT','IDEMPOTENCY_CONFLICT','OWNER_NOT_FOUND','PHOTO_NOT_STAGED','INVALID_SLOT','INVALID_MEDIA',
  'INVALID_MIME','PHOTO_UPLOAD_LIMIT','INVALID_IMAGE_SIZE','IMAGE_SIGNATURE_MISMATCH','PHOTO_NOT_FOUND','VEHICLE_NOT_ACTIVE','VERSION_CONFLICT',
  'CONTACT_NOT_FOUND','PRIMARY_CONTACT_INVARIANT','INVALID_REQUEST_STATE','INVALID_DECISION','OWNERSHIP_NOT_VERIFIED',
- 'INVALID_QR','INVALID_QR_REASON','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
+ 'INVALID_QR','INVALID_QR_REASON','INVALID_VEHICLE_IDS','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
  'DELETION_NOT_AUTHORIZED','DELETION_RETRY_REQUIRED','BUSY','CAMPAIGN_BUSY','SCHEMA_MISMATCH','MISSING_TABLE','IDLE_POLICY_NOT_CONFIGURED',
  'INVALID_LIMIT','INVALID_PAGINATION','NO_CHANGES','ORGANIZATION_INACTIVE','PARENT_NOT_FOUND','INVALID_ORG_TYPE','INVALID_ORG_PARENT',
  'SELF_DEMOTION_DENIED','SELF_ROLE_EXPANSION_DENIED','SELF_SUSPEND_DENIED','RETENTION_POLICY_NOT_CONFIGURED','OPERATION_DISABLED','OPERATION_RECOVERY_REQUIRED',
@@ -48,7 +48,7 @@ export function createOperationController({store,security,sessions,drivePhotos,a
  };
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
- if(entries.length!==59||DTO_OPERATIONS.length!==59||entries.some(op=>!DTO_OPERATIONS.includes(op))
+ if(entries.length!==60||DTO_OPERATIONS.length!==60||entries.some(op=>!DTO_OPERATIONS.includes(op))
   ||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
   throw new Error('INCOMPLETE_API_DISPATCH');
  function dispatch(request){

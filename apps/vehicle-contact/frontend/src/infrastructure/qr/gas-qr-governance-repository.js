@@ -13,6 +13,18 @@ export function createGasQrGovernanceRepository({ callOperation }) {
     issue: async (vehicleId, reason) => mapResult(await callOperation('qr.issue', { vehicleId, ...why(reason) }), true),
     revoke: async (vehicleId, reason) => mapResult(await callOperation('qr.revoke', { vehicleId, ...why(reason) }), false),
     replace: async (vehicleId, reason) => mapResult(await callOperation('qr.replace', { vehicleId, ...why(reason) }), true),
+    // S5 / VC-ADR-032 B: the ACTIVE code of up to 100 vehicles (qr.manage), for display and printing.
+    async exportCodes(vehicleIds) {
+      const response = await callOperation('qr.export', { vehicleIds })
+      const items = response?.data?.items
+      if (!Array.isArray(items)) throw Object.assign(new Error('Invalid QR export'), { code: 'INVALID_ENVELOPE' })
+      return items.map((x) => Object.freeze({
+        vehicleId: text(x.vehicleId), status: text(x.status), plate: text(x.plate), province: text(x.province),
+        vehicleType: text(x.vehicleType), brand: text(x.brand), model: text(x.model), color: text(x.color),
+        qrId: text(x.qrId), issuedAt: text(x.issuedAt),
+        token: x.status === 'READY' && /^[a-f0-9]{64}$/.test(text(x.token)) ? x.token : '',
+      }))
+    },
     async history(vehicleId) {
       const response = await callOperation('qr.history', { vehicleId })
       const items = response?.data?.items

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, inject, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { qrResolveRepositoryKey } from '../application/vehicles/qr-resolve-port.js'
 import { qrScannerKey } from '../application/scanner/qr-scanner-port.js'
@@ -31,7 +32,14 @@ async function submit() {
   await work.resolve(candidate)
 }
 
-onMounted(scanner.bindLifecycle)
+const route = useRoute()
+const router = useRouter()
+// VC-ADR-032 (A): opened from a sticker link (#/q/<code> → ?t=<code>): drop it from the URL, then resolve.
+onMounted(async () => {
+  scanner.bindLifecycle()
+  const code = typeof route.query.t === 'string' ? route.query.t : ''
+  if (code) { await router.replace({ query: {} }); await resolveAndShow(code) }
+})
 onBeforeUnmount(() => { work.clearSensitive(); scanner.destroy() })
 </script>
 

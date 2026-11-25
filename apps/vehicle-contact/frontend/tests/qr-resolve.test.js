@@ -49,13 +49,15 @@ describe('QR resolve vertical slice', () => {
     expect(JSON.stringify(recoverable.failure.value)).not.toContain('private token detail')
   })
 
-  it('keeps the token out of URLs, storage and visible result markup', () => {
+  it('keeps the token out of storage and visible markup; a sticker link (#/q/<code>, hash only) is read once and removed from the URL', () => {
     const page = readFileSync(new URL('../src/pages/QrResolvePage.vue', import.meta.url), 'utf8')
     const router = readFileSync(new URL('../src/router/index.js', import.meta.url), 'utf8')
     expect(router).toMatch(/name: 'qr-resolve'.*requiredPermissions: \['vehicle\.lookup'\]/)
     expect(page).not.toContain('localStorage')
     expect(page).not.toContain('sessionStorage')
-    expect(page).not.toContain('route.query')
+    // VC-ADR-032 (A): the only URL use is the sticker link: read ?t once, replace the URL, then resolve.
+    expect(page).toContain("await router.replace({ query: {} }); await resolveAndShow(code)")
+    expect(router).toContain("{ path: '/q/:code', name: 'qr-link'")
     expect(page).toContain('type="password"')
     expect(page).toContain('VehicleSearchResult')
   })

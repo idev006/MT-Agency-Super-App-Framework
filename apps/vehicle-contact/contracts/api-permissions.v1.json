@@ -354,6 +354,13 @@
       "enabled": false
     },
     {
+      "id": "VC-QR-006",
+      "operation": "qr.export",
+      "requiredPermission": "qr.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
       "id": "VC-PHOTOS-001",
       "operation": "photos.upload",
       "requiredPermission": "campaign.token.valid",

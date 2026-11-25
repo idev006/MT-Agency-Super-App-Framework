@@ -51,7 +51,7 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "changes.listPending":[[],["limit","page","pageSize"]],"changes.review":[["requestId","decision"],[]],
  "changes.listMine":[[],["limit","page","pageSize"]],
  "qr.resolve":[["token"],[]],
- "qr.issue":[["vehicleId","reason"],["note"]],"qr.revoke":[["vehicleId","reason"],["note"]],"qr.replace":[["vehicleId","reason"],["note"]],"qr.history":[["vehicleId"],[]],
+ "qr.issue":[["vehicleId","reason"],["note"]],"qr.revoke":[["vehicleId","reason"],["note"]],"qr.replace":[["vehicleId","reason"],["note"]],"qr.history":[["vehicleId"],[]],"qr.export":[["vehicleIds"],[]],
  "system.config.get":[[],[]],"system.config.update":[["values"],[]],
  "retention.listDue":[[],["limit","page","pageSize"]],"retention.listExecutable":[[],["limit","page","pageSize"]],"retention.approve":[["jobId"],[]],"retention.execute":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
  "audit.query":[[],["vehicleId","limit","page","pageSize"]],"audit.export":[[],["vehicleId","limit"]]

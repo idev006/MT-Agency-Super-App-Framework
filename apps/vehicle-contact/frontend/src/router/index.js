@@ -20,6 +20,7 @@ import AccountSecurityPage from '../pages/AccountSecurityPage.vue'
 import OrganizationAdministrationPage from '../pages/OrganizationAdministrationPage.vue'
 import CampaignAdministrationPage from '../pages/CampaignAdministrationPage.vue'
 import QrGovernancePage from '../pages/QrGovernancePage.vue'
+import QrPrintPage from '../pages/QrPrintPage.vue'
 import SystemSettingsPage from '../pages/SystemSettingsPage.vue'
 import RetentionApprovalPage from '../pages/RetentionApprovalPage.vue'
 import AuditReviewPage from '../pages/AuditReviewPage.vue'
@@ -48,6 +49,7 @@ export const router = createRouter({
         { path: 'account/security', name: 'account-security', component: AccountSecurityPage, meta: { title: 'บัญชีและความปลอดภัย', requiredPermissions: ['session.authenticated'] } },
         { path: 'admin/organizations', name: 'organization-administration', component: OrganizationAdministrationPage, meta: { title: 'หน่วยงาน', requiredPermissions: ['organizations.read'] } },
         { path: 'admin/campaigns', name: 'campaign-administration', component: CampaignAdministrationPage, meta: { title: 'แคมเปญลงทะเบียน', requiredPermissions: ['campaigns.manage'] } },
+        { path: 'admin/qr-print', name: 'qr-print', component: QrPrintPage, meta: { title: 'พิมพ์ QR', requiredPermissions: ['qr.manage', 'vehicle.list'] } },
         { path: 'admin/qr', name: 'qr-governance', component: QrGovernancePage, meta: { title: 'จัดการ QR', requiredPermissions: ['qr.manage'] } },
         { path: 'admin/settings', name: 'system-settings', component: SystemSettingsPage, meta: { title: 'ตั้งค่าระบบ', requiredPermissions: ['system.settings.read'] } },
         { path: 'admin/retention', name: 'retention-approval', component: RetentionApprovalPage, meta: { title: 'การเก็บรักษาข้อมูล', requiredPermissions: ['retention.read'] } },
@@ -57,6 +59,9 @@ export const router = createRouter({
     // VC-ADR-031: the stable, shareable campaign link. Today it opens the staff intake page with the
     // code pre-filled (sign-in first); a public registrant page can replace the target later without
     // changing links already printed or shared.
+    // VC-ADR-032 (A): a scanned sticker opens <app>#/q/<code>. Signed out → the sign-in page (no API call);
+    // after sign-in the QR check page resolves the code (vehicle.lookup), which then leaves the URL.
+    { path: '/q/:code', name: 'qr-link', redirect: (to) => ({ name: 'qr-resolve', query: /^[a-f0-9]{64}$/i.test(String(to.params.code)) ? { t: String(to.params.code).toLowerCase() } : {} }) },
     { path: '/register', name: 'campaign-link', redirect: (to) => ({ name: 'registration-intake', query: typeof to.query.c === 'string' ? { c: to.query.c } : {} }) },
     { path: '/', redirect: { name: 'dashboard' } },
     { path: '/:pathMatch(.*)*', redirect: { name: 'dashboard' } },

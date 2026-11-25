@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { assertQrScanner } from '../../application/scanner/qr-scanner-port.js'
+import { codeFromScan } from '../../domain/qr/vehicle-qr-link.js'
 
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 const MAX_IMAGE_BYTES = 10_000_000
@@ -35,11 +36,13 @@ export function useQrScanner({ scanner, elementId, onDecoded }) {
   async function handleDecoded(text) {
     if (decoding) return
     decoding = true
-    const candidate = String(text || '').trim()
+    const read = String(text || '').trim()
+    // VC-ADR-032 (A): this app's /q/ link or the bare code; anything else is not a vehicle QR.
+    const candidate = codeFromScan(read) || read
     if (!QR_TOKEN.test(candidate) && phase.value === 'scanning') {
       const now = Date.now()
-      if (candidate !== lastIgnored || now - lastIgnoredAt > 3000) notice.value = /^https?:\/\//i.test(candidate) ? 'LINK_NOT_VEHICLE_QR' : 'NOT_VEHICLE_QR'
-      lastIgnored = candidate; lastIgnoredAt = now
+      if (read !== lastIgnored || now - lastIgnoredAt > 3000) notice.value = /^https?:\/\//i.test(read) ? 'LINK_NOT_VEHICLE_QR' : 'NOT_VEHICLE_QR'
+      lastIgnored = read; lastIgnoredAt = now
       decoding = false
       return
     }

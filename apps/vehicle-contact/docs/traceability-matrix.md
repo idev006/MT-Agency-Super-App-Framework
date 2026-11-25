@@ -60,6 +60,7 @@ The permission column is from `contracts/api-permissions.v1.json` and retains **
 | `qr.revoke` | `VC-QR-003` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-04 | PASS — authenticated direct-GAS token API; physical QR/device acceptance open |
 | `qr.replace` | `VC-QR-004` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-04 | PASS — authenticated direct-GAS token API; physical QR/device acceptance open |
 | `qr.history` | `VC-QR-005` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-S3-QR | SOURCE + unit tests; live proof pending deploy (VC-ADR-036 S3) |
+| `qr.export` | `VC-QR-006` | [UC-QR-02](use-cases/UC-QR-02/specification.md) | `qr.manage` | ACTOR-S5-QR-EXPORT | SOURCE + unit tests; live proof pending deploy (S5, VC-ADR-032 B) |
 | `photos.upload` | `VC-PHOTOS-001` | [UC-PHOTO-01](use-cases/UC-PHOTO-01/specification.md) | `campaign.token.valid` | ACTOR-03 | PASS — campaign-token direct-GAS five-photo workflow; browser/business UAT open |
 | `photos.list` | `VC-PHOTOS-002` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.photos.read` | ACTOR-03 | PASS — authenticated direct-GAS; browser/business UAT open |
 | `vehicles.photo` | `VC-VEHICLES-008` | [UC-VEH-01](use-cases/UC-VEH-01/specification.md) | `vehicle.photos.read` | ACTOR-03 | OFFLINE PASS (VIEW-03, RBAC matrix, Worker allowlist test) — live G6 pending V66 deploy |

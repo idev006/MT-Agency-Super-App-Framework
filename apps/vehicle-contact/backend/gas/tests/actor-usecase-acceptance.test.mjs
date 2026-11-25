@@ -62,10 +62,13 @@ test('ACTOR-03 REGISTRATION: anonymous 5-photo staging, idempotent submit, admin
  assert.equal(h.read('vc_vehicle_photos').length,5);
  assert.equal(h.read('vc_qr_tokens').length,1);
  assert.equal(h.read('vc_qr_tokens')[0].token_digest,h.security.sha256(approved.qrToken));
- assert.ok(!JSON.stringify(h.read('vc_qr_tokens')).includes(approved.qrToken));
+ // S5 / VC-ADR-032 B (owner decision): the code is stored so admins can show/print it; it is returned only by
+ // qr.export (qr.manage) and never by lookup / detail / history / resolve.
+ assert.equal(h.read('vc_qr_tokens')[0].qr_token,approved.qrToken);
  assertError(assert,h.call('vehicles.lookup',{plate:'กข1234',province:'TH-10'}),'UNAUTHENTICATED','anonymous lookup blocked');
  const lookup=assertOk(assert,h.as('staff','vehicles.lookup',{plate:'กข 1234',province:'TH-10'}),'staff lookup');
  assert.equal(lookup.vehicleId,approved.vehicleId);assert.equal(lookup.contacts.length,1);assert.equal(lookup.photos.length,5);
+ assert.ok(!JSON.stringify(lookup).includes(approved.qrToken),'lookup never returns the QR code');
  const detail=assertOk(assert,h.as('staff','vehicles.detail',{vehicleId:approved.vehicleId}),'authorized vehicle detail');
  assert.equal(detail.vehicleId,approved.vehicleId);
  const qrLookup=assertOk(assert,h.as('staff','qr.resolve',{token:approved.qrToken}),'authorized QR resolve');
@@ -309,4 +312,27 @@ test('ACTOR-D2-FILTERS admin lists filter on the server before paging; unknown f
  assert.equal(assertOk(assert,h.as('sys','campaigns.list',{page:1,pageSize:10,state:'CURRENT'}),'current').total,1);
  for(const [op,payload] of [['users.list',{status:'GONE'}],['organizations.list',{type:'X'}],['campaigns.list',{state:'SOON'}],['users.list',{q:'x'.repeat(101)}]])
   assertError(assert,h.as('sys',op,{page:1,pageSize:10,...payload}),'INVALID_REQUEST',op+' bad filter');
+});
+
+test('ACTOR-S5-QR-EXPORT admins get the ACTIVE code of selected vehicles for printing; audited; legacy QR = REISSUE_NEEDED; others denied',()=>{
+ const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
+ const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
+ const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const vehicleId=h.read('vc_vehicles')[0].vehicle_id;
+ const x=assertOk(assert,h.as('sys','qr.export',{vehicleIds:[vehicleId,vehicleId,'missing']}),'export');
+ assert.equal(x.items.length,2,'duplicates collapsed');
+ assert.equal(x.items[0].status,'READY');assert.equal(x.items[0].token,approved.qrToken,'the approval code');
+ assert.equal(x.items[0].plate,h.read('vc_vehicles')[0].plate_normalized);
+ assert.equal(x.items[1].status,'NOT_FOUND');assert.equal(x.ready,1);
+ assert.ok(h.read('vc_change_audit').some(a=>a.action==='QR_EXPORTED'&&a.entity_id===vehicleId),'who exported is audited');
+ const replaced=assertOk(assert,h.as('reg','qr.replace',{vehicleId,reason:'DAMAGED'}),'replace');
+ assert.equal(assertOk(assert,h.as('reg','qr.export',{vehicleIds:[vehicleId]}),'export').items[0].token,replaced.token,'always the ACTIVE code');
+ // a QR issued before codes were stored cannot be shown: reissue, never guess
+ const active=h.read('vc_qr_tokens').find(q=>q.vehicle_id===vehicleId&&q.status==='ACTIVE');
+ h.store.update('vc_qr_tokens',{qr_id:active.qr_id},{qr_token:''});
+ const legacy=assertOk(assert,h.as('sys','qr.export',{vehicleIds:[vehicleId]}),'legacy');
+ assert.equal(legacy.items[0].status,'REISSUE_NEEDED');assert.equal('token' in legacy.items[0],false);
+ for(const role of ['staff','owner','worker'])assertError(assert,h.as(role,'qr.export',{vehicleIds:[vehicleId]}),'FORBIDDEN',role+' denied');
+ assertError(assert,h.as('sys','qr.export',{vehicleIds:[]}),'INVALID_VEHICLE_IDS','empty selection');
+ assertError(assert,h.as('sys','qr.export',{vehicleIds:Array.from({length:101},(_,i)=>'v'+i)}),'INVALID_VEHICLE_IDS','max 100');
 });

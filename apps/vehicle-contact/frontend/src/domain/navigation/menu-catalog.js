@@ -13,6 +13,7 @@ export const menuCatalog = Object.freeze([
   { id: 'organizations', icon: 'organizations', label: 'หน่วยงาน', description: 'จัดการโครงสร้างหน่วยงานตำรวจและหน่วยงานภายนอก', route: 'organization-administration', permissionsAny: ['organizations.read', 'organizations.manage'] },
   { id: 'campaigns', icon: 'campaigns', label: 'แคมเปญลงทะเบียน', description: 'สร้าง ตรวจสอบ และเพิกถอนแคมเปญลงทะเบียน', route: 'campaign-administration', permissionsAny: ['campaigns.manage'] },
   { id: 'qr-governance', icon: 'qr', label: 'จัดการ QR', description: 'ออก เพิกถอน และเปลี่ยน QR ภายใต้สิทธิ์ที่กำหนด', route: 'qr-governance', permissionsAny: ['qr.manage'] },
+  { id: 'qr-print', icon: 'qr', label: 'พิมพ์ QR', description: 'เลือกรถแล้วสร้างแผ่น QR สำหรับพิมพ์หรือส่งโรงพิมพ์', route: 'qr-print', permissionsAny: ['qr.manage'] },
   { id: 'system-settings', icon: 'settings', label: 'ตั้งค่าระบบ', description: 'ตรวจสอบและปรับนโยบายการทำงานของระบบ', route: 'system-settings', permissionsAny: ['system.settings.read', 'system.settings.manage'] },
   { id: 'retention', icon: 'retention', label: 'การเก็บรักษาข้อมูล', description: 'ตรวจสอบหรือดำเนินงานตามนโยบายข้อมูล', route: 'retention-approval', permissionsAny: ['retention.read', 'retention.delete.approve'] },
   { id: 'audit', icon: 'audit', label: 'ตรวจสอบ Audit', description: 'ตรวจสอบและส่งออกหลักฐานกิจกรรมที่ได้รับอนุญาต', route: 'audit-review', permissionsAny: ['audit.read'] },
