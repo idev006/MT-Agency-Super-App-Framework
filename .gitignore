@@ -10,3 +10,5 @@ dist/
 # Local DEV scratch / live-E2E artifacts — never commit (may contain transient results)
 .tmp/
 test-results/
+e2e-results/
+e2e-report/

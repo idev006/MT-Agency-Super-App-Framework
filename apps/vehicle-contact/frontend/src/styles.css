@@ -328,6 +328,9 @@ textarea {
 .p6-table tbody tr:last-child td { border-bottom: 0; }
 .p6-table .p6-col-sticky { position: sticky; left: 0; z-index: 1; box-shadow: 1px 0 0 var(--color-base-300); }
 .p6-table thead .p6-col-sticky { z-index: 3; }
+/* E2E finding (phone 375px): a 350px pinned column covered the row's action button. The pinned column
+   never takes more than 42% of the screen; its long text wraps inside it. */
+.p6-table .p6-col-sticky, .p6-table .p6-col-sticky > .p6-cell { max-width: min(350px, 42vw); }
 .p6-table .p6-col-name { min-width: 9rem; font-weight: 600; }
 .p6-table .p6-col-text { min-width: 12rem; }
 .p6-table .p6-col-date, .p6-table .p6-col-status, .p6-table .p6-col-nowrap { white-space: nowrap; }
