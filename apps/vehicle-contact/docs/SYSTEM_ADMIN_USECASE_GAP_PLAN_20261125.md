@@ -182,3 +182,24 @@ This gap is in the role design, not a bug in one screen. Fixing it means giving 
   - Confirm is disabled with no reason ("เลือกเหตุผล") and with OTHER without a note ("ระบุเหตุผลเพิ่มเติม"); it is enabled once a note is entered.
   - Cancelled, so nothing was changed.
 - **Pages:** the published bundle contains `qr.history`.
+
+## 10. S2 live evidence (2026-11-25, BE 0.9.24: GAS V74 + Cloud Run, commit 53bd4d8; FE 0.9.4)
+
+**Indexes**
+- `ensure-firestore-indexes.mjs` reports `declared 20 / live 20 / missing 0`.
+- The 4 S2 indexes were created add-only and are READY.
+
+**Full live chain against Cloud Run**
+- Result: **PASS 108/108**.
+- `VEHICLES.DETAIL` asserts:
+  - STAFF receives none of `owner/registration/changeRequests/retention/accessLog`;
+  - the automation admin's view matches the suite's own facts (registration APPROVED via campaign, access log contains DETAIL views, no secrets).
+- 60/60 operations covered.
+- **DATA_PROOF 7/7**, started 06:23:32Z, after the suite start at 06:21:03Z.
+- 0 cleanup failures.
+
+**Browser** (local FE on main + live data, synthetic admin, logged out at the end)
+- **Registry:** colours in Thai (ขาว, ดำ, เงิน, แดง).
+- **Drawer:** 7 tabs, including "ที่มาและคำขอ" and "การเข้าดู".
+- **"ที่มาและคำขอ":** channel = campaign, submitted at, approved by + time, change requests (0).
+- **"การเข้าดู":** real rows (who / when / channel).
