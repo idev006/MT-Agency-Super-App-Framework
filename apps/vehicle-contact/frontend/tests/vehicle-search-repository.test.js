@@ -23,7 +23,7 @@ describe('GAS vehicle search repository contract', () => {
     expect(callOperation).toHaveBeenNthCalledWith(2, 'vehicles.history', { vehicleId: 'vehicle-1' }, { signal: undefined })
     expect(result.requestIds).toEqual({ lookup: 'lookup-id', history: 'history-id' })
     expect(result.vehicle.contacts).toHaveLength(1)
-    expect(result.vehicle.photos).toEqual([{ photoId: 'photo-1', slot: 'FRONT', mimeType: 'image/jpeg' }])
+    expect(result.vehicle.photos).toEqual([{ photoId: 'photo-1', slot: 'FRONT', mimeType: 'image/jpeg', createdAt: '' }])
     expect(JSON.stringify(result)).not.toContain('must-not-leak')
     expect(JSON.stringify(result)).not.toContain('actor_id')
   })

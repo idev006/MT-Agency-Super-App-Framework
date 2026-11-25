@@ -3,6 +3,7 @@ import {qrReason,QR_SYSTEM_REASONS} from '../../domain/policies/QrReasonPolicy.j
 import {paginate} from '../pagination/Pagination.js';
 import {createChangeReview} from './ChangeReviewOperation.js';
 import {createQrHistory} from './QrHistoryOperation.js';
+import {createVehicle360} from './Vehicle360.js';
 import {createVehicleView} from './VehicleView.js';
 export function createVehicleOperations({store,security,campaigns,references}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
@@ -353,7 +354,8 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   if(!list.length){lookupAudit(a,'NO_MATCH','PLATE','NOT_FOUND');return null;}
   return vehicleView(list[0],a,'PLATE');
  }
- function vehicleDetail(p,a){return vehicleView(activeVehicle(p.vehicleId),a,'DETAIL');}
+ // VC-ADR-036 S2: detail = the view + permission-gated Vehicle 360 dimensions (admins / auditors only).
+ function vehicleDetail(p,a){const v=activeVehicle(p.vehicleId),view=vehicleView(v,a,'DETAIL');return view?Object.assign(view,vehicle360(v,a)):view;}
  function vehicleHistory(p){const idValue=need(p.vehicleId,'VEHICLE_ID');return store.list('vc_change_audit',{entity_id:idValue}).slice(-100);}
  function vehicleUpdate(p,a){
   const idValue=need(p.vehicleId,'VEHICLE_ID');
@@ -448,7 +450,19 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   const items=store.list('vc_vehicles').filter(v=>String(v.status)==='ACTIVE')
    .map(v=>({vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,vehicleType:v.vehicle_type,
     brand:v.make,model:v.model,color:v.color,status:v.status,version:Number(v.version),createdAt:v.created_at}));
-  return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
+  return withListLabels(paginate(items,p,{defaultLimit:50,maxLegacyLimit:100}));
+ }
+ // S2: the registry showed colour/type codes (WHITE) while detail showed labels (ขาว). Labels for the
+ // CURRENT page only, by reference id (equality reads, one parallel round).
+ function withListLabels(pageResult){
+  const rows=Array.isArray(pageResult)?pageResult:pageResult.items;
+  const keys=[...new Set(rows.flatMap(r=>[r.color&&'COLOR-'+r.color,r.vehicleType&&'VEHICLE_TYPE-'+r.vehicleType]).filter(Boolean))];
+  if(!keys.length)return pageResult;
+  const reqs=keys.map(k=>({kind:'one',name:'vc_reference_values',filter:{reference_id:'REF-'+k}}));
+  const refs=typeof store.readMany==='function'?store.readMany(reqs):reqs.map(r=>store.one(r.name,r.filter));
+  const label=new Map(keys.map((k,i)=>[k,(refs[i]&&refs[i].label_th)||'']));
+  for(const r of rows){r.colorLabel=label.get('COLOR-'+r.color)||'';r.vehicleTypeLabel=label.get('VEHICLE_TYPE-'+r.vehicleType)||'';}
+  return pageResult;
  }
  function changeListMine(p,a){
   const items=store.list('vc_change_requests').filter(r=>String(r.submitted_by)===String(a.userId))
@@ -485,6 +499,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   });
  }
  const qrHistory=createQrHistory({store,need});
+ const vehicle360=createVehicle360({store});
  return Object.freeze({
   'registrations.submit':registrationSubmit,'registrations.listPending':registrationPending,
   'registrations.detail':registrationDetail,'registrations.review':registrationReview,

@@ -24,7 +24,7 @@ test('REG-01 vehicles.list returns every ACTIVE vehicle for SYSTEM_ADMIN and REG
 test('REG-02 vehicles.list exposes minimal non-PII fields only (no owner id, no contacts)',()=>{
  const h=createAcceptanceHarness();seedRegistry(h);
  const rows=assertOk(assert,h.as('sys','vehicles.list',{limit:100}),'registry fields');
- const allowed=['vehicleId','plate','province','vehicleType','brand','model','color','status','version','createdAt'].sort();
+ const allowed=['vehicleId','plate','province','vehicleType','brand','model','color','status','version','createdAt','colorLabel','vehicleTypeLabel'].sort(); // S2: + display labels (not PII)
  assert.deepEqual(Object.keys(rows[0]).sort(),allowed);
  assert.equal(rows[0].createdAt,FIXED_NOW);
  assert.equal(rows[0].ownerUserId,undefined,'owner id must not leak');

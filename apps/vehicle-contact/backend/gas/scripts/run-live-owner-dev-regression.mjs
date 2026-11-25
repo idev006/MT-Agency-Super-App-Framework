@@ -191,7 +191,17 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
    assert.equal(ok(await request('vehicles.lookup',{plate,province:'TH-10'},state.tokens.staff)).vehicleId,state.approved.vehicleId);
   });
   await test('VEHICLES.DETAIL','vehicles.detail',async()=>{
-   assert.equal(ok(await request('vehicles.detail',{vehicleId:state.approved.vehicleId},state.tokens.staff)).vehicleId,state.approved.vehicleId);
+   const staffView=ok(await request('vehicles.detail',{vehicleId:state.approved.vehicleId},state.tokens.staff));
+   assert.equal(staffView.vehicleId,state.approved.vehicleId);
+   // VC-ADR-036 S2 (permission-gated Vehicle 360): STAFF never receives the admin/auditor dimensions.
+   for(const k of ['owner','registration','changeRequests','retention','accessLog'])assert.equal(staffView[k],undefined,'staff got '+k);
+   // Automation admin (SYSTEM_ADMIN + REGISTRATION_ADMIN): oracle = this suite's own facts.
+   const adminView=ok(await request('vehicles.detail',{vehicleId:state.approved.vehicleId},adminToken));
+   assert.equal(adminView.registration?.status,'APPROVED','registration origin');
+   assert.equal(adminView.registration?.viaCampaign,true);
+   assert.ok(Array.isArray(adminView.changeRequests));
+   assert.ok(adminView.accessLog?.some(x=>x.source==='DETAIL'),'access log shows detail views');
+   assert.ok(!/token|digest|password/i.test(JSON.stringify(adminView)),'no secrets');
   });
   await test('PHOTOS.LIST','photos.list',async()=>{
    assert.equal(ok(await request('photos.list',{vehicleId:state.approved.vehicleId},state.tokens.staff)).length,5);
