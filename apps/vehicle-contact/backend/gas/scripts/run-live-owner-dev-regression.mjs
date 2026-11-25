@@ -328,6 +328,10 @@ if(isCli){
     headers:{'content-type':'text/plain;charset=utf-8','accept':'application/json'},
     body:JSON.stringify({apiVersion:'v1',group:operation.slice(0,split),action:operation.slice(split+1),payload,
      ...(token?{sessionToken:token}:{}),requestId:'ownerDev'+tag})});
+  }catch(error){
+   // Record WHY the transport failed (e.g. ECONNRESET, UND_ERR_SOCKET) instead of "fetch failed".
+   if(error?.name==='AbortError')throw Error('CLIENT_TIMEOUT_40S');
+   throw Error('NETWORK_'+String(error?.cause?.code||error?.cause?.name||'UNKNOWN').slice(0,40));
   }finally{
    clearTimeout(timer);
    if(activeRequestController===controller)activeRequestController=null;
