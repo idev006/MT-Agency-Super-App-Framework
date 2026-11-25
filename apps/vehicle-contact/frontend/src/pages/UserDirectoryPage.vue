@@ -26,6 +26,7 @@ onMounted(() => directory.load())
 
 async function runConfirmed(action) {
   if (action.kind === 'suspend') await administration.suspendUser(action.userId)
+  else if (action.kind === 'reactivate') await administration.reactivateUser(action.userId)
   else if (action.kind === 'resetPassword') await administration.resetPassword(action.userId, action.temporaryPassword)
   else if (action.kind === 'assignRoles') await administration.assignRoles(action.userId, action.roles)
 }

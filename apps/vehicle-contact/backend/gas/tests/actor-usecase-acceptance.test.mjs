@@ -73,7 +73,8 @@ test('ACTOR-03 REGISTRATION: anonymous 5-photo staging, idempotent submit, admin
  assert.equal(assertOk(assert,h.as('staff','contacts.read',{vehicleId:approved.vehicleId}),'contact read')[0].phone,'+66810000001');
  assert.equal(assertOk(assert,h.as('staff','photos.list',{vehicleId:approved.vehicleId}),'photos list').length,5);
  assert.ok(h.read('vc_lookup_audit').length>=4);
- assertError(assert,h.as('sys','vehicles.lookup',{plate:'กข1234',province:'TH-10'}),'FORBIDDEN','SYSTEM_ADMIN no implicit lookup');
+ // VC-ADR-036: SYSTEM_ADMIN may look vehicles up (full view); still no registration approval.
+ assert.equal(h.as('sys','vehicles.lookup',{plate:'กข1234',province:'TH-10'}).ok,true,'SYSTEM_ADMIN lookup allowed (VC-ADR-036)');
  assertError(assert,h.as('owner','contacts.read',{vehicleId:approved.vehicleId}),'FORBIDDEN','owner cannot read contact without permission');
 });
 test('ACTOR-04 REGISTRATION_ADMIN: corrections, duplicate/version guards, owner change approval and QR rotation',()=>{
@@ -178,4 +179,41 @@ test('ACTOR-ADR031 the campaign code can be copied at any time; the name is kept
  assert.equal(assertOk(assert,h.as(null,'campaigns.validate',{campaignToken:row.campaignToken}),'copied code works').campaignId,made.campaignId);
  assertError(assert,h.as('sys','campaigns.create',{...window,name:'x'.repeat(121)}),'INVALID_CAMPAIGN','name too long');
  assertError(assert,h.as('staff','campaigns.list',{}),'FORBIDDEN','only campaign admins see the codes');
+});
+
+test('ACTOR-ADR036 SYSTEM_ADMIN: full vehicle view + QR management without registration approval; reactivate users; enable organizations',()=>{
+ const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
+ const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
+ assertError(assert,h.as('sys','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'FORBIDDEN','still no registration approval');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const auditBefore=h.read('vc_lookup_audit').length;
+ const found=assertOk(assert,h.as('sys','vehicles.lookup',{plate:'กข 1234',province:'TH-10'}),'SYSTEM_ADMIN lookup');
+ assert.equal(found.contacts[0].phone,'+66810000001','contacts visible (owner decision)');
+ assert.equal(found.photos.length,5);
+ assert.equal(h.read('vc_lookup_audit').length,auditBefore+1,'every view is still audited');
+ const detail=assertOk(assert,h.as('sys','vehicles.detail',{vehicleId:found.vehicleId}),'SYSTEM_ADMIN detail');
+ assert.ok(Array.isArray(detail.history),'history visible');
+ const rotated=assertOk(assert,h.as('sys','qr.replace',{vehicleId:found.vehicleId}),'SYSTEM_ADMIN can rotate QR');
+ assert.match(rotated.token,/^[a-f0-9]{64}$/);
+ assert.equal(h.read('vc_qr_tokens').filter(q=>q.vehicle_id===found.vehicleId&&q.status==='ACTIVE').length,1,'exactly one active QR');
+
+ // users.reactivate: only SUSPENDED -> ACTIVE; sessions revoked at suspension stay revoked; staff cannot.
+ const u=assertOk(assert,h.as('sys','users.create',{username:'reactivate_me',displayName:'R',temporaryPassword:'Synthetic-Temp-Password-2026!'}),'create');
+ assertError(assert,h.as('sys','users.reactivate',{userId:u.userId}),'INVALID_REQUEST_STATE','ACTIVE user cannot be reactivated');
+ assertOk(assert,h.as('sys','users.suspend',{userId:u.userId}),'suspend');
+ assertError(assert,h.as('staff','users.reactivate',{userId:u.userId}),'FORBIDDEN','staff denied');
+ assert.equal(h.read('vc_users').find(x=>x.user_id===u.userId).status,'SUSPENDED','denied call did not mutate');
+ assert.equal(assertOk(assert,h.as('sys','users.reactivate',{userId:u.userId}),'reactivate').reactivated,true);
+ assert.equal(h.read('vc_users').find(x=>x.user_id===u.userId).status,'ACTIVE');
+ assert.ok(h.read('vc_change_audit').some(a=>a.action==='USER_REACTIVATED'&&a.entity_id===u.userId),'audited');
+ assertError(assert,h.as('sys','users.reactivate',{userId:'no-such-user'}),'NOT_FOUND','unknown user');
+
+ // organizations.enable: only DISABLED -> ACTIVE; staff cannot.
+ assertError(assert,h.as('sys','organizations.enable',{organizationId:org}),'INVALID_REQUEST_STATE','ACTIVE org cannot be enabled');
+ assertOk(assert,h.as('sys','organizations.disable',{organizationId:org}),'disable');
+ assertError(assert,h.as('staff','organizations.enable',{organizationId:org}),'FORBIDDEN','staff denied');
+ assert.equal(h.read('vc_organizations').find(o=>o.organization_id===org).status,'DISABLED','denied call did not mutate');
+ assert.equal(assertOk(assert,h.as('sys','organizations.enable',{organizationId:org}),'enable').enabled,true);
+ assert.equal(h.read('vc_organizations').find(o=>o.organization_id===org).status,'ACTIVE');
+ assert.ok(h.read('vc_change_audit').some(a=>a.action==='ORG_ENABLED'&&a.entity_id===org),'audited');
 });

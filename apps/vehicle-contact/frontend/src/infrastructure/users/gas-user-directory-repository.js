@@ -63,6 +63,9 @@ export function createGasUserDirectoryRepository({ callOperation }) {
     async suspend(userId, { signal } = {}) {
       return mutationResult(await callOperation('users.suspend', { userId }, { signal }), { userId: 'string', suspended: 'boolean' })
     },
+    async reactivate(userId, { signal } = {}) {
+      return mutationResult(await callOperation('users.reactivate', { userId }, { signal }), { userId: 'string', reactivated: 'boolean' })
+    },
     async resetPassword(userId, temporaryPassword, { signal } = {}) {
       return mutationResult(await callOperation('users.resetPassword', { userId, temporaryPassword }, { signal }), { userId: 'string', reset: 'boolean' })
     },

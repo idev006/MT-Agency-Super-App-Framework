@@ -129,15 +129,17 @@
         "users.list",
         "users.update",
         "users.suspend",
+        "users.reactivate",
         "users.assignRoles"
       ],
       "tests": [
         "ACTOR-01",
         "TC-RBAC-03",
-        "MATRIX-02"
+        "MATRIX-02",
+        "ACTOR-ADR036"
       ],
       "pre": "System Admin has users.manage; username and roles meet allowlist; server session active.",
-      "success": "Create a STAFF account with temporary password, edit profile, assign valid roles, suspend account, revoke sessions, write change audit.",
+      "success": "Create a STAFF account with temporary password, edit profile, assign valid roles, suspend account, revoke sessions, write change audit. VC-ADR-036: reactivate a SUSPENDED account (sessions stay revoked; audited).",
       "failure": "Duplicate username, invalid roles, self-suspend, self-demotion and lack of users.manage are denied; no self-signup.",
       "tables": [
         "vc_users",
@@ -164,14 +166,16 @@
         "organizations.list",
         "organizations.create",
         "organizations.update",
-        "organizations.disable"
+        "organizations.disable",
+        "organizations.enable"
       ],
       "tests": [
         "ACTOR-01",
-        "MATRIX-02"
+        "MATRIX-02",
+        "ACTOR-ADR036"
       ],
       "pre": "Authenticated reader has organizations.read; writes require organizations.manage; POLICE parent may be hierarchical; EXTERNAL remains flat.",
-      "success": "List active/disabled organizations; create POLICE or EXTERNAL records; update allowed fields; disable rather than silently delete.",
+      "success": "List active/disabled organizations; create POLICE or EXTERNAL records; update allowed fields; disable rather than silently delete. VC-ADR-036: enable a DISABLED organization again (audited).",
       "failure": "Invalid org_type, missing parent, self-parent, multi-level ancestor cycles and unauthorized writes are rejected.",
       "tables": [
         "vc_organizations",

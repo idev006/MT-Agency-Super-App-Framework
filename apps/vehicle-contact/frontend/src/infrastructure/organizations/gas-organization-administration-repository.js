@@ -51,5 +51,11 @@ export function createGasOrganizationAdministrationRepository({ callOperation })
       if (response.data?.disabled !== true) throw new OrganizationContractError()
       return { organizationId: text(response.data.organizationId, true), disabled: true, requestId: response.requestId }
     },
+    // VC-ADR-036: DISABLED -> ACTIVE
+    async enable({ organizationId, signal }) {
+      const response = await callOperation('organizations.enable', { organizationId }, { signal })
+      if (response.data?.enabled !== true) throw new OrganizationContractError()
+      return { organizationId: text(response.data.organizationId, true), enabled: true, requestId: response.requestId }
+    },
   })
 }

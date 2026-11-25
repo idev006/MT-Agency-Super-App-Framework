@@ -53,7 +53,10 @@ function confirmAction() {
   pending.value = null
   emit('confirmed', payload)
 }
-const confirmCopy = computed(() => pending.value?.kind === 'suspend'
+const selectedSuspended = computed(() => selected.value?.status === 'SUSPENDED')
+const confirmCopy = computed(() => pending.value?.kind === 'reactivate'
+  ? { title: 'เปิดใช้งานบัญชีอีกครั้งหรือไม่', message: `บัญชี ${pending.value.label} จะกลับมาเข้าสู่ระบบได้ด้วยรหัสผ่านเดิม และบันทึกประวัติการเปิดใช้งาน`, label: 'เปิดใช้งานอีกครั้ง' }
+  : pending.value?.kind === 'suspend'
   ? { title: 'ระงับบัญชีหรือไม่', message: `บัญชี ${pending.value.label} จะเข้าสู่ระบบไม่ได้และทุกเซสชันจะถูกเพิกถอน`, label: 'ระงับบัญชี' }
   : pending.value?.kind === 'resetPassword'
     ? { title: 'รีเซ็ตรหัสผ่านหรือไม่', message: `ทุกเซสชันของ ${pending.value.label} จะถูกเพิกถอน และผู้ใช้ต้องเปลี่ยนรหัสผ่านเมื่อเข้าสู่ระบบ`, label: 'รีเซ็ตรหัสผ่าน' }
@@ -83,7 +86,8 @@ const confirmCopy = computed(() => pending.value?.kind === 'suspend'
         <button class="btn" type="button" :disabled="busy || selectedSelf || !selectedRoles.length" @click="requestAction('assignRoles')">เปลี่ยนบทบาท</button>
         <label class="field-stack"><span class="label-text font-medium">รหัสผ่านชั่วคราวใหม่</span><input v-model="temporaryPassword" class="input input-bordered w-full" type="password" minlength="12" maxlength="128" autocomplete="new-password" /></label>
         <button class="btn" type="button" :disabled="busy || temporaryPassword.length < 12" @click="requestAction('resetPassword')">รีเซ็ตรหัสผ่าน</button>
-        <button class="btn btn-error" type="button" :disabled="busy || selectedSelf" @click="requestAction('suspend')">ระงับบัญชี</button>
+        <button v-if="selectedSuspended" class="btn btn-primary" type="button" :disabled="busy" @click="requestAction('reactivate')">เปิดใช้งานอีกครั้ง</button>
+        <button v-else class="btn btn-error" type="button" :disabled="busy || selectedSelf" @click="requestAction('suspend')">ระงับบัญชี</button>
         <p v-if="selectedSelf" class="text-sm text-warning">ระบบไม่อนุญาตให้เปลี่ยนบทบาทหรือระงับบัญชีของตนเอง ให้ผู้ดูแลระบบอีกบัญชีดำเนินการแทน</p>
       </template>
     </div></section>

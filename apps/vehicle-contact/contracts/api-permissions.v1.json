@@ -95,6 +95,13 @@
       "enabled": false
     },
     {
+      "id": "VC-USERS-007",
+      "operation": "users.reactivate",
+      "requiredPermission": "users.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
       "id": "VC-USERS-005",
       "operation": "users.resetPassword",
       "requiredPermission": "users.manage",
@@ -132,6 +139,13 @@
     {
       "id": "VC-ORGANIZATIONS-004",
       "operation": "organizations.disable",
+      "requiredPermission": "organizations.manage",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-ORGANIZATIONS-005",
+      "operation": "organizations.enable",
       "requiredPermission": "organizations.manage",
       "identitySource": "SERVER_VERIFIED_SESSION",
       "enabled": false

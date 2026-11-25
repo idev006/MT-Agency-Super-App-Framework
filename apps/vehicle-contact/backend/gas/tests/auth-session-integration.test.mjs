@@ -93,7 +93,9 @@ test('TC-AUTH-04 initial password-change requirement blocks permissions, allows 
  assert.equal(status.data.organizationId,null);
  assert.deepEqual(status.data.roles,['SYSTEM_ADMIN']);
  assert.ok(status.data.permissions.includes('users.manage'));
- assert.ok(!status.data.permissions.includes('vehicle.lookup'));
+ // VC-ADR-036: SYSTEM_ADMIN now has the full vehicle view, but still no registration approval.
+ assert.ok(status.data.permissions.includes('vehicle.lookup'));
+ assert.ok(!status.data.permissions.includes('vehicle.registration.approve'));
  const change=h.dispatch('auth','changePassword',{oldPassword:OLD_PASSWORD,newPassword:NEW_PASSWORD},token);
  assert.equal(change.ok,true,JSON.stringify(change));
  assert.equal(change.data.reauthenticate,true);
@@ -132,11 +134,11 @@ test('TC-SESS-02 successful access refreshes last_seen_at; logout revokes sessio
  assert.equal(h.dispatch('auth','logout',{},token).ok,true);
  expectCode(h.dispatch('system','config.get',{},token),'UNAUTHENTICATED');
 });
-test('TC-RBAC-01 admin has settings permissions but not implicit vehicle lookup; fake role in body cannot escalate',()=>{
+test('TC-RBAC-01 admin has settings permissions but not implicit registration approval (VC-ADR-036); fake role in body cannot escalate',()=>{
  const h=harness();h.activate();
  const token=h.login().data.sessionToken;
  assert.equal(h.dispatch('system','config.get',{},token).ok,true);
- expectCode(h.dispatch('vehicles','lookup',{plate:'TEST1',province:'TH-10'},token),'FORBIDDEN');
+ expectCode(h.dispatch('registrations','listPending',{},token),'FORBIDDEN');
  expectCode(h.dispatch('system','config.update',{values:{idle_timeout_minutes:31},role:'SYSTEM_ADMIN'},token),'INVALID_REQUEST');
  const settings=h.dispatch('system','config.get',{},token);
  assert.equal(settings.data.idle_timeout_minutes,'30');

@@ -122,6 +122,21 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
    const data=ok(await request('organizations.update',{organizationId:state.org.organizationId,name:'P6VC Automated Updated '+tag},adminToken));
    assert.equal(data.updated,true);
   });
+  // VC-ADR-036: disable -> enable round trip on the suite's own organization, verified through the list.
+  await test('ORGANIZATIONS.ENABLE','organizations.enable',async()=>{
+   ok(await request('organizations.disable',{organizationId:state.org.organizationId},adminToken));
+   const data=ok(await request('organizations.enable',{organizationId:state.org.organizationId},adminToken));
+   assert.equal(data.enabled,true);
+   denied(await request('organizations.enable',{organizationId:state.org.organizationId},adminToken),'INVALID_REQUEST_STATE');
+  });
+  // VC-ADR-036: suspend -> reactivate round trip on the suite's staff account; an ACTIVE account cannot be "reactivated".
+  await test('USERS.REACTIVATE','users.reactivate',async()=>{
+   denied(await request('users.reactivate',{userId:state.users.staff.userId},adminToken),'INVALID_REQUEST_STATE');
+   ok(await request('users.suspend',{userId:state.users.staff.userId},adminToken));
+   const data=ok(await request('users.reactivate',{userId:state.users.staff.userId},adminToken));
+   assert.equal(data.reactivated,true);
+   state.tokens.staff=await login(state.users.staff.username,actorActive);
+  });
   await test('CAMPAIGNS.CREATE','campaigns.create',async()=>{
    const now=Date.now();state.campaign=ok(await request('campaigns.create',{
     startsAt:new Date(now-60000).toISOString(),endsAt:new Date(now+3600000).toISOString(),maxSubmissions:3

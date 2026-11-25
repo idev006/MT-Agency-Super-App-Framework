@@ -5,7 +5,7 @@ import { useSystemSettings } from '../src/features/settings/useSystemSettings.js
 
 describe('SYSTEM_ADMIN governance state machines', () => {
   it('loads and mutates organizations only with manage permission', async () => {
-    const repository = { list: vi.fn().mockResolvedValue({ organizations: [], pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 }, requestId: 'l' }), create: vi.fn().mockResolvedValue({ requestId: 'c' }), update: vi.fn(), disable: vi.fn() }
+    const repository = { list: vi.fn().mockResolvedValue({ organizations: [], pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 }, requestId: 'l' }), create: vi.fn().mockResolvedValue({ requestId: 'c' }), update: vi.fn(), disable: vi.fn(), enable: vi.fn() }
     const state = useOrganizationAdministration({ repository, permissions: ['organizations.manage'] })
     await state.load(); expect(state.phase.value).toBe('empty')
     await state.create({ name: 'A', type: 'POLICE' }); expect(state.actionPhase.value).toBe('success')
@@ -13,7 +13,7 @@ describe('SYSTEM_ADMIN governance state machines', () => {
   })
 
   it('does not call organization writes with read-only permission', async () => {
-    const repository = { list: vi.fn(), create: vi.fn(), update: vi.fn(), disable: vi.fn() }
+    const repository = { list: vi.fn(), create: vi.fn(), update: vi.fn(), disable: vi.fn(), enable: vi.fn() }
     const state = useOrganizationAdministration({ repository, permissions: ['organizations.read'] })
     await state.create({ name: 'A', type: 'POLICE' })
     expect(state.actionPhase.value).toBe('forbidden'); expect(repository.create).not.toHaveBeenCalled()
@@ -40,5 +40,19 @@ describe('SYSTEM_ADMIN governance state machines', () => {
     const state = useSystemSettings({ repository, permissions: ['system.settings.read', 'system.settings.manage'] })
     await state.load(); await state.save({ idleTimeoutMinutes: 45, retentionDays: 730 })
     expect(state.settings.value).toEqual({ idleTimeoutMinutes: 45, retentionDays: 730 }); expect(state.savePhase.value).toBe('success')
+  })
+})
+
+describe('VC-ADR-036 re-enable / reactivate', () => {
+  it('organization enable calls the repository and reloads; read-only permission cannot', async () => {
+    const list = vi.fn().mockResolvedValue({ organizations: [], pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 }, requestId: 'l' })
+    const enable = vi.fn().mockResolvedValue({ organizationId: 'o1', enabled: true, requestId: 'e' })
+    const manage = useOrganizationAdministration({ repository: { list, create: vi.fn(), update: vi.fn(), disable: vi.fn(), enable }, permissions: ['organizations.manage'] })
+    await manage.enable('o1')
+    expect(enable).toHaveBeenCalledWith({ organizationId: 'o1' })
+    const readOnlyEnable = vi.fn()
+    const read = useOrganizationAdministration({ repository: { list, create: vi.fn(), update: vi.fn(), disable: vi.fn(), enable: readOnlyEnable }, permissions: ['organizations.read'] })
+    await read.enable('o1')
+    expect(readOnlyEnable).not.toHaveBeenCalled()
   })
 })

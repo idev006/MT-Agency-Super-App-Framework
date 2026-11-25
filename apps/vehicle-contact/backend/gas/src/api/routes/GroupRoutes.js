@@ -2,8 +2,8 @@
 const GROUPS=Object.freeze({
  system:Object.freeze(['health','config.get','config.update']),
  auth:Object.freeze(['login','googleLogin','changePassword','logout','session','linkGoogle']),
- users:Object.freeze(['create','list','update','suspend','resetPassword','assignRoles']),
- organizations:Object.freeze(['list','create','update','disable']),
+ users:Object.freeze(['create','list','update','suspend','reactivate','resetPassword','assignRoles']),
+ organizations:Object.freeze(['list','create','update','disable','enable']),
  campaigns:Object.freeze(['create','list','validate','revoke']),
  references:Object.freeze(['registration']),
  registrations:Object.freeze(['submit','listPending','detail','review','photo']),

@@ -4,7 +4,7 @@
 
 ## 1. Authority and scope
 - Business baseline: [Approved requirements](../../APPROVED_REQUIREMENTS_BASELINE_R01_R26.md).
-- API operations: `organizations.list`, `organizations.create`, `organizations.update`, `organizations.disable` (API v1 JSON envelope, GAS POST except public health GET).
+- API operations: `organizations.list`, `organizations.create`, `organizations.update`, `organizations.disable`, `organizations.enable` (API v1 JSON envelope, GAS POST except public health GET).
 - Implementation: `backend/gas/src/application/use-cases/AdministrationOperations.js`; server permission source `backend/gas/src/api/controllers/OperationController.js`.
 - Diagram source: [sequence.mmd](sequence.mmd) (Mermaid, reviewed alongside spec).
 
