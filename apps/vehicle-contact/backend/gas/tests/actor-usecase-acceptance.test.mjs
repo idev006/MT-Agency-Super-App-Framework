@@ -285,3 +285,28 @@ test('ACTOR-S2-360 vehicle detail dimensions are permission-gated on the server 
  const rows=Array.isArray(list)?list:list.items;
  assert.ok('colorLabel' in rows[0]&&'vehicleTypeLabel' in rows[0]);
 });
+
+test('ACTOR-D2-FILTERS admin lists filter on the server before paging; unknown filter values fail closed',()=>{
+ const h=createAcceptanceHarness();
+ const parent=h.createOrganization();
+ const child=assertOk(assert,h.as('sys','organizations.create',{name:'สภ.เมือง D2',type:'POLICE',parentId:parent}),'child').organizationId;
+ assertOk(assert,h.as('sys','organizations.create',{name:'บริษัท D2',type:'EXTERNAL'}),'external');
+ assertOk(assert,h.as('sys','organizations.disable',{organizationId:child}),'disable child');
+ const orgs=assertOk(assert,h.as('sys','organizations.list',{page:1,pageSize:10,status:'DISABLED'}),'disabled orgs');
+ assert.equal(orgs.total,1);assert.equal(orgs.items[0].organization_id,child);assert.ok(orgs.items[0].parentName,'parent name resolved');
+ assert.equal(assertOk(assert,h.as('sys','organizations.list',{page:1,pageSize:10,type:'EXTERNAL'}),'external').total,1);
+ assert.equal(assertOk(assert,h.as('sys','organizations.list',{page:1,pageSize:10,q:'d2'}),'text').total,2);
+ const u=assertOk(assert,h.as('sys','users.create',{username:'d2_user',displayName:'ผู้ใช้ D2',organizationId:parent,temporaryPassword:'Synthetic-Temp-Password-2026!'}),'create').userId;
+ assertOk(assert,h.as('sys','users.suspend',{userId:u}),'suspend');
+ const suspended=assertOk(assert,h.as('sys','users.list',{page:1,pageSize:10,status:'SUSPENDED'}),'suspended');
+ assert.equal(suspended.total,1);assert.equal(suspended.items[0].userId,u);assert.ok(suspended.items[0].organizationName,'org name resolved');
+ assert.ok(assertOk(assert,h.as('sys','users.list',{page:1,pageSize:10,status:'ACTIVE'}),'active').items.every(x=>x.status==='ACTIVE'));
+ assert.ok(assertOk(assert,h.as('sys','users.list',{page:1,pageSize:10,role:'STAFF'}),'staff').items.every(x=>x.roles.includes('STAFF')));
+ assert.equal(assertOk(assert,h.as('sys','users.list',{page:1,pageSize:10,q:'ผู้ใช้ d2'}),'q').total,1);
+ h.createCampaign();const c2=h.createCampaign();assertOk(assert,h.as('sys','campaigns.revoke',{campaignId:c2.campaignId}),'revoke');
+ const revoked=assertOk(assert,h.as('sys','campaigns.list',{page:1,pageSize:10,state:'REVOKED'}),'revoked');
+ assert.equal(revoked.total,1);assert.equal(revoked.items[0].state,'REVOKED');
+ assert.equal(assertOk(assert,h.as('sys','campaigns.list',{page:1,pageSize:10,state:'CURRENT'}),'current').total,1);
+ for(const [op,payload] of [['users.list',{status:'GONE'}],['organizations.list',{type:'X'}],['campaigns.list',{state:'SOON'}],['users.list',{q:'x'.repeat(101)}]])
+  assertError(assert,h.as('sys',op,{page:1,pageSize:10,...payload}),'INVALID_REQUEST',op+' bad filter');
+});

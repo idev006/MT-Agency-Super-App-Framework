@@ -6,6 +6,7 @@ import { campaignRegistrationLink, isCampaignCode, campaignDisplayName } from '.
 import { qrImageDataUrl } from '../src/infrastructure/media/qr-image.js'
 import { createGasCampaignAdministrationRepository } from '../src/infrastructure/campaigns/gas-campaign-administration-repository.js'
 import CampaignAdministrationPanel from '../src/features/campaigns/components/CampaignAdministrationPanel.vue'
+import CampaignShareTools from '../src/features/campaigns/components/CampaignShareTools.vue'
 import { readFileSync } from 'node:fs'
 
 const CODE = 'ab'.repeat(32)
@@ -40,15 +41,18 @@ describe('VC-ADR-031 shareable campaign', () => {
   })
 
   it('every open campaign keeps copy-link / QR / copy-code; old ones explain; closed ones offer nothing to share', async () => {
-    const html = await renderToString(createSSRApp(CampaignAdministrationPanel, { campaigns: [
-      open, { ...open, campaignId: 'old', campaignToken: '' }, { ...open, campaignId: 'gone', status: 'REVOKED' },
-    ], lastCreatedId: 'c1' }))
-    const card = (id) => html.slice(html.indexOf(`data-campaign="${id}"`)).split('</li>')[0]
-    expect(html).toContain('สร้างแคมเปญ “ลงทะเบียน สภ.เมือง” แล้ว')
+    // D2: share tools live in the campaign drawer; the table row keeps a one-click copy-link for open ones
+    const items = [open, { ...open, campaignId: 'old', campaignToken: '' }, { ...open, campaignId: 'gone', status: 'REVOKED' }]
+    const tools = {}
+    for (const item of items) tools[item.campaignId] = await renderToString(createSSRApp(CampaignShareTools, { campaign: item }))
+    const card = (id) => tools[id]
+    const table = await renderToString(createSSRApp(CampaignAdministrationPanel, { campaigns: items, total: 3, lastCreatedId: 'c1' }))
+    expect(table).toContain('คัดลอกลิงก์</button>')
+    expect(table).toContain('4 / 10')
+    expect(table.match(/คัดลอกลิงก์<\/button>/g)).toHaveLength(1)
     expect(card('c1')).toContain('คัดลอกลิงก์ลงทะเบียน')
     expect(card('c1')).toContain('แสดง QR')
     expect(card('c1')).toContain('คัดลอกรหัส')
-    expect(card('c1')).toContain('4 / 10')
     expect(card('old')).toContain('data-legacy-campaign')
     expect(card('old')).not.toContain('data-share-actions')
     expect(card('gone')).not.toContain('data-share-actions')

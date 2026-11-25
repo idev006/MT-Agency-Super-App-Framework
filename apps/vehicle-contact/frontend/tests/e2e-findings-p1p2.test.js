@@ -24,7 +24,7 @@ describe('P1.1 one-time secrets', () => {
   it('the approval page guards leaving while the one-time QR is shown; campaigns no longer need it (VC-ADR-031: always copyable)', () => {
     expect(read('../src/pages/CampaignAdministrationPage.vue')).not.toContain('useOneTimeSecretGuard')
     expect(read('../src/pages/RegistrationReviewPage.vue')).toContain('useOneTimeSecretGuard(work.oneTimeQr)')
-    expect(read('../src/features/campaigns/components/CampaignAdministrationPanel.vue')).toContain('คัดลอกรหัส')
+    expect(read('../src/features/campaigns/components/CampaignShareTools.vue')).toContain('คัดลอกรหัส')
   })
 })
 

@@ -10,7 +10,7 @@ describe('GAS user directory repository contract', () => {
     const repository = createGasUserDirectoryRepository({ callOperation })
     const result = await repository.list({ page: 1, pageSize: 10 })
     expect(callOperation).toHaveBeenCalledWith('users.list', { page: 1, pageSize: 10 }, { signal: undefined })
-    expect(result).toEqual({ users: [{ userId: 'u-1', username: 'admin', displayName: 'ผู้ดูแล', organizationId: 'org-1', status: 'ACTIVE', roles: ['SYSTEM_ADMIN'] }], pagination: { total: 1, page: 1, pageSize: 10, totalPages: 1 }, requestId: 'users-request' })
+    expect(result).toEqual({ users: [{ userId: 'u-1', username: 'admin', displayName: 'ผู้ดูแล', organizationId: 'org-1', organizationName: '', status: 'ACTIVE', roles: ['SYSTEM_ADMIN'] }], pagination: { total: 1, page: 1, pageSize: 10, totalPages: 1 }, requestId: 'users-request' })
     expect(JSON.stringify(result)).not.toContain('password_hash')
   })
 

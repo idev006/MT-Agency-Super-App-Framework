@@ -1,4 +1,4 @@
-import { callPaginatedOperation, mapPaginatedData } from '../api/pagination-contract.js'
+import { callPaginatedOperation, filterPayload, mapPaginatedData } from '../api/pagination-contract.js'
 
 export class OrganizationContractError extends Error {
   constructor() {
@@ -23,6 +23,7 @@ function mapOrganization(value) {
     name: text(value.name, true),
     type,
     parentId: text(value.parent_id || ''),
+    parentName: typeof value.parentName === 'string' ? value.parentName.trim() : '',
     status: text(value.status, true),
   })
 }
@@ -30,8 +31,8 @@ function mapOrganization(value) {
 export function createGasOrganizationAdministrationRepository({ callOperation }) {
   if (typeof callOperation !== 'function') throw new TypeError('callOperation is required')
   return Object.freeze({
-    async list({ page = 1, pageSize = 10, signal } = {}) {
-      const response = await callPaginatedOperation({ callOperation, operation: 'organizations.list', page, pageSize, options: { signal } })
+    async list({ page = 1, pageSize = 10, filters = {}, signal } = {}) {
+      const response = await callPaginatedOperation({ callOperation, operation: 'organizations.list', payload: filterPayload(filters), page, pageSize, options: { signal } })
       const result = mapPaginatedData(response.data, mapOrganization)
       return { organizations: result.items, pagination: result.pagination, requestId: response.requestId }
     },

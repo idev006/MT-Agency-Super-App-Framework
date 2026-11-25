@@ -30,7 +30,7 @@ describe('SYSTEM_ADMIN governance page contracts', () => {
   })
 
   it('VC-ADR-031: the campaign link stays copyable from the list and is never put in browser storage', () => {
-    const component = read('../src/features/campaigns/components/CampaignAdministrationPanel.vue')
+    const component = read('../src/features/campaigns/components/CampaignShareTools.vue')
     expect(component).not.toContain('ระบบจะแสดงค่านี้ครั้งเดียว')
     expect(component).toContain('คัดลอกลิงก์ลงทะเบียน')
     expect(component).not.toContain('localStorage')

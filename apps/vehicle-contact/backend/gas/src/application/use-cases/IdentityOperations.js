@@ -1,4 +1,5 @@
 import {ROLE_PERMISSIONS} from '../security/SessionService.js';
+import {listFilter} from '../pagination/ListFilter.js';
 import {paginate} from '../pagination/Pagination.js';
 // Static dummy hash with the same PBKDF2 cost as GasSecurity.hashPassword (150000 rounds).
 // Used for unknown/inactive users so login always performs equal work (no username-enumeration timing oracle).
@@ -92,9 +93,11 @@ export function createIdentityOperations({store,security,sessions}) {
  }
  function listUsers(p){
   // Speed: the role and user tables are independent → one parallel round (was two sequential scans).
-  const [roleRows,userRows]=typeof store.readMany==='function'
-   ?store.readMany([{kind:'list',name:'vc_user_roles'},{kind:'list',name:'vc_users'}])
-   :[store.list('vc_user_roles'),store.list('vc_users')];
+  const [roleRows,userRows,orgRows]=typeof store.readMany==='function'
+   ?store.readMany([{kind:'list',name:'vc_user_roles'},{kind:'list',name:'vc_users'},{kind:'list',name:'vc_organizations'}])
+   :[store.list('vc_user_roles'),store.list('vc_users'),store.list('vc_organizations')];
+  const orgName=new Map((orgRows||[]).map(o=>[String(o.organization_id),o.name]));
+  const f=listFilter(p,{status:['ACTIVE','SUSPENDED'],extra:{role:['SYSTEM_ADMIN','REGISTRATION_ADMIN','STAFF','OWNER','RETENTION_WORKER']}});
   const rolesByUser=new Map();
   for(const r of roleRows){
    if(r.status!=='ACTIVE')continue;
@@ -103,9 +106,10 @@ export function createIdentityOperations({store,security,sessions}) {
    rolesByUser.get(uid).push(String(r.role_id));
   }
   const items=userRows.map(u=>({
-   userId:u.user_id,username:u.username_normalized,displayName:u.display_name,organizationId:u.org_id,status:u.status,
+   userId:u.user_id,username:u.username_normalized,displayName:u.display_name,organizationId:u.org_id,
+   organizationName:u.org_id?orgName.get(String(u.org_id))||'':'',status:u.status,
    roles:rolesByUser.get(String(u.user_id))||[]
-  }));
+  })).filter(u=>(!f.status||u.status===f.status)&&(!f.role||u.roles.includes(f.role))&&f.text(u.displayName,u.username,u.organizationName));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function updateUser(p,actor){

@@ -1,39 +1,30 @@
 <script setup>
-defineProps({ users: { type: Array, required: true } })
+import DataTable from '../../../components/common/DataTable.vue'
+import StatusBadge from '../../../components/common/StatusBadge.vue'
+import { roleLabels } from '../../../domain/identity/role-presentation.js'
 
-const statusLabels = Object.freeze({ ACTIVE: 'ใช้งาน', SUSPENDED: 'ระงับการใช้งาน', INACTIVE: 'ไม่ใช้งาน' })
-const statusLabel = (status) => statusLabels[status] || 'สถานะอื่น'
-const statusClass = (status) => status === 'ACTIVE' ? 'badge-success' : status === 'SUSPENDED' ? 'badge-warning' : 'badge-ghost'
+// D2: users as one DataTable (desktop and phone, sideways scroll); "จัดการ" opens the drawer.
+defineProps({ users: { type: Array, required: true }, total: { type: Number, default: 0 } })
+const emit = defineEmits(['manage'])
+const columns = [
+  { key: 'displayName', label: 'ชื่อที่แสดง' },
+  { key: 'username', label: 'ชื่อผู้ใช้' },
+  { key: 'organizationName', label: 'หน่วยงาน' },
+  { key: 'roles', label: 'บทบาท' },
+  { key: 'status', label: 'สถานะ' },
+  { key: 'actions', label: 'การจัดการ', srOnly: true, class: 'text-right' },
+]
 </script>
 
 <template>
-  <section class="card card-border bg-base-100 shadow-none" aria-labelledby="user-directory-title">
-    <div class="card-body gap-5 p-5 sm:p-6">
-      <div class="flex flex-wrap items-start justify-between gap-3">
-        <div><h2 id="user-directory-title" class="card-title text-xl font-medium">บัญชีผู้ใช้</h2><p class="mt-1 text-base-content/70">แสดงสูงสุด 50 บัญชีตามลำดับที่ระบบส่วนกลางคืนมา</p></div>
-        <span class="badge badge-neutral">{{ users.length }} บัญชี</span>
-      </div>
-
-      <div class="hidden overflow-x-auto md:block">
-        <table class="table">
-          <thead><tr><th>ชื่อที่แสดง</th><th>ชื่อผู้ใช้</th><th>หน่วยงาน</th><th>สถานะ</th></tr></thead>
-          <tbody>
-            <tr v-for="user in users" :key="user.userId">
-              <td class="font-medium">{{ user.displayName || 'ยังไม่กำหนด' }}</td>
-              <td>{{ user.username }}</td>
-              <td>{{ user.organizationId || 'ยังไม่ผูกหน่วยงาน' }}</td>
-              <td><span class="badge" :class="statusClass(user.status)">{{ statusLabel(user.status) }}</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <ul class="list rounded-box border border-base-300 md:hidden">
-        <li v-for="user in users" :key="user.userId" class="list-row gap-3">
-          <div class="min-w-0 flex-1"><strong class="block truncate font-medium">{{ user.displayName || 'ยังไม่กำหนดชื่อ' }}</strong><p class="truncate text-sm text-base-content/70">{{ user.username }}</p><p class="mt-1 text-sm text-base-content/60">{{ user.organizationId || 'ยังไม่ผูกหน่วยงาน' }}</p></div>
-          <span class="badge" :class="statusClass(user.status)">{{ statusLabel(user.status) }}</span>
-        </li>
-      </ul>
-    </div>
+  <section aria-labelledby="user-directory-title">
+    <div class="mb-3 flex items-center justify-between gap-3"><h2 id="user-directory-title" class="text-lg font-semibold">บัญชีผู้ใช้</h2><span class="badge badge-neutral">{{ total }} บัญชี</span></div>
+    <DataTable :columns="columns" :rows="users" row-key="userId" label="รายชื่อบัญชีผู้ใช้">
+      <template #cell-displayName="{ row }">{{ row.displayName || 'ยังไม่กำหนด' }}</template>
+      <template #cell-organizationName="{ row }">{{ row.organizationName || (row.organizationId ? 'หน่วยงานที่ไม่พบ' : 'ยังไม่ผูกหน่วยงาน') }}</template>
+      <template #cell-roles="{ row }"><span class="text-sm">{{ row.roles.map((r) => roleLabels[r] || r).join(', ') || '—' }}</span></template>
+      <template #cell-status="{ row }"><StatusBadge :status="row.status" /></template>
+      <template #cell-actions="{ row }"><button class="btn btn-sm" type="button" :data-manage-user="row.userId" @click="emit('manage', row)">จัดการ</button></template>
+    </DataTable>
   </section>
 </template>
