@@ -1,6 +1,8 @@
 import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition} from '../../domain/policies/VehicleLifecycle.js';
+import {qrReason,QR_SYSTEM_REASONS} from '../../domain/policies/QrReasonPolicy.js';
 import {paginate} from '../pagination/Pagination.js';
 import {createChangeReview} from './ChangeReviewOperation.js';
+import {createQrHistory} from './QrHistoryOperation.js';
 import {createVehicleView} from './VehicleView.js';
 export function createVehicleOperations({store,security,campaigns,references}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
@@ -392,7 +394,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    if(!Number.isSafeInteger(retention)||retention<1)throw new Error('RETENTION_POLICY_NOT_CONFIGURED');
    store.update('vc_vehicles',{vehicle_id:vehicleId},{status:'INACTIVE',version:Number(v.version)+1,updated_at:now(),updated_by:a.userId});
    for(const q of store.list('vc_qr_tokens',{vehicle_id:vehicleId}).filter(x=>x.status==='ACTIVE'))
-    store.update('vc_qr_tokens',{qr_id:q.qr_id},{status:'REVOKED',revoked_at:now()});
+    store.update('vc_qr_tokens',{qr_id:q.qr_id},{status:'REVOKED',revoked_at:now(),revoked_by:a.userId,revoke_reason:QR_SYSTEM_REASONS.cancel,revoke_note:''});
    store.insert('vc_retention_jobs',{job_id:id(),vehicle_id:vehicleId,due_at:new Date(Date.parse(now())+retention*86400000).toISOString(),
     status:'WAITING_RETENTION',approved_by:'',approved_at:'',attempts:0,last_error:'',legal_hold:false,created_at:now(),updated_at:now()});
    audit(a,'vehicle',vehicleId,'VEHICLE_CANCELLED');
@@ -464,21 +466,25 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  }
  function manageQr(p,a,mode){
   const vehicleId=need(p.vehicleId,'VEHICLE_ID');
+  const why=qrReason(mode,p.reason,p.note); // VC-ADR-036: every QR change carries a reason
   return store.withLock(()=>{
    activeVehicle(vehicleId);
    const active=store.list('vc_qr_tokens',{vehicle_id:vehicleId}).filter(q=>q.status==='ACTIVE');
    if(active.length>1)throw new Error('MULTIPLE_ACTIVE_QR');
    if(mode==='issue'&&active.length)throw new Error('QR_ALREADY_ACTIVE');
    if(mode==='revoke'&&!active.length)return {vehicleId,revoked:false};
-   for(const row of active)store.update('vc_qr_tokens',{qr_id:row.qr_id},{status:'REVOKED',revoked_at:now()});
+   for(const row of active)store.update('vc_qr_tokens',{qr_id:row.qr_id},{status:'REVOKED',revoked_at:now(),
+    revoked_by:a.userId,revoke_reason:why.reason,revoke_note:why.note});
    if(mode==='revoke'){audit(a,'qr',vehicleId,'QR_REVOKED');return {vehicleId,revoked:true};}
    const token=id(),qrId=id();
    store.insert('vc_qr_tokens',{qr_id:qrId,vehicle_id:vehicleId,token_digest:security.sha256(token),issued_at:now(),
-    revoked_at:'',issued_by:a.userId,reason:mode==='replace'?'REPLACEMENT':'NEW',status:'ACTIVE'});
+    revoked_at:'',issued_by:a.userId,reason:why.reason,issue_note:why.note,
+    replaces_qr_id:mode==='replace'&&active[0]?active[0].qr_id:'',status:'ACTIVE'});
    audit(a,'qr',vehicleId,mode==='replace'?'QR_REPLACED':'QR_ISSUED');
    return {vehicleId,qrId,token};
   });
  }
+ const qrHistory=createQrHistory({store,need});
  return Object.freeze({
   'registrations.submit':registrationSubmit,'registrations.listPending':registrationPending,
   'registrations.detail':registrationDetail,'registrations.review':registrationReview,
@@ -486,7 +492,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   'vehicles.cancel':vehicleCancel,'vehicles.history':vehicleHistory,'vehicles.listMine':vehicleListMine,'vehicles.list':vehicleList,
   'contacts.read':contactRead,'contacts.update':contactUpdate,
   'changes.submit':changeSubmit,'changes.listPending':changePending,'changes.review':changeReview,'changes.listMine':changeListMine,
-  'qr.resolve':resolveQr,'qr.issue':(p,a)=>manageQr(p,a,'issue'),
+  'qr.resolve':resolveQr,'qr.issue':(p,a)=>manageQr(p,a,'issue'),'qr.history':qrHistory,
   'qr.revoke':(p,a)=>manageQr(p,a,'revoke'),'qr.replace':(p,a)=>manageQr(p,a,'replace')
  });
 }

@@ -555,16 +555,18 @@
       "ops": [
         "qr.issue",
         "qr.revoke",
-        "qr.replace"
+        "qr.replace",
+        "qr.history"
       ],
       "tests": [
         "ACTOR-04",
         "EDGE-06",
-        "GAS-FLOW.ROTATE_QR"
+        "GAS-FLOW.ROTATE_QR",
+        "ACTOR-S3-QR"
       ],
       "pre": "Authenticated actor with qr.manage; vehicle ACTIVE and at most one ACTIVE QR.",
-      "success": "Issue opaque token only if none active; rotate revokes old then creates new digest; revoke fails closed for older QR, audit mutations.",
-      "failure": "Two active QR conflict, issue with existing token, inactive vehicle, unauthorized mutation blocked.",
+      "success": "Issue opaque token only if none active; rotate revokes old then creates new digest; revoke fails closed for older QR, audit mutations. VC-ADR-036 S3: every issue/replace/revoke requires a reason (OTHER needs a note), records who/why (revoked_by, revoke_reason, replaces_qr_id), and qr.history returns the full per-vehicle history without tokens.",
+      "failure": "Two active QR conflict, issue with existing token, inactive vehicle, unauthorized mutation blocked. Missing or unknown reason, OTHER without note -> INVALID_QR_REASON (no write).",
       "tables": [
         "vc_qr_tokens",
         "vc_vehicles",

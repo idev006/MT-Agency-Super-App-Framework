@@ -77,7 +77,7 @@ try{
   if(seen.has(b.plate))continue;seen.add(b.plate);
   const lk=ok(await call('vehicles.lookup',{plate:b.plate,province:b.province}),'lookupBatch');
   const found=!!(lk&&lk.vehicleId);let qrMatch='N/A';
-  if(found){const rep=ok(await call('qr.replace',{vehicleId:lk.vehicleId}),'qr.replace');const res=ok(await call('qr.resolve',{token:rep.token}),'qr.resolveBatch');qrMatch=res&&res.vehicleId===lk.vehicleId?'MATCH':'MISMATCH';}
+  if(found){const rep=ok(await call('qr.replace',{vehicleId:lk.vehicleId,reason:'DAMAGED'}),'qr.replace');const res=ok(await call('qr.resolve',{token:rep.token}),'qr.resolveBatch');qrMatch=res&&res.vehicleId===lk.vehicleId?'MATCH':'MISMATCH';}
   report.batchVerified.push({plate:b.plate,province:b.province,lookupFound:found,qrResolve:qrMatch});
  }
  step('BATCH_VERIFY',{count:report.batchVerified.length,rows:report.batchVerified});

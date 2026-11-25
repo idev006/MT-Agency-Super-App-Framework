@@ -1,7 +1,7 @@
 {
-  "backendVersion": "0.9.22",
+  "backendVersion": "0.9.23",
   "persistenceEngine": "firestore",
   "dualWrite": false,
   "updatedAt": "2026-11-24T00:00:00Z",
-  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.22 = VC-ADR-036 S1: SYSTEM_ADMIN full vehicle view (lookup/contact/photos/history), users.reactivate, organizations.enable. Prior: 0.9.21 VC-ADR-034 Drive media bridge (V71)."
+  "note": "Expected live markers asserted by verify-live-publish.mjs and the nightly smoke workflow. Update this file in the same slice that publishes a new version or flips a persistence flag. 0.9.23 = VC-ADR-036 S3: QR reasons required (issue/replace/revoke), revoked_by/revoke_reason/replaces_qr_id, qr.history. Prior: 0.9.22 S1 SYSTEM_ADMIN full vehicle view + reactivate/enable (V72)."
 }

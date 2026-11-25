@@ -65,7 +65,7 @@ describe('R7 owner feedback', () => {
   it('vehicle detail uses tabs and loads evidence photos through vehicles.photo', () => {
     const tabs = read('features/vehicle-search/components/VehicleDetailTabs.vue')
     expect(tabs).toContain('role="tablist"')
-    expect(tabs).toContain("watch(active, (tab) => { if (tab === 'photos') openPhotos() })")
+    expect(tabs).toContain("watch(active, (tab) => { if (tab === 'photos') openPhotos()")
     expect(read('infrastructure/vehicles/gas-vehicle-detail-repository.js')).toContain("callOperation('vehicles.photo'")
     expect(read('pages/VehicleDetailPage.vue')).toContain("route.query.from === 'registry'")
   })

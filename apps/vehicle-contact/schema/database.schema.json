@@ -296,6 +296,46 @@
           "key": null,
           "classification": "internal",
           "notes": "Candidate; pending business/data steward approval"
+        },
+        {
+          "name": "issue_note",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "VC-ADR-036 S3: free-text note for the issue reason (required when reason OTHER; <=200)"
+        },
+        {
+          "name": "replaces_qr_id",
+          "type": "string",
+          "required": false,
+          "key": "foreign",
+          "classification": "internal",
+          "notes": "VC-ADR-036 S3: the qr_id this token replaced (qr.replace chain)"
+        },
+        {
+          "name": "revoked_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "VC-ADR-036 S3: user_id who revoked (or the canceller for VEHICLE_CANCELLED)"
+        },
+        {
+          "name": "revoke_reason",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "VC-ADR-036 S3: LOST|STOLEN|DAMAGED|VEHICLE_SOLD|ADMIN_REVOKE|OTHER|VEHICLE_CANCELLED"
+        },
+        {
+          "name": "revoke_note",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "VC-ADR-036 S3: free-text note for the revoke reason (<=200)"
         }
       ]
     },
@@ -1554,15 +1594,78 @@
     "vc_reference_values": {
       "description": "Canonical bounded registration reference catalog; additive migration; values require data-owner approval before enforcement",
       "columns": [
-        {"name":"reference_id","type":"string","required":true,"key":"primary","classification":"internal","notes":"Stable unique row identifier"},
-        {"name":"catalog","type":"string","required":true,"key":null,"classification":"internal","notes":"PROVINCE, PLATE_TYPE, VEHICLE_TYPE, RELATIONSHIP, BRAND, MODEL or COLOR"},
-        {"name":"code","type":"string","required":true,"key":null,"classification":"internal","notes":"Stable machine code unique within catalog"},
-        {"name":"label_th","type":"string","required":true,"key":null,"classification":"internal","notes":"Thai display label"},
-        {"name":"parent_code","type":"string","required":false,"key":"foreign","classification":"internal","notes":"MODEL parent must reference an active BRAND code"},
-        {"name":"sort_order","type":"integer","required":false,"key":null,"classification":"internal","notes":"Non-negative deterministic display order"},
-        {"name":"status","type":"string","required":true,"key":null,"classification":"internal","notes":"ACTIVE or INACTIVE"},
-        {"name":"updated_by","type":"string","required":false,"key":null,"classification":"internal","notes":"Last authorized editor"},
-        {"name":"updated_at","type":"datetime-iso8601","required":false,"key":null,"classification":"internal","notes":"Last update timestamp"}
+        {
+          "name": "reference_id",
+          "type": "string",
+          "required": true,
+          "key": "primary",
+          "classification": "internal",
+          "notes": "Stable unique row identifier"
+        },
+        {
+          "name": "catalog",
+          "type": "string",
+          "required": true,
+          "key": null,
+          "classification": "internal",
+          "notes": "PROVINCE, PLATE_TYPE, VEHICLE_TYPE, RELATIONSHIP, BRAND, MODEL or COLOR"
+        },
+        {
+          "name": "code",
+          "type": "string",
+          "required": true,
+          "key": null,
+          "classification": "internal",
+          "notes": "Stable machine code unique within catalog"
+        },
+        {
+          "name": "label_th",
+          "type": "string",
+          "required": true,
+          "key": null,
+          "classification": "internal",
+          "notes": "Thai display label"
+        },
+        {
+          "name": "parent_code",
+          "type": "string",
+          "required": false,
+          "key": "foreign",
+          "classification": "internal",
+          "notes": "MODEL parent must reference an active BRAND code"
+        },
+        {
+          "name": "sort_order",
+          "type": "integer",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Non-negative deterministic display order"
+        },
+        {
+          "name": "status",
+          "type": "string",
+          "required": true,
+          "key": null,
+          "classification": "internal",
+          "notes": "ACTIVE or INACTIVE"
+        },
+        {
+          "name": "updated_by",
+          "type": "string",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Last authorized editor"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime-iso8601",
+          "required": false,
+          "key": null,
+          "classification": "internal",
+          "notes": "Last update timestamp"
+        }
       ]
     },
     "vc_security_events": {

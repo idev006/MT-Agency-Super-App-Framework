@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { provinceLabel } from '../../../domain/reference/provinces.js'
 import { formatThaiPhone, orderContacts, photoSlotLabel, relationshipLabel, telHref } from '../../../domain/reference/vehicle-presentation.js'
 import { formatBangkokDateTime } from '../../../domain/time/bangkok-date-time.js'
+import QrHistoryTable from '../../qr-governance/components/QrHistoryTable.vue'
 
 // R7 (owner: "ทำไมไม่มีภาพรถ และข้อมูลอื่นๆ เพื่อประกอบการพิจารณาครบมั้ย" + "ใช้ tabs บ้าง"):
 // the full vehicle record for decision making, split into tabs. Photos load only when their tab
@@ -13,12 +14,15 @@ const props = defineProps({
   canReadPhotos: Boolean,
   canReadHistory: Boolean,
   loadPhoto: { type: Function, default: null },
+  // VC-ADR-036 S3: QR history tab for qr.manage holders
+  loadQrHistory: { type: Function, default: null },
 })
 const tabs = computed(() => [
   { id: 'facts', label: 'ข้อมูลรถ' },
   { id: 'contacts', label: `ผู้ประสานงาน (${props.result.vehicle.contacts.length})`, hidden: !props.canReadContacts },
   { id: 'photos', label: `ภาพหลักฐาน (${props.result.vehicle.photos.length})`, hidden: !props.canReadPhotos },
   { id: 'history', label: 'ประวัติ', hidden: !props.canReadHistory },
+  { id: 'qr', label: 'ประวัติ QR', hidden: !props.loadQrHistory },
 ].filter((t) => !t.hidden))
 const active = ref('facts')
 const vehicle = computed(() => props.result.vehicle)
@@ -59,8 +63,15 @@ async function openPhotos() {
     }
   }))
 }
-watch(active, (tab) => { if (tab === 'photos') openPhotos() })
-watch(() => vehicle.value.vehicleId, () => { photos.value = {}; activePhoto.value = ''; active.value = 'facts' })
+const qrHistory = ref([])
+const qrHistoryPhase = ref('idle')
+async function openQrHistory() {
+  if (!props.loadQrHistory || qrHistoryPhase.value === 'loading') return
+  qrHistoryPhase.value = 'loading'
+  try { qrHistory.value = await props.loadQrHistory(vehicle.value.vehicleId); qrHistoryPhase.value = 'ready' } catch { qrHistoryPhase.value = 'error' }
+}
+watch(active, (tab) => { if (tab === 'photos') openPhotos(); if (tab === 'qr') openQrHistory() })
+watch(() => vehicle.value.vehicleId, () => { photos.value = {}; activePhoto.value = ''; active.value = 'facts'; qrHistory.value = []; qrHistoryPhase.value = 'idle' })
 const current = computed(() => photos.value[activePhoto.value])
 const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId === activePhoto.value)?.slot || '')
 </script>
@@ -133,6 +144,9 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
           <li v-for="(entry, index) in result.history" :key="entry.id"><hr v-if="index"><div class="timeline-middle"><span class="status status-neutral" aria-hidden="true"></span></div><div class="timeline-end mb-4"><strong class="font-medium">{{ historyLabels[entry.action] || 'บันทึกการเปลี่ยนแปลง' }}</strong><p class="text-sm text-base-content/80">{{ formatBangkokDateTime(entry.occurredAt, '-') }}</p></div><hr v-if="index < result.history.length - 1"></li>
         </ul>
       </div>
+    </section>
+    <section v-if="loadQrHistory" v-show="active === 'qr'" id="vp-qr" role="tabpanel" aria-labelledby="vt-qr" class="card card-border bg-base-100 shadow-none">
+      <div class="card-body p-5"><QrHistoryTable :items="qrHistory" :phase="qrHistoryPhase === 'idle' ? 'loading' : qrHistoryPhase" /></div>
     </section>
   </div>
 </template>

@@ -15,7 +15,7 @@ function upstream(env){
  if(env.P6VC_API_URL!==undefined&&env.P6VC_API_URL!=="")return env.P6VC_API_URL===TRUSTED_CLOUD_RUN_URL?env.P6VC_API_URL:"";
  return env.P6VC_GAS_EXEC_URL===TRUSTED_GAS_URL?env.P6VC_GAS_EXEC_URL:"";
 }
-const READ_ONLY_OPERATIONS=new Set(["system.health","system.config.get","users.list","organizations.list","campaigns.list","registrations.listPending","vehicles.lookup","vehicles.history","changes.listPending","retention.jobStatus"]);
+const READ_ONLY_OPERATIONS=new Set(["system.health","system.config.get","users.list","organizations.list","campaigns.list","registrations.listPending","vehicles.lookup","vehicles.history","changes.listPending","retention.jobStatus","qr.history"]);
 const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "system.health":[[],[]],
  "auth.login":[["username","password"],[]],
@@ -51,7 +51,7 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "changes.listPending":[[],["limit","page","pageSize"]],"changes.review":[["requestId","decision"],[]],
  "changes.listMine":[[],["limit","page","pageSize"]],
  "qr.resolve":[["token"],[]],
- "qr.issue":[["vehicleId"],[]],"qr.revoke":[["vehicleId"],[]],"qr.replace":[["vehicleId"],[]],
+ "qr.issue":[["vehicleId","reason"],["note"]],"qr.revoke":[["vehicleId","reason"],["note"]],"qr.replace":[["vehicleId","reason"],["note"]],"qr.history":[["vehicleId"],[]],
  "system.config.get":[[],[]],"system.config.update":[["values"],[]],
  "retention.listDue":[[],["limit","page","pageSize"]],"retention.listExecutable":[[],["limit","page","pageSize"]],"retention.approve":[["jobId"],[]],"retention.execute":[["jobId"],[]],"retention.jobStatus":[["jobId"],[]],
  "audit.query":[[],["vehicleId","limit","page","pageSize"]],"audit.export":[[],["vehicleId","limit"]]
