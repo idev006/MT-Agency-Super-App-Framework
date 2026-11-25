@@ -144,3 +144,24 @@ This gap is in the role design, not a bug in one screen. Fixing it means giving 
 | 4 | User reactivation + organization re-enable | **Add both** | S1: `users.reactivate`, `organizations.enable`. |
 
 **Updated order:** S1 (RBAC + reactivate/enable) → S3 (QR history with reasons) → S2 (Vehicle 360) → S5 (VC-ADR-032 rest) → S6 (audit for people) → S7 (public registration), with UI D1 alongside S2.
+
+## 8. S1 live evidence (2026-11-25, BE 0.9.22: GAS V72 + Cloud Run, commit d7c4994)
+
+**Deployment:** GAS V72, Cloud Run and the Worker all report health 0.9.22.
+
+**Full live chain against Cloud Run** (`run-live-api-suite.mjs --require-authenticated --require-data-proof`)
+- Result: **PASS 106/106**.
+  - Public: 11.
+  - Worker fail-closed: 14.
+  - Inventory: 75 tests covering **59/59** operations, including `USERS.REACTIVATE` and `ORGANIZATIONS.ENABLE` (positive round trip + `INVALID_REQUEST_STATE` negative).
+  - **DATA_PROOF 6/6**: Firestore SDK read-back. The report started 03:05:25Z, after the suite start at 03:03:08Z, so it is fresh evidence.
+- 0 cleanup failures.
+
+**Pure SYSTEM_ADMIN live check:**
+- Synthetic account; Firestore `vc_user_roles` = `[SYSTEM_ADMIN]` only.
+- Session permissions include `vehicle.lookup`, but not `vehicle.registration.approve`.
+- `vehicles.lookup` OK with contact phone visible; `vehicles.detail` OK with history.
+- **Firestore `vc_lookup_audit` +2 rows for that actor** (search + detail).
+- `qr.issue` on a vehicle that already has an active QR → `QR_ALREADY_ACTIVE`, with Firestore active QR count 1 → 1. QR management is reachable, and the rule held without mutation.
+- `registrations.listPending` → FORBIDDEN.
+- Cleanup: account suspended (Firestore status = SUSPENDED).
