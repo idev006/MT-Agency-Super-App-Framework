@@ -9,12 +9,13 @@ export function createRequestProfiler(nowMs=()=>Date.now()){
   function phase(name,fn){return timed(fn,ms=>{phases[name]=(phases[name]||0)+ms;});}
   function wrapUrlFetch(u){
     if(!u)return u;
-    return {
-      fetch:(url,opts)=>timed(()=>u.fetch(url,opts),ms=>fetches.push({kind:kindOf(url),n:1,ms})),
-      fetchAll:reqs=>timed(()=>u.fetchAll(reqs),ms=>fetches.push({kind:'fetchAll['+reqs.map(r=>kindOf(r.url)).join(',')+']',n:reqs.length,ms}))
-    };
+    const w={fetch:(url,opts)=>timed(()=>u.fetch(url,opts),ms=>fetches.push({kind:kindOf(url),n:1,ms}))};
+    // FIX 2026-11-25: expose fetchAll ONLY when the host has it. Cloud Run had none, so a profiled
+    // request crashed on its first parallel round (OPERATION_FAILED for every prof_* request).
+    if(typeof u.fetchAll==='function')w.fetchAll=reqs=>timed(()=>u.fetchAll(reqs),ms=>fetches.push({kind:'fetchAll['+reqs.map(r=>kindOf(r.url)).join(',')+']',n:reqs.length,ms}));
+    return w;
   }
-  function kindOf(url){const s=String(url||'');return /oauth2/.test(s)?'token':/:runQuery/.test(s)?'runQuery':/:commit/.test(s)?'commit':/:batchGet/.test(s)?'batchGet':/:beginTransaction/.test(s)?'beginTx':'other';}
+  function kindOf(url){const s=String(url||'');return /oauth2/.test(s)?'token':/:runAggregationQuery/.test(s)?'count':/:runQuery/.test(s)?'runQuery':/:commit/.test(s)?'commit':/:batchGet/.test(s)?'batchGet':/:beginTransaction/.test(s)?'beginTx':'other';}
   function wrapCache(c){
     if(!c)return c;
     return {
