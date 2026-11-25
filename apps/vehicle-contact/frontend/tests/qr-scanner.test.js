@@ -35,7 +35,7 @@ describe('QR camera scanner state and privacy contract', () => {
     await Promise.all([first, duplicate])
   })
 
-  it('rejects decoded URL or arbitrary text without resolving a vehicle', async () => {
+  it('a non-vehicle QR (URL or text) never resolves a vehicle and KEEPS the camera running (owner 2026-11-25)', async () => {
     const scanner = fakeScanner()
     let decode
     scanner.start.mockImplementation(async ({ onDecode }) => { decode = onDecode; return { devices: [] } })
@@ -43,9 +43,23 @@ describe('QR camera scanner state and privacy contract', () => {
     const work = useQrScanner({ scanner, elementId: 'reader', onDecoded })
     await work.start()
     await decode('https://example.test/qr?token=' + 'a'.repeat(64))
-    expect(work.failure.value).toEqual({ code: 'INVALID_QR' })
     expect(onDecoded).not.toHaveBeenCalled()
-    expect(scanner.stop).toHaveBeenCalled()
+    expect(scanner.stop).not.toHaveBeenCalled()
+    expect(work.phase.value).toBe('scanning')
+    expect(work.notice.value).toBe('LINK_NOT_VEHICLE_QR')
+    await decode('hello')
+    expect(work.notice.value).toBe('NOT_VEHICLE_QR')
+    await decode('c'.repeat(64))
+    expect(onDecoded).toHaveBeenCalledWith('c'.repeat(64))
+    expect(work.notice.value).toBe('')
+  })
+
+  it('a non-vehicle QR read from an image file is still an error (no camera to keep)', async () => {
+    const scanner = fakeScanner()
+    scanner.scanFile.mockResolvedValue('https://example.test/x')
+    const work = useQrScanner({ scanner, elementId: 'reader', onDecoded: vi.fn() })
+    await work.scanFile({ type: 'image/png', size: 10 })
+    expect(work.failure.value).toEqual({ code: 'INVALID_QR' })
   })
 
   it('stops before switching camera or selecting a device', async () => {

@@ -17,7 +17,13 @@ const work = useQrResolve({ repository: inject(qrResolveRepositoryKey), permissi
 const token = ref('')
 const permissionSet = computed(() => new Set(permissions.value))
 const readerId = 'p6vc-qr-reader'
-const scanner = useQrScanner({ scanner: inject(qrScannerKey), elementId: readerId, onDecoded: work.resolve })
+// After a vehicle QR is read the camera stops (privacy, battery) and the result is brought into view,
+// so on a phone the user sees the vehicle instead of a closed camera.
+async function resolveAndShow(candidate) {
+  await work.resolve(candidate)
+  globalThis.document?.getElementById('qr-result')?.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+}
+const scanner = useQrScanner({ scanner: inject(qrScannerKey), elementId: readerId, onDecoded: resolveAndShow })
 
 async function submit() {
   const candidate = token.value
@@ -34,7 +40,8 @@ onBeforeUnmount(() => { work.clearSensitive(); scanner.destroy() })
     <template #breadcrumbs><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">ตรวจสอบ QR</span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
     <template #toolbar>
-      <QrScannerPanel class="mb-5" :reader-id="readerId" :phase="scanner.phase.value" :failure-code="scanner.failure.value?.code" :devices="scanner.devices.value" :selected-device-id="scanner.selectedDeviceId.value" :facing-mode="scanner.facingMode.value" :active-facing-mode="scanner.activeFacingMode.value" :active="scanner.active.value" :busy="scanner.busy.value" @start="scanner.start" @stop="scanner.stop" @switch="scanner.switchCamera" @select-device="scanner.selectDevice" @scan-file="scanner.scanFile" />
+      <QrScannerPanel class="mb-5" :reader-id="readerId" :phase="scanner.phase.value" :failure-code="scanner.failure.value?.code" :devices="scanner.devices.value" :selected-device-id="scanner.selectedDeviceId.value" :facing-mode="scanner.facingMode.value" :active-facing-mode="scanner.activeFacingMode.value" :active="scanner.active.value" 
+        :notice="scanner.notice.value" :busy="scanner.busy.value" @start="scanner.start" @stop="scanner.stop" @switch="scanner.switchCamera" @select-device="scanner.selectDevice" @scan-file="scanner.scanFile" />
       <div class="mb-5 flex justify-end"><RouterLink class="btn btn-ghost" :to="{ name: 'vehicle-search' }">ค้นหาด้วยเลขทะเบียนแทน</RouterLink></div>
       <details class="collapse collapse-arrow border border-base-300 bg-base-100"><summary class="collapse-title font-medium">สแกนไม่ได้? กรอกรหัส QR เอง</summary><div class="collapse-content">
       <form autocomplete="off" @submit.prevent="submit">
@@ -56,7 +63,7 @@ onBeforeUnmount(() => { work.clearSensitive(); scanner.destroy() })
       </div></details>
     </template>
 
-    <section aria-live="polite">
+    <section id="qr-result" class="scroll-mt-4" aria-live="polite">
       <div v-if="work.phase.value === 'idle'" class="alert items-start shadow-none"><div><h2 class="font-medium">พร้อมตรวจสอบ</h2><p class="mt-1">กด “เปิดกล้อง” แล้วหันกล้องไปที่ QR บนรถ</p></div></div>
       <div v-else-if="work.phase.value === 'loading'" class="space-y-4" role="status"><span class="sr-only">กำลังตรวจสอบ QR</span><div class="skeleton h-40 w-full"></div><div class="grid gap-4 sm:grid-cols-2"><div class="skeleton h-40"></div><div class="skeleton h-40"></div></div></div>
       <div v-else-if="work.phase.value === 'invalid'" class="alert alert-warning">รูปแบบ QR token ไม่ถูกต้อง กรุณาอ่าน QR ใหม่</div>
@@ -64,7 +71,8 @@ onBeforeUnmount(() => { work.clearSensitive(); scanner.destroy() })
       <div v-else-if="work.phase.value === 'forbidden'" class="alert alert-warning">เซสชันนี้ไม่ได้รับอนุญาตให้ตรวจสอบยานพาหนะ</div>
       <div v-else-if="work.phase.value === 'unauthenticated'" class="alert alert-warning"><div><p>เซสชันสิ้นสุดแล้ว กรุณาเข้าสู่ระบบอีกครั้ง</p><RouterLink class="btn btn-sm mt-3" :to="{ name: 'sign-in' }">เข้าสู่ระบบ</RouterLink></div></div>
       <div v-else-if="work.phase.value === 'recoverable-error' || work.phase.value === 'error'" class="alert alert-error items-start"><div><h2 class="font-medium">ตรวจสอบ QR ไม่สำเร็จ</h2><p class="mt-1">{{ work.phase.value === 'recoverable-error' ? 'การเชื่อมต่อขัดข้อง สามารถลองคำขอเดิมอีกครั้งได้' : 'ระบบปฏิเสธคำขอโดยไม่เปิดเผยข้อมูลยานพาหนะ' }}</p><button v-if="work.phase.value === 'recoverable-error'" class="btn btn-sm mt-3" type="button" @click="work.retry">ลองอีกครั้ง</button><details v-if="work.failure.value?.requestId" class="collapse collapse-arrow mt-3 bg-base-100 text-base-content"><summary class="collapse-title font-medium">รายละเอียดสำหรับเจ้าหน้าที่สนับสนุน</summary><div class="collapse-content break-all font-mono text-sm">{{ work.failure.value.requestId }}</div></details></div></div>
-      <VehicleSearchResult v-else-if="work.phase.value === 'success'" :result="work.result.value" :can-read-contacts="permissionSet.has('vehicle.contact.read')" :can-read-photos="permissionSet.has('vehicle.photos.read')" :can-read-history="permissionSet.has('vehicle.history.read')" />
+      <div v-if="work.phase.value !== 'idle' && work.phase.value !== 'loading' && !scanner.active.value" class="mb-4 flex justify-end"><button class="btn btn-primary min-h-11" type="button" :disabled="scanner.busy.value" @click="scanner.start">สแกนคันถัดไป</button></div>
+      <VehicleSearchResult v-if="work.phase.value === 'success'" :result="work.result.value" :can-read-contacts="permissionSet.has('vehicle.contact.read')" :can-read-photos="permissionSet.has('vehicle.photos.read')" :can-read-history="permissionSet.has('vehicle.history.read')" />
     </section>
   </PageTemplateComponent>
 </template>
