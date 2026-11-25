@@ -25,6 +25,17 @@ function stopElementTracks(elementId, documentRef) {
   })
 }
 
+// Owner 2026-11-25 (real phone): "กล้องไม่อ่าน qrcode". Reading settings: the phone's native QR
+// reader (BarcodeDetector, Android Chrome) when available, else ZXing; 10 frames/s; and a square scan
+// box of ~75% of the view, so the decoder reads a cropped, larger QR instead of the whole frame.
+export const SCAN_FPS = 10
+export function scanBox(width, height) {
+  const side = Math.max(120, Math.floor(Math.min(width, height) * 0.75))
+  const s = Math.min(side, Math.floor(Math.min(width, height)))
+  return { width: s, height: s }
+}
+const DECODER_CONFIG = (formats) => ({ formatsToSupport: [formats.QR_CODE], useBarCodeDetectorIfSupported: true, experimentalFeatures: { useBarCodeDetectorIfSupported: true }, verbose: false })
+
 export function createHtml5QrCodeScannerAdapter({
   loadLibrary = () => import('html5-qrcode'),
   documentRef = globalThis.document,
@@ -85,10 +96,10 @@ export function createHtml5QrCodeScannerAdapter({
         if (run !== operation) throw Object.assign(new Error('SCANNER_STOPPED'), { code: 'SCANNER_STOPPED' })
         let candidateEngine = null
         try {
-          candidateEngine = new Html5Qrcode(elementId, { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE], verbose: false })
+          candidateEngine = new Html5Qrcode(elementId, DECODER_CONFIG(Html5QrcodeSupportedFormats))
           engine = candidateEngine
           activeElementId = elementId
-          await candidateEngine.start(candidate, { fps: 5, disableFlip: false }, onDecode, () => {})
+          await candidateEngine.start(candidate, { fps: SCAN_FPS, qrbox: scanBox, disableFlip: false }, onDecode, () => {})
           if (run !== operation || engine !== candidateEngine) {
             try { await candidateEngine.stop() } catch { /* fallback tracks are stopped below */ }
             try { candidateEngine.clear() } catch { /* already cleared */ }
@@ -119,7 +130,7 @@ export function createHtml5QrCodeScannerAdapter({
       const run = operation
       const { Html5Qrcode, Html5QrcodeSupportedFormats } = await library()
       try {
-        engine = new Html5Qrcode(elementId, { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE], verbose: false })
+        engine = new Html5Qrcode(elementId, DECODER_CONFIG(Html5QrcodeSupportedFormats))
         activeElementId = elementId
         const text = await engine.scanFile(file, false)
         if (run !== operation) throw Object.assign(new Error('SCANNER_STOPPED'), { code: 'SCANNER_STOPPED' })
