@@ -133,3 +133,14 @@ This gap is in the role design, not a bug in one screen. Fixing it means giving 
 | Ops | Synthetic residue cleanup + runners tag their records; Cloud Run concurrency (async host) | Firestore counts before/after; latency under parallel load |
 
 **Recommended order:** S0 → S1 (unblocks SYSTEM_ADMIN) → S3 (owner's QR history, mostly existing data) → S2 → S4 → S5 → S6 → S7, with UI D1 alongside S2 so the new screens use the shared components from the start.
+
+## 7. Owner decisions (2026-11-25, recorded as VC-ADR-036)
+
+| # | Question | Answer | Effect on the plan |
+|---|---|---|---|
+| 1 | SYSTEM_ADMIN vehicle visibility | **See everything, including phone** | S1: SYSTEM_ADMIN gets `vehicle.lookup`, `vehicle.contact.read`, `vehicle.photos.read`, `vehicle.history.read`. Every view is still audited. |
+| 2 | Who requests and approves a new QR | **Admin issues it themselves** | **S4 (request records) is dropped.** S3 adds a required reason, plus `revoked_by`/`revoke_reason` and `qr.history`. |
+| 3 | Who sees "who viewed this vehicle" | **SYSTEM_ADMIN only** | S2: the access-log dimension needs `audit.read`. |
+| 4 | User reactivation + organization re-enable | **Add both** | S1: `users.reactivate`, `organizations.enable`. |
+
+**Updated order:** S1 (RBAC + reactivate/enable) → S3 (QR history with reasons) → S2 (Vehicle 360) → S5 (VC-ADR-032 rest) → S6 (audit for people) → S7 (public registration), with UI D1 alongside S2.
