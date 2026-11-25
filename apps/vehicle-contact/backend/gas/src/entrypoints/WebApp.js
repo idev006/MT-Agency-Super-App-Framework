@@ -4,6 +4,7 @@ import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.
 import {createReferenceSeedInstaller} from '../infrastructure/reference/ReferenceSeedInstaller.js';
 import {createRuntimeStore,runtimeProjectId} from '../composition/StoreSelector.js';
 import {auditDrivePhotos} from '../infrastructure/media/DrivePhotoAudit.js';
+import {housekeepDrivePhotos} from '../infrastructure/media/DrivePhotoHousekeeping.js';
 import { createApplication } from "../composition/Container.js";
 import { apiFailure } from "../api/responses/ResponseFactory.js";
 import {createMediaBridgeServer,isMediaBridgeRequest} from "../infrastructure/media/MediaBridgeServer.js";
@@ -103,3 +104,19 @@ export function verifyDrivePhotosFromEditor() {
  Logger.log(JSON.stringify(result));
  return result;
 }
+
+// Drive photo housekeeping (owner 2026-11-25). Editor / time-trigger only; never via doGet/doPost.
+// Files go to the Drive trash (recoverable 30 days). Logs counters + short id prefixes only.
+function runPhotoHousekeeping(apply) {
+ const folderId=PropertiesService.getScriptProperties().getProperty('VEHICLE_PHOTOS_FOLDER_ID');
+ const result=housekeepDrivePhotos({store:editorStore(),driveApp:DriveApp,folderId,apply});
+ Logger.log(JSON.stringify(result));
+ return result;
+}
+// Dry run: what WOULD be trashed / removed.
+export function previewDrivePhotoHousekeepingFromEditor() { return runPhotoHousekeeping(false); }
+// Apply now (the owner runs it once to clear the leftovers).
+export function runDrivePhotoHousekeepingFromEditor() { return runPhotoHousekeeping(true); }
+// Daily rule: the owner adds a time-driven trigger for this function in the editor (Triggers →
+// Add trigger → dailyDrivePhotoHousekeeping → Day timer). No extra OAuth scope is needed.
+export function dailyDrivePhotoHousekeeping() { return runPhotoHousekeeping(true); }

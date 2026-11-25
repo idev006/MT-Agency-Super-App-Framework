@@ -47,3 +47,19 @@ test('RES-04 --apply refuses without the exact gate (no reads, no deletes)', asy
   assert.deepEqual(await main({env: {GOOGLE_APPLICATION_CREDENTIALS: 'missing.json'}, argv: ['--apply', 'x.json']}), {mode: 'BLOCKED', reason: 'MISSING_PURGE_GATE'});
   assert.equal(PURGE_GATE, 'PURGE_SYNTHETIC_RESIDUE');
 });
+
+import {classifyInit, MASTER_TABLES, isSyntheticOrgRow} from '../scripts/purge-synthetic-residue.mjs';
+test('RES-05 init keeps only master tables, the admin account and real organizations', () => {
+  const r = {...rows, vc_organizations: [{organization_id: 'o-real', name: 'หน่วยงานทดสอบ P6'}, {organization_id: 'o-t', name: 'P6VC Reset x'}, {organization_id: 'o-p', name: 'CR probe org 1'}],
+    vc_campaigns: [{campaign_id: 'cp1'}], vc_idempotency: [{key: 'k1'}], vc_roles: [{role_id: 'R'}]};
+  const {ids, kept} = classifyInit(r, {now: NOW, adminUsername: 'admin'});
+  assert.deepEqual(ids.vc_vehicles, ['vr', 'vs'], 'every vehicle, real-looking ones too');
+  assert.deepEqual(ids.vc_users, ['u-d', 'u-t']); assert.deepEqual(ids.vc_user_roles, ['rt']);
+  assert.deepEqual(ids.vc_sessions, ['s-old', 's-rev'], "the admin's live session stays");
+  assert.deepEqual(ids.vc_organizations, ['o-p', 'o-t']); assert.deepEqual(ids.vc_campaigns, ['cp1']); assert.deepEqual(ids.vc_idempotency, ['k1']);
+  for (const t of MASTER_TABLES) assert.equal(ids[t], undefined, t + ' is master');
+  assert.equal(kept.vc_reference_values, 1); assert.equal(kept.vc_users, 1); assert.equal(kept.vc_organizations, 1);
+  assert.throws(() => classifyInit(r, {adminUsername: 'nobody'}), /ADMIN_NOT_FOUND/);
+  assert.throws(() => classifyInit(r, {}), /ADMIN_USERNAME_REQUIRED/);
+  assert.equal(isSyntheticOrgRow({name: 'หน่วยงานทดสอบ P6'}), false);
+});
