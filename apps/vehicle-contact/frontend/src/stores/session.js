@@ -9,8 +9,9 @@ const TRANSPORT_KEY = 'p6vc-api-transport'
 const DIRECT_ENDPOINT_KEY = 'p6vc-gas-endpoint'
 const WORKER_ENDPOINT_KEY = 'p6vc-worker-endpoint'
 const SESSION_REJECTION_CODES = new Set(['UNAUTHENTICATED', 'SESSION_EXPIRED', 'SESSION_IDLE_EXPIRED'])
-const defaultDirectEndpoint = import.meta.env.VITE_GAS_API_URL || ''
-const defaultWorkerEndpoint = import.meta.env.VITE_WORKER_API_URL || ''
+// Read when a store is created (not at import), so the build/test environment is the only source.
+const buildDirectEndpoint = () => import.meta.env.VITE_GAS_API_URL || ''
+const buildWorkerEndpoint = () => import.meta.env.VITE_WORKER_API_URL || ''
 const previewEnabled = import.meta.env.DEV && import.meta.env.VITE_UI_PREVIEW === 'true'
 const previewSession = Object.freeze({
   userId: 'preview-user', displayName: 'ผู้ใช้งานทดสอบ', organizationId: 'preview-unit',
@@ -26,7 +27,7 @@ const previewSession = Object.freeze({
 
 // Owner 2026-11-25: the channel is decided by the build (the gateway in front of the API), never
 // by the user. Saved channel/URL overrides from older versions are ignored and removed.
-export function defaultTransport(workerEndpoint = defaultWorkerEndpoint) {
+export function defaultTransport(workerEndpoint = buildWorkerEndpoint()) {
   return isValidApiEndpoint(workerEndpoint, 'worker') ? 'worker' : 'direct'
 }
 
@@ -38,8 +39,8 @@ function browserSessionStorage() {
 export const useSessionStore = defineStore('session', () => {
   for (const key of [TRANSPORT_KEY, DIRECT_ENDPOINT_KEY, WORKER_ENDPOINT_KEY]) globalThis.localStorage?.removeItem(key)
   const transport = ref(defaultTransport())
-  const directEndpoint = ref(defaultDirectEndpoint)
-  const workerEndpoint = ref(defaultWorkerEndpoint)
+  const directEndpoint = ref(buildDirectEndpoint())
+  const workerEndpoint = ref(buildWorkerEndpoint())
   const phase = ref('idle')
   const sessionToken = ref(previewEnabled ? 'development-preview-only' : browserSessionStorage()?.getItem(SESSION_KEY) || '')
   const session = ref(previewEnabled ? previewSession : (sessionToken.value ? loadSessionSummary(browserSessionStorage()) : null))

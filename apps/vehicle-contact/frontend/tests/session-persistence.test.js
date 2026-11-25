@@ -1,5 +1,5 @@
 import { createPinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSessionStore } from '../src/stores/session.js'
 
 function memoryStorage(initial = {}) {
@@ -11,7 +11,6 @@ function memoryStorage(initial = {}) {
   }
 }
 
-const gasEndpoint = 'https://script.google.com/macros/s/persisted-test/exec'
 const workerEndpoint = 'https://p6vc.example.workers.dev/api/frontend'
 const sessionData = {
   userId: 'staff-1', displayName: 'เจ้าหน้าที่ทดสอบ', organizationId: 'org-1', roles: ['STAFF'],
@@ -23,7 +22,11 @@ describe('session and endpoint refresh persistence', () => {
     vi.restoreAllMocks()
     globalThis.localStorage = memoryStorage()
     globalThis.sessionStorage = memoryStorage()
+    // Hermetic: the endpoint comes from the build environment only (never from this machine's .env).
+    vi.stubEnv('VITE_WORKER_API_URL', workerEndpoint)
+    vi.stubEnv('VITE_GAS_API_URL', '')
   })
+  afterEach(() => vi.unstubAllEnvs())
 
   it('the build decides the channel: saved channel/URL overrides from older versions are ignored and removed', () => {
     globalThis.localStorage.setItem('p6vc-api-transport', 'direct')
@@ -36,7 +39,6 @@ describe('session and endpoint refresh persistence', () => {
   })
 
   it('keeps a previously authenticated session during a transient refresh failure', async () => {
-    globalThis.localStorage.setItem('p6vc-gas-endpoint', gasEndpoint)
     globalThis.sessionStorage.setItem('p6vc-session-token', 'synthetic-session-token')
     globalThis.sessionStorage.setItem('p6vc-session-summary', JSON.stringify(sessionData))
     globalThis.fetch = vi.fn().mockRejectedValue(new TypeError('offline'))
@@ -50,8 +52,7 @@ describe('session and endpoint refresh persistence', () => {
     expect(refreshed.error.code).toBe('NETWORK_ERROR')
   })
 
-  it('clears cached state when GAS definitively rejects the session', async () => {
-    globalThis.localStorage.setItem('p6vc-gas-endpoint', gasEndpoint)
+  it('clears cached state when the system definitively rejects the session', async () => {
     globalThis.sessionStorage.setItem('p6vc-session-token', 'expired-session-token')
     globalThis.sessionStorage.setItem('p6vc-session-summary', JSON.stringify(sessionData))
     globalThis.fetch = vi.fn().mockResolvedValue({
