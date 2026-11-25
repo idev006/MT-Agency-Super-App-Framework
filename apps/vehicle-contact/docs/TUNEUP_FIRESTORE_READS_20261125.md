@@ -91,3 +91,55 @@ The fake server bills like Firestore: a query costs max(1, docs returned) and a 
    - live chain with DATA_PROOF (freshness checked);
    - browser check of the audit, registry and lookup pages.
 3. Cost: compare the billing "Cloud Firestore Read Ops Bangkok" line over the next days against the 302,023 baseline. Run fewer full live suites.
+
+## 7. Live evidence (2026-11-25)
+
+**Releases:**
+- 0.9.25 (D2): GAS V75 + Cloud Run.
+- 0.9.26 (this tune-up): GAS V76 + Cloud Run.
+- 0.9.27 (Cloud Run `fetchAll` + profiler fix, #209): GAS V77 + Cloud Run.
+
+**Live chain.** Each release passed 108/108, with DATA_PROOF 7/7. DATA_PROOF `startedAt` was checked to be at or after the suite `startedAt`.
+
+| Release | Suite p50 |
+|---|---:|
+| 0.9.25 | 754 ms |
+| 0.9.26 | 593 ms |
+| 0.9.27 | 389 ms |
+
+**Indexes:** 27/27 READY (7 added, add-only).
+
+**Residue purge** (owner-approved, `scripts/purge-synthetic-residue.mjs`, #208):
+- 2,483 synthetic Firestore docs were deleted from the dry-run plan the owner confirmed, with 0 skipped.
+- An independent COUNT recount matched the plan's "kept" numbers exactly, and a new dry run listed 0.
+- A smoke test after the purge passed: login, every list page, audit, references, retention, logout.
+- The 349 Drive files are **not** deleted yet. They need the GAS-side trash step.
+
+**Found while verifying 0.9.26, fixed in 0.9.27:**
+- Cloud Run had no `UrlFetchApp.fetchAll`, so every "one parallel round" ran sequentially.
+- The request profiler crashed on Cloud Run (every `prof_*` request returned `OPERATION_FAILED`).
+
+**Live read shape on 0.9.27, from the profiler** (`prof_*`, synthetic admin; call kinds only, no data). The first round of every operation is the session check: 1 query, then user + roles + permissions in one parallel round.
+
+| Operation | After the session check | Server ms |
+|---|---|---:|
+| audit.query (page 1) | `fetchAll[runQuery, runQuery, count, count]`: two windows + two COUNTs, one round | 41 |
+| vehicles.list (page 1) | `fetchAll[runQuery, count]` | 44 |
+| vehicles.lookup | one equality `runQuery` + the access-log `commit` | 48 |
+| references.registration (memo warm) | `fetchAll[runQuery, runQuery]`: organizations + setting only; the 645 reference rows come from the memo | — |
+| users.list | `fetchAll[roles, users, organizations]`: full reads of small collections (D2, by design) | 61 |
+
+**Client latency** (Cloud Run direct, median of 5, second warm run):
+
+| Operation | 0.9.26 | 0.9.27 |
+|---|---:|---:|
+| users.list | 165 | 177 |
+| audit.query | 163 | 97 |
+| vehicles.list | 105 | 62 |
+| vehicles.lookup | 116 | 73 |
+| references.registration | 166 | 102 |
+| campaigns.list | 138 | 77 |
+
+The first run right after the deploy was slower while instances warmed up. Client timings include internet round trips and vary between runs.
+
+**Cost.** Confirm on billing ("Cloud Firestore Read Ops Bangkok") over the next days against the 302,023 baseline.
