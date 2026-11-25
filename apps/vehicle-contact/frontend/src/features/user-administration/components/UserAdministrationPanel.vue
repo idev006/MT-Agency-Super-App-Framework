@@ -1,38 +1,44 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import ConfirmDialog from '../../../components/common/ConfirmDialog.vue'
+import StatusBadge from '../../../components/common/StatusBadge.vue'
 import { roleLabels } from '../../../domain/identity/role-presentation.js'
 import { FULL_HUMAN_ADMIN_ROLES, USER_ROLES } from '../useUserAdministration.js'
 
-const props = defineProps({ users: { type: Array, required: true }, currentUserId: { type: String, default: '' }, busy: { type: Boolean, default: false } })
-const emit = defineEmits(['create', 'update', 'confirmed'])
-const createForm = reactive({ username: '', displayName: '', organizationId: '', temporaryPassword: '' })
-const selectedUserId = ref('')
+// D2: management of ONE account, shown inside the EntityDrawer opened from the users table.
+const props = defineProps({
+  user: { type: Object, required: true },
+  currentUserId: { type: String, default: '' },
+  busy: { type: Boolean, default: false },
+  organizations: { type: Array, default: () => [] },
+})
+const emit = defineEmits(['update', 'confirmed'])
 const editForm = reactive({ displayName: '', organizationId: '' })
 const temporaryPassword = ref('')
 const selectedRoles = ref(['STAFF'])
 const pending = ref(null)
-const selected = computed(() => props.users.find((item) => item.userId === selectedUserId.value) || null)
-const selectedSelf = computed(() => selectedUserId.value === props.currentUserId)
+const selectedSelf = computed(() => props.user.userId === props.currentUserId)
+const selectedSuspended = computed(() => props.user.status === 'SUSPENDED')
 const selectedRoleLabels = computed(() => selectedRoles.value.map((role) => roleLabels[role] || role).join(', '))
+// keep the current organization selectable even when it is not in the ACTIVE list
+const organizationOptions = computed(() => {
+  const list = [...props.organizations]
+  if (props.user.organizationId && !list.some((o) => o.organizationId === props.user.organizationId)) list.unshift({ organizationId: props.user.organizationId, name: props.user.organizationName || 'หน่วยงานปัจจุบัน' })
+  return list
+})
 
-watch(selected, (user) => {
+watch(() => props.user, (user) => {
   editForm.displayName = user?.displayName || ''
   editForm.organizationId = user?.organizationId || ''
   temporaryPassword.value = ''
   selectedRoles.value = user?.roles?.length ? [...user.roles] : (selectedSelf.value ? ['SYSTEM_ADMIN'] : ['STAFF'])
-})
+}, { immediate: true })
 
-function submitCreate() {
-  const payload = { username: createForm.username, displayName: createForm.displayName, temporaryPassword: createForm.temporaryPassword }
-  if (createForm.organizationId.trim()) payload.organizationId = createForm.organizationId.trim()
-  emit('create', payload)
-  createForm.username = ''; createForm.displayName = ''; createForm.organizationId = ''; createForm.temporaryPassword = ''
-}
+const changed = computed(() => editForm.displayName.trim() !== (props.user.displayName || '') || editForm.organizationId !== (props.user.organizationId || ''))
 function submitUpdate() {
-  const payload = { userId: selectedUserId.value }
+  const payload = { userId: props.user.userId }
   if (editForm.displayName.trim()) payload.displayName = editForm.displayName.trim()
-  if (editForm.organizationId.trim()) payload.organizationId = editForm.organizationId.trim()
+  if (editForm.organizationId) payload.organizationId = editForm.organizationId
   emit('update', payload)
 }
 function applyFullAccessProfile() { selectedRoles.value = [...FULL_HUMAN_ADMIN_ROLES] }
@@ -41,10 +47,7 @@ function roleDisabled(role) {
   if (role === 'RETENTION_WORKER') return selectedRoles.value.some((item) => item !== 'RETENTION_WORKER')
   return selectedRoles.value.includes('RETENTION_WORKER')
 }
-function requestAction(kind) {
-  if (!selected.value) return
-  pending.value = { kind, userId: selected.value.userId, label: selected.value.displayName || selected.value.username }
-}
+function requestAction(kind) { pending.value = { kind, userId: props.user.userId, label: props.user.displayName || props.user.username } }
 function confirmAction() {
   if (!pending.value) return
   const payload = { ...pending.value }
@@ -53,7 +56,6 @@ function confirmAction() {
   pending.value = null
   emit('confirmed', payload)
 }
-const selectedSuspended = computed(() => selected.value?.status === 'SUSPENDED')
 const confirmCopy = computed(() => pending.value?.kind === 'reactivate'
   ? { title: 'เปิดใช้งานบัญชีอีกครั้งหรือไม่', message: `บัญชี ${pending.value.label} จะกลับมาเข้าสู่ระบบได้ด้วยรหัสผ่านเดิม และบันทึกประวัติการเปิดใช้งาน`, label: 'เปิดใช้งานอีกครั้ง' }
   : pending.value?.kind === 'suspend'
@@ -64,32 +66,34 @@ const confirmCopy = computed(() => pending.value?.kind === 'reactivate'
 </script>
 
 <template>
-  <div class="grid gap-5 xl:grid-cols-2">
-    <form class="card card-border bg-base-100" @submit.prevent="submitCreate"><div class="card-body gap-4"><h2 class="card-title">สร้างบัญชีผู้ใช้</h2>
-      <label class="field-stack"><span class="label-text font-medium">ชื่อผู้ใช้</span><input v-model="createForm.username" class="input input-bordered w-full" required maxlength="100" autocomplete="off" /></label>
-      <label class="field-stack"><span class="label-text font-medium">ชื่อที่แสดง</span><input v-model="createForm.displayName" class="input input-bordered w-full" required maxlength="256" /></label>
-      <label class="field-stack"><span class="label-text font-medium">รหัสหน่วยงาน (ถ้ามี)</span><input v-model="createForm.organizationId" class="input input-bordered w-full" maxlength="256" /></label>
-      <label class="field-stack"><span class="label-text font-medium">รหัสผ่านชั่วคราว</span><input v-model="createForm.temporaryPassword" class="input input-bordered w-full" type="password" minlength="12" maxlength="128" required autocomplete="new-password" /></label>
-      <div class="card-actions justify-end"><button class="btn btn-primary" type="submit" :disabled="busy">สร้างบัญชี</button></div>
-    </div></form>
+  <div class="grid gap-4">
+    <section class="card card-border bg-base-100 shadow-none"><div class="card-body gap-3 p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2"><h3 class="font-semibold">{{ user.displayName || user.username }}</h3><StatusBadge :status="user.status" /></div>
+      <p class="text-sm text-base-content/80">ชื่อผู้ใช้ {{ user.username }} · {{ user.organizationName || 'ยังไม่ผูกหน่วยงาน' }}</p>
+      <p v-if="selectedSelf" class="text-sm text-warning">นี่คือบัญชีของคุณ ระบบไม่อนุญาตให้เปลี่ยนบทบาทหรือระงับบัญชีของตนเอง ให้ผู้ดูแลระบบอีกบัญชีดำเนินการแทน</p>
+    </div></section>
 
-    <section class="card card-border bg-base-100"><div class="card-body gap-4"><h2 class="card-title">จัดการบัญชี</h2>
-      <label class="field-stack"><span class="label-text font-medium">เลือกบัญชี</span><select v-model="selectedUserId" class="select select-bordered w-full"><option value="">เลือกบัญชี</option><option v-for="user in users" :key="user.userId" :value="user.userId">{{ user.displayName || user.username }} — {{ user.username }}</option></select></label>
-      <template v-if="selected">
-        <div class="divider">ข้อมูลบัญชี</div>
-        <label class="field-stack"><span class="label-text font-medium">ชื่อที่แสดง</span><input v-model="editForm.displayName" class="input input-bordered w-full" /></label>
-        <label class="field-stack"><span class="label-text font-medium">รหัสหน่วยงาน</span><input v-model="editForm.organizationId" class="input input-bordered w-full" /></label>
-        <button class="btn" type="button" :disabled="busy || (!editForm.displayName.trim() && !editForm.organizationId.trim())" @click="submitUpdate">บันทึกข้อมูลบัญชี</button>
-        <div class="divider">บทบาทและความปลอดภัย</div>
-        <fieldset><legend class="mb-2 font-medium">บทบาทใหม่ (แทนที่รายการเดิมทั้งหมด)</legend><div class="grid gap-2 sm:grid-cols-2"><label v-for="role in USER_ROLES" :key="role" class="flex min-h-11 items-center gap-2"><input v-model="selectedRoles" class="checkbox" type="checkbox" :value="role" :disabled="roleDisabled(role)" /><span>{{ roleLabels[role] || role }}</span></label></div></fieldset>
-        <div class="rounded-box border border-base-300 p-4"><strong class="font-medium">โปรไฟล์ผู้ดูแลระบบสิทธิ์เต็ม</strong><p class="mt-1 text-sm text-base-content/65">รวมงานบริหารระบบและงานตรวจสอบการลงทะเบียน ไม่รวมผู้ปฏิบัติงานลบข้อมูล</p><button class="btn btn-sm mt-3" type="button" :disabled="busy || selectedSelf" @click="applyFullAccessProfile">เลือกโปรไฟล์นี้</button></div>
-        <button class="btn" type="button" :disabled="busy || selectedSelf || !selectedRoles.length" @click="requestAction('assignRoles')">เปลี่ยนบทบาท</button>
-        <label class="field-stack"><span class="label-text font-medium">รหัสผ่านชั่วคราวใหม่</span><input v-model="temporaryPassword" class="input input-bordered w-full" type="password" minlength="12" maxlength="128" autocomplete="new-password" /></label>
+    <section class="card card-border bg-base-100 shadow-none"><form class="card-body gap-3 p-5" @submit.prevent="submitUpdate">
+      <h3 class="font-semibold">ข้อมูลบัญชี</h3>
+      <label class="field-stack"><span class="label-text font-medium">ชื่อที่แสดง</span><input v-model="editForm.displayName" class="input input-bordered w-full" maxlength="256" /></label>
+      <label class="field-stack"><span class="label-text font-medium">หน่วยงาน</span><select v-model="editForm.organizationId" class="select select-bordered w-full"><option value="" disabled>เลือกหน่วยงาน</option><option v-for="o in organizationOptions" :key="o.organizationId" :value="o.organizationId">{{ o.name }}</option></select></label>
+      <div class="flex justify-end"><button class="btn" type="submit" :disabled="busy || !changed || !editForm.displayName.trim()">บันทึกข้อมูลบัญชี</button></div>
+    </form></section>
+
+    <section class="card card-border bg-base-100 shadow-none"><div class="card-body gap-3 p-5">
+      <h3 class="font-semibold">บทบาท</h3>
+      <fieldset><legend class="mb-2 text-sm text-base-content/80">บทบาทใหม่ (แทนที่รายการเดิมทั้งหมด)</legend><div class="grid gap-2 sm:grid-cols-2"><label v-for="role in USER_ROLES" :key="role" class="flex min-h-11 items-center gap-2"><input v-model="selectedRoles" class="checkbox" type="checkbox" :value="role" :disabled="roleDisabled(role)" /><span>{{ roleLabels[role] || role }}</span></label></div></fieldset>
+      <div class="flex flex-wrap justify-end gap-2"><button class="btn btn-sm" type="button" :disabled="busy || selectedSelf" title="รวมงานบริหารระบบและงานตรวจสอบการลงทะเบียน ไม่รวมผู้ปฏิบัติงานลบข้อมูล" @click="applyFullAccessProfile">เลือกโปรไฟล์ผู้ดูแลระบบสิทธิ์เต็ม</button><button class="btn" type="button" :disabled="busy || selectedSelf || !selectedRoles.length" @click="requestAction('assignRoles')">เปลี่ยนบทบาท</button></div>
+    </div></section>
+
+    <section class="card card-border bg-base-100 shadow-none"><div class="card-body gap-3 p-5">
+      <h3 class="font-semibold">ความปลอดภัย</h3>
+      <label class="field-stack"><span class="label-text font-medium">รหัสผ่านชั่วคราวใหม่ (อย่างน้อย 12 ตัว)</span><input v-model="temporaryPassword" class="input input-bordered w-full" type="password" minlength="12" maxlength="128" autocomplete="new-password" /></label>
+      <div class="flex flex-wrap justify-end gap-2">
         <button class="btn" type="button" :disabled="busy || temporaryPassword.length < 12" @click="requestAction('resetPassword')">รีเซ็ตรหัสผ่าน</button>
         <button v-if="selectedSuspended" class="btn btn-primary" type="button" :disabled="busy" @click="requestAction('reactivate')">เปิดใช้งานอีกครั้ง</button>
         <button v-else class="btn btn-error" type="button" :disabled="busy || selectedSelf" @click="requestAction('suspend')">ระงับบัญชี</button>
-        <p v-if="selectedSelf" class="text-sm text-warning">ระบบไม่อนุญาตให้เปลี่ยนบทบาทหรือระงับบัญชีของตนเอง ให้ผู้ดูแลระบบอีกบัญชีดำเนินการแทน</p>
-      </template>
+      </div>
     </div></section>
   </div>
   <ConfirmDialog :open="Boolean(pending)" :title="confirmCopy.title" :message="confirmCopy.message" :confirm-label="confirmCopy.label" :busy="busy" @cancel="pending = null" @confirm="confirmAction" />

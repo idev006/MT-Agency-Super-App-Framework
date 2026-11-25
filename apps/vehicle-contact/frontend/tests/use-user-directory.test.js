@@ -6,7 +6,7 @@ describe('useUserDirectory state machine', () => {
     const list = vi.fn().mockResolvedValue({ users: [{ userId: 'u-1' }], pagination: { total: 1, page: 1, pageSize: 10, totalPages: 1 }, requestId: 'id' })
     const directory = useUserDirectory({ repository: { list }, permissions: ['users.manage'] })
     await expect(directory.load()).resolves.toBe(true)
-    expect(list).toHaveBeenCalledWith({ page: 1, pageSize: 10 })
+    expect(list).toHaveBeenCalledWith({ page: 1, pageSize: 10, filters: { status: 'ACTIVE', role: '', q: '' } })
     expect(directory.phase.value).toBe('success')
   })
 

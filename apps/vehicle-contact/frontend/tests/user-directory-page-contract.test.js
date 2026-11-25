@@ -12,9 +12,14 @@ describe('SYSTEM_ADMIN user directory page contract', () => {
     expect(router).toMatch(/name: 'user-directory'.*requiredPermissions: \['users\.manage'\]/)
   })
 
-  it('uses native responsive table/list presentation without raw API access', () => {
-    expect(list).toContain('class="table"')
-    expect(list).toContain('class="list')
+  it('D2: one DataTable (desktop and phone), server filters, drawer + create dialog, no raw API access', () => {
+    expect(list).toContain('<DataTable')
+    expect(list).toContain("emit('manage', row)")
+    expect(page).toContain('<ListFilterBar')
+    expect(page).toContain('directory.applyFilters')
+    expect(page).toContain('<EntityDrawer')
+    expect(page).toContain('<UserCreateDialog')
+    expect(page).toContain('route.query.user')
     expect(page).not.toContain('gas-api-client')
     expect(page).not.toContain('fetch(')
   })

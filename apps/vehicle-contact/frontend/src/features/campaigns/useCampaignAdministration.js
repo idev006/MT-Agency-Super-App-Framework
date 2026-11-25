@@ -10,6 +10,7 @@ export function useCampaignAdministration({ repository, permissions }) {
   const phase = ref('idle'), campaigns = ref([]), failure = ref(null)
   const page = ref(1), pageSize = ref(10), pagination = ref({ total: 0, page: 1, pageSize: 10, totalPages: 0 })
   const actionPhase = ref('idle'), actionFailure = ref(null), oneTimeToken = ref(null), lastCreatedId = ref('')
+  const filters = ref({ state: 'CURRENT', q: '' }) // D2: open + upcoming by default
   const permissionList = computed(() => Array.isArray(unref(permissions)) ? unref(permissions) : [])
   const canManage = computed(() => permissionList.value.includes('campaigns.manage'))
 
@@ -18,7 +19,7 @@ export function useCampaignAdministration({ repository, permissions }) {
     if (!canManage.value) { phase.value = 'forbidden'; return false }
     phase.value = 'loading'
     try {
-      const result = await source.list({ page: page.value, pageSize: pageSize.value })
+      const result = await source.list({ page: page.value, pageSize: pageSize.value, filters: filters.value })
       if (result.pagination.totalPages > 0 && page.value > result.pagination.totalPages) { page.value = result.pagination.totalPages; return load() }
       campaigns.value = result.campaigns
       pagination.value = result.pagination
@@ -65,7 +66,9 @@ export function useCampaignAdministration({ repository, permissions }) {
     }
   }
 
-  return { phase, campaigns, failure, page, pageSize, pagination, actionPhase, actionFailure, oneTimeToken, lastCreatedId, canManage, load,
+  return { phase, campaigns, failure, page, pageSize, pagination, filters,
+    applyFilters: (value) => { filters.value = { ...filters.value, ...value }; page.value = 1; return load() },
+    actionPhase, actionFailure, oneTimeToken, lastCreatedId, canManage, load,
     changePage: (value) => { page.value = value; return load() },
     changePageSize: (value) => { pageSize.value = value; page.value = 1; return load() },
     create, revoke, clearOneTimeToken: () => { oneTimeToken.value = null } }

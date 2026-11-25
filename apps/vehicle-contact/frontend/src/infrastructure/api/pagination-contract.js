@@ -26,6 +26,11 @@ export function mapPaginatedData(value, mapItem) {
   })
 }
 
+// D2: drop empty filter values so the server sees only real filters (and an empty filter = no filter).
+export function filterPayload(filters = {}) {
+  return Object.fromEntries(Object.entries(filters || {}).filter(([, v]) => typeof v === 'string' && v.trim()).map(([k, v]) => [k, v.trim()]))
+}
+
 const LEGACY_PAGINATION_ERRORS = new Set(['HTTP_403', 'INVALID_REQUEST'])
 
 export async function callPaginatedOperation({ callOperation, operation, payload = {}, page, pageSize, options }) {

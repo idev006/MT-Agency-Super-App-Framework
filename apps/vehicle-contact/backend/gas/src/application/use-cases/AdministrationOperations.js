@@ -1,4 +1,5 @@
 import {paginate} from '../pagination/Pagination.js';
+import {listFilter} from '../pagination/ListFilter.js';
 export function createAdministrationOperations({store,security}) {
  const required=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const audit=(actor,action,id)=>store.insert('vc_change_audit',{
@@ -26,7 +27,13 @@ export function createAdministrationOperations({store,security}) {
   return getSettings();
  }
  function listOrgs(p){
-  return paginate(store.list('vc_organizations'),p,{defaultLimit:100,maxLegacyLimit:500});
+  // D2: status / type / q filters before pagination; parentName for display.
+  const f=listFilter(p,{status:['ACTIVE','DISABLED'],extra:{type:['POLICE','EXTERNAL']}});
+  const rows=store.list('vc_organizations');
+  const names=new Map(rows.map(o=>[String(o.organization_id),o.name]));
+  const items=rows.map(o=>({...o,parentName:o.parent_id?names.get(String(o.parent_id))||'':''}))
+   .filter(o=>(!f.status||o.status===f.status)&&(!f.type||o.org_type===f.type)&&f.text(o.name,o.parentName));
+  return paginate(items,p,{defaultLimit:100,maxLegacyLimit:500});
  }
  function createOrg(p,a){
   const id=security.secretToken(),type=required(p.type,'ORG_TYPE');
@@ -89,12 +96,20 @@ export function createAdministrationOperations({store,security}) {
   });
   return {campaignId:id,campaignToken:token,name};
  }
+ // D2: state = OPEN | UPCOMING | ENDED | REVOKED (server clock); CURRENT = OPEN + UPCOMING.
+ function campaignStateOf(x,nowMs){
+  if(x.status!=='ACTIVE'||x.revoked_at)return 'REVOKED';
+  if(Date.parse(x.ends_at)<=nowMs)return 'ENDED';
+  if(Date.parse(x.starts_at)>nowMs)return 'UPCOMING';
+  return 'OPEN';
+ }
  function listCampaigns(p){
-  const items=store.list('vc_campaigns').map(x=>({
+  const f=listFilter(p,{extra:{state:['CURRENT','OPEN','UPCOMING','ENDED','REVOKED']}}),nowMs=Date.parse(security.now());
+  const items=store.list('vc_campaigns').map(x=>({state:campaignStateOf(x,nowMs),
    campaignId:x.campaign_id,startsAt:x.starts_at,endsAt:x.ends_at,maxSubmissions:Number(x.max_submissions),
    submittedCount:Number(x.submitted_count),status:x.status,name:x.campaign_name||'',
    campaignToken:x.campaign_token||'',createdAt:x.created_at||'',revokedAt:x.revoked_at||''
-  })).reverse(); // R6 (E2E P3): newest first — a new campaign was landing on the last page.
+  })).filter(x=>(!f.state||(f.state==='CURRENT'?['OPEN','UPCOMING'].includes(x.state):x.state===f.state))&&f.text(x.name)).reverse(); // R6 (E2E P3): newest first — a new campaign was landing on the last page.
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function validateCampaign(p){

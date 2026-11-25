@@ -7,7 +7,7 @@ describe('SYSTEM_ADMIN governance repository contracts', () => {
   it('maps organization rows and strips storage fields', async () => {
     const callOperation = vi.fn().mockResolvedValue({ data: { items: [{ organization_id: 'org-1', name: 'กองบังคับการ', org_type: 'POLICE', parent_id: '', status: 'ACTIVE', internal: 'drop' }], total: 1, page: 1, pageSize: 10, totalPages: 1 }, requestId: 'orgs' })
     const result = await createGasOrganizationAdministrationRepository({ callOperation }).list()
-    expect(result.organizations).toEqual([{ organizationId: 'org-1', name: 'กองบังคับการ', type: 'POLICE', parentId: '', status: 'ACTIVE' }])
+    expect(result.organizations).toEqual([{ organizationId: 'org-1', name: 'กองบังคับการ', type: 'POLICE', parentId: '', parentName: '', status: 'ACTIVE' }])
     expect(JSON.stringify(result)).not.toContain('internal')
   })
 

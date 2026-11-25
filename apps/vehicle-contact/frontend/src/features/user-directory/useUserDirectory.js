@@ -11,6 +11,8 @@ export function useUserDirectory({ repository, permissions }) {
   const failure = ref(null)
   const page = ref(1)
   const pageSize = ref(10)
+  // D2: default ACTIVE so test residue / suspended accounts do not crowd the list
+  const filters = ref({ status: 'ACTIVE', role: '', q: '' })
   const permissionList = computed(() => Array.isArray(unref(permissions)) ? unref(permissions) : [])
   const canReadUsers = computed(() => permissionList.value.includes('users.manage'))
 
@@ -24,7 +26,7 @@ export function useUserDirectory({ repository, permissions }) {
     }
     phase.value = 'loading'
     try {
-      result.value = await source.list({ page: page.value, pageSize: pageSize.value })
+      result.value = await source.list({ page: page.value, pageSize: pageSize.value, filters: filters.value })
       if (result.value.pagination.totalPages > 0 && page.value > result.value.pagination.totalPages) {
         page.value = result.value.pagination.totalPages
         return load()
@@ -44,5 +46,7 @@ export function useUserDirectory({ repository, permissions }) {
   async function changePage(value) { page.value = value; return load() }
   async function changePageSize(value) { pageSize.value = value; page.value = 1; return load() }
 
-  return { phase, result, failure, page, pageSize, canReadUsers, load, changePage, changePageSize }
+  async function applyFilters(value) { filters.value = { ...filters.value, ...value }; page.value = 1; return load() }
+
+  return { phase, result, failure, page, pageSize, filters, canReadUsers, load, changePage, changePageSize, applyFilters }
 }

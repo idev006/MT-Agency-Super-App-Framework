@@ -1,4 +1,4 @@
-import { callPaginatedOperation, mapPaginatedData } from '../api/pagination-contract.js'
+import { callPaginatedOperation, filterPayload, mapPaginatedData } from '../api/pagination-contract.js'
 
 export class CampaignContractError extends Error {
   constructor() {
@@ -35,14 +35,15 @@ function mapCampaign(value) {
     // VC-ADR-031: present for campaigns created from 0.9.20; empty for older ones (code unrecoverable).
     name: optionalText(value.name),
     campaignToken: optionalText(value.campaignToken),
+    state: optionalText(value.state), // D2: server-clock OPEN | UPCOMING | ENDED | REVOKED
   })
 }
 
 export function createGasCampaignAdministrationRepository({ callOperation }) {
   if (typeof callOperation !== 'function') throw new TypeError('callOperation is required')
   return Object.freeze({
-    async list({ page = 1, pageSize = 10, signal } = {}) {
-      const response = await callPaginatedOperation({ callOperation, operation: 'campaigns.list', page, pageSize, options: { signal } })
+    async list({ page = 1, pageSize = 10, filters = {}, signal } = {}) {
+      const response = await callPaginatedOperation({ callOperation, operation: 'campaigns.list', payload: filterPayload(filters), page, pageSize, options: { signal } })
       const result = mapPaginatedData(response.data, mapCampaign)
       return { campaigns: result.items, pagination: result.pagination, requestId: response.requestId }
     },

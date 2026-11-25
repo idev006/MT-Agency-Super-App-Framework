@@ -10,6 +10,7 @@ export function useOrganizationAdministration({ repository, permissions }) {
   const phase = ref('idle'), organizations = ref([]), failure = ref(null)
   const page = ref(1), pageSize = ref(10), pagination = ref({ total: 0, page: 1, pageSize: 10, totalPages: 0 })
   const actionPhase = ref('idle'), actionFailure = ref(null), lastAction = ref(null)
+  const filters = ref({ status: 'ACTIVE', type: '', q: '' }) // D2
   const permissionList = computed(() => Array.isArray(unref(permissions)) ? unref(permissions) : [])
   const canRead = computed(() => permissionList.value.some((item) => ['organizations.read', 'organizations.manage'].includes(item)))
   const canManage = computed(() => permissionList.value.includes('organizations.manage'))
@@ -19,7 +20,7 @@ export function useOrganizationAdministration({ repository, permissions }) {
     if (!canRead.value) { phase.value = 'forbidden'; return false }
     phase.value = 'loading'
     try {
-      const result = await source.list({ page: page.value, pageSize: pageSize.value })
+      const result = await source.list({ page: page.value, pageSize: pageSize.value, filters: filters.value })
       if (result.pagination.totalPages > 0 && page.value > result.pagination.totalPages) { page.value = result.pagination.totalPages; return load() }
       organizations.value = result.organizations
       pagination.value = result.pagination
@@ -50,7 +51,9 @@ export function useOrganizationAdministration({ repository, permissions }) {
   }
 
   return {
-    phase, organizations, failure, page, pageSize, pagination, actionPhase, actionFailure, lastAction, canRead, canManage, load,
+    phase, organizations, failure, page, pageSize, pagination, filters,
+    applyFilters: (value) => { filters.value = { ...filters.value, ...value }; page.value = 1; return load() },
+    actionPhase, actionFailure, lastAction, canRead, canManage, load,
     changePage: (value) => { page.value = value; return load() },
     changePageSize: (value) => { pageSize.value = value; page.value = 1; return load() },
     create: (input) => write('create', () => source.create(input)),
