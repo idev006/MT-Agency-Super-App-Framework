@@ -6,6 +6,7 @@ import { qrGovernanceRepositoryKey } from '../application/qr/qr-governance-port.
 import { vehicleSearchRepositoryKey } from '../application/vehicles/vehicle-search-port.js'
 import { vehicleDetailRepositoryKey } from '../application/vehicles/vehicle-detail-port.js'
 import QrHistoryTable from '../features/qr-governance/components/QrHistoryTable.vue'
+import VehicleQrImage from '../features/qr-governance/components/VehicleQrImage.vue'
 import { QR_REASONS, qrReasonLabel, qrReasonProblem } from '../domain/reference/qr-reasons.js'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
@@ -92,7 +93,7 @@ async function copyToken() { copied.value = await copySecret(token.value) }
     </section>
 
     <div v-if="work.phase.value === 'success'" class="alert alert-success mt-5 items-start" role="status"><div class="min-w-0"><h2 class="font-semibold">ดำเนินการสำเร็จ</h2>
-      <template v-if="token"><p class="mt-2">รหัส QR แสดงครั้งเดียว คัดลอกไปพิมพ์สติกเกอร์ตอนนี้ ถ้าออกจากหน้านี้ระบบจะถามยืนยันก่อน</p><code class="mt-2 block break-all rounded-box bg-base-100 p-3 text-base-content">{{ token }}</code>
+      <template v-if="token"><p class="mt-2">รหัส QR แสดงครั้งเดียว คัดลอกไปพิมพ์สติกเกอร์ตอนนี้ ถ้าออกจากหน้านี้ระบบจะถามยืนยันก่อน</p><code class="mt-2 block break-all rounded-box bg-base-100 p-3 text-base-content">{{ token }}</code><VehicleQrImage :token="token" />
         <div class="mt-3 flex flex-wrap gap-2"><button class="btn btn-primary btn-sm" type="button" @click="copyToken">{{ copied ? 'คัดลอกแล้ว ✓' : 'คัดลอกรหัส QR' }}</button><button class="btn btn-sm" type="button" @click="work.clearSensitiveResult">บันทึกแล้ว ปิดและล้างรหัส</button></div></template>
     </div></div>
     <div v-else-if="work.phase.value === 'uncertain'" class="alert alert-warning mt-5">ไม่ทราบผลแน่ชัด ค้นหารถคันนี้อีกครั้งเพื่อตรวจสถานะก่อนดำเนินการซ้ำ</div>

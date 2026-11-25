@@ -9,6 +9,7 @@ defineProps({
   activeFacingMode: { type: String, default: '' },
   active: { type: Boolean, default: false },
   busy: { type: Boolean, default: false },
+  notice: { type: String, default: '' },
 })
 const emit = defineEmits(['start', 'stop', 'switch', 'select-device', 'scan-file'])
 
@@ -35,6 +36,7 @@ function chooseFile(event) {
       <label class="field-stack"><span class="label font-medium">เลือกกล้อง</span><select class="select select-bordered min-h-11 w-full" :value="selectedDeviceId" :disabled="busy || devices.length < 2" @change="emit('select-device', $event.target.value)"><option value="">{{ devices.length ? `อัตโนมัติ — ขอใช้${facingMode === 'environment' ? 'กล้องหลัง' : 'กล้องหน้า'}` : 'เปิดกล้องเพื่อค้นหาอุปกรณ์' }}</option><option v-for="device in devices" :key="device.id" :value="device.id">{{ device.label }}</option></select><span class="text-sm text-base-content/65">ชื่อและทิศทางกล้องอาจไม่แสดงบน iPhone กรุณาตรวจภาพก่อนใช้งาน</span></label>
       <label class="field-stack"><span class="label font-medium">อ่าน QR จากรูปภาพ</span><input class="file-input file-input-bordered min-h-11 w-full" type="file" accept="image/jpeg,image/png,image/webp" :disabled="busy" @change="chooseFile"><span class="text-sm text-base-content/65">ใช้เป็นทางเลือกเมื่อกล้องเปิดไม่ได้ รองรับ JPEG, PNG และ WebP ไม่เกิน 10 MB</span></label>
       <div v-if="phase === 'starting' || phase === 'switching' || phase === 'scanning-file'" class="alert" role="status"><span class="loading loading-spinner loading-sm"></span><span>{{ phase === 'scanning-file' ? 'กำลังอ่าน QR จากรูปภาพ' : 'กำลังเตรียมกล้อง' }}</span></div>
+      <div v-if="phase === 'scanning' && notice" class="alert alert-warning" role="status" data-qr-notice>{{ notice === 'LINK_NOT_VEHICLE_QR' ? 'QR นี้เป็นลิงก์ (เช่น QR แคมเปญลงทะเบียน) ไม่ใช่ QR ยานพาหนะ' : 'QR นี้ไม่ใช่ QR ยานพาหนะ' }} — กล้องยังเปิดอยู่ ลองสแกน QR บนสติกเกอร์รถ</div>
       <div v-else-if="phase === 'scanning'" class="alert alert-success" role="status">กล้องทำงานแล้ว<span v-if="activeFacingMode"> (อุปกรณ์รายงาน: {{ activeFacingMode }})</span> จัด QR ให้อยู่ในกรอบ</div>
       <div v-else-if="phase === 'error'" class="alert alert-warning items-start"><div><strong>ไม่สามารถอ่าน QR ได้</strong><p class="mt-1 text-sm">รหัสข้อผิดพลาด: {{ failureCode || 'CAMERA_UNAVAILABLE' }} — สามารถใช้รูปภาพหรือกรอกรหัส QR ด้านล่างแทนได้</p></div></div>
     </div>

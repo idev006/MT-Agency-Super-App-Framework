@@ -13,6 +13,7 @@ import { formatThaiPhone, photoSlotLabel } from '../domain/reference/vehicle-pre
 import { useRegistrationReferenceStore } from '../stores/registration-reference.js'
 import { useSessionStore } from '../stores/session.js'
 import { useOneTimeSecretGuard } from '../features/common/useOneTimeSecretGuard.js'
+import VehicleQrImage from '../features/qr-governance/components/VehicleQrImage.vue'
 
 const auth = useSessionStore()
 const { roles, permissions, session, transport } = storeToRefs(auth)
@@ -80,7 +81,7 @@ async function confirmDecision() {
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
 
     <div v-if="work.oneTimeQr.value" class="alert alert-success mb-3 items-start py-2" role="status">
-      <div class="min-w-0"><strong>อนุมัติแล้ว — คัดลอกรหัส QR ไปพิมพ์สติกเกอร์ตอนนี้</strong><p class="mt-1 break-all font-mono text-sm">{{ work.oneTimeQr.value.token }}</p><p class="mt-1 text-sm">ระบบแสดงค่านี้ครั้งเดียวและไม่บันทึกใน browser (ถ้าพลาด ให้ผู้ดูแลออก QR ใหม่ที่หน้า “จัดการ QR”)</p></div>
+      <div class="min-w-0"><strong>อนุมัติแล้ว — คัดลอกรหัส QR ไปพิมพ์สติกเกอร์ตอนนี้</strong><p class="mt-1 break-all font-mono text-sm">{{ work.oneTimeQr.value.token }}</p><VehicleQrImage :token="work.oneTimeQr.value.token" /><p class="mt-1 text-sm">ระบบแสดงค่านี้ครั้งเดียวและไม่บันทึกใน browser (ถ้าพลาด ให้ผู้ดูแลออก QR ใหม่ที่หน้า “จัดการ QR”)</p></div>
       <div class="flex gap-2"><button class="btn btn-sm" type="button" @click="copyQrToken">{{ qrCopied ? 'คัดลอกแล้ว' : 'คัดลอก' }}</button><button class="btn btn-sm" type="button" @click="work.clearOneTimeQr(); qrCopied = false">ปิด</button></div>
     </div>
 

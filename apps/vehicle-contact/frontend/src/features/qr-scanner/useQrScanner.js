@@ -13,6 +13,12 @@ export function useQrScanner({ scanner, elementId, onDecoded }) {
   const facingMode = ref('environment')
   const selectedDeviceId = ref('')
   const activeFacingMode = ref('')
+  // Owner 2026-11-25 (real phone): "สแกน QR ... ทำให้กล้องปิดตัวลง". A QR that is not a vehicle QR
+  // (e.g. the campaign registration link) used to STOP the camera. Now the camera keeps running and
+  // a notice says what was read; the same non-vehicle QR is not reported again for a moment.
+  const notice = ref('')
+  let lastIgnored = ''
+  let lastIgnoredAt = 0
   let decoding = false
   let lifecycleBound = false
   let generation = 0
@@ -30,6 +36,13 @@ export function useQrScanner({ scanner, elementId, onDecoded }) {
     if (decoding) return
     decoding = true
     const candidate = String(text || '').trim()
+    if (!QR_TOKEN.test(candidate) && phase.value === 'scanning') {
+      const now = Date.now()
+      if (candidate !== lastIgnored || now - lastIgnoredAt > 3000) notice.value = /^https?:\/\//i.test(candidate) ? 'LINK_NOT_VEHICLE_QR' : 'NOT_VEHICLE_QR'
+      lastIgnored = candidate; lastIgnoredAt = now
+      decoding = false
+      return
+    }
     if (!QR_TOKEN.test(candidate)) {
       try {
         await source.stop()
@@ -41,6 +54,7 @@ export function useQrScanner({ scanner, elementId, onDecoded }) {
       return
     }
     phase.value = 'decoded'
+    notice.value = ''
     try {
       await source.stop()
       await onDecoded(candidate.toLowerCase())
@@ -55,6 +69,7 @@ export function useQrScanner({ scanner, elementId, onDecoded }) {
     const run = ++generation
     phase.value = cameraId || active.value ? 'switching' : 'starting'
     failure.value = null
+    notice.value = ''
     try {
       const result = await source.start({ elementId, cameraId, facingMode: nextFacingMode, onDecode: handleDecoded })
       if (disposed || run !== generation) {
@@ -145,5 +160,5 @@ export function useQrScanner({ scanner, elementId, onDecoded }) {
     await source.stop()
   }
 
-  return { phase, failure, devices, facingMode, activeFacingMode, selectedDeviceId, active, busy, start, stop, switchCamera, selectDevice, scanFile, bindLifecycle, destroy }
+  return { phase, failure, notice, devices, facingMode, activeFacingMode, selectedDeviceId, active, busy, start, stop, switchCamera, selectDevice, scanFile, bindLifecycle, destroy }
 }
