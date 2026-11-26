@@ -85,3 +85,14 @@ describe('configurable person types / sticker colours', () => {
     expect(css).not.toContain('Pridi')
   })
 })
+
+describe('print pages are laid out from the capacity (live PDF review 2026-11-26)', () => {
+  it('16 stickers of 5 cm on A4 office = 2 pages (15 + 1); each page is its own block', async () => {
+    const items = Array.from({ length: 16 }, (_, i) => ({ vehicleId: 'v' + i, plate: 'ก' + i, province: '30', qrId: 'q' + i, token: 'ab'.repeat(32), stickerCategory: 'NCO', sticker: toSticker(DEFAULT_STICKER_CATEGORIES[3]) }))
+    const html = await renderToString(createSSRApp(QrStickerSheet, { items, mode: 'office', paper: 'A4' }))
+    expect((html.match(/data-page="/g) || []).length).toBe(2)
+    expect(html).toContain('data-page="2"')
+    const a3 = await renderToString(createSSRApp(QrStickerSheet, { items, mode: 'sheet', paper: 'A3' }))
+    expect((a3.match(/data-page="/g) || []).length).toBe(1) // 24 per A3 sheet
+  })
+})

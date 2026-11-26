@@ -25,7 +25,7 @@ test('QR print: pick vehicles → sheet with READY stickers, others listed with 
   await expect(page.getByRole('table', { name: 'เลือกรถสำหรับพิมพ์ QR' })).toBeVisible()
   await page.getByRole('button', { name: 'เลือกทั้งหน้า' }).click()
   await expect(page.getByText('เลือกแล้ว 3 / 100 คัน')).toBeVisible()
-  await page.getByRole('button', { name: 'สร้างแผ่น QR' }).click()
+  await page.getByRole('button', { name: 'สร้างแผ่น QR', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'แผ่น QR พร้อมพิมพ์ 1 ดวง' })).toBeVisible()
   const sticker = page.locator('.qr-print-area [data-sticker="v1"]')
   await expect(sticker).toContainText('กข1234')
@@ -53,7 +53,7 @@ test('QR print → PDF: real page sizes (A4 sheet, 56 mm single page with bleed)
   test.skip(browserName !== 'chromium' || info.project.name.includes('phone'), 'PDF output is Chromium desktop only')
   await signIn(page, '/#/app/admin/qr-print')
   await page.getByRole('button', { name: 'เลือกทั้งหน้า' }).click()
-  await page.getByRole('button', { name: 'สร้างแผ่น QR' }).click()
+  await page.getByRole('button', { name: 'สร้างแผ่น QR', exact: true }).click()
   await expect(page.getByRole('heading', { name: /แผ่น QR พร้อมพิมพ์/ })).toBeVisible()
   const boxes = async () => {
     const pdf = (await page.pdf({ preferCSSPageSize: true, printBackground: true })).toString('latin1')
@@ -91,8 +91,22 @@ test('person types + sticker colours (VC-ADR-038): a system admin changes a colo
   // the print page now draws v1 in orange
   await page.goto('/#/app/admin/qr-print')
   await page.getByRole('button', { name: 'เลือกทั้งหน้า' }).click()
-  await page.getByRole('button', { name: 'สร้างแผ่น QR' }).click()
+  await page.getByRole('button', { name: 'สร้างแผ่น QR', exact: true }).click()
   const sticker = page.locator('.qr-print-area [data-sticker="v1"]')
   await expect(sticker).toHaveCSS('background-color', 'rgb(255, 122, 0)')
   await expect(sticker).toHaveCSS('color', 'rgb(17, 17, 17)') // dark text on orange
+})
+
+test('print UX (live review 2026-11-26): select all at once, action bar stays at hand, steps, a sticker is never split, white pages', async ({ page, browserName }, info) => {
+  await signIn(page, '/#/app/admin/qr-print')
+  await page.getByRole('button', { name: /เลือกทั้งหมด \(3 คัน\)/ }).click()
+  await expect(page.getByText('เลือกแล้ว 3 / 100 คัน')).toBeVisible()
+  const bar = page.locator('[data-print-bar]')
+  await expect(bar).toContainText('เลือกแล้ว 3 คัน')
+  await bar.getByRole('button', { name: 'สร้างแผ่น QR (3 คัน)' }).click()
+  await expect(page.locator('[data-print-steps] li')).toHaveCount(3)
+  if (browserName !== 'chromium' || info.project.name.includes('phone')) return
+  await page.emulateMedia({ media: 'print' })
+  const styles = await page.evaluate(() => { const c = document.querySelector('.qr-print-root .qr-page'); const s = getComputedStyle(c); return { breakInside: s.breakInside, bg: getComputedStyle(document.body).backgroundColor } })
+  expect(styles).toEqual({ breakInside: 'avoid', bg: 'rgb(255, 255, 255)' })
 })
