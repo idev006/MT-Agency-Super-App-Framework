@@ -65,13 +65,39 @@ describe('S5 QR link, export and print', () => {
     expect(byCat).toContain('--band:#f2c200;--ink:#111111') // yellow band → dark text
     expect(byCat).not.toContain('data-sticker="n"')
     expect(byCat).toContain('พล.ต.ต. ขึ้นไป')
-    const all5 = await renderToString(createSSRApp(QrStickerSheet, { items, sizeMode: '5', mode: 'shop' }))
+    const all5 = await renderToString(createSSRApp(QrStickerSheet, { items, sizeMode: '5', mode: 'single' }))
     expect(all5).toMatch(/data-sticker="r" data-size="5"/)
-    expect(all5).toContain('qr-sheet--shop')
+    expect(all5).toContain('qr-sheet--single')
     const css = readFileSync(new URL('../src/features/qr-governance/components/QrStickerSheet.vue', import.meta.url), 'utf8')
     expect(css).toContain('.qr-sticker--5 { width: 50mm; height: 50mm;')
     expect(css).toContain('.qr-sticker--8 { width: 80mm; height: 80mm;')
     expect(css).toContain('@page qr5 { size: 56mm 56mm;') // 3 mm bleed each side
+  })
+
+  it('owner 2026-11-26: the WHOLE sticker is the colour (seen from far), white tile only behind the QR; print-shop sheet has bleed + crop marks', async () => {
+    const items = [{ vehicleId: 'b', plate: 'ก9', province: '30', qrId: 'q9', token: CODE, stickerCategory: 'SENIOR_OFFICER' }]
+    const sheet = await renderToString(createSSRApp(QrStickerSheet, { items, mode: 'sheet', paper: 'A3' }))
+    expect(sheet).toContain('qr-sheet--paper-A3')
+    expect((sheet.match(/<line /g) || []).length).toBe(8) // 8 crop marks per sticker
+    expect(sheet).toContain('viewBox="0 0 64 64"') // 50 trim + 2 × (3 bleed + 4 mark zone)
+    expect(await renderToString(createSSRApp(QrStickerSheet, { items, mode: 'office' }))).not.toContain('<line ')
+    const css = read('../src/features/qr-governance/components/QrStickerSheet.vue')
+    expect(css).toMatch(/\.qr-sticker \{[^}]*background: var\(--band\)/) // colour covers the sticker
+    expect(css).toMatch(/\.qr-sticker__tile \{[^}]*background: #fff/) // quiet zone for the scanner
+    expect(css).toContain('@page sheetA4 { size: A4; margin: 8mm; }')
+    expect(css).toContain('body:has(> .qr-print-root) > *:not(.qr-print-root) { display: none !important; }')
+  })
+
+  it('sheet capacity per paper and pages needed (each size starts a new page)', async () => {
+    const { sheetCapacity, pagesNeeded } = await import('../src/domain/qr/sticker-layout.js')
+    expect(sheetCapacity('A4', 5, 'office')).toBe(15) // 3 × 5
+    expect(sheetCapacity('A4', 8, 'office')).toBe(6) // 2 × 3
+    expect(sheetCapacity('A4', 5, 'sheet')).toBe(12) // 3 × 4 at 64 mm pitch
+    expect(sheetCapacity('A3', 5, 'sheet')).toBe(24) // 4 × 6
+    expect(sheetCapacity('A5', 8, 'sheet')).toBe(2) // 1 × 2
+    expect(sheetCapacity('A4', 8, 'single')).toBe(1)
+    expect(pagesNeeded('A4', 'office', { 5: 16, 8: 1 })).toBe(3)
+    expect(pagesNeeded('A4', 'single', { 5: 2, 8: 1 })).toBe(3)
   })
 
   it('the sticker categories mirror the backend policy exactly', async () => {

@@ -12,11 +12,12 @@ import { qrGovernanceRepositoryKey } from '../application/qr/qr-governance-port.
 import { useVehicleRegistry } from '../features/vehicle-registry/useVehicleRegistry.js'
 import { provinceLabel } from '../domain/reference/provinces.js'
 import { STICKER_CATEGORIES, stickerCategoryOf } from '../domain/reference/sticker-categories.js'
+import { PAPERS, pagesNeeded, sheetCapacity } from '../domain/qr/sticker-layout.js'
 import { useSessionStore } from '../stores/session.js'
 
 // S5 (owner 2026-11-25: "หน้าที่ผู้ใช้สามารถสั่ง export qr ของรถที่เลือกได้ เพื่อนำไปให้โรงพิมพ์ จัดพิมพ์").
-// Pick vehicles from the approved registry → fetch their ACTIVE codes (qr.export, audited) → print an A4
-// label sheet or one sticker per page (Print / Save as PDF for the print shop). Codes stay in memory only.
+// Pick vehicles from the approved registry → fetch their ACTIVE codes (qr.export, audited) → print on A3/A4/A5
+// (office cut guides, or a print-shop sheet with bleed + crop marks) or one sticker per page (Print / Save as PDF for the print shop). Codes stay in memory only.
 const MAX = 100
 const auth = useSessionStore()
 const { roles, permissions, session, transport } = storeToRefs(auth)
@@ -50,7 +51,8 @@ const phase = ref('idle') // idle | loading | ready | error
 const failure = ref('')
 const results = ref([])
 // owner 2026-11-26: two print sizes (5 × 5 / 8 × 8 cm); colour + default size by the vehicle user's category
-const mode = ref('office') // office: A4 with cut guides · shop: one sticker per page with 3 mm bleed
+const mode = ref('office') // office: cut guides · sheet: print shop, many per sheet + bleed + crop marks · single: one per page + bleed
+const paper = ref('A4') // A3 | A4 | A5 (office / sheet)
 const sizeMode = ref('category') // category | 5 | 8
 const printable = (x) => x.status === 'READY' && Boolean(stickerCategoryOf(x.stickerCategory))
 const ready = computed(() => results.value.filter(printable))
@@ -64,6 +66,16 @@ const summary = computed(() => {
     count[k] = (count[k] || 0) + 1
   }
   return Object.entries(count)
+})
+const sizeOf = (x) => (sizeMode.value === 'category' ? STICKER_CATEGORIES[x.stickerCategory].size : Number(sizeMode.value))
+// "A4: 8 × 8 ซม. 6 ดวง/แผ่น · 5 × 5 ซม. 15 ดวง/แผ่น · รวม 2 แผ่น"
+const layout = computed(() => {
+  const bySize = {}
+  for (const x of ready.value) bySize[sizeOf(x)] = (bySize[sizeOf(x)] || 0) + 1
+  const sizes = Object.keys(bySize).map(Number).sort((a, b) => b - a)
+  const per = sizes.map((s) => `${s} × ${s} ซม. ${sheetCapacity(paper.value, s, mode.value)} ดวง/แผ่น`)
+  const where = mode.value === 'single' ? 'หน้าละ 1 ดวง' : `${paper.value}: ${per.join(' · ')}`
+  return `${where} · รวม ${pagesNeeded(paper.value, mode.value, bySize)} หน้า`
 })
 const STATUS_TEXT = Object.freeze({ NO_STICKER_CATEGORY: 'ยังไม่กำหนดประเภทสติกเกอร์ (สี/ขนาด)', REISSUE_NEEDED: 'QR นี้ออกก่อนระบบเก็บรหัส ต้องออก QR ใหม่ก่อนพิมพ์', NO_ACTIVE_QR: 'ยังไม่มี QR ที่ใช้งานอยู่', VEHICLE_NOT_ACTIVE: 'รถไม่อยู่ในสถานะใช้งาน', NOT_FOUND: 'ไม่พบรถ' })
 async function prepare() {
@@ -120,8 +132,12 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
         <h2 id="qr-sheet-title" class="text-lg font-semibold">แผ่น QR พร้อมพิมพ์ {{ ready.length }} ดวง</h2>
         <div class="flex flex-wrap items-center gap-2">
           <label class="field-stack"><span class="sr-only">รูปแบบ</span><select v-model="mode" class="select select-bordered select-sm">
-            <option value="office">พิมพ์เองที่สำนักงาน (A4 มีเส้นตัด)</option>
-            <option value="shop">ส่งโรงพิมพ์ (1 ดวงต่อหน้า + ตัดตก 3 มม.)</option>
+            <option value="office">พิมพ์เองที่สำนักงาน (มีเส้นตัด)</option>
+            <option value="sheet">ส่งโรงพิมพ์: หลายดวงต่อแผ่น + ตัดตก 3 มม. + เครื่องหมายตัด</option>
+            <option value="single">ส่งโรงพิมพ์: 1 ดวงต่อหน้า + ตัดตก 3 มม.</option>
+          </select></label>
+          <label v-if="mode !== 'single'" class="field-stack"><span class="sr-only">กระดาษ</span><select v-model="paper" class="select select-bordered select-sm">
+            <option v-for="(p, k) in PAPERS" :key="k" :value="k">กระดาษ {{ k }} ({{ p.w }} × {{ p.h }} มม.)</option>
           </select></label>
           <label class="field-stack"><span class="sr-only">ขนาด</span><select v-model="sizeMode" class="select select-bordered select-sm">
             <option value="category">ขนาดตามประเภท (แดง 8 × 8, อื่น ๆ 5 × 5 ซม.)</option>
@@ -137,11 +153,13 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
           <ul class="mt-1 list-disc pl-5 text-sm"><li v-for="x in notReady" :key="x.vehicleId">{{ x.plate || x.vehicleId.slice(0, 8) }} — {{ STATUS_TEXT[x.status] || x.status }}<RouterLink v-if="x.status === 'REISSUE_NEEDED' || x.status === 'NO_ACTIVE_QR'" class="link ml-2" :to="{ name: 'qr-governance', query: { vehicleId: x.vehicleId } }">ไปออก QR</RouterLink><RouterLink v-else-if="x.status === 'NO_STICKER_CATEGORY'" class="link ml-2" :to="{ name: 'vehicle-maintenance', params: { vehicleId: x.vehicleId } }">กำหนดประเภท</RouterLink></li></ul>
         </div>
       </div>
-      <p class="mb-3 text-sm text-base-content/80 print:hidden">ตอนพิมพ์: ปิด "หัวกระดาษและท้ายกระดาษ" และตั้งมาตราส่วน 100% (ไม่ย่อ/ขยาย) เพื่อให้ได้ขนาดจริง · พิมพ์เอง: กระดาษ A4 · ส่งโรงพิมพ์: เลือก "บันทึกเป็น PDF" (ขนาดหน้าตามสติกเกอร์ + ตัดตก 3 มม.) ระบบบันทึกการส่งออกนี้ไว้ใน Audit แล้ว</p>
+      <p class="mb-3 text-sm text-base-content/80 print:hidden">ตอนพิมพ์: ปิด "หัวกระดาษและท้ายกระดาษ" เปิด "กราฟิกพื้นหลัง" และตั้งมาตราส่วน 100% (ไม่ย่อ/ขยาย) เพื่อให้ได้ขนาดจริงและสีเต็มดวง · ส่งโรงพิมพ์: เลือก "บันทึกเป็น PDF" แล้วส่งไฟล์ (ขนาดเป็นซม.จริง สีเลยเส้นตัด 3 มม.) · ขนาดแต่ละชุดขึ้นหน้าใหม่ ระบบบันทึกการส่งออกนี้ไว้ใน Audit แล้ว</p>
       <p v-if="summary.length" class="mb-3 flex flex-wrap gap-2 text-sm print:hidden" data-sheet-summary><span v-for="[k, n] in summary" :key="k" class="badge badge-outline">{{ k }}: {{ n }} ดวง</span></p>
-      <div class="qr-print-area rounded-box bg-white p-4">
-        <QrStickerSheet :items="ready" :mode="mode" :size-mode="sizeMode" />
+      <p v-if="ready.length" class="mb-3 text-sm print:hidden" data-sheet-layout>{{ layout }}</p>
+      <div class="qr-print-area overflow-x-auto rounded-box bg-white p-4">
+        <QrStickerSheet :items="ready" :mode="mode" :size-mode="sizeMode" :paper="paper" />
       </div>
+      <Teleport to="body"><div class="qr-print-root"><QrStickerSheet :items="ready" :mode="mode" :size-mode="sizeMode" :paper="paper" /></div></Teleport>
     </section>
   </PageTemplateComponent>
 </template>
