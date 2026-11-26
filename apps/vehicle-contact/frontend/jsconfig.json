@@ -1,0 +1,12 @@
+{
+  "//": "Editor/LSP only (cross-file go-to-definition, find-references). Vite does not read it.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "checkJs": false,
+    "allowJs": true
+  },
+  "include": ["src/**/*.js", "src/**/*.vue", "tests/**/*.js", "tests/**/*.mjs", "e2e/**/*.js", "e2e/**/*.mjs", "scripts/**/*.mjs", "scripts/**/*.js"],
+  "exclude": ["node_modules", "dist", "e2e-results", "test-results"]
+}
