@@ -27,7 +27,7 @@ test('QR print: pick vehicles → sheet with READY stickers, others listed with 
   await expect(page.getByText('เลือกแล้ว 3 / 100 คัน')).toBeVisible()
   await page.getByRole('button', { name: 'สร้างแผ่น QR' }).click()
   await expect(page.getByRole('heading', { name: 'แผ่น QR พร้อมพิมพ์ 1 ดวง' })).toBeVisible()
-  const sticker = page.locator('[data-sticker="v1"]')
+  const sticker = page.locator('.qr-print-area [data-sticker="v1"]')
   await expect(sticker).toContainText('กข1234')
   await expect(sticker).toContainText('ตำรวจภูธรภาค 6')
   await expect(sticker.locator('img')).toBeVisible()
@@ -40,6 +40,27 @@ test('QR print: pick vehicles → sheet with READY stickers, others listed with 
   await expect(page.locator('[data-sheet-summary]')).toContainText('แดง 8 × 8 ซม.: 1 ดวง')
   await page.getByRole('combobox', { name: 'ขนาด' }).selectOption('5')
   expect(Math.round((await sticker.boundingBox()).width)).toBe(189) // 50 mm
-  await page.getByRole('combobox', { name: 'รูปแบบ' }).selectOption('shop')
-  await expect(page.locator('[data-qr-sheet]')).toHaveClass(/qr-sheet--shop/)
+  await expect(page.locator('[data-sheet-layout]')).toContainText('A4: 5 × 5 ซม. 15 ดวง/แผ่น · รวม 1 หน้า')
+  await page.getByRole('combobox', { name: 'รูปแบบ' }).selectOption('sheet')
+  await page.getByRole('combobox', { name: 'กระดาษ' }).selectOption('A3')
+  await expect(page.locator('.qr-print-area [data-qr-sheet]')).toHaveClass(/qr-sheet--sheet/)
+  await expect(page.locator('[data-sheet-layout]')).toContainText('A3: 5 × 5 ซม. 24 ดวง/แผ่น')
+  await page.getByRole('combobox', { name: 'รูปแบบ' }).selectOption('single')
+  await expect(page.getByRole('combobox', { name: 'กระดาษ' })).toHaveCount(0)
+})
+
+test('QR print → PDF: real page sizes (A4 sheet, 56 mm single page with bleed) and only the stickers are printed', async ({ page, browserName }, info) => {
+  test.skip(browserName !== 'chromium' || info.project.name.includes('phone'), 'PDF output is Chromium desktop only')
+  await signIn(page, '/#/app/admin/qr-print')
+  await page.getByRole('button', { name: 'เลือกทั้งหน้า' }).click()
+  await page.getByRole('button', { name: 'สร้างแผ่น QR' }).click()
+  await expect(page.getByRole('heading', { name: /แผ่น QR พร้อมพิมพ์/ })).toBeVisible()
+  const boxes = async () => {
+    const pdf = (await page.pdf({ preferCSSPageSize: true, printBackground: true })).toString('latin1')
+    return [...pdf.matchAll(/\/MediaBox\s*\[\s*0 0 ([\d.]+) ([\d.]+)\s*\]/g)].map((m) => [Math.round(+m[1] / 72 * 25.4), Math.round(+m[2] / 72 * 25.4)])
+  }
+  expect(await boxes()).toEqual([[210, 297]]) // office, A4, one page, nothing else from the app
+  await page.getByRole('combobox', { name: 'ขนาด' }).selectOption('5')
+  await page.getByRole('combobox', { name: 'รูปแบบ' }).selectOption('single')
+  expect(await boxes()).toEqual([[56, 56]]) // 50 mm + 3 mm bleed each side
 })

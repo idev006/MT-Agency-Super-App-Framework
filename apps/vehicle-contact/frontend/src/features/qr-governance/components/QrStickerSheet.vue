@@ -4,20 +4,24 @@ import { qrImageDataUrl } from '../../../infrastructure/media/qr-image.js'
 import { stickerShortCode, vehicleQrLink } from '../../../domain/qr/vehicle-qr-link.js'
 import { provinceLabel } from '../../../domain/reference/provinces.js'
 import { STICKER_CATEGORIES, bandTextColour } from '../../../domain/reference/sticker-categories.js'
+import { PAPERS } from '../../../domain/qr/sticker-layout.js'
 
-// S5 sticker at its REAL size (owner 2026-11-26): 5 × 5 cm or 8 × 8 cm, colour by the vehicle user's
-// category (StickerCategoryPolicy), the plate printed on the sticker beside the QR (never inside it).
-// The QR sits on a white panel with a quiet zone (scan-safe); the colour frames it with the category text.
-//   mode 'office': stickers on A4 with cut guides (print in the office, cut by hand).
-//   mode 'shop'  : one sticker per page, page = sticker + 3 mm bleed on each side (send the PDF to a print shop).
-// No name, phone or personal data is printed (policy).
+// S5 sticker at its REAL size: 5 × 5 cm or 8 × 8 cm, colour by the vehicle user's category (StickerCategoryPolicy).
+// Owner 2026-11-26: the WHOLE sticker is the colour so a guard sees it from far away. Only a white tile sits
+// behind the QR (a QR needs a light quiet zone to scan); the plate is printed large on the colour.
+//   mode 'office': on the chosen paper with dashed cut guides (print and cut in the office)
+//   mode 'sheet' : print shop — many per sheet, each with 3 mm bleed + crop marks
+//   mode 'single': print shop — one per page, page = sticker + 3 mm bleed
+// Each size starts on its own page. No name, phone or personal data is printed.
 const props = defineProps({
   items: { type: Array, required: true }, // READY export items { vehicleId, plate, province, qrId, token, stickerCategory }
-  mode: { type: String, default: 'office' }, // 'office' | 'shop'
+  mode: { type: String, default: 'office' }, // 'office' | 'sheet' | 'single'
   sizeMode: { type: String, default: 'category' }, // 'category' | '5' | '8'
+  paper: { type: String, default: 'A4' }, // A3 | A4 | A5 (office / sheet)
   unitMark: { type: String, default: 'ตำรวจภูธรภาค 6' },
 })
 const ORDER = Object.keys(STICKER_CATEGORIES)
+const paperName = computed(() => (PAPERS[props.paper] ? props.paper : 'A4'))
 const stickers = computed(() => props.items
   .filter((x) => STICKER_CATEGORIES[x.stickerCategory])
   .map((x) => {
@@ -26,63 +30,98 @@ const stickers = computed(() => props.items
     return { ...x, cat, size, ink: bandTextColour(x.stickerCategory), provinceName: provinceLabel(x.province) || x.province,
       shortCode: stickerShortCode(x.qrId), image: qrImageDataUrl(vehicleQrLink(x.token), { cellSize: 10, margin: 2 }) }
   })
-  .sort((a, b) => ORDER.indexOf(a.stickerCategory) - ORDER.indexOf(b.stickerCategory) || b.size - a.size || a.plate.localeCompare(b.plate, 'th')))
+  .sort((a, b) => b.size - a.size || ORDER.indexOf(a.stickerCategory) - ORDER.indexOf(b.stickerCategory) || a.plate.localeCompare(b.plate, 'th')))
+const groups = computed(() => [8, 5].map((size) => ({ size, list: stickers.value.filter((s) => s.size === size) })).filter((g) => g.list.length))
+// crop marks (mm) around one cell in 'sheet' mode: cell = mark zone 4 + bleed 3 + trim + bleed 3 + mark zone 4
+const marks = (size) => {
+  const w = size * 10 + 14, o = 7, l = 3.5
+  return { w, lines: [[0, o, l, o], [w - l, o, w, o], [0, w - o, l, w - o], [w - l, w - o, w, w - o],
+    [o, 0, o, l], [w - o, 0, w - o, l], [o, w - l, o, w], [w - o, w - l, w - o, w]] }
+}
 </script>
 
 <template>
-  <div class="qr-sheet" :class="`qr-sheet--${mode}`" data-qr-sheet>
-    <div v-for="s in stickers" :key="s.vehicleId" class="qr-cell" :class="`qr-cell--${s.size}`">
-      <article class="qr-sticker" :class="`qr-sticker--${s.size}`" :style="{ '--band': s.cat.hex, '--ink': s.ink }" :data-sticker="s.vehicleId" :data-size="s.size" :data-category="s.stickerCategory">
-        <div class="qr-sticker__panel">
-          <strong class="qr-sticker__plate">{{ s.plate }}</strong>
-          <span class="qr-sticker__province">{{ s.provinceName }}</span>
-          <img :src="s.image" :alt="`QR ยานพาหนะ ${s.plate}`" class="qr-sticker__qr" />
-          <span class="qr-sticker__code">{{ s.shortCode }}</span>
+  <div class="qr-sheet" :class="[`qr-sheet--${mode}`, `qr-sheet--paper-${paperName}`]" :data-paper="paperName" data-qr-sheet>
+    <div v-for="g in groups" :key="g.size" class="qr-group" :class="`qr-group--${g.size}`" :data-group-size="g.size">
+      <div v-for="s in g.list" :key="s.vehicleId" class="qr-cell" :class="`qr-cell--${s.size}`" :style="{ '--band': s.cat.hex }">
+        <svg v-if="mode === 'sheet'" class="qr-marks" :viewBox="`0 0 ${marks(s.size).w} ${marks(s.size).w}`" aria-hidden="true">
+          <line v-for="(m, i) in marks(s.size).lines" :key="i" :x1="m[0]" :y1="m[1]" :x2="m[2]" :y2="m[3]" stroke="#000" stroke-width="0.15" />
+        </svg>
+        <div class="qr-bleed">
+          <article class="qr-sticker" :class="`qr-sticker--${s.size}`" :style="{ '--band': s.cat.hex, '--ink': s.ink }" :data-sticker="s.vehicleId" :data-size="s.size" :data-category="s.stickerCategory">
+            <div class="qr-sticker__head">
+              <strong class="qr-sticker__plate">{{ s.plate }}</strong>
+              <span class="qr-sticker__province">{{ s.provinceName }}</span>
+            </div>
+            <div class="qr-sticker__tile">
+              <img :src="s.image" :alt="`QR ยานพาหนะ ${s.plate}`" class="qr-sticker__qr" />
+              <span class="qr-sticker__code">{{ s.shortCode }}</span>
+            </div>
+            <p class="qr-sticker__foot">{{ unitMark }} · {{ s.cat.label }}</p>
+          </article>
         </div>
-        <p class="qr-sticker__band">{{ unitMark }} · {{ s.cat.label }}</p>
-      </article>
+      </div>
     </div>
   </div>
 </template>
 
 <style>
-/* Real-world units (mm). 5 cm: frame 2.5 mm, label band 7 mm, QR 26 mm. 8 cm: frame 4 mm, band 10 mm, QR 46 mm. */
-.qr-sheet { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4mm; color: #000; }
-.qr-cell { padding: 1mm; outline: 0.2mm dashed #9ca3af; } /* cut guide around each sticker (office mode) */
-.qr-sticker { box-sizing: border-box; display: flex; flex-direction: column; background: var(--band); color: var(--ink); overflow: hidden; break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.qr-sticker--5 { width: 50mm; height: 50mm; padding: 2.5mm 2.5mm 0; border-radius: 2mm; }
-.qr-sticker--8 { width: 80mm; height: 80mm; padding: 4mm 4mm 0; border-radius: 3mm; }
-.qr-sticker__panel { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; color: #000; border-radius: 1.2mm; line-height: 1.15; min-height: 0; }
+/* Real-world units (mm). Whole sticker = category colour; white tile only behind the QR.
+   5 cm: padding 2.2, plate 5.6, QR 26 on a 28 mm tile. 8 cm: padding 3.5, plate 9.5, QR 44 on a 47 mm tile. */
+.qr-sheet { color: #000; }
+.qr-group { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 3mm; }
+.qr-group + .qr-group { margin-top: 6mm; }
+.qr-cell { position: relative; flex: none; }
+.qr-sticker { box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; background: var(--band); color: var(--ink); overflow: hidden; break-inside: avoid; line-height: 1.1; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.qr-sticker--5 { width: 50mm; height: 50mm; padding: 2.2mm; }
+.qr-sticker--8 { width: 80mm; height: 80mm; padding: 3.5mm; }
+.qr-sticker__head { display: flex; flex-direction: column; align-items: center; min-width: 0; max-width: 100%; }
 .qr-sticker__plate { font-weight: 800; letter-spacing: 0.1mm; white-space: nowrap; }
-.qr-sticker--5 .qr-sticker__plate { font-size: 4.6mm; }
-.qr-sticker--8 .qr-sticker__plate { font-size: 8mm; }
-.qr-sticker__province { white-space: nowrap; }
-.qr-sticker--5 .qr-sticker__province { font-size: 2.5mm; }
-.qr-sticker--8 .qr-sticker__province { font-size: 4mm; }
-.qr-sticker__qr { image-rendering: pixelated; margin: 0.6mm 0; }
+.qr-sticker--5 .qr-sticker__plate { font-size: 5.6mm; }
+.qr-sticker--8 .qr-sticker__plate { font-size: 9.5mm; }
+.qr-sticker__province { font-weight: 600; white-space: nowrap; }
+.qr-sticker--5 .qr-sticker__province { font-size: 2.6mm; }
+.qr-sticker--8 .qr-sticker__province { font-size: 4.2mm; }
+.qr-sticker__tile { display: flex; flex-direction: column; align-items: center; background: #fff; color: #333; }
+.qr-sticker--5 .qr-sticker__tile { padding: 1mm 1mm 0.4mm; border-radius: 1mm; }
+.qr-sticker--8 .qr-sticker__tile { padding: 1.5mm 1.5mm 0.5mm; border-radius: 1.5mm; }
+.qr-sticker__qr { display: block; image-rendering: pixelated; }
 .qr-sticker--5 .qr-sticker__qr { width: 26mm; height: 26mm; }
-.qr-sticker--8 .qr-sticker__qr { width: 46mm; height: 46mm; }
-.qr-sticker__code { font-family: ui-monospace, monospace; color: #444; }
+.qr-sticker--8 .qr-sticker__qr { width: 44mm; height: 44mm; }
+.qr-sticker__code { font-family: ui-monospace, monospace; }
 .qr-sticker--5 .qr-sticker__code { font-size: 2mm; }
 .qr-sticker--8 .qr-sticker__code { font-size: 3mm; }
-.qr-sticker__band { margin: 0; text-align: center; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.qr-sticker--5 .qr-sticker__band { height: 7mm; line-height: 7mm; font-size: 2.4mm; }
-.qr-sticker--8 .qr-sticker__band { height: 10mm; line-height: 10mm; font-size: 3.8mm; }
+.qr-sticker__foot { margin: 0; max-width: 100%; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.qr-sticker--5 .qr-sticker__foot { font-size: 2.4mm; }
+.qr-sticker--8 .qr-sticker__foot { font-size: 4mm; }
 
-/* print-shop: one sticker per page; the page is the sticker + 3 mm bleed where the colour runs to the edge */
+/* office: dashed cut guide on the trim line, colour runs to the guide */
+.qr-sheet--office .qr-cell { outline: 0.2mm dashed #6b7280; }
+/* print shop: bleed = the colour runs 3 mm past the trim line */
+.qr-sheet--sheet .qr-bleed, .qr-sheet--single .qr-bleed { padding: 3mm; background: var(--band); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.qr-sheet--sheet .qr-group { gap: 0; }
+.qr-sheet--sheet .qr-cell { padding: 4mm; }
+.qr-marks { position: absolute; inset: 0; width: 100%; height: 100%; }
+.qr-sheet--single .qr-group { gap: 6mm; }
+
+/* The print copy is teleported to <body> (.qr-print-root); printing shows only that copy. */
+.qr-print-root { display: none; }
+@page sheetA3 { size: A3; margin: 8mm; }
+@page sheetA4 { size: A4; margin: 8mm; }
+@page sheetA5 { size: A5; margin: 8mm; }
 @page qr5 { size: 56mm 56mm; margin: 0; }
 @page qr8 { size: 86mm 86mm; margin: 0; }
-.qr-sheet--shop { gap: 6mm; }
-.qr-sheet--shop .qr-cell { outline: none; padding: 3mm; background: var(--bleed, transparent); }
 @media print {
-  body * { visibility: hidden !important; }
-  .qr-print-area, .qr-print-area * { visibility: visible !important; }
-  .qr-print-area { position: absolute; inset: 0; margin: 0; padding: 0 !important; background: #fff !important; }
-  .qr-sheet--office { gap: 3mm; padding: 8mm; }
-  .qr-sheet--shop { display: block; padding: 0; }
-  .qr-sheet--shop .qr-cell { break-after: page; padding: 3mm; outline: none; }
-  .qr-sheet--shop .qr-cell--5 { page: qr5; width: 56mm; height: 56mm; }
-  .qr-sheet--shop .qr-cell--8 { page: qr8; width: 86mm; height: 86mm; }
-  .qr-sheet--shop .qr-sticker { border-radius: 0; box-shadow: 0 0 0 3mm var(--band); } /* bleed: colour runs past the trim line */
+  body:has(> .qr-print-root) > *:not(.qr-print-root) { display: none !important; }
+  .qr-print-root { display: block; background: #fff; }
+  .qr-group + .qr-group { margin-top: 0; break-before: page; }
+  .qr-sheet--paper-A3 .qr-group { page: sheetA3; }
+  .qr-sheet--paper-A4 .qr-group { page: sheetA4; }
+  .qr-sheet--paper-A5 .qr-group { page: sheetA5; }
+  .qr-sheet--single .qr-group { display: block; }
+  .qr-sheet--single .qr-cell { break-after: page; }
+  .qr-sheet--single .qr-cell:last-child { break-after: auto; }
+  .qr-sheet--single .qr-group--5 { page: qr5; }
+  .qr-sheet--single .qr-group--8 { page: qr8; }
 }
 </style>
