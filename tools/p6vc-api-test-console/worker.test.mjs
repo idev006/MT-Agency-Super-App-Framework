@@ -589,5 +589,10 @@ test('lists: qr.export takes up to 100 vehicle ids, sticker list up to 20; other
   assert.equal((await send('system','config.update',{values:{sticker_categories:Array.from({length:20},(_,i)=>cat(i))}})).status,200,'20 types');
   assert.equal((await send('system','config.update',{values:{sticker_categories:Array.from({length:21},(_,i)=>cat(i))}})).status,403,'21 types');
   assert.equal((await send('registrations','listPending',{page:1,pageSize:10,extra:ids(11)})).status,403,'other ops unchanged');
+  // VC-ADR-042: the QR print page — mark printed (≤100 ids) and list filters
+  assert.equal((await send('qr','markPrinted',{vehicleIds:ids(100)})).status,200,'mark 100 printed');
+  for(const bad of [{vehicleIds:ids(101)},{vehicleIds:[]},{vehicleIds:[5]}])assert.equal((await send('qr','markPrinted',bad)).status,403);
+  assert.equal((await send('vehicles','list',{page:1,pageSize:50,organizationId:'o1',stickerCategory:'NCO',printState:'NOT_PRINTED',plate:'กข1',withFilterOptions:true})).status,200,'filters');
+  assert.equal((await send('vehicles','list',{page:1,pageSize:50,owner:'x'})).status,403,'unknown filter refused');
  }finally{fake.restore();}
 });

@@ -1,6 +1,6 @@
 import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition,stickerCategory} from '../../domain/policies/VehicleLifecycle.js';
 import {qrReason,QR_SYSTEM_REASONS} from '../../domain/policies/QrReasonPolicy.js';
-import {paginate,readPage} from '../pagination/Pagination.js';
+import {paginate} from '../pagination/Pagination.js';
 // TUNEUP R1: ACTIVE vehicles with this business key — an equality query (index plate_normalized+province_code+status).
 const activeByPlate=(store,plate,province)=>store.list('vc_vehicles',{plate_normalized:String(plate),province_code:String(province),status:'ACTIVE'});
 import {createChangeReview} from './ChangeReviewOperation.js';
@@ -450,25 +450,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    .map(listRow);
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
- function vehicleList(p){
-  // Admin registry read: all ACTIVE vehicles, minimal non-PII fields (no contacts, no owner id).
-  // Single bounded snapshot read; no cross-sheet join. Gated by vehicle.list (admin roles only).
-  // TUNEUP R1: only the requested window + a COUNT (was the whole collection per page).
-  return withListLabels(readPage(store,{name:'vc_vehicles',filter:{status:'ACTIVE'},
-   map:v=>({...listRow(v),createdAt:v.created_at})},p,{defaultLimit:50,maxLegacyLimit:100}));
- }
- // S2: the registry showed colour/type codes (WHITE) while detail showed labels (ขาว). Labels for the
- // CURRENT page only, by reference id (equality reads, one parallel round).
- function withListLabels(pageResult){
-  const rows=Array.isArray(pageResult)?pageResult:pageResult.items;
-  const keys=[...new Set(rows.flatMap(r=>[r.color&&'COLOR-'+r.color,r.vehicleType&&'VEHICLE_TYPE-'+r.vehicleType]).filter(Boolean))];
-  if(!keys.length)return pageResult;
-  const reqs=keys.map(k=>({kind:'one',name:'vc_reference_values',filter:{reference_id:'REF-'+k}}));
-  const refs=typeof store.readMany==='function'?store.readMany(reqs):reqs.map(r=>store.one(r.name,r.filter));
-  const label=new Map(keys.map((k,i)=>[k,(refs[i]&&refs[i].label_th)||'']));
-  for(const r of rows){r.colorLabel=label.get('COLOR-'+r.color)||'';r.vehicleTypeLabel=label.get('VEHICLE_TYPE-'+r.vehicleType)||'';}
-  return pageResult;
- }
+ // vehicles.list (admin registry / QR print, filters) lives in VehicleListOperations.js (VC-ADR-042)
  function changeListMine(p,a){
   const items=store.list('vc_change_requests',{submitted_by:String(a.userId)})
    .map(r=>({requestId:r.change_id,vehicleId:r.vehicle_id,status:r.status,submittedAt:r.submitted_at,
@@ -514,7 +496,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   'registrations.submit':registrationSubmit,'registrations.listPending':registrationPending,
   'registrations.detail':registrationDetail,'registrations.review':registrationReview,
   'vehicles.lookup':vehicleLookup,'vehicles.detail':vehicleDetail,'vehicles.update':vehicleUpdate,
-  'vehicles.cancel':vehicleCancel,'vehicles.history':vehicleHistory,'vehicles.listMine':vehicleListMine,'vehicles.list':vehicleList,
+  'vehicles.cancel':vehicleCancel,'vehicles.history':vehicleHistory,'vehicles.listMine':vehicleListMine,
   'contacts.read':contactRead,'contacts.update':contactUpdate,
   'changes.submit':changeSubmit,'changes.listPending':changePending,'changes.review':changeReview,'changes.listMine':changeListMine,
   'qr.resolve':resolveQr,'qr.issue':(p,a)=>manageQr(p,a,'issue'),'qr.history':qrHistory,'qr.export':qrExport,

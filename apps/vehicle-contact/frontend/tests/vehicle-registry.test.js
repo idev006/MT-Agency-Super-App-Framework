@@ -17,7 +17,7 @@ describe('vehicle registry repository contract', () => {
     const repository = createGasVehicleRegistryRepository({ callOperation })
     const result = await repository.list({ page: 1, pageSize: 10 })
     expect(callOperation).toHaveBeenCalledWith('vehicles.list', { page: 1, pageSize: 10 }, undefined)
-    expect(result.vehicles[0]).toEqual({ vehicleId: 'v-1', plate: 'กข1234', province: '65', status: 'ACTIVE', vehicleType: 'CAR', brand: 'Toyota', model: 'Test', color: 'ขาว', stickerCategory: '', sticker: null, colorLabel: '', vehicleTypeLabel: '', createdAt: '2026-11-20T00:00:00.000Z', version: 2 })
+    expect(result.vehicles[0]).toEqual({ vehicleId: 'v-1', plate: 'กข1234', province: '65', status: 'ACTIVE', vehicleType: 'CAR', brand: 'Toyota', model: 'Test', color: 'ขาว', stickerCategory: '', sticker: null, colorLabel: '', vehicleTypeLabel: '', createdAt: '2026-11-20T00:00:00.000Z', version: 2, organizationId: '', organizationName: '', qrPrintState: 'NOT_PRINTED', qrPrintedAt: '' })
     expect(JSON.stringify(result)).not.toContain('secret')
     expect(JSON.stringify(result)).not.toContain('0800000000')
   })
@@ -50,7 +50,7 @@ describe('vehicle registry state and page contracts', () => {
     await work.load()
     expect(work.phase.value).toBe('success')
     expect(work.vehicles.value[0].vehicleId).toBe('v-1')
-    expect(repository.list).toHaveBeenCalledWith({ page: 1, pageSize: 10 })
+    expect(repository.list).toHaveBeenCalledWith({ page: 1, pageSize: 10, filters: {}, withFilterOptions: false })
 
     const empty = useVehicleRegistry({ repository: { list: vi.fn().mockResolvedValue({ vehicles: [], pagination: { total: 0, page: 1, pageSize: 10, totalPages: 0 } }) }, permissions: ['vehicle.list'] })
     await empty.load()

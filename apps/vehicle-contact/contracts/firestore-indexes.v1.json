@@ -413,6 +413,170 @@
         }
       ],
       "purpose": "S5 qr.export: the ACTIVE QR of each selected vehicle (vehicle_id + status, _seq order)"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "organization_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "VC-ADR-042 (2026-11-26): QR print filters on vehicles.list — organization_id"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "qr_print_state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "VC-ADR-042 (2026-11-26): QR print filters on vehicles.list — qr_print_state"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sticker_category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "VC-ADR-042 (2026-11-26): QR print filters on vehicles.list — sticker_category"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "organization_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "qr_print_state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "VC-ADR-042 (2026-11-26): QR print filters on vehicles.list — organization_id + qr_print_state"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "organization_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sticker_category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "VC-ADR-042 (2026-11-26): QR print filters on vehicles.list — organization_id + sticker_category"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "qr_print_state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sticker_category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "VC-ADR-042 (2026-11-26): QR print filters on vehicles.list — qr_print_state + sticker_category"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "organization_id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "qr_print_state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sticker_category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "VC-ADR-042 (2026-11-26): QR print filters on vehicles.list — organization_id + qr_print_state + sticker_category"
+    },
+    {
+      "collection": "vc_vehicles",
+      "fields": [
+        {
+          "fieldPath": "plate_normalized",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "ASCENDING"
+        }
+      ],
+      "purpose": "VC-ADR-042 (2026-11-26): QR print page plate search (plate without province)"
     }
   ]
 }

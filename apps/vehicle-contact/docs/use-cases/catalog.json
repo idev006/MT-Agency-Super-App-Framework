@@ -563,17 +563,20 @@
         "qr.revoke",
         "qr.replace",
         "qr.history",
-        "qr.export"
+        "qr.export",
+        "qr.markPrinted"
       ],
       "tests": [
         "ACTOR-04",
         "EDGE-06",
         "GAS-FLOW.ROTATE_QR",
         "ACTOR-S3-QR",
-        "ACTOR-S5-QR-EXPORT"
+        "ACTOR-S5-QR-EXPORT",
+        "PRINT-01",
+        "PRINT-02"
       ],
       "pre": "Authenticated actor with qr.manage; vehicle ACTIVE and at most one ACTIVE QR.",
-      "success": "Issue opaque token only if none active; rotate revokes old then creates new digest; revoke fails closed for older QR, audit mutations. VC-ADR-036 S3: every issue/replace/revoke requires a reason (OTHER needs a note), records who/why (revoked_by, revoke_reason, replaces_qr_id), and qr.history returns the full per-vehicle history without tokens. S5 (VC-ADR-032 B): the code is stored at issue; qr.export returns the ACTIVE code of up to 100 selected vehicles for display and printing, audited per vehicle (QR_EXPORTED); QRs issued before 0.9.30 are REISSUE_NEEDED.",
+      "success": "Issue opaque token only if none active; rotate revokes old then creates new digest; revoke fails closed for older QR, audit mutations. VC-ADR-036 S3: every issue/replace/revoke requires a reason (OTHER needs a note), records who/why (revoked_by, revoke_reason, replaces_qr_id), and qr.history returns the full per-vehicle history without tokens. S5 (VC-ADR-032 B): the code is stored at issue; qr.export returns the ACTIVE code of up to 100 selected vehicles for display and printing, audited per vehicle (QR_EXPORTED); QRs issued before 0.9.30 are REISSUE_NEEDED. VC-ADR-042: after printing the admin confirms and qr.markPrinted sets the vehicles with an ACTIVE QR to PRINTED (audited QR_PRINTED); a new QR (approval, issue, replace) puts the vehicle back to NOT_PRINTED; vehicles.list filters by organization, person type, print state and plate for the print page.",
       "failure": "Two active QR conflict, issue with existing token, inactive vehicle, unauthorized mutation blocked. Missing or unknown reason, OTHER without note -> INVALID_QR_REASON (no write).",
       "tables": [
         "vc_qr_tokens",
@@ -584,10 +587,12 @@
       "kind": "AS_IMPLEMENTED_LIVE_DEV_API_SCOPE_VERIFIED",
       "status": "LIVE_DEV_API_SCOPE_VERIFIED_UAT_AND_RELEASE_OPEN",
       "source": [
-        "backend/gas/src/application/use-cases/VehicleOperations.js"
+        "backend/gas/src/application/use-cases/VehicleOperations.js",
+        "backend/gas/src/application/use-cases/VehicleListOperations.js"
       ],
       "testSources": [
-        "backend/gas/tests/actor-usecase-acceptance.test.mjs"
+        "backend/gas/tests/actor-usecase-acceptance.test.mjs",
+        "backend/gas/tests/print-filters.test.mjs"
       ],
       "requirement": "APPROVED_REQUIREMENTS_BASELINE_R01_R26.md (section-level mapping; no unverified R number asserted)"
     },

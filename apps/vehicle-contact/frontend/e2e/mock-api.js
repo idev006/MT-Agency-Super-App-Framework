@@ -37,6 +37,9 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
     { vehicleId: 'v3', plate: 'ฮฮ7', province: '30', status: 'ACTIVE', vehicleType: 'RY01', brand: 'BYD', model: 'Dolphin', color: 'GREY', colorLabel: 'เทา', vehicleTypeLabel: 'รถยนต์นั่งส่วนบุคคลไม่เกิน 7 คน', createdAt: at(-30), version: 1, qr: 'NO_ACTIVE_QR' },
   ]
   const qrCode = { v1: CODE(171) }
+  // VC-ADR-042: unit + print state per vehicle (the print page filters)
+  const printInfo = { v1: { organizationId: 'o2', qrPrintState: 'NOT_PRINTED', qrPrintedAt: '' }, v2: { organizationId: 'o1', qrPrintState: 'NOT_PRINTED', qrPrintedAt: '' },
+    v3: { organizationId: 'o2', qrPrintState: 'NOT_PRINTED', qrPrintedAt: '' } }
   const revokedCode = CODE(172) // a sticker whose QR was replaced
   const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
   const calls = []
@@ -112,7 +115,20 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
       const n = vehicles.length; vehicles.splice(0)
       return { deleted: n * 6, deleteByTable: { vc_vehicles: n }, drive: { status: 'DONE', trashed: n * 5, more: false } }
     },
-    'vehicles.list': (p) => page(vehicles.map(({ qr, ...v }) => ({ stickerCategory: '', ...v, sticker: sticker(v) })), p),
+    'vehicles.list': (p) => {
+      if (p.printState && !['NOT_PRINTED', 'PRINTED'].includes(p.printState)) return { error: 'INVALID_REQUEST' }
+      const rows = vehicles.map(({ qr, ...v }) => ({ stickerCategory: '', ...v, ...printInfo[v.vehicleId], organizationName: orgName(printInfo[v.vehicleId]?.organizationId), sticker: sticker(v) }))
+        .filter((v) => (!p.organizationId || v.organizationId === p.organizationId) && (!p.stickerCategory || v.stickerCategory === p.stickerCategory)
+          && (!p.printState || v.qrPrintState === p.printState) && (!p.plate || v.plate === String(p.plate).replace(/[\s-]/g, '')))
+      const out = page(rows, p)
+      return p.withFilterOptions ? { ...out, filterOptions: { organizations: orgs.filter((o) => o.status === 'ACTIVE').map((o) => ({ id: o.organization_id, name: o.name })),
+        stickerCategories: withInk(stickerConfig), printStates: ['NOT_PRINTED', 'PRINTED'] } } : out
+    },
+    'qr.markPrinted': (p) => {
+      const marked = p.vehicleIds.filter((id) => qrCode[id]), skipped = p.vehicleIds.filter((id) => !qrCode[id])
+      for (const id of marked) printInfo[id] = { ...printInfo[id], qrPrintState: 'PRINTED', qrPrintedAt: at(0) }
+      return { marked: marked.length, skipped, printedAt: at(0) }
+    },
     'vehicles.detail': (p) => { const v = vehicles.find((x) => x.vehicleId === p.vehicleId); return v ? detail(v, true) : { error: 'NOT_FOUND' } },
     'qr.history': (p) => ({ items: [
       { qrId: 'q2', status: 'ACTIVE', issuedAt: at(-60), issuedByName: 'ผู้ดูแลระบบทดสอบ', reason: 'DAMAGED', note: 'สติกเกอร์ซีดจนอ่านไม่ได้', replacesQrId: 'q1', revokedAt: '', revokedByName: '', revokeReason: '', revokeNote: '' },

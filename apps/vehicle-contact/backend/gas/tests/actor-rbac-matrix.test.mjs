@@ -20,9 +20,9 @@ const validPayload=op=>{
  validateOperationPayload(op,payload);
  return payload;
 };
-test('MATRIX-00 inventory = 63 routes (62 DTOs + health), public endpoints intentionally scoped',()=>{
- assert.equal(declared.length,63);
- assert.equal(new Set(declared).size,63);
+test('MATRIX-00 inventory = 64 routes (63 DTOs + health), public endpoints intentionally scoped',()=>{
+ assert.equal(declared.length,64);
+ assert.equal(new Set(declared).size,64);
  assert.deepEqual(DTO_OPERATIONS.slice().sort(),declared.filter(x=>x!=='system.health').sort());
  assert.deepEqual([...publicOps].sort(),['auth.login','auth.googleLogin','campaigns.validate','photos.upload','registrations.submit'].sort());
  assert.deepEqual(Object.keys(OPERATION_PERMISSIONS).sort(),declared.filter(op=>op!=='system.health'&&!publicOps.has(op)).sort());
@@ -35,10 +35,10 @@ test('MATRIX-01 every protected route rejects missing session using a valid DTO,
   assert.equal(h.io.writes,before,'unauthorized call must have no business data writes');
   count++;
  }
- assert.equal(count,57);
- console.log('RBAC anonymous denied at 57 protected operations with schema-valid payloads');
+ assert.equal(count,58);
+ console.log('RBAC anonymous denied at 58 protected operations with schema-valid payloads');
 });
-test('MATRIX-02 five actor roles × 57 protected operations: server session, not client role, governs access',()=>{
+test('MATRIX-02 five actor roles × 58 protected operations: server session, not client role, governs access',()=>{
  let total=0,denied=0,granted=0;
  for(const [actor,role]of Object.entries(actors)){
   const grants=ROLE_PERMISSIONS[role];
@@ -57,7 +57,7 @@ test('MATRIX-02 five actor roles × 57 protected operations: server session, not
    total++;
   }
  }
- assert.equal(total,285);
+ assert.equal(total,290);
  console.log('RBAC 5 roles × 50 operations = '+total+' checks; role-allowed='+granted+', denied='+denied);
 });
 test('MATRIX-03 anonymous public operations require correct business token or credentials, not fake role',()=>{

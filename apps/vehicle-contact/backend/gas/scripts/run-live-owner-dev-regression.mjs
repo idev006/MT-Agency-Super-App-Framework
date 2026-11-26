@@ -298,6 +298,17 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
    assert.equal(x.items[1].status,'NOT_FOUND');assert.equal(x.ready,1);
    denied(await request('qr.export',{vehicleIds:[state.approved.vehicleId]},state.tokens.staff),'FORBIDDEN');
   });
+  // VC-ADR-042: confirm printed → the vehicle leaves the "not printed" filter; a new QR brings it back
+  await test('QR.MARK_PRINTED','qr.markPrinted',async()=>{
+   const v=state.approved.vehicleId;
+   const m=ok(await request('qr.markPrinted',{vehicleIds:[v,'no-such-vehicle']},state.tokens.reg));
+   assert.equal(m.marked,1);assert.deepEqual(m.skipped,['no-such-vehicle']);
+   const printed=ok(await request('vehicles.list',{page:1,pageSize:100,printState:'PRINTED',plate},state.tokens.reg));
+   assert.ok(printed.items.some(x=>x.vehicleId===v&&x.qrPrintState==='PRINTED'&&x.qrPrintedAt),'listed as printed');
+   const notPrinted=ok(await request('vehicles.list',{page:1,pageSize:100,printState:'NOT_PRINTED',plate},state.tokens.reg));
+   assert.ok(!notPrinted.items.some(x=>x.vehicleId===v),'not in the not-printed filter');
+   denied(await request('qr.markPrinted',{vehicleIds:[v]},state.tokens.staff),'FORBIDDEN');
+  });
   await test('PHOTOS.REPLACE','photos.replace',async()=>{
    assert.equal(ok(await request('photos.replace',{vehicleId:state.approved.vehicleId,slot:'FRONT',base64Image:png,mimeType:'image/png'},state.tokens.reg)).replaced,true);
   });

@@ -8,7 +8,7 @@ const inventory=JSON.parse(readFileSync(resolve(root,'contracts/api-inventory.v1
 const routes=Object.entries(API_GROUPS).flatMap(([group,actions])=>actions.map(action=>group+'.'+action));
 const expected=inventory.operations.map(x=>x.group+'.'+x.action);
 const nonHealth=expected.filter(x=>x!=='system.health');
-assert.equal(inventory.operations.length,63);
+assert.equal(inventory.operations.length,64);
 assert.equal(new Set(routes).size,routes.length);
 assert.deepEqual(routes.slice().sort(),expected.slice().sort());
 assert.deepEqual(DTO_OPERATIONS.slice().sort(),nonHealth.slice().sort());
