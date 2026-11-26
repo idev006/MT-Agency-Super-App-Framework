@@ -27,6 +27,13 @@ export function createGasQrGovernanceRepository({ callOperation }) {
         token: x.status === 'READY' && /^[a-f0-9]{64}$/.test(text(x.token)) ? x.token : '',
       }))
     },
+    // VC-ADR-042: the admin confirms the print → these vehicles leave the "ยังไม่พิมพ์" filter
+    async markPrinted(vehicleIds) {
+      const response = await callOperation('qr.markPrinted', { vehicleIds })
+      const d = response?.data
+      if (!d || !Number.isSafeInteger(d.marked)) throw Object.assign(new Error('Invalid mark printed'), { code: 'INVALID_ENVELOPE' })
+      return { marked: d.marked, skipped: Array.isArray(d.skipped) ? d.skipped.map(String) : [], printedAt: text(d.printedAt) }
+    },
     async history(vehicleId) {
       const response = await callOperation('qr.history', { vehicleId })
       const items = response?.data?.items

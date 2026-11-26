@@ -9,6 +9,7 @@ import {createReferenceOperations} from '../../application/use-cases/ReferenceOp
 import {withStickerCategories} from '../../application/use-cases/StickerCategoryOperations.js';
 import {createSystemResetOperations} from '../../application/use-cases/SystemResetOperations.js';
 import {createLogPolicyReader,withLogPolicy,withLogPolicyStore} from '../../application/use-cases/LogPolicyOperations.js';
+import {createVehicleListOperations,withPrintStateStore} from '../../application/use-cases/VehicleListOperations.js';
 const permissions={
  'system.config.get':'system.settings.read','system.config.update':'system.settings.manage','system.reset.preview':'system.reset','system.reset.execute':'system.reset',
  'auth.changePassword':'session.authenticated','auth.logout':'session.authenticated','auth.session':'session.authenticated','auth.linkGoogle':'session.authenticated',
@@ -20,7 +21,7 @@ const permissions={
  'vehicles.lookup':'vehicle.lookup','vehicles.detail':'vehicle.lookup','vehicles.update':'vehicle.update','vehicles.cancel':'vehicle.update','vehicles.history':'vehicle.history.read','vehicles.listMine':'vehicle.own.read','vehicles.list':'vehicle.list',
  'contacts.read':'vehicle.contact.read','contacts.update':'vehicle.update',
  'changes.submit':'vehicle.change.submit','changes.listPending':'vehicle.change.approve','changes.review':'vehicle.change.approve','changes.listMine':'vehicle.own.read',
- 'qr.resolve':'vehicle.lookup','qr.issue':'qr.manage','qr.revoke':'qr.manage','qr.replace':'qr.manage','qr.history':'qr.manage','qr.export':'qr.manage',
+ 'qr.resolve':'vehicle.lookup','qr.issue':'qr.manage','qr.revoke':'qr.manage','qr.replace':'qr.manage','qr.history':'qr.manage','qr.export':'qr.manage','qr.markPrinted':'qr.manage',
  'photos.list':'vehicle.photos.read','vehicles.photo':'vehicle.photos.read','photos.replace':'vehicle.update',
  'retention.listDue':'retention.read','retention.listExecutable':'retention.worker','retention.approve':'retention.delete.approve','retention.execute':'retention.worker','retention.jobStatus':'retention.read',
  'audit.query':'audit.read','audit.export':'audit.read'
@@ -44,18 +45,20 @@ const safeErrors=new Set([
 export function createOperationController({store:rawStore,security,sessions,drivePhotos,allowDestructiveRetention=false,allowSystemReset=false,referenceMemo=null,logPolicyMemo=null}) {
  // VC-ADR-040: every operation writes through the log-policy store (switched-off logs are not written; kept ones expire)
  const policy=createLogPolicyReader(rawStore,logPolicyMemo);
- const store=withLogPolicyStore(rawStore,{policy,now:()=>security.now()});
+ // VC-ADR-042: a new ACTIVE QR puts the vehicle back to NOT_PRINTED on every write path
+ const store=withPrintStateStore(withLogPolicyStore(rawStore,{policy,now:()=>security.now()}));
  const admin=createAdministrationOperations({store,security});
  const references=createReferenceOperations({store,security,memo:referenceMemo});
  const handlers=withLogPolicy(withStickerCategories({
   ...createIdentityOperations({store,security,sessions}),...admin,'references.registration':references['references.registration'],
   ...createVehicleOperations({store,security,campaigns:admin,references}),
+  ...createVehicleListOperations({store,security}),
   ...createMediaRetentionOperations({store,security,drivePhotos,campaigns:admin,allowDestructiveRetention}),
   ...createSystemResetOperations({store,security,drivePhotos,enabled:allowSystemReset})
  },{store,security}),{store,security,policy,memo:logPolicyMemo});
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
- if(entries.length!==62||DTO_OPERATIONS.length!==62||entries.some(op=>!DTO_OPERATIONS.includes(op))
+ if(entries.length!==63||DTO_OPERATIONS.length!==63||entries.some(op=>!DTO_OPERATIONS.includes(op))
   ||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
   throw new Error('INCOMPLETE_API_DISPATCH');
  function dispatch(request){

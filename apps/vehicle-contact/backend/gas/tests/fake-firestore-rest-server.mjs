@@ -58,7 +58,8 @@ const decodeValue=v=>{
 const decodeFields=f=>{const o={};for(const k of Object.keys(f||{}))o[k]=decodeValue(f[k]);return o;};
 const reorder=f=>{const o={};for(const k of Object.keys(f||{}).sort().reverse()){const v=f[k];o[k]=v.mapValue?{mapValue:{fields:reorder(v.mapValue.fields)}}:v;}return o;};
 const matches=(fields,w)=>{
-  if(w.fieldFilter)return decodeValue(fields[w.fieldFilter.field.fieldPath])===decodeValue(w.fieldFilter.value);
+  // like Firestore: a document without the filtered field never matches an equality filter
+  if(w.fieldFilter){const f=fields[w.fieldFilter.field.fieldPath];return f!==undefined&&decodeValue(f)===decodeValue(w.fieldFilter.value);}
   if(w.compositeFilter)return w.compositeFilter.filters.every(f=>matches(fields,f));
   throw new Error('bad where');
 };

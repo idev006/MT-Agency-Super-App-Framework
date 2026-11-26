@@ -8,6 +8,7 @@ import {createFirestoreStore} from '../src/infrastructure/persistence/firestore/
 import {createFirestoreRestGateway} from '../src/infrastructure/persistence/firestore/FirestoreRestGateway.js';
 import {createMediaRetentionOperations} from '../src/application/use-cases/MediaRetentionOperations.js';
 import {createVehicleOperations} from '../src/application/use-cases/VehicleOperations.js';
+import {createVehicleListOperations} from '../src/application/use-cases/VehicleListOperations.js';
 import {createReferenceOperations} from '../src/application/use-cases/ReferenceOperations.js';
 import {createProcessMemo} from '../src/composition/Container.js';
 import {pageWindow, pageOf, readPage} from '../src/application/pagination/Pagination.js';
@@ -70,7 +71,7 @@ function seedVehicles(fake, n) {
 test('TUNE-04 vehicles.list / listMine / lookup query by key, not the whole registry', () => {
   const {fake, store} = setup();
   seedVehicles(fake, 300);
-  const ops = createVehicleOperations({store, security, campaigns: {}, references: {}});
+  const ops = {...createVehicleOperations({store, security, campaigns: {}, references: {}}), ...createVehicleListOperations({store, security})};
   const list = billed(fake, () => ops['vehicles.list']({page: 2, pageSize: 10}));
   assert.equal(list.out.total, 200); assert.deepEqual(list.out.items.map(v => v.vehicleId), ['v15', 'v16', 'v18', 'v19', 'v21', 'v22', 'v24', 'v25', 'v27', 'v28']);
   assert.ok(list.reads <= 21, `vehicles.list billed ${list.reads} (budget 21; before: 300)`);

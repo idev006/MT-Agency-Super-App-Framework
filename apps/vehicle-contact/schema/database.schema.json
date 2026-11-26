@@ -150,6 +150,22 @@
           "required": false,
           "classification": "internal",
           "notes": "Person type code (StickerCategoryPolicy; configurable list in vc_settings key sticker_categories). Declared by the registrant, required and confirmed at APPROVE, changeable via vehicles.update (ACTIVE types only)"
+        },
+        {
+          "name": "qr_print_state",
+          "key": null,
+          "type": "string",
+          "required": false,
+          "classification": "internal",
+          "notes": "QR sticker print state (print filters, owner 2026-11-26): NOT_PRINTED when a QR is issued (approval, qr.issue, qr.replace), PRINTED by qr.markPrinted. Missing on rows before 0.9.37 → backfill sets NOT_PRINTED"
+        },
+        {
+          "name": "qr_printed_at",
+          "key": null,
+          "type": "string",
+          "required": false,
+          "classification": "internal",
+          "notes": "ISO time of the last qr.markPrinted for the ACTIVE QR; empty after a new QR is issued"
         }
       ]
     },

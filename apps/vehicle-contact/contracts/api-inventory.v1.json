@@ -760,6 +760,20 @@
       "liveVerified": false
     },
     {
+      "id": "VC-QR-007",
+      "group": "qr",
+      "action": "markPrinted",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/qr.markPrinted",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
       "id": "VC-PHOTOS-001",
       "group": "photos",
       "action": "upload",

@@ -4,7 +4,7 @@
 
 ## 1. Authority and scope
 - Business baseline: [Approved requirements](../../APPROVED_REQUIREMENTS_BASELINE_R01_R26.md).
-- API operations: `qr.issue`, `qr.revoke`, `qr.replace`, `qr.history`, `qr.export` (API v1 JSON envelope, GAS POST except public health GET).
+- API operations: `qr.issue`, `qr.revoke`, `qr.replace`, `qr.history`, `qr.export`, `qr.markPrinted` (API v1 JSON envelope, GAS POST except public health GET).
 - Implementation: `backend/gas/src/application/use-cases/VehicleOperations.js`; server permission source `backend/gas/src/api/controllers/OperationController.js`.
 - Diagram source: [sequence.mmd](sequence.mmd) (Mermaid, reviewed alongside spec).
 
@@ -66,4 +66,11 @@ sequenceDiagram
     API-->>FE: QR_ALREADY_ACTIVE / MULTIPLE_ACTIVE_QR / FORBIDDEN
   end
   Note over QR,DB: Partial write and timeout recovery remains a release gate
+  Admin->>FE: Filter (organization, person type, not printed, plate) and print (VC-ADR-042)
+  FE->>API: vehicles.list(filters, withFilterOptions)
+  API-->>FE: Matching vehicles + organization + print state
+  FE->>API: qr.markPrinted(vehicleIds) after the admin confirms the print
+  API->>DB: Vehicles with an ACTIVE QR -> PRINTED + QR_PRINTED audit
+  API-->>FE: marked / skipped
+  Note over QR,DB: Any new ACTIVE QR puts the vehicle back to NOT_PRINTED
 ```
