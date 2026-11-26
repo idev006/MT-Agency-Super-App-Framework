@@ -41,7 +41,7 @@ WEB APP (frontend/src)                         CORE (backend/core/src)
  Controller  features/ (composables), stores/   application/  use cases, one folder per operation group           (= business logic: flow)
  Application application/ (FE use cases)        domain/       pure rules (moved from backend/gas/src/domain, ph.9)(= business logic: rules)
  Domain      domain/ (FE rules)                 ports/        Store, MediaStore, Clock, Ids, Hash — interfaces only
- Stub        infrastructure/api + repositories  adapters/     driven: firestore-store, media-bridge-client, legacy-client (= data access)
+ Stub        infrastructure/api + repositories  adapters/     driven: firestore/ (SDK store) + outbound/ (Integration Manager, §5) (= data access)
                    ⇅  contracts/ (api-inventory, DTO, permissions, trusted endpoints) — one source for both tiers
 ```
 
@@ -59,7 +59,71 @@ WEB APP (frontend/src)                         CORE (backend/core/src)
 6. **One operation group per folder** in `application/` (officer path, auth, registration, vehicles+QR, changes, admin) — files
    stay small without a line cap.
 
-## 5. Sources
+## 5. Outbound integrations — the Integration Manager (VC-ADR-047)
+Owner (2026-11-27): keep photos in the owner's Drive through the GAS bridge (option D, VC-ADR-034 confirmed), and "nodejs
+จึงควรมี โค้ดส่วนที่ทำหน้าที่เป็นผู้เรียก (Manager หรือ อื่นๆ) ไปยัง api ต่างๆ ที่จะเกิดขึ้นในอนาคต".
+
+**Today the legacy engine calls 4 external systems from 4 places, each with its own timeout / retry / error handling:**
+Firestore REST + Google token exchange (`FirestoreRestGateway`), Google `tokeninfo` for Google sign-in (`GasSecurity`),
+the GAS photo bridge (`media-bridge-client`), and — in the core — the legacy engine (`legacy-client`).
+
+**Patterns used** (sources in §6): *Gateway* (Fowler) — one object per external system holds all its awkwardness and can be
+swapped for a stub; *Anti-Corruption Layer* (Azure) — the gateway translates the outside model and errors into ours;
+*Retry* and *Circuit Breaker* (Azure resilience patterns) — applied once, in the manager, not in every caller; *Ports and
+Adapters* — use cases see only a port.
+
+```
+application/ (use case)  ──calls──▶  ports/  MediaStore · IdentityVerifier · LegacyEngine · Notifier(future) · …
+                                        ▲ implemented by
+adapters/outbound/
+  gateways/        media-bridge.mjs · google-identity.mjs · legacy-engine.mjs · <future>.mjs    (one per external system: ACL)
+  manager.mjs      Integration Manager: builds every gateway from the registry below; one place for policy
+  http-client.mjs  the ONLY place that calls fetch(): timeout, retry (idempotent calls only, backoff + jitter),
+                   circuit breaker per integration, requestId passed on, structured log (name, status, ms — never bodies
+                   or secrets), counters for the health view
+  signers/         hmac-media-bridge.mjs (VC-ADR-034 signature) · google-oidc.mjs (Cloud Run → Cloud Run, later) · api-key
+adapters/firestore/  the Firestore Node SDK store (its own transport; the manager only sets its timeouts and retries)
+contracts/outbound-integrations.v1.json   ONE list: name, endpoint id (contracts/trusted-endpoints.v1.json), timeoutMs,
+                   retry {max, onStatus}, breaker {failures, openMs}, which operations are idempotent, secret env NAMES
+```
+
+**Rules (CI-checked with the Dependency Rule test):**
+1. Only `adapters/outbound/http-client.mjs` may call `fetch`; only gateways may import it; use cases import ports only.
+2. Every integration is listed once in `outbound-integrations.v1.json`; its URL must be a trusted endpoint (no URL in code).
+3. Retry only idempotent calls (read, trash, health); never retry an upload or a write without an idempotency key.
+4. A gateway maps every outside failure to one of our codes (`UPSTREAM_UNAVAILABLE`, `UPSTREAM_REJECTED`, `UPSTREAM_TIMEOUT`)
+   — no outside message reaches a user.
+5. Secrets only from the environment (Secret Manager), by name in the registry; never logged.
+6. Each gateway has a contract test against a local fake server (as `core-proxy.test.mjs` does for the legacy engine).
+
+**Adding a future API** = one registry entry + one trusted endpoint + one gateway (+ a port if it is a new kind of thing) + its
+contract test. No use case touches HTTP.
+
+## 6. Single source of truth in the code (owner 2026-11-27: "พยายามใช้หลักการ SSOT ในการออกแบบโค้ด")
+**Rule:** every fact has **one owner file**; every other place gets it by — in this order of preference —
+1. **import** the owner module (same language: backend, core, web app and scripts are all JavaScript; the web app already imports
+   backend domain files such as `LogPolicy.js`);
+2. **generate** from the owner for places that cannot import (workflow YAML, `wrangler.toml`, shell scripts), with a `--check`
+   in CI like `scripts/gen-system-maps.mjs`;
+3. **check** equality in a test, only when 1 and 2 are impossible.
+A hand copy is not allowed. Measured 2026-11-27 (code only, tests and docs not counted):
+
+| Fact | Owner (single source) | Copies today | How the core removes them |
+|---|---|---|---|
+| Operations, DTO fields, permissions, public ops | `contracts/api-inventory.v1.json`, `api-permissions.v1.json` | controller permission map, Worker allowlist + public ops | the core's facade **loads the contracts**; no hand maps (Worker retires in phase 9) |
+| Photo slots (5) | `domain/policies/VehicleLifecycle.js` | 16 files (web app 4, Worker, 8 scripts, …) | export `PHOTO_SLOTS`; web app + scripts import it |
+| Limits (QR list 100, sticker types 20, payload sizes) | the domain/use-case constant (`QR_EXPORT_MAX`, `STICKER_CATEGORY_MAX`) | gateway (`frontend-gateway.mjs`), Worker | move to `domain/limits.js`; gateway imports |
+| Endpoints (GAS, Cloud Run legacy/core) | `contracts/trusted-endpoints.v1.json` | 2 workflows, 2 ops scripts, 2 live scripts, Worker + wrangler | workflows read the URL with `jq`; scripts import the contract |
+| Error codes | `contracts/error-catalog.v1.json` | controller allowlist | facade loads the catalog |
+| Version | one file (`backend/core/package.json` after phase 9) | 3 files | health and the expected-live marker read it |
+| Settings defaults, log kinds | the registries (`SettingsRegistry`, `LOG_CATEGORIES`) | — (already single) | keep |
+| Tables, fields, indexes, TTL | `schema/database.schema.json`, `contracts/firestore-*.json` | — (already single, CI-checked) | keep |
+
+**Enforcement — an SSOT ratchet** (phase 2, in `gen-system-maps.mjs`): a list of known facts (literal photo-slot list, trusted
+URLs, version string, limits) is searched outside their owner; every hit is listed in `CHANGE_CHECKLIST.md` under "copies";
+CI fails when the count **goes up**. Each port of an operation group must bring its copies to zero.
+
+## 7. Sources
 - Microsoft Azure Architecture Center — N-tier architecture style: https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/n-tier
 - Robert C. Martin — The Clean Architecture (2012): https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html
 - Alistair Cockburn — Hexagonal Architecture: https://alistaircockburn.com/Articles/Hexagonal-Architecture
@@ -67,3 +131,6 @@ WEB APP (frontend/src)                         CORE (backend/core/src)
 - AWS Prescriptive Guidance — Strangler fig pattern: https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/strangler-fig.html
 - Google Cloud — Cloud Run maximum concurrent requests: https://docs.cloud.google.com/run/docs/about-concurrency
 - Simon Brown — The C4 model: https://c4model.com/
+- Martin Fowler — Gateway (2021): https://www.martinfowler.com/articles/gateway-pattern.html
+- Microsoft — Anti-corruption Layer pattern: https://learn.microsoft.com/azure/architecture/patterns/anti-corruption-layer
+- Microsoft — Microservices design patterns (Retry, Circuit Breaker for interservice calls): https://learn.microsoft.com/azure/architecture/microservices/design/patterns
