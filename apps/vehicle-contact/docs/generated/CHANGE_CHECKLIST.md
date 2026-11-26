@@ -26,17 +26,7 @@ Every file that wires the reference operation `qr.markPrinted` — a new operati
 
 Hard-coded operation counts (update them, or better: derive from the inventory):
 
-- [ ] `apps/vehicle-contact/backend/gas/src/api/controllers/OperationController.js` — `length!==63`
-- [ ] `apps/vehicle-contact/backend/gas/src/domain/policies/ApiInventoryGate.js` — `length === 63`
-- [ ] `apps/vehicle-contact/backend/gas/tests/actor-rbac-matrix.test.mjs` — `64 routes`
-- [ ] `apps/vehicle-contact/backend/gas/tests/actor-rbac-matrix.test.mjs` — `assert.equal(count,58)`
-- [ ] `apps/vehicle-contact/backend/gas/tests/actor-rbac-matrix.test.mjs` — `assert.equal(total,290)`
-- [ ] `apps/vehicle-contact/backend/gas/tests/actor-rbac-matrix.test.mjs` — `length,64`
-- [ ] `apps/vehicle-contact/backend/gas/tests/actor-rbac-matrix.test.mjs` — `size,64`
-- [ ] `apps/vehicle-contact/backend/gas/tests/api-inventory.test.mjs` — `length,64`
-- [ ] `apps/vehicle-contact/backend/gas/tests/api-wiring.test.mjs` — `length,64`
-- [ ] `apps/vehicle-contact/backend/gas/tests/live-owner-dev-runner.test.mjs` — `length,64`
-- [ ] `scripts/validate-usecase-ssot.mjs` — `length===64`
+- none
 
 ## What to deploy for a change in…
 

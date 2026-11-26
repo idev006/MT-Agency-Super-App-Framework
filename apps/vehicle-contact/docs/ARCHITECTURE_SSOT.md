@@ -88,7 +88,7 @@ Source root `apps/vehicle-contact/backend/gas/src/`; each `.js` mirrors one flat
 4. **Pagination:** `contracts/list-pagination.v1.json` — `page`/`pageSize` envelope, server-capped (legacy `limit` array tolerated).
 5. **RBAC:** `contracts/api-permissions.v1.json` + `OPERATION_PERMISSIONS` + `ROLE_PERMISSIONS`; 5 roles × 50 protected ops = **250** matrix checks.
 6. **Data dictionary:** `schema/database.schema.json` — the **DB-agnostic logical model** (25 entities, canonical columns, primary keys, classification); physical Sheets tabs and Firestore collections both project from it. Logical relationship view: [ER diagram](DATA_MODEL_ER_DIAGRAM_20261122.md); derived physical projections: [Sheets](GAS_DATA_MODEL.md) · [Firestore](FIRESTORE_PHYSICAL_MAPPING_20261122.md).
-7. **Synchronized count gates** (must move together when adding an op): `GroupRoutes` ↔ `DTO_SCHEMAS` ↔ `OperationController` count gate ↔ `api-inventory` (56) ↔ `api-permissions` ↔ `ApiInventoryGate` (56) ↔ `validate-usecase-ssot.mjs` (56, 20 UCs) ↔ Worker allowlist ↔ count-based tests.
+7. **Operation set, no counts** (VC-ADR-044 PR 1): `contracts/api-inventory.v1.json` is the list of operations; `GroupRoutes`, `DTO_SCHEMAS` (+ `system.health`, answered by the Router), `OperationController` handlers/permissions, `api-permissions` and the use-case coverage (`validate-usecase-ssot.mjs`) are checked as **equal sets** against it — no hard-coded operation count anywhere. Still a hand copy until VC-ADR-044 PR 2: the Worker allowlist.
 
 ## 6. Persistence black-box architecture (Sheets + Firestore)
 
