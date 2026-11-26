@@ -11,7 +11,7 @@
 The audit does **not** call the GAS API and does **not** trust API responses. It reads **raw sheet cells** directly:
 
 1. Open the spreadsheet in the Qoder in-app browser logged in to an authorized Google account (`thaipoliceregion6@gmail.com`).
-2. Run [`sheets-data-audit.browser.js`](../backend/gas/scripts/sheets-data-audit.browser.js) via `browser-use evaluate_script` (or DevTools console) on that page. The spreadsheet id is read from `location.pathname`, so the script is generic and hardcodes no private id.
+2. Run [`sheets-data-audit.browser.js`](https://github.com/idev006/MT-Agency-Super-App-Framework/blob/15dae00/apps/vehicle-contact/backend/gas/scripts/sheets-data-audit.browser.js "removed 2026-11-26 (VC-ADR-044); last version") via `browser-use evaluate_script` (or DevTools console) on that page. The spreadsheet id is read from `location.pathname`, so the script is generic and hardcodes no private id.
 3. For each of the 25 sheets it fetches the **read-only `gviz/tq?tqx=out:csv` export** (`credentials:'include'`), parses raw display values, and checks schema, display errors, logical FK integrity and seeded-fixture consistency.
 4. Returns **sanitized counters only** — no display names, phones, password hashes/salts, token digests, `application_json` or other PII/secret material.
 

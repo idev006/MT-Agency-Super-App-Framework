@@ -1,1 +1,0 @@
-One-time live API smoke test of the user-provided /exec endpoint. This request contains no credentials and uses only synthetic data. Follow-up tests require manual workflow_dispatch.

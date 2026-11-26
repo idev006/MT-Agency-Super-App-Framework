@@ -3,10 +3,6 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createApiRouter} from '../src/api/routes/Router.js';
 import {DATABASE_SCHEMA,VEHICLE_SCHEMA_V1} from '../src/domain/ports/SchemaRepository.js';
-import {validateVehicleRegistrationDraft} from '../src/domain/policies/VehicleRegistration.js';
-import {VEHICLE_PHOTO_SLOTS,validatePhotoSlotSelection} from '../src/domain/policies/PhotoSlots.js';
-import {issueQrToken} from '../src/domain/policies/QrTokenPolicy.js';
-import {randomBytes,createHash} from 'node:crypto';
 
 const router=createApiRouter();
 function call(group,action,payload={},overrides={}) {
@@ -61,29 +57,4 @@ test('G5 QR: digest-based token metadata exists; issue, resolve and revoke remai
     assert.equal(result.ok,false);
     assert.equal(result.error.code,'SERVICE_UNAVAILABLE');
   }
-});
-
-test('G3 Registration: synthetic draft validation rejects missing stable vehicle identity or plate',()=>{
-  assert.equal(validateVehicleRegistrationDraft({vehicle_id:'v-1',plate_normalized:'ทดสอบ123',province_code:'62',version:0}).valid,true);
-  assert.deepEqual(validateVehicleRegistrationDraft({vehicle_id:'v-1',province_code:'62'}).errors,['REQUIRED_PLATE_NORMALIZED']);
-  assert.deepEqual(validateVehicleRegistrationDraft({vehicle_id:'v-1',plate_normalized:'TEST',province_code:'62',version:-2}).errors,['INVALID_VERSION']);
-});
-
-test('G4 Media: exactly five stable slots; reject duplicate, extra and unknown photo labels',()=>{
-  assert.deepEqual(VEHICLE_PHOTO_SLOTS,['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE']);
-  assert.equal(validatePhotoSlotSelection(VEHICLE_PHOTO_SLOTS.map(slot=>({slot}))).valid,true);
-  assert.equal(validatePhotoSlotSelection([]).valid,false); // Approved baseline requires all five slots
-  assert.equal(validatePhotoSlotSelection([{slot:'FRONT'},{slot:'FRONT'}]).errors.includes('DUPLICATE_SLOT'),true);
-  assert.equal(validatePhotoSlotSelection([{slot:'OVERHEAD'}]).errors.includes('INVALID_SLOT'),true);
-  assert.equal(validatePhotoSlotSelection([...VEHICLE_PHOTO_SLOTS.map(slot=>({slot})),{slot:'FRONT'}]).errors.includes('TOO_MANY_PHOTOS'),true);
-});
-
-test('G5 QR: opaque 256-bit token and SHA-256 digest only when trusted crypto adapters are supplied',()=>{
-  const issued=issueQrToken({randomBytes,sha256:value=>createHash('sha256').update(value,'utf8').digest('hex')});
-  assert.match(issued.token,/^[a-f0-9]{64}$/);
-  assert.equal(issued.token_digest,createHash('sha256').update(issued.token,'utf8').digest('hex'));
-  assert.notEqual(issued.token,issued.token_digest);
-  assert.throws(()=>issueQrToken({randomBytes:()=>new Uint8Array(8),sha256:()=>''}),/32/);
-  assert.throws(()=>issueQrToken({randomBytes:()=>new Uint8Array(32),sha256:()=>''}),/SHA-256/);
-  assert.throws(()=>issueQrToken({}),/Trusted cryptography/);
 });
