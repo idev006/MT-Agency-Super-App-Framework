@@ -1,6 +1,6 @@
 // Explicit per-group v1 operation allowlist. Each group owns a bounded business capability.
 const GROUPS=Object.freeze({
- system:Object.freeze(['health','config.get','config.update']),
+ system:Object.freeze(['health','config.get','config.update','reset.preview','reset.execute']),
  auth:Object.freeze(['login','googleLogin','changePassword','logout','session','linkGoogle']),
  users:Object.freeze(['create','list','update','suspend','reactivate','resetPassword','assignRoles']),
  organizations:Object.freeze(['list','create','update','disable','enable']),

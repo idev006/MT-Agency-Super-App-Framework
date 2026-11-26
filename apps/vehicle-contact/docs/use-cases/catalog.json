@@ -199,16 +199,19 @@
       "ops": [
         "system.health",
         "system.config.get",
-        "system.config.update"
+        "system.config.update",
+        "system.reset.preview",
+        "system.reset.execute"
       ],
       "tests": [
+        "ACTOR-SYSTEM-RESET",
         "LIVE-01",
         "LIVE-02",
         "ACTOR-01",
         "MATRIX-00"
       ],
       "pre": "Public health may be checked without credentials; settings require a server-verified SYSTEM_ADMIN session.",
-      "success": "Health returns minimal status; settings allow idle_timeout_minutes (1–480) and retention_days (1–3650), audit writes.",
+      "success": "Health returns minimal status; settings allow idle_timeout_minutes (1–480) and retention_days (1–3650), audit writes. VC-ADR-039: system.reset.preview counts what a reset deletes (master tables, the admin and by default all users/organizations kept); system.reset.execute needs the plan digest, the phrase RESET P6VC and the admin password, deletes, trashes the Drive photo files and writes one SYSTEM_RESET audit row; disabled unless the host switches it on.",
       "failure": "Unauthorized get/update, unsupported keys, invalid integer ranges are denied; health must not disclose secrets.",
       "tables": [
         "vc_settings",

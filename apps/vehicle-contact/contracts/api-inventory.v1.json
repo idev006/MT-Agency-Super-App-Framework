@@ -60,6 +60,34 @@
       "liveVerified": false
     },
     {
+      "id": "VC-SYSTEM-004",
+      "group": "system",
+      "action": "reset.preview",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/system.reset.preview",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
+      "id": "VC-SYSTEM-005",
+      "group": "system",
+      "action": "reset.execute",
+      "apiVersion": "v1",
+      "transport": "GAS_POST_ENVELOPE",
+      "status": "SOURCE_WRITTEN_UNVERIFIED",
+      "protected": true,
+      "requestSchemaRef": "#/definitions/requests/system.reset.execute",
+      "responseSchemaRef": "#/definitions/ApiResponse",
+      "implementationVerified": false,
+      "integrationVerified": false,
+      "liveVerified": false
+    },
+    {
       "id": "VC-AUTH-001",
       "group": "auth",
       "action": "login",

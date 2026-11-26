@@ -96,6 +96,17 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
       if (p.values?.sticker_categories) stickerConfig = p.values.sticker_categories.map((c) => ({ ...c, hex: c.hex.toLowerCase() }))
       return { idle_timeout_minutes: '30', retention_days: '365', sticker_categories: withInk(stickerConfig) }
     },
+    // VC-ADR-039 system reset (mock: counts from the mock data; execute empties the vehicle list)
+    'system.reset.preview': (p) => ({ phrase: 'RESET P6VC', planDigest: 'd'.repeat(64), options: { keepUsers: p.keepUsers !== false, keepCampaigns: p.keepCampaigns === true },
+      deleteByTable: { vc_vehicles: vehicles.length, vc_vehicle_photos: vehicles.length * 5, ...(p.keepCampaigns ? {} : { vc_campaigns: campaigns.length }), ...(p.keepUsers === false ? { vc_users: users.length - 1 } : {}) },
+      deleteTotal: vehicles.length * 6 + (p.keepCampaigns ? 0 : campaigns.length) + (p.keepUsers === false ? users.length - 1 : 0),
+      keptByTable: { vc_reference_values: 645, vc_settings: 3, ...(p.keepUsers === false ? { vc_users: 1 } : { vc_users: users.length }) }, driveFiles: vehicles.length * 5 }),
+    'system.reset.execute': (p) => {
+      if (p.confirmation !== 'RESET P6VC') return { error: 'RESET_CONFIRMATION_INVALID' }
+      if (p.password !== 'e2e-password-123') return { error: 'INVALID_CREDENTIALS' }
+      const n = vehicles.length; vehicles.splice(0)
+      return { deleted: n * 6, deleteByTable: { vc_vehicles: n }, drive: { status: 'DONE', trashed: n * 5, more: false } }
+    },
     'vehicles.list': (p) => page(vehicles.map(({ qr, ...v }) => ({ stickerCategory: '', ...v, sticker: sticker(v) })), p),
     'vehicles.detail': (p) => { const v = vehicles.find((x) => x.vehicleId === p.vehicleId); return v ? detail(v, true) : { error: 'NOT_FOUND' } },
     'qr.history': (p) => ({ items: [

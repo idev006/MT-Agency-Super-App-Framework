@@ -48,10 +48,11 @@ export function createApplication(deps={}) {
     const folderId=props.getProperty('VEHICLE_PHOTOS_FOLDER_ID');
     // deps.drivePhotos: the Cloud Run host injects the signed Drive bridge (VC-ADR-034).
     const drivePhotos=deps.drivePhotos?deps.drivePhotos:folderId?createDrivePhotos({driveApp:s.driveApp,utilities:s.utilities,folderId}):{
-      upload(){throw new Error('DRIVE_NOT_CONFIGURED');},read(){throw new Error('DRIVE_NOT_CONFIGURED');},trash(){throw new Error('DRIVE_NOT_CONFIGURED');}
+      upload(){throw new Error('DRIVE_NOT_CONFIGURED');},read(){throw new Error('DRIVE_NOT_CONFIGURED');},trash(){throw new Error('DRIVE_NOT_CONFIGURED');},trashAll(){throw new Error('DRIVE_NOT_CONFIGURED');}
     };
     const controller=createOperationController({store,security,sessions,drivePhotos:prof?prof.wrapDrivePhotos(drivePhotos):drivePhotos,
-      allowDestructiveRetention:props.getProperty('VEHICLE_RETENTION_EXECUTE_ENABLED')==='true',referenceMemo});
+      allowDestructiveRetention:props.getProperty('VEHICLE_RETENTION_EXECUTE_ENABLED')==='true',
+      allowSystemReset:props.getProperty('VEHICLE_SYSTEM_RESET_ENABLED')==='true',referenceMemo});
     return prof?{dispatch:req=>prof.phase('controller',()=>controller.dispatch(req))}:controller;
   }
 

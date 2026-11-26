@@ -1,6 +1,6 @@
 // Server-authoritative sessions and immutable role-to-permission policy.
 export const ROLE_PERMISSIONS=Object.freeze({
- SYSTEM_ADMIN:['session.authenticated','system.settings.read','system.settings.manage','users.manage','organizations.read','organizations.manage','campaigns.manage','qr.manage','retention.read','retention.delete.approve','audit.read','vehicle.list',
+ SYSTEM_ADMIN:['session.authenticated','system.settings.read','system.settings.manage','system.reset','users.manage','organizations.read','organizations.manage','campaigns.manage','qr.manage','retention.read','retention.delete.approve','audit.read','vehicle.list',
   // VC-ADR-036 (owner 2026-11-25): full vehicle view incl. contacts; NOT registration approval.
   'vehicle.lookup','vehicle.contact.read','vehicle.photos.read','vehicle.history.read'],
  REGISTRATION_ADMIN:['session.authenticated','organizations.read','vehicle.registration.approve','vehicle.lookup','vehicle.list','vehicle.contact.read','vehicle.photos.read','vehicle.update','vehicle.history.read','vehicle.change.approve','qr.manage','retention.read'],

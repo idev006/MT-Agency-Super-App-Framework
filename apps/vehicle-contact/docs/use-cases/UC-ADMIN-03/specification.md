@@ -4,7 +4,7 @@
 
 ## 1. Authority and scope
 - Business baseline: [Approved requirements](../../APPROVED_REQUIREMENTS_BASELINE_R01_R26.md).
-- API operations: `system.health`, `system.config.get`, `system.config.update` (API v1 JSON envelope, GAS POST except public health GET).
+- API operations: `system.health`, `system.config.get`, `system.config.update`, `system.reset.preview`, `system.reset.execute` (API v1 JSON envelope, GAS POST except public health GET).
 - Implementation: `backend/gas/src/api/routes/Router.js`, `backend/gas/src/application/use-cases/AdministrationOperations.js`; server permission source `backend/gas/src/api/controllers/OperationController.js`.
 - Diagram source: [sequence.mmd](sequence.mmd) (Mermaid, reviewed alongside spec).
 
@@ -62,5 +62,19 @@ sequenceDiagram
     API-->>FE: Updated setting values
   else Invalid / unauthorized
     API-->>FE: INVALID_SETTINGS / FORBIDDEN
+  end
+  Admin->>FE: Reset data for test / set-up (VC-ADR-039)
+  FE->>API: system.reset.preview(keepUsers, keepCampaigns)
+  API->>API: Require system.reset and host switch
+  API->>DB: Read all tables, count rows to delete, plan digest
+  API-->>FE: Counts deleted / kept, Drive file count, phrase
+  FE->>API: system.reset.execute(phrase, password, planDigest)
+  alt Phrase, password and unchanged plan
+    API->>DB: Delete non-master rows (batches)
+    API->>Drive: trashAll photo folder (Drive trash)
+    API->>DB: Append SYSTEM_RESET audit
+    API-->>FE: Deleted counts and Drive status
+  else Wrong phrase / password / stale plan / switched off
+    API-->>FE: RESET_CONFIRMATION_INVALID / INVALID_CREDENTIALS / RESET_PLAN_STALE / OPERATION_DISABLED
   end
 ```

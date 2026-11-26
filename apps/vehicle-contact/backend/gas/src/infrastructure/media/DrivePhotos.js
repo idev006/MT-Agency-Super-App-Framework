@@ -30,5 +30,12 @@ export function createDrivePhotos({driveApp,utilities,folderId}) {
   if(typeof storageRef!=='string'||!storageRef||storageRef.length>150)throw new Error('INVALID_STORAGE_REF');
   driveApp.getFileById(storageRef).setTrashed(true);return true;
  }
- return Object.freeze({upload,read,trash});
+ // VC-ADR-039 system reset: move every file of the photo folder to the Drive trash (30-day undo), within a
+ // time budget (GAS / Cloud Run limits); more=true when files remain (call again).
+ function trashAll(budgetMs=25000){
+  const start=Date.now(),files=driveApp.getFolderById(folderId).getFiles();let trashed=0;
+  while(files.hasNext()){if(Date.now()-start>budgetMs)return {trashed,more:true};files.next().setTrashed(true);trashed++;}
+  return {trashed,more:false};
+ }
+ return Object.freeze({upload,read,trash,trashAll});
 }

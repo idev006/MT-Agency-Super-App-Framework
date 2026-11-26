@@ -82,7 +82,7 @@ jobs:
             --concurrency 1 --min-instances 0 --max-instances 10 \
             --cpu 1 --memory 512Mi --timeout 60 \
             --allow-unauthenticated \
-            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),RUNTIME_SA_EMAIL=${RUNTIME_SA},MEDIA_BRIDGE_URL=${MEDIA_BRIDGE_URL}" \
+            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),RUNTIME_SA_EMAIL=${RUNTIME_SA},MEDIA_BRIDGE_URL=${MEDIA_BRIDGE_URL},P6VC_SYSTEM_RESET=${{ vars.P6VC_SYSTEM_RESET || 'DISABLED' }}" \
             --set-secrets "P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest,P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest" \
             --labels "app=p6vc,commit=${GITHUB_SHA::12}" \
             --quiet
