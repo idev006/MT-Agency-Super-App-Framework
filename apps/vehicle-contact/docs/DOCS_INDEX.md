@@ -12,20 +12,25 @@
 | เอกสาร | ใช้ทำอะไร |
 |---|---|
 | [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) | สถานะรันไทม์/หลักฐานปัจจุบัน — จุดกลับมาทำงาน (authority ลำดับ 2 ใน PROJECT_HANDOVER §2) |
+| [SYSTEM_MAP.md](SYSTEM_MAP.md) | แผนที่ระบบปัจจุบัน (Mermaid จาก source): บริบท, deploy, backend/frontend map, workflows, states, data map, "จะแก้ X แตะไฟล์ไหน" |
 | [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) | ลำดับความน่าเชื่อถือ, กฎความปลอดภัย, next actions, prompt มาตรฐาน (§1) |
 | [HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md](HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md) | handoff ล่าสุด Phase 3 + acceptance review §10 |
 | [BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md](BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md) | หลักฐาน cutover: suite 97/97 + dual-store audit §4.3 + rollback window §6.1 |
 | [FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md](FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md) | ขั้นตอน rollback/monitoring |
 | [DECISION_LOG.md](DECISION_LOG.md) | VC-ADR ทั้งหมด (019/020/021/022 = Firestore/runtime/PDPA/rollback) |
 
-## 2. เอกสารทั้งหมด (153 ไฟล์)
+## 2. เอกสารทั้งหมด (154 ไฟล์)
 
 | เอกสาร | หมวด | อัปเดต (git) | วันที่ในไฟล์ | สถานะ / หมายเหตุ |
 |---|---|---|---|---|
+| [DECISION_LOG.md](DECISION_LOG.md) — P6 Vehicle Contact — Decision and approval log | Navigation / current | 2026-11-26 | 2026-11-26 |  |
+| [SCRIPT_PROPERTIES.md](SCRIPT_PROPERTIES.md) — P6VC — GAS Script Properties catalog | Reference | 2026-11-26 | **⚠ ไม่ระบุ** |  |
+| [traceability-matrix.md](traceability-matrix.md) — P6 Vehicle Contact — Requirements → Use Case → Sequence → API → Tests | Reference | 2026-11-26 | 2026-11-22 |  |
+| [BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md](BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md) — POC #1 — GAS V8 → Firestore REST + service-account OAuth proof (F3a de-risk) | Evidence | 2026-11-25 | 2026-11-25 | **DONE — OFFLINE 10/10 + LIVE GAS RUN #2 PASS 8/8 (2026-11-22 20:57 ICT).** Run #1 (20:25  |
 | [CLOUD_RUN_SPIKE_AND_GAS_INCIDENT_20261125.md](CLOUD_RUN_SPIKE_AND_GAS_INCIDENT_20261125.md) — Cloud Run spike + GAS outbound incident (2026-11-25) | Evidence | 2026-11-25 | 2026-11-25 |  |
-| [DECISION_LOG.md](DECISION_LOG.md) — P6 Vehicle Contact — Decision and approval log | Navigation / current | 2026-11-25 | 2026-11-25 |  |
+| [FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md](FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md) — Incident — Firestore REST live POC run #1: three real-API contract bugs (FAIL 5/8) | Evidence | 2026-11-25 | 2026-11-25 | **CLOSED — fixed and live-verified.** Offline suite **10/10**, live-shape probe against Fi |
 | [SYSTEM_ADMIN_USECASE_GAP_PLAN_20261125.md](SYSTEM_ADMIN_USECASE_GAP_PLAN_20261125.md) — SYSTEM_ADMIN use cases: coverage check, Vehicle 360, QR history, plan (2026-11-25) | Plan / process | 2026-11-25 | 2026-11-25 |  |
-| [traceability-matrix.md](traceability-matrix.md) — P6 Vehicle Contact — Requirements → Use Case → Sequence → API → Tests | Reference | 2026-11-25 | 2026-11-22 |  |
+| [TUNEUP_FIRESTORE_READS_20261125.md](TUNEUP_FIRESTORE_READS_20261125.md) — Tune-up: Firestore reads and unnecessary parts (2026-11-25) | Reference | 2026-11-25 | 2026-11-25 |  |
 | [UI_AUDIT_SYSTEM_ADMIN_20261125.md](UI_AUDIT_SYSTEM_ADMIN_20261125.md) — UI audit: Initial System Admin (2026-11-25) | Reference | 2026-11-25 | 2026-11-25 |  |
 | [BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md](BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md) — Backend Firestore LIVE cutover + integration test evidence (synthetic DEV) | Evidence | 2026-11-24 | 2026-11-24 | SYNTHETIC-DEV CUTOVER Phases 0→2 EXECUTED + verified on live GAS @51; **Phase 3 (Firestore |
 | [FRONTEND_REDESIGN_R1_R2_EVIDENCE_20261124.md](FRONTEND_REDESIGN_R1_R2_EVIDENCE_20261124.md) — P6VC — Frontend redesign R1 (sign-in) + R2 (role home) evidence | Evidence | 2026-11-24 | 2026-11-24 |  |
@@ -42,7 +47,7 @@
 | [BACKEND_FIRESTORE_DUALWRITE_F3B1_EVIDENCE_20261122.md](BACKEND_FIRESTORE_DUALWRITE_F3B1_EVIDENCE_20261122.md) — F3b-1 — Dual-write wrapper + divergence journal (offline evidence) | Evidence | 2026-11-23 | 2026-11-23 | OFFLINE DONE — code + tests merged to source; **NOT pushed to GAS, NOT enabled live.** Run |
 | [BACKEND_FIRESTORE_LIVE_API_SUITE_EVIDENCE_20261122.md](BACKEND_FIRESTORE_LIVE_API_SUITE_EVIDENCE_20261122.md) — BACKEND — Full automated API/use-case pipeline on LIVE Firestore DEV (#69) | Evidence | 2026-11-23 | 2026-11-22 |  |
 | [BACKEND_FIRESTORE_LIVE_POC2_POC3_EVIDENCE_20261122.md](BACKEND_FIRESTORE_LIVE_POC2_POC3_EVIDENCE_20261122.md) — BACKEND — Firestore live POC #2/#3 evidence (Node sync bridge → real gateway → live Firestore DEV) | Evidence | 2026-11-23 | 2026-11-22 |  |
-| [CODE_MAP_20261121.md](CODE_MAP_20261121.md) — P6 Vehicle Contact — Code Map (current source) | Standard / architecture | 2026-11-23 | 2026-11-23 | SOURCE-MIRRORED MAP of the source merge baseline `main` @ `248a3a6` (PR #122). The publish |
+| [CODE_MAP_20261121.md](CODE_MAP_20261121.md) — P6 Vehicle Contact — Code Map (current source) | Standard / architecture | 2026-11-23 | 2026-11-26 | SOURCE-MIRRORED MAP of the source merge baseline `main` @ `248a3a6` (PR #122). The publish |
 | [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) — P6 Vehicle Contact — Current Delivery Status / Resume Here | Navigation / current | 2026-11-23 | 2026-11-23 | DEV engineering evidence is strong; **production readiness and all human sign-offs remain  |
 | [FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md](FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md) — Firestore cutover & rollback runbook (F3b-3) | Runbook | 2026-11-23 | 2026-11-23 | PROCEDURE READY — every live phase below is **gated**; none may be self-approved (PM plan  |
 | [FIRESTORE_NEW_STORE_PDPA_SECURITY_REVIEW_55_20261123.md](FIRESTORE_NEW_STORE_PDPA_SECURITY_REVIEW_55_20261123.md) — #55 — New-store PDPA & security review: Firestore (decision-ready dossier) | Compliance | 2026-11-23 | 2026-11-23 |  |
@@ -63,7 +68,6 @@
 | [PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md) — P6 Vehicle Contact — Production Readiness Plan | Plan / process | 2026-11-23 | 2026-11-23 | ACTIVE GATE TRACKER — **NOT PRODUCTION-READY AND NOT RELEASE-APPROVED**. The original 48-h |
 | [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) — P6 Vehicle Contact — Project Handover / Next AI | Navigation / current | 2026-11-23 | 2026-11-23 |  |
 | [PROJECT_PROPOSAL_POLICY_DRIVEN.md](PROJECT_PROPOSAL_POLICY_DRIVEN.md) — ข้อเสนอโครงการระบบตรวจสอบและติดต่อผู้รับผิดชอบยานพาหนะ (MT Vehicle Contact) | Proposal / decision input | 2026-11-23 | 2026-11-17 |  |
-| [SCRIPT_PROPERTIES.md](SCRIPT_PROPERTIES.md) — P6VC — GAS Script Properties catalog | Reference | 2026-11-23 | **⚠ ไม่ระบุ** |  |
 | [SENIOR_THAI_LEGAL_COUNSEL_ROLE.md](SENIOR_THAI_LEGAL_COUNSEL_ROLE.md) — TOR — นิติกรอาวุโสด้านกฎหมายไทย กฎหมายคุ้มครองข้อมูลส่วนบุคคลและกฎหมายดิจิทัล | Standard / architecture | 2026-11-23 | 2026-11-16 |  |
 | [TEST_AND_DELIVERY.md](TEST_AND_DELIVERY.md) — Test, Acceptance & Rapid Delivery — MT Vehicle Contact v1.0 | Engineering reference | 2026-11-23 | 2026-11-16 | PROPOSED |
 | [TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md](TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md) — P6VC Test Automation + Integration Test Design (GAS + Firestore main engine) | Engineering reference | 2026-11-23 | 2026-11-23 | **Doc ID:** P6VC-QA-TEST-DESIGN-001 |
@@ -76,7 +80,6 @@
 | [BACKEND_FIRESTORE_BACKFILL_F3B2_EVIDENCE_20261122.md](BACKEND_FIRESTORE_BACKFILL_F3B2_EVIDENCE_20261122.md) — F3b-2/F3b-3 — Checksum backfill + independent read-back audit + reverse dual-write + cutover runbook (offline  | Evidence | 2026-11-22 | 2026-11-22 | OFFLINE DONE — **NOT executed live, NOT pushed to GAS.** Runtime stays Sheets V50/0.9.2; n |
 | [BACKEND_FIRESTORE_GATEWAY_F3A_EVIDENCE_20261122.md](BACKEND_FIRESTORE_GATEWAY_F3A_EVIDENCE_20261122.md) — F3a — real GAS Firestore REST gateway + backend selection flag (offline proof) | Evidence | 2026-11-22 | 2026-11-22 | **OFFLINE DONE.** 19 new tests pass; full `npm run check` **exit 0** (build **60 `.gs` mod |
 | [BACKEND_FIRESTORE_INFRA_F4_EVIDENCE_20261122.md](BACKEND_FIRESTORE_INFRA_F4_EVIDENCE_20261122.md) — F4 (infra slice) — Firestore DEV provisioning + service account + connectivity read-back proof | Evidence | 2026-11-22 | 2026-11-22 |  |
-| [BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md](BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md) — POC #1 — GAS V8 → Firestore REST + service-account OAuth proof (F3a de-risk) | Evidence | 2026-11-22 | 2026-11-22 | **DONE — OFFLINE 10/10 + LIVE GAS RUN #2 PASS 8/8 (2026-11-22 20:57 ICT).** Run #1 (20:25  |
 | [BACKEND_SCOPED_OPS_0_9_0_EVIDENCE_20261121.md](BACKEND_SCOPED_OPS_0_9_0_EVIDENCE_20261121.md) — P6 Vehicle Contact — Backend 0.9.0 scoped operations evidence | Evidence | 2026-11-22 | 2026-11-21 |  |
 | [C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md) — C6 — SYSTEM_ADMIN approved-vehicle registry (`vehicles.list`) | Evidence | 2026-11-22 | 2026-11-22 | SOURCE COMPLETE + TEST GREEN + **DEPLOYED LIVE (GAS Web App Version 48, `backendVersion 0. |
 | [DATA_MODEL_ER_DIAGRAM_20261122.md](DATA_MODEL_ER_DIAGRAM_20261122.md) — P6 Vehicle Contact — Logical Data Model ER Diagram (DB-agnostic SSOT) | Requirements / design | 2026-11-22 | 2026-11-22 |  |
@@ -85,7 +88,6 @@
 | [E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) — E1 — Indexed datastore migration design & owner decision packet | Reference | 2026-11-22 | 2026-11-22 |  |
 | [E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md) — E3 — Production sign-off dossier (prepared for owner review) | Proposal / decision input | 2026-11-22 | 2026-11-22 |  |
 | [FIRESTORE_PHYSICAL_MAPPING_20261122.md](FIRESTORE_PHYSICAL_MAPPING_20261122.md) — Firestore physical mapping (DERIVED projection of the logical SSOT) | Reference | 2026-11-22 | 2026-11-22 | **Document:** P6VC-FS-MAP-001 |
-| [FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md](FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md) — Incident — Firestore REST live POC run #1: three real-API contract bugs (FAIL 5/8) | Evidence | 2026-11-22 | 2026-11-22 | **CLOSED — fixed and live-verified.** Offline suite **10/10**, live-shape probe against Fi |
 | [FRONTEND_A11Y_CONTRAST_TOUCH_EVIDENCE_20261122.md](FRONTEND_A11Y_CONTRAST_TOUCH_EVIDENCE_20261122.md) — P6 Vehicle Contact — Semantic Contrast (WCAG AA) + Touch-Target Evidence | Evidence | 2026-11-22 | 2026-11-22 | SOURCE-REVIEW EVIDENCE (partial gate matrix; full sign-off pending) |
 | [FRONTEND_ARCHITECTURE.md](FRONTEND_ARCHITECTURE.md) — P6 Vehicle Contact Frontend Architecture | Standard / architecture | 2026-11-22 | 2026-11-22 | Vue SPA POC, Cloudflare `/api/frontend` and GitHub Pages deployment implemented and verifi |
 | [FRONTEND_UI_COMPLIANCE_CHECKLIST.md](FRONTEND_UI_COMPLIANCE_CHECKLIST.md) — P6 Vehicle Contact — Frontend UI Compliance Checklist | Engineering reference | 2026-11-22 | 2026-11-18 | REQUIRED MERGE GATE |
@@ -174,7 +176,7 @@
 | [SYSTEM_ANALYSIS_V2.md](SYSTEM_ANALYSIS_V2.md) — P6 Vehicle Contact — System Analysis & Design v2.0 | Reference | 2026-11-16 | 2026-10-31 |  |
 | [TEAM_UPSKILL_RESEARCH_2026-10-31.md](TEAM_UPSKILL_RESEARCH_2026-10-31.md) — MT Vehicle Contact — Team Upskill / Reskill Research | Engineering reference | 2026-11-16 | 2026-10-31 | **Research date:** 31 ตุลาคม 2569 |
 | [WORKFLOW_AND_MEDIA_PIPELINE.md](WORKFLOW_AND_MEDIA_PIPELINE.md) — MT Vehicle Contact v1.0 — Workflow & Photo Pipeline | Plan / process | 2026-11-16 | 2026-10-30 | PROPOSED / Implementation-ready design draft |
-| [TUNEUP_FIRESTORE_READS_20261125.md](TUNEUP_FIRESTORE_READS_20261125.md) — Tune-up: Firestore reads and unnecessary parts (2026-11-25) | Reference | — | 2026-11-25 |  |
+| [SYSTEM_MAP.md](SYSTEM_MAP.md) — P6 Vehicle Contact — System Map (แผนที่ระบบ) | Standard / architecture | — | 2026-11-26 | CURRENT MAP — สร้างจาก source code โดยตรง (อ่านโค้ด ไม่เดา). ใช้แทนส่วนภาพรวมของ CODE_MAP_ |
 
 ## 3. กติกาความสด (freshness rules)
 

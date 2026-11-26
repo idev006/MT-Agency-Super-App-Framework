@@ -15,7 +15,7 @@ function cat(f) {
   if (/RUNBOOK/.test(n)) return 'Runbook';
   if (/(EVIDENCE|INCIDENT|REHEARSAL)/.test(n)) return 'Evidence';
   if (/(PROPOSAL|BRIEFING|DOSSIER)/.test(n)) return 'Proposal / decision input';
-  if (/(STANDARD|PATTERNS|BLUEPRINT|ARCHITECTURE|CODE_MAP|_SSOT|GOVERNANCE|CHARTER|SENIOR_|_ROLE)/.test(n)) return 'Standard / architecture';
+  if (/(STANDARD|PATTERNS|BLUEPRINT|ARCHITECTURE|CODE_MAP|SYSTEM_MAP|_SSOT|GOVERNANCE|CHARTER|SENIOR_|_ROLE)/.test(n)) return 'Standard / architecture';
   if (/(PLAN|ROADMAP|WORKPACKAGE|BACKLOG|KANBAN|RACI|WORKFLOW|_SOP)/.test(n)) return 'Plan / process';
   if (/(PRD|PRODUCT_REQUIREMENTS|APPROVED_REQUIREMENTS|REQUIREMENTS|TRACEABILITY|DATA_MODEL|ER_DIAGRAM|SCHEMA)/.test(n)) return 'Requirements / design';
   if (/(PDPA|SECURITY|LEGAL|CONSENT|PRIVACY|RETENTION|LAWFUL)/.test(n)) return 'Compliance';
@@ -47,6 +47,7 @@ rows.sort((a,b) => (b.git||'').localeCompare(a.git||'') || a.f.localeCompare(b.f
 
 const readFirst = [
   ['CURRENT_DELIVERY_STATUS.md','สถานะรันไทม์/หลักฐานปัจจุบัน — จุดกลับมาทำงาน (authority ลำดับ 2 ใน PROJECT_HANDOVER §2)'],
+  ['SYSTEM_MAP.md','แผนที่ระบบปัจจุบัน (Mermaid จาก source): บริบท, deploy, backend/frontend map, workflows, states, data map, "จะแก้ X แตะไฟล์ไหน"'],
   ['PROJECT_HANDOVER.md','ลำดับความน่าเชื่อถือ, กฎความปลอดภัย, next actions, prompt มาตรฐาน (§1)'],
   ['HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md','handoff ล่าสุด Phase 3 + acceptance review §10'],
   ['BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md','หลักฐาน cutover: suite 97/97 + dual-store audit §4.3 + rollback window §6.1'],
