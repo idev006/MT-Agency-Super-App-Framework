@@ -1,9 +1,13 @@
 // HTTP wrapper: same v1 JSON envelope as the GAS Web App (GET = health, POST = operation).
 // Never returns internal error text.
+//   /              server-to-server (live suite, uptime check, deploy smoke) — unchanged
+//   /api/frontend  the web app in the browser: CORS + strict gateway checks (frontend-gateway.mjs, VC-ADR-044 PR 2)
+import {FRONTEND_PATH, handleFrontend} from './frontend-gateway.mjs';
 const MAX_BODY = 8 * 1024 * 1024;
 
 export function createApiHandler(application) {
   return (req, res) => {
+    if (String(req.url || '/').split('?')[0] === FRONTEND_PATH) return handleFrontend(req, res, application);
     const send = (status, body) => {
       res.writeHead(status, {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store'});
       res.end(JSON.stringify(body));
