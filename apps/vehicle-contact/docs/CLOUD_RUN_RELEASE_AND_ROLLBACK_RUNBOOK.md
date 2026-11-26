@@ -25,6 +25,20 @@ Owner 2026-11-26: the API may run on Cloud Run only, *"แต่ไม่อย�
 Photos go through the GAS web app. To return it to the previous version: `npx @google/clasp@3.4.1 -u p6vc list-versions`, then
 `npx @google/clasp@3.4.1 -u p6vc update-deployment <deploymentId> -V <previous>` (deployment id in `deploy-vehicle-cloudrun.yml` `MEDIA_BRIDGE_URL`).
 
+## Proven on 2026-11-26
+| What | Result |
+|---|---|
+| Safe deploy | candidate `p6vc-api-00020-yok` smoked 5/5 with no traffic, switched, live smoke 5/5 |
+| One-click rollback | `00020-yok` → `00019-9zt` in about a minute, live smoke 5/5; full live suite 112/112 + DATA_PROOF 7/7 afterwards |
+| Uptime check | `p6vc-api-health` passing in every region (first latency ~1.5 s = cold start) |
+| Alert e-mail | drill alert e-mail arrived about 5 minutes after the drill started |
+
+## Alert drill (repeat after changing the e-mail or the policy)
+The console has no "send test notification" for e-mail channels any more. Instead, in Cloud Shell create a temporary
+uptime check that always fails (same URL, expects text the API never returns, every minute) plus a policy on the same
+e-mail channel, wait for the e-mail (~5 min), then delete both. Both carry "drill" in their names; the real check and
+policy are never touched. Script: `apps/vehicle-contact/ops/cloudrun-alert-drill.sh` (start) and `... stop` (always run it).
+
 ## Notes
 - Revisions keep their own environment (e.g. `P6VC_SYSTEM_RESET`): rolling back also rolls back those switches.
 - A rollback never touches Firestore data. A release that changed data shape needs its own data rollback plan.
