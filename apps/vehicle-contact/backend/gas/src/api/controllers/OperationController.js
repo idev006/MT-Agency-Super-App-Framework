@@ -63,7 +63,8 @@ export function createOperationController({store:rawStore,security,sessions,driv
  },{store,security});
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
- if(entries.length!==63||DTO_OPERATIONS.length!==63||entries.some(op=>!DTO_OPERATIONS.includes(op))
+ // every handler has a DTO and vice versa (system.health is answered by the Router; the inventory = DTOs + health)
+ if(entries.length!==DTO_OPERATIONS.length||entries.some(op=>!DTO_OPERATIONS.includes(op))
   ||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
   throw new Error('INCOMPLETE_API_DISPATCH');
  function dispatch(request){
