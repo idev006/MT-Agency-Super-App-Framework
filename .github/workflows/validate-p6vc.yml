@@ -40,6 +40,8 @@ jobs:
           node --check scripts/validate-usecase-ssot.mjs
           node scripts/validate-ssot.mjs
           node scripts/validate-usecase-ssot.mjs
+          # generated system maps must match the code (regenerate: node scripts/gen-system-maps.mjs)
+          node scripts/gen-system-maps.mjs --check
       - name: Test and build frontend for GitHub Pages
         working-directory: apps/vehicle-contact/frontend
         env:
