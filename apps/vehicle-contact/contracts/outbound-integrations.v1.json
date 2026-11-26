@@ -1,0 +1,28 @@
+{
+  "schema": "p6vc.outbound-integrations.v1",
+  "note": "VC-ADR-047: the ONE list of external systems the Node core calls. url = a trusted endpoint id (contracts/trusted-endpoints.v1.json); secrets = environment variable NAMES only (values live in Secret Manager). Retry is applied to idempotent operations only.",
+  "integrations": [
+    {
+      "name": "legacy-engine",
+      "port": "LegacyEngine",
+      "endpoint": "cloud-run-api",
+      "timeoutMs": 55000,
+      "retry": { "max": 0 },
+      "breaker": { "failures": 5, "openMs": 15000 },
+      "idempotent": ["GET"],
+      "secrets": [],
+      "note": "VC-ADR-046 strangler: operations not ported yet; removed in phase 9"
+    },
+    {
+      "name": "media-bridge",
+      "port": "MediaStore",
+      "endpoint": "gas-webapp",
+      "timeoutMs": 30000,
+      "retry": { "max": 2, "backoffMs": 300 },
+      "breaker": { "failures": 5, "openMs": 30000 },
+      "idempotent": ["read", "trash"],
+      "secrets": ["P6VC_MEDIA_BRIDGE_SECRET"],
+      "note": "VC-ADR-034 / VC-ADR-047 option D: photo files in the owner's Google Drive through the signed GAS bridge"
+    }
+  ]
+}

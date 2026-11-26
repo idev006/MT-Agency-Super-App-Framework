@@ -25,7 +25,6 @@ env:
   SERVICE: p6vc-core
   REPOSITORY: p6vc
   RUNTIME_SA: p6vc-api-runtime@mt-iam-core-2026.iam.gserviceaccount.com
-  LEGACY_API_URL: https://p6vc-api-46858005337.asia-southeast3.run.app
 
 jobs:
   deploy:
@@ -82,7 +81,7 @@ jobs:
 
       - name: Deploy revision (no traffic when the service already exists)
         run: |
-          # Phase 1 is a pure async proxy: no secrets, no Firestore access; high concurrency is safe.
+          # Async core: high concurrency is safe. Outbound URLs come from contracts/ (Integration Manager), not env.
           NO_TRAFFIC=""
           if [ "${{ steps.prev.outputs.exists }}" = "true" ]; then NO_TRAFFIC="--no-traffic --tag candidate"; fi
           gcloud run deploy "$SERVICE" \
@@ -92,7 +91,6 @@ jobs:
             --concurrency 80 --min-instances 0 --max-instances 5 \
             --cpu 1 --memory 256Mi --timeout 60 \
             --allow-unauthenticated \
-            --set-env-vars "P6VC_LEGACY_API_URL=${LEGACY_API_URL}" \
             --labels "app=p6vc,component=core,commit=${GITHUB_SHA::12}" \
             $NO_TRAFFIC --quiet
 
