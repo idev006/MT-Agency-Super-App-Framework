@@ -10,14 +10,20 @@ export const LOG_SETTING_KEY = 'log_policy';
 export const LOG_MAX_DAYS = 3650;
 export const LOG_EXPIRE_FIELD = 'expire_at'; // the Firestore TTL field (FirestoreStore TTL_FIELD)
 
+// match: which rows a kind governs — [{table, field, values}] (no field = the rest of that table). A row belongs to the first
+// kind whose match names its value; otherwise to the kind that owns the table (fallback).
 export const LOG_CATEGORIES = Object.freeze([
-  {code: 'LOOKUP', table: 'vc_lookup_audit', sources: ['PLATE', 'QR'], enabled: true, days: 365, canDisable: true, minDays: 30, allowForever: false},
-  {code: 'CONTACT', table: 'vc_lookup_audit', sources: ['CONTACT'], enabled: true, days: 365, canDisable: false, minDays: 90, allowForever: false},
-  {code: 'PHOTO', table: 'vc_lookup_audit', sources: ['PHOTO'], enabled: false, days: 90, canDisable: true, minDays: 30, allowForever: false},
-  {code: 'CHANGE', table: 'vc_change_audit', sources: null, enabled: true, days: 1825, canDisable: false, minDays: 365, allowForever: true},
-  {code: 'LOGIN', table: 'vc_security_events', sources: null, enabled: true, days: 90, canDisable: false, minDays: 30, allowForever: false}
-].map(c => Object.freeze(c)));
-export const LOG_TABLES = Object.freeze([...new Set(LOG_CATEGORIES.map(c => c.table))]);
+  {code: 'LOOKUP', match: [{table: 'vc_lookup_audit', field: 'lookup_source', values: ['PLATE', 'QR', 'DETAIL']}],
+    fallbackFor: 'vc_lookup_audit', enabled: true, days: 365, canDisable: true, minDays: 30, allowForever: false},
+  {code: 'CONTACT', match: [{table: 'vc_lookup_audit', field: 'lookup_source', values: ['CONTACT']}], enabled: true, days: 365, canDisable: false, minDays: 90, allowForever: false},
+  // a photo view is a photo view wherever it is written: vehicle photos (lookup log) and the reviewer opening a
+  // pending registration's photo (change log, REGISTRATION_PHOTO_VIEWED) — both follow this switch (live read-back 0.9.35)
+  {code: 'PHOTO', match: [{table: 'vc_lookup_audit', field: 'lookup_source', values: ['PHOTO']},
+    {table: 'vc_change_audit', field: 'action', values: ['REGISTRATION_PHOTO_VIEWED']}], enabled: false, days: 90, canDisable: true, minDays: 30, allowForever: false},
+  {code: 'CHANGE', match: [{table: 'vc_change_audit'}], fallbackFor: 'vc_change_audit', enabled: true, days: 1825, canDisable: false, minDays: 365, allowForever: true},
+  {code: 'LOGIN', match: [{table: 'vc_security_events'}], fallbackFor: 'vc_security_events', enabled: true, days: 90, canDisable: false, minDays: 30, allowForever: false}
+].map(c => Object.freeze({...c, match: Object.freeze(c.match.map(m => Object.freeze({...m})))})));
+export const LOG_TABLES = Object.freeze([...new Set(LOG_CATEGORIES.flatMap(c => c.match.map(m => m.table)))]);
 const BY_CODE = new Map(LOG_CATEGORIES.map(c => [c.code, c]));
 
 export const defaultLogPolicy = () => Object.fromEntries(LOG_CATEGORIES.map(c => [c.code, {enabled: c.enabled, days: c.days}]));
@@ -57,11 +63,18 @@ export const loadLogPolicy = store => {
 
 // Which category governs a row about to be written (null = not governed).
 export function logCategory(table, row) {
-  if (table === 'vc_lookup_audit') {
-    const source = String(row && row.lookup_source || '');
-    return LOG_CATEGORIES.find(c => c.table === table && c.sources.includes(source)) || BY_CODE.get('LOOKUP');
-  }
-  return LOG_CATEGORIES.find(c => c.table === table) || null;
+  const hit = LOG_CATEGORIES.find(c => c.match.some(m => m.table === table && m.field && m.values.includes(String(row && row[m.field] || ''))));
+  return hit || LOG_CATEGORIES.find(c => c.fallbackFor === table) || null;
+}
+
+// COUNT specs per kind: [{table, filter}] — the fallback kind counts its whole table minus what other kinds claim.
+export function logCountSpecs(code) {
+  const c = BY_CODE.get(code);
+  const own = c.match.flatMap(m => m.field ? m.values.map(v => ({table: m.table, filter: {[m.field]: v}, sign: 1})) : []);
+  if (!c.fallbackFor || c.match.some(m => m.table === c.fallbackFor && m.field)) return own;
+  const claimed = LOG_CATEGORIES.filter(o => o.code !== code).flatMap(o => o.match.filter(m => m.table === c.fallbackFor && m.field)
+    .flatMap(m => m.values.map(v => ({table: m.table, filter: {[m.field]: v}, sign: -1}))));
+  return [{table: c.fallbackFor, filter: {}, sign: 1}, ...claimed];
 }
 
 // {write, expireAt}: expireAt is an ISO time, or null when kept without limit.

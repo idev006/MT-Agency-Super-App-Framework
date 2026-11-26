@@ -2,7 +2,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createAcceptanceHarness, assertOk, assertError} from './acceptance-fixture.mjs';
-import {LOG_CATEGORIES, defaultLogPolicy, logDecision, parseLogPolicy, readLogPolicy} from '../src/domain/policies/LogPolicy.js';
+import {LOG_CATEGORIES, defaultLogPolicy, logCategory, logCountSpecs, logDecision, parseLogPolicy, readLogPolicy} from '../src/domain/policies/LogPolicy.js';
 import {withLogPolicyStore} from '../src/application/use-cases/LogPolicyOperations.js';
 import {createFirestoreStore, TTL_FIELD} from '../src/infrastructure/persistence/firestore/FirestoreStore.js';
 import {createFirestoreRestGateway} from '../src/infrastructure/persistence/firestore/FirestoreRestGateway.js';
@@ -100,4 +100,9 @@ test('LOG-05 the stored policy is read safely: unreadable → defaults; a requir
   assert.equal(logDecision(p, 'vc_lookup_audit', {lookup_source: 'CONTACT', created_at: '2026-01-01T00:00:00.000Z'}).write, true);
   assert.equal(logDecision(p, 'vc_lookup_audit', {lookup_source: 'UNKNOWN'}).code, 'LOOKUP', 'an unknown source counts as a search');
   assert.throws(() => parseLogPolicy('x'), /INVALID_LOG_POLICY/);
+  // a photo view is PHOTO wherever it is written; opening a vehicle's detail is LOOKUP (live read-back 0.9.35)
+  assert.equal(logCategory('vc_change_audit', {action: 'REGISTRATION_PHOTO_VIEWED'}).code, 'PHOTO');
+  assert.equal(logCategory('vc_change_audit', {action: 'VEHICLE_UPDATED'}).code, 'CHANGE');
+  assert.equal(logCategory('vc_lookup_audit', {lookup_source: 'DETAIL'}).code, 'LOOKUP');
+  assert.deepEqual(logCountSpecs('CHANGE'), [{table: 'vc_change_audit', filter: {}, sign: 1}, {table: 'vc_change_audit', filter: {action: 'REGISTRATION_PHOTO_VIEWED'}, sign: -1}]);
 });

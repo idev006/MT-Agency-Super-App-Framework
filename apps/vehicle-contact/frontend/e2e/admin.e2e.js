@@ -89,7 +89,7 @@ test('log policy (VC-ADR-040): required logs locked; switching a log off asks fi
   await card.locator('[data-log-forever="CHANGE"]').check()
   await save.click()
   const dialog = page.getByRole('dialog', { name: 'ยืนยันการหยุดบันทึก' })
-  await expect(dialog).toContainText('ค้นหารถด้วยป้ายทะเบียน / สแกน QR')
+  await expect(dialog).toContainText('ค้นหา / เปิดดูรถ')
   await dialog.locator('[data-log-confirm]').click()
   await expect(card.getByRole('status')).toContainText('บันทึกการตั้งค่าการบันทึกประวัติแล้ว')
   const sent = api.calls.filter((c) => c.op === 'system.config.update').at(-1).payload.values.log_policy

@@ -3,7 +3,7 @@
 //                         a kept row gets expire_at (Firestore TTL deletes it then). One place, so no use case changes.
 //   withLogPolicy       — system.config.get adds log_policy (+ row counts); system.config.update saves it (no new API op).
 // The policy is read at most once a minute per server process (memo) and only when a log row is about to be written.
-import {LOG_EXPIRE_FIELD, LOG_SETTING_KEY, LOG_TABLES, LOG_CATEGORIES, defaultLogPolicy, loadLogPolicy, logDecision,
+import {LOG_EXPIRE_FIELD, LOG_SETTING_KEY, LOG_TABLES, LOG_CATEGORIES, defaultLogPolicy, loadLogPolicy, logCountSpecs, logDecision,
   logPolicyList, parseLogPolicy} from '../../domain/policies/LogPolicy.js';
 
 export function createLogPolicyReader(store, memo = null) {
@@ -52,14 +52,14 @@ export function withLogPolicyStore(store, {policy, now}) {
 
 // Row counts per kind (COUNT aggregation: ~1 read per 1,000 rows, never the rows). null when the store cannot count.
 function logCounts(store) {
-  const reqs = LOG_CATEGORIES.map(c => ({kind: 'count', name: c.table, filter: c.sources ? {lookup_source: c.sources[0]} : {}}));
-  const extra = LOG_CATEGORIES.flatMap((c, i) => (c.sources || []).slice(1).map(src => [i, {kind: 'count', name: c.table, filter: {lookup_source: src}}]));
+  const plan = LOG_CATEGORIES.flatMap(c => logCountSpecs(c.code).map(s => ({code: c.code, ...s})));
   try {
-    const all = typeof store.readMany === 'function' ? store.readMany([...reqs, ...extra.map(([, r]) => r)])
-      : [...reqs, ...extra.map(([, r]) => r)].map(r => typeof store.count === 'function' ? store.count(r.name, r.filter) : store.list(r.name, r.filter).length);
-    const n = all.slice(0, reqs.length).map(Number);
-    extra.forEach(([i], k) => { n[i] += Number(all[reqs.length + k]) || 0; });
-    return Object.fromEntries(LOG_CATEGORIES.map((c, i) => [c.code, Number.isFinite(n[i]) ? n[i] : null]));
+    const reqs = plan.map(s => ({kind: 'count', name: s.table, filter: s.filter}));
+    const all = typeof store.readMany === 'function' ? store.readMany(reqs)
+      : reqs.map(r => typeof store.count === 'function' ? store.count(r.name, r.filter) : store.list(r.name, r.filter).length);
+    const out = Object.fromEntries(LOG_CATEGORIES.map(c => [c.code, 0]));
+    plan.forEach((s, i) => { out[s.code] += s.sign * Number(all[i]); });
+    return Object.fromEntries(Object.entries(out).map(([k, n]) => [k, Number.isFinite(n) ? Math.max(0, n) : null]));
   } catch { return null; }
 }
 
