@@ -20,7 +20,8 @@ import { useSessionStore } from '../stores/session.js'
 const MAX = 100
 const auth = useSessionStore()
 const { roles, permissions, session, transport } = storeToRefs(auth)
-const registry = useVehicleRegistry({ repository: inject(vehicleRegistryRepositoryKey), permissions })
+const vehicleRepository = inject(vehicleRegistryRepositoryKey)
+const registry = useVehicleRegistry({ repository: vehicleRepository, permissions })
 const qrRepository = inject(qrGovernanceRepositoryKey)
 const route = useRoute()
 
@@ -32,6 +33,20 @@ function toggle(v) {
   if (next.has(v.vehicleId)) next.delete(v.vehicleId)
   else if (next.size < MAX) next.set(v.vehicleId, { plate: v.plate, province: v.province })
   selected.value = next
+}
+// UX 2026-11-26: picking 21 vehicles took 3 pages × "เลือกทั้งหน้า". Select every approved vehicle (≤ MAX) at once.
+const allPhase = ref('idle')
+async function selectAll() {
+  allPhase.value = 'loading'
+  try {
+    const next = new Map(selected.value)
+    for (let p = 1; next.size < MAX; p++) {
+      const r = await vehicleRepository.list({ page: p, pageSize: 100 })
+      for (const v of r.vehicles) if (next.size < MAX) next.set(v.vehicleId, { plate: v.plate, province: v.province })
+      if (p >= (r.pagination?.totalPages || 1)) break
+    }
+    selected.value = next; allPhase.value = 'idle'
+  } catch { allPhase.value = 'error' }
 }
 function togglePage() {
   const next = new Map(selected.value)
@@ -87,6 +102,7 @@ function clearSheet() { results.value = []; phase.value = 'idle' }
 const print = () => globalThis.print?.()
 
 onMounted(async () => {
+  registry.pageSize.value = 50 // UX: fewer pages to go through
   await registry.load()
   // From the vehicle detail ("พิมพ์ QR คันนี้"): ?vehicle=<id> preselects that vehicle.
   const pre = typeof route.query.vehicle === 'string' ? route.query.vehicle : ''
@@ -96,7 +112,7 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
 </script>
 
 <template>
-  <PageTemplateComponent eyebrow="การกำกับดูแล" title="พิมพ์ QR" description="เลือกรถ แล้วสร้างแผ่น QR สำหรับพิมพ์เอง (A4) หรือบันทึกเป็น PDF ส่งโรงพิมพ์ ระบบบันทึกว่าใครส่งออก QR ของรถคันใด">
+  <PageTemplateComponent eyebrow="การกำกับดูแล" title="พิมพ์ QR" description="1. เลือกรถ  2. สร้างแผ่น QR  3. เลือกรูปแบบแล้วพิมพ์ หรือบันทึกเป็น PDF ส่งโรงพิมพ์ ทุกการส่งออกถูกบันทึกใน Audit">
     <template #breadcrumbs><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">พิมพ์ QR</span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
 
@@ -106,6 +122,7 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
         <div class="flex flex-wrap items-center gap-2">
           <span class="badge badge-neutral">เลือกแล้ว {{ selected.size }} / {{ MAX }} คัน</span>
           <button class="btn btn-sm" type="button" :disabled="!pageIds.length" @click="togglePage">{{ allOnPage ? 'ยกเลิกทั้งหน้า' : 'เลือกทั้งหน้า' }}</button>
+          <button class="btn btn-sm" type="button" :disabled="allPhase === 'loading' || !registry.pagination.value.total" @click="selectAll"><span v-if="allPhase === 'loading'" class="loading loading-spinner loading-xs"></span>เลือกทั้งหมด ({{ Math.min(registry.pagination.value.total, MAX) }} คัน)</button>
           <button class="btn btn-sm btn-ghost" type="button" :disabled="!selected.size" @click="selected = new Map()">ล้างที่เลือก</button>
           <button class="btn btn-primary btn-sm" type="button" :disabled="!selected.size || phase === 'loading'" @click="prepare"><span v-if="phase === 'loading'" class="loading loading-spinner loading-sm"></span>สร้างแผ่น QR</button>
         </div>
@@ -122,6 +139,11 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
           <template #cell-color="{ row }">{{ row.colorLabel || row.color || '—' }}</template>
           <template #cell-stickerCategory="{ row }"><span v-if="row.sticker" class="inline-flex items-center gap-2"><span class="inline-block size-3 rounded-full" :style="{ background: row.sticker.hex }" aria-hidden="true"></span>{{ row.sticker.label }} · {{ row.sticker.colour }} {{ row.sticker.size }}×{{ row.sticker.size }}</span><span v-else class="text-warning">ยังไม่กำหนด</span></template>
         </DataTable>
+        <div v-if="selected.size" class="sticky bottom-0 z-10 mt-3 flex flex-wrap items-center justify-between gap-2 rounded-box border border-base-300 bg-base-100 p-3 shadow-lg" data-print-bar>
+          <span class="font-semibold">เลือกแล้ว {{ selected.size }} คัน</span>
+          <button class="btn btn-primary" type="button" :disabled="phase === 'loading'" @click="prepare"><span v-if="phase === 'loading'" class="loading loading-spinner loading-sm"></span>สร้างแผ่น QR ({{ selected.size }} คัน)</button>
+        </div>
+        <p v-if="allPhase === 'error'" class="mt-2 text-sm text-error">โหลดรายการทั้งหมดไม่สำเร็จ ลองอีกครั้ง</p>
         <PaginationControl class="mt-3" :page="registry.page.value" :page-size="registry.pageSize.value" :total-items="registry.pagination.value.total" :disabled="registry.phase.value === 'loading'" label="แบ่งหน้ารายการรถ" @update:page="registry.changePage" @update:page-size="registry.changePageSize" />
       </template>
     </section>
@@ -152,7 +174,11 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
           <ul class="mt-1 list-disc pl-5 text-sm"><li v-for="x in notReady" :key="x.vehicleId">{{ x.plate || x.vehicleId.slice(0, 8) }} — {{ STATUS_TEXT[x.status] || x.status }}<RouterLink v-if="x.status === 'REISSUE_NEEDED' || x.status === 'NO_ACTIVE_QR'" class="link ml-2" :to="{ name: 'qr-governance', query: { vehicleId: x.vehicleId } }">ไปออก QR</RouterLink><RouterLink v-else-if="x.status === 'NO_STICKER_CATEGORY'" class="link ml-2" :to="{ name: 'vehicle-maintenance', params: { vehicleId: x.vehicleId } }">กำหนดประเภท</RouterLink></li></ul>
         </div>
       </div>
-      <p class="mb-3 text-sm text-base-content/80 print:hidden">ตอนพิมพ์: ปิด "หัวกระดาษและท้ายกระดาษ" เปิด "กราฟิกพื้นหลัง" และตั้งมาตราส่วน 100% (ไม่ย่อ/ขยาย) เพื่อให้ได้ขนาดจริงและสีเต็มดวง · ส่งโรงพิมพ์: เลือก "บันทึกเป็น PDF" แล้วส่งไฟล์ (ขนาดเป็นซม.จริง สีเลยเส้นตัด 3 มม.) · ขนาดแต่ละชุดขึ้นหน้าใหม่ ระบบบันทึกการส่งออกนี้ไว้ใน Audit แล้ว</p>
+      <ol class="mb-3 list-decimal space-y-1 pl-5 text-sm print:hidden" data-print-steps>
+        <li>กด <strong>พิมพ์ / บันทึกเป็น PDF</strong></li>
+        <li>ในหน้าต่างพิมพ์: <strong>มาตราส่วน 100%</strong> · <strong>เปิด "กราฟิกพื้นหลัง"</strong> · ปิด "หัวกระดาษและท้ายกระดาษ" (ถ้าไม่ตั้ง ขนาดหรือสีจะไม่ถูก)</li>
+        <li>ส่งโรงพิมพ์: เลือกปลายทาง <strong>"บันทึกเป็น PDF"</strong> แล้วส่งไฟล์ (ขนาดจริง สีเลยเส้นตัด 3 มม. มีเครื่องหมายตัด)</li>
+      </ol>
       <p v-if="summary.length" class="mb-3 flex flex-wrap gap-2 text-sm print:hidden" data-sheet-summary><span v-for="[k, n] in summary" :key="k" class="badge badge-outline">{{ k }}: {{ n }} ดวง</span></p>
       <p v-if="ready.length" class="mb-3 text-sm print:hidden" data-sheet-layout>{{ layout }}</p>
       <div class="qr-print-area overflow-x-auto rounded-box bg-white p-4">
