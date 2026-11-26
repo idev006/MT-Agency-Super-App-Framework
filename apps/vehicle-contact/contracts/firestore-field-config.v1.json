@@ -21,6 +21,16 @@
       "collection": "vc_operation_journal",
       "field": "expire_at",
       "purpose": "recovery journal 180 days"
+    },
+    {
+      "collection": "vc_lookup_audit",
+      "field": "expire_at",
+      "purpose": "search / contact / photo view log: days set by a system admin (VC-ADR-040, log_policy)"
+    },
+    {
+      "collection": "vc_change_audit",
+      "field": "expire_at",
+      "purpose": "change log: days set by a system admin, or kept without limit (VC-ADR-040, log_policy)"
     }
   ],
   "indexExemptions": [

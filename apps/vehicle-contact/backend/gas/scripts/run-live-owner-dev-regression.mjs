@@ -62,7 +62,10 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
   let settings;
   await test('SYSTEM.CONFIG.GET','system.config.get',async()=>{settings=ok(await request('system.config.get',{},adminToken));
    // VC-ADR-038: the person-type / sticker-colour list comes with the settings (defaults until a system admin saves one)
-   assert.ok(Array.isArray(settings.sticker_categories)&&settings.sticker_categories.some(c=>c.code==='NCO'&&c.active&&/^#[0-9a-f]{6}$/.test(c.hex)),'sticker categories');});
+   assert.ok(Array.isArray(settings.sticker_categories)&&settings.sticker_categories.some(c=>c.code==='NCO'&&c.active&&/^#[0-9a-f]{6}$/.test(c.hex)),'sticker categories');
+   // VC-ADR-040: the log policy (5 kinds) + row counts come with the settings; required logs are always on
+   assert.deepEqual((settings.log_policy||[]).map(c=>c.code),['LOOKUP','CONTACT','PHOTO','CHANGE','LOGIN'],'log policy');
+   assert.ok(settings.log_policy.filter(c=>!c.canDisable).every(c=>c.enabled)&&settings.log_counts&&typeof settings.log_counts.CHANGE==='number','required logs on + counts');});
   await test('SYSTEM.CONFIG.UPDATE','system.config.update',async()=>{
    const idle=Math.max(1,Number(settings?.idle_timeout_minutes)||30);
    const retention=Math.max(1,Number(settings?.retention_days)||365);

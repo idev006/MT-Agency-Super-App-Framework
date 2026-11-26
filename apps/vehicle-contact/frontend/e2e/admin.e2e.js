@@ -71,3 +71,29 @@ test('system reset (VC-ADR-039): check first → phrase + password → reset; wr
   const sent = api.calls.filter((c) => c.op === 'system.reset.execute').at(-1).payload
   expect(sent).toEqual({ confirmation: 'RESET P6VC', password: 'e2e-password-123', planDigest: 'd'.repeat(64), keepUsers: true, keepCampaigns: false })
 })
+
+test('log policy (VC-ADR-040): required logs locked; switching a log off asks first; days checked; the whole list is sent', async ({ page, api }) => {
+  await signIn(page, '/#/app/admin/settings')
+  const card = page.locator('section', { has: page.getByRole('heading', { name: 'การบันทึกประวัติ' }) })
+  await expect(card.getByRole('table', { name: 'การบันทึกประวัติ' })).toBeVisible()
+  await expectTableRules(page)
+  for (const code of ['CONTACT', 'CHANGE', 'LOGIN']) await expect(card.locator(`[data-log-locked="${code}"]`)).toHaveText('บันทึกเสมอ')
+  await expect(card.locator('[data-log-toggle="PHOTO"]')).not.toBeChecked()
+  await expect(card.getByRole('table', { name: 'การบันทึกประวัติ' })).toContainText('1,240')
+  const save = card.locator('[data-log-save]')
+  await expect(save).toBeDisabled()
+  await card.locator('[data-log-days="LOOKUP"]').fill('5')
+  await expect(save).toBeDisabled() // below the 30-day minimum
+  await card.locator('[data-log-days="LOOKUP"]').fill('180')
+  await card.locator('[data-log-toggle="LOOKUP"]').uncheck()
+  await card.locator('[data-log-forever="CHANGE"]').check()
+  await save.click()
+  const dialog = page.getByRole('dialog', { name: 'ยืนยันการหยุดบันทึก' })
+  await expect(dialog).toContainText('ค้นหารถด้วยป้ายทะเบียน / สแกน QR')
+  await dialog.locator('[data-log-confirm]').click()
+  await expect(card.getByRole('status')).toContainText('บันทึกการตั้งค่าการบันทึกประวัติแล้ว')
+  const sent = api.calls.filter((c) => c.op === 'system.config.update').at(-1).payload.values.log_policy
+  expect(sent).toEqual([{ code: 'LOOKUP', enabled: false, days: 180 }, { code: 'CONTACT', enabled: true, days: 365 }, { code: 'PHOTO', enabled: false, days: 90 },
+    { code: 'CHANGE', enabled: true, days: 0 }, { code: 'LOGIN', enabled: true, days: 90 }])
+  await expect(card.locator('[data-log-toggle="LOOKUP"]')).not.toBeChecked()
+})

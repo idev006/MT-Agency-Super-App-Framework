@@ -1,4 +1,5 @@
 import { DEFAULT_STICKER_CATEGORIES, toSticker, toStickerList } from '../../domain/reference/sticker-categories.js'
+import { toLogCounts, toLogPolicy } from '../../domain/settings/log-policy.js'
 export class SystemSettingsContractError extends Error {
   constructor() {
     super('System settings response does not match the contract')
@@ -21,6 +22,9 @@ function mapSettings(value) {
     retentionDays: parse(value.retention_days, 3650, { optional: true }),
     // VC-ADR-038: person types + sticker colours (backend ≥0.9.33; the defaults before that)
     stickerCategories: Array.isArray(value.sticker_categories) ? toStickerList(value.sticker_categories) : DEFAULT_STICKER_CATEGORIES.map(toSticker),
+    // VC-ADR-040: which logs are kept and for how long (backend ≥0.9.35; null before that → the card is hidden)
+    logPolicy: toLogPolicy(value.log_policy),
+    logCounts: toLogCounts(value.log_counts),
   })
 }
 
@@ -50,6 +54,11 @@ export function createGasSystemSettingsRepository({ callOperation }) {
       const d = response.data
       if (!d || !Number.isSafeInteger(d.deleted)) throw new SystemSettingsContractError()
       return { deleted: d.deleted, drive: { status: String(d.drive?.status || ''), trashed: Number(d.drive?.trashed) || 0, more: d.drive?.more === true } }
+    },
+    async updateLogPolicy({ policy, signal }) {
+      const list = policy.map(({ code, enabled, days }) => ({ code, enabled, days }))
+      const response = await callOperation('system.config.update', { values: { log_policy: list } }, { signal })
+      return { settings: mapSettings(response.data), requestId: response.requestId }
     },
     async updateStickerCategories({ categories, signal }) {
       const list = categories.map(({ code, label, colour, hex, size, active }) => ({ code, label, colour, hex, size, active }))

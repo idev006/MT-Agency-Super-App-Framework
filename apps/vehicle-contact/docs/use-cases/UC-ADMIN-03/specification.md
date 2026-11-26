@@ -77,4 +77,13 @@ sequenceDiagram
   else Wrong phrase / password / stale plan / switched off
     API-->>FE: RESET_CONFIRMATION_INVALID / INVALID_CREDENTIALS / RESET_PLAN_STALE / OPERATION_DISABLED
   end
+  Admin->>FE: Set which logs are kept and for how long (VC-ADR-040)
+  FE->>API: system.config.update({log_policy: [{code, enabled, days} x5]})
+  alt Every kind, days in range, required logs on
+    API->>DB: Save vc_settings log_policy + LOG_POLICY_UPDATED audit
+    API-->>FE: Settings + log_policy + log_counts
+  else Invalid / required log switched off
+    API-->>FE: INVALID_LOG_POLICY / LOG_REQUIRED
+  end
+  Note over API,DB: Every later log write: switched-off kind not written; kept row gets expire_at (Firestore TTL)
 ```

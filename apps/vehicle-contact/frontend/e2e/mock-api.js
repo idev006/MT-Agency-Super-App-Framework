@@ -3,6 +3,7 @@
 // deliberately includes long Thai names and 64-char ids to exercise the table rules.
 import { ROLE_PERMISSIONS } from '../../backend/gas/src/application/security/SessionService.js'
 import { DEFAULT_STICKER_CATEGORIES, resolveSticker, stickerInk } from '../../backend/gas/src/domain/policies/StickerCategoryPolicy.js'
+import { defaultLogPolicy, logPolicyList, parseLogPolicy } from '../../backend/gas/src/domain/policies/LogPolicy.js'
 
 const CODE = (n) => n.toString(16).padStart(2, '0').repeat(32)
 const at = (m) => new Date(Date.UTC(2026, 10, 25, 4, 0) + m * 60000).toISOString()
@@ -43,6 +44,9 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
   let stickerConfig = DEFAULT_STICKER_CATEGORIES.map((c) => ({ ...c }))
   const withInk = (list) => list.map((c) => ({ ...c, ink: stickerInk(c.hex) }))
   const sticker = (v) => resolveSticker(v.stickerCategory || '', stickerConfig)
+  // VC-ADR-040: the log policy uses the backend's own rules
+  let logPolicy = defaultLogPolicy()
+  const logView = () => ({ log_policy: logPolicyList(logPolicy), log_counts: { LOOKUP: 1240, CONTACT: 310, PHOTO: 0, CHANGE: 474, LOGIN: 98 } })
 
   const detail = (v, withAdmin) => ({
     vehicleId: v.vehicleId, plate: v.plate, province: v.province, status: v.status, vehicleType: v.vehicleType, plateType: 'STANDARD',
@@ -91,10 +95,11 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
       else if (p.state) rows = rows.filter((c) => c.state === p.state)
       return page(rows, p)
     },
-    'system.config.get': () => ({ idle_timeout_minutes: '30', retention_days: '365', sticker_categories: withInk(stickerConfig) }),
+    'system.config.get': () => ({ idle_timeout_minutes: '30', retention_days: '365', sticker_categories: withInk(stickerConfig), ...logView() }),
     'system.config.update': (p) => {
       if (p.values?.sticker_categories) stickerConfig = p.values.sticker_categories.map((c) => ({ ...c, hex: c.hex.toLowerCase() }))
-      return { idle_timeout_minutes: '30', retention_days: '365', sticker_categories: withInk(stickerConfig) }
+      if (p.values?.log_policy) { try { logPolicy = parseLogPolicy(p.values.log_policy) } catch (e) { return { error: e.message } } }
+      return { idle_timeout_minutes: '30', retention_days: '365', sticker_categories: withInk(stickerConfig), ...logView() }
     },
     // VC-ADR-039 system reset (mock: counts from the mock data; execute empties the vehicle list)
     'system.reset.preview': (p) => ({ phrase: 'RESET P6VC', planDigest: 'd'.repeat(64), options: { keepUsers: p.keepUsers !== false, keepCampaigns: p.keepCampaigns === true },
