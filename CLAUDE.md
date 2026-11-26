@@ -1,5 +1,7 @@
 # Notes for coding agents (P6 Vehicle Contact)
 
+MT-Studio project profile (commands, deploy order + confirmation phrases, live-proof gates, gotchas): [`.mt-studio/project.yaml`](.mt-studio/project.yaml) — single source for those facts; owner rules L0 live in the MT-Studio-Plugin repo.
+
 Start here before changing `apps/vehicle-contact` (owner 2026-11-26: maps so work is faster and has fewer mistakes):
 
 - **Generated maps — always current, CI-checked** (`node scripts/gen-system-maps.mjs --check`):
