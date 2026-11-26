@@ -51,6 +51,13 @@ export function useQrResolve({ repository, permissions }) {
         retryToken = ''
         return true
       }
+      // Backend ≥0.9.31 tells a signed-in officer why a sticker opens no vehicle (no vehicle data either way).
+      if (error?.code === 'QR_REVOKED' || error?.code === 'VEHICLE_NOT_ACTIVE') {
+        phase.value = error.code === 'QR_REVOKED' ? 'revoked' : 'inactive'
+        failure.value = { code: error.code, requestId: typeof error?.requestId === 'string' ? error.requestId : '' }
+        retryToken = ''
+        return true
+      }
       capture(error)
       return false
     }
@@ -64,5 +71,10 @@ export function useQrResolve({ repository, permissions }) {
     retryToken = ''
   }
 
-  return { phase, result, failure, canResolve, resolve, retry, clearSensitive }
+  // Back to step 1 (scan): forget the previous vehicle on screen.
+  function reset() {
+    retryToken = ''; result.value = null; failure.value = null; phase.value = 'idle'
+  }
+
+  return { phase, result, failure, canResolve, resolve, retry, clearSensitive, reset }
 }

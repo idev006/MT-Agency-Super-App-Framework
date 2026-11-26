@@ -35,6 +35,8 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
     { vehicleId: 'v3', plate: 'ฮฮ7', province: '30', status: 'ACTIVE', vehicleType: 'RY01', brand: 'BYD', model: 'Dolphin', color: 'GREY', colorLabel: 'เทา', vehicleTypeLabel: 'รถยนต์นั่งส่วนบุคคลไม่เกิน 7 คน', createdAt: at(-30), version: 1, qr: 'NO_ACTIVE_QR' },
   ]
   const qrCode = { v1: CODE(171) }
+  const revokedCode = CODE(172) // a sticker whose QR was replaced
+  const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
   const calls = []
 
   const detail = (v, withAdmin) => ({
@@ -44,7 +46,7 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
     qr: { active: v.qr !== 'NO_ACTIVE_QR', issuedAt: v.createdAt },
     contacts: [{ name: 'นายทดสอบ ระบบ', phone: '+66800000001', relationship: 'OWNER', isPrimary: true, verifiedAt: v.createdAt },
       { name: 'นางสาวผู้ประสานงานสำรอง ที่มีชื่อยาว', phone: '+66800000002', relationship: 'FAMILY', isPrimary: false, verifiedAt: v.createdAt }],
-    photos: [],
+    photos: ['FRONT', 'REAR', 'LEFT', 'RIGHT', 'FRONT_ANGLE'].map((slot, i) => ({ photoId: `${v.vehicleId}-p${i}`, slot, mimeType: 'image/png', createdAt: v.createdAt })),
     history: [
       { audit_id: 'h1', action: 'REGISTRATION_APPROVED', redacted_summary: 'REGISTRATION_APPROVED', created_at: v.createdAt },
       { audit_id: 'h2', action: 'CONTACT_UPDATED', redacted_summary: 'CONTACT_UPDATED', created_at: at(-20) },
@@ -98,7 +100,12 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
       })
       return { items, exportedAt: at(0), ready: items.filter((x) => x.status === 'READY').length }
     },
-    'qr.resolve': (p) => { const id = Object.keys(qrCode).find((k) => qrCode[k] === p.token); const v = vehicles.find((x) => x.vehicleId === id); return v ? detail(v, false) : { error: 'INVALID_QR' } },
+    'qr.resolve': (p) => {
+      if (p.token === revokedCode) return { error: 'QR_REVOKED' }
+      const id = Object.keys(qrCode).find((k) => qrCode[k] === p.token); const v = vehicles.find((x) => x.vehicleId === id)
+      return v ? detail(v, false) : null
+    },
+    'vehicles.photo': (p) => ({ photoId: p.photoId, slot: 'FRONT', mimeType: 'image/png', base64Image: PNG }),
     'audit.query': (p) => page(Array.from({ length: 23 }, (_, i) => ({ type: i % 2 ? 'LOOKUP' : 'CHANGE', eventId: CODE(i + 1), actorId: CODE(90), vehicleId: CODE(91), entityId: CODE(92), action: i % 2 ? 'DETAIL' : 'REGISTRATION_APPROVED', at: at(-i) })), p),
     'registrations.listPending': (p) => page([], p),
     'changes.listPending': (p) => page([], p),
@@ -111,10 +118,10 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
     calls.push({ op, payload: body.payload || {}, hasSession: Boolean(body.sessionToken) })
     const fn = handlers[op]
     const out = fn ? fn(body.payload || {}) : { error: 'E2E_UNMOCKED' }
-    const ok = !(out && typeof out === 'object' && 'error' in out && Object.keys(out).length === 1)
+    const ok = !(out && typeof out === 'object' && 'error' in out && Object.keys(out).length === 1) // null = ok with no data
     const envelope = ok ? { ok: true, data: out, error: null, requestId: body.requestId || 'e2e' }
       : { ok: false, data: null, error: { code: out.error, message: 'e2e' }, requestId: body.requestId || 'e2e' }
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(envelope) })
   }
-  return { handle, calls, data: { users, orgs, campaigns, vehicles, qrCode } }
+  return { handle, calls, data: { users, orgs, campaigns, vehicles, qrCode, revokedCode } }
 }

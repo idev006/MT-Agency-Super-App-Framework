@@ -101,10 +101,10 @@ test('ACTOR-04 REGISTRATION_ADMIN: corrections, duplicate/version guards, owner 
  assert.equal(h.as('reg','vehicles.history',{vehicleId}).ok,true);
  assertError(assert,h.as('reg','qr.issue',{vehicleId,reason:'NEW'}),'QR_ALREADY_ACTIVE','no duplicate active QR');
  const rotated=assertOk(assert,h.as('reg','qr.replace',{vehicleId,reason:'DAMAGED'}),'rotate QR');
- assert.equal(h.as('staff','qr.resolve',{token:approved.qrToken}).data,null,'old QR must fail closed');
+ assertError(assert,h.as('staff','qr.resolve',{token:approved.qrToken}),'QR_REVOKED','old QR fails closed and says why (no vehicle data)');
  assert.equal(assertOk(assert,h.as('staff','qr.resolve',{token:rotated.token}),'new QR').vehicleId,vehicleId);
  assertOk(assert,h.as('sys','qr.revoke',{vehicleId,reason:'ADMIN_REVOKE'}),'sys QR revoke');
- assert.equal(h.as('staff','qr.resolve',{token:rotated.token}).data,null);
+ assertError(assert,h.as('staff','qr.resolve',{token:rotated.token}),'QR_REVOKED','revoked QR');
  const fresh=assertOk(assert,h.as('reg','qr.issue',{vehicleId,reason:'NEW'}),'fresh QR');
  assert.ok(fresh.token);assert.equal(h.read('vc_qr_tokens').filter(q=>q.status==='ACTIVE').length,1);
 });
@@ -126,7 +126,7 @@ test('ACTOR-06 CANCEL + RETENTION: QR stops, staff cannot delete, system admin a
  const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:reg.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
  assertError(assert,h.as('staff','vehicles.cancel',{vehicleId:approved.vehicleId}),'FORBIDDEN','staff cannot cancel');
  assertOk(assert,h.as('reg','vehicles.cancel',{vehicleId:approved.vehicleId}),'cancel vehicle');
- assert.equal(h.as('staff','qr.resolve',{token:approved.qrToken}).data,null,'cancel invalidates QR');
+ assertError(assert,h.as('staff','qr.resolve',{token:approved.qrToken}),'QR_REVOKED','cancel invalidates QR (cancel revokes it)');
  assert.equal(h.as('staff','vehicles.lookup',{plate:'กข1234',province:'TH-10'}).data,null,'inactive vehicle invisible');
  const job=h.read('vc_retention_jobs')[0];
  assertError(assert,h.as('staff','retention.approve',{jobId:job.job_id}),'FORBIDDEN','staff cannot approve deletion');

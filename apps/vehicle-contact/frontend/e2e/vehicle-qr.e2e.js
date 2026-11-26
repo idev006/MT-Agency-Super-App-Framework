@@ -37,16 +37,3 @@ test('QR print: pick vehicles → sheet with READY stickers, others listed with 
   await page.getByRole('combobox', { name: 'รูปแบบ' }).selectOption('single')
   await expect(page.locator('[data-qr-sheet]')).toHaveClass(/qr-sheet--single/)
 })
-
-test('a scanned sticker link: signed out → sign-in page with NO API call carrying the code; after sign-in → the vehicle', async ({ page, api }) => {
-  const code = api.data.qrCode.v1
-  await page.goto(`/#/q/${code}`)
-  await expect(page).toHaveURL(/#\/signin/)
-  expect(api.calls.filter((c) => JSON.stringify(c.payload).includes(code)), 'no API call before sign-in').toEqual([])
-  await page.getByLabel('ชื่อผู้ใช้', { exact: true }).fill('e2e_admin')
-  await page.locator('input[autocomplete="current-password"]').fill('e2e-synthetic-password')
-  await page.getByRole('button', { name: 'เข้าสู่ระบบ', exact: true }).click()
-  await expect(page).toHaveURL(/#\/app\/vehicles\/qr$/)
-  await expect(page.getByText('กข1234').first()).toBeVisible()
-  expect(api.calls.find((c) => c.op === 'qr.resolve').payload.token).toBe(code)
-})

@@ -21,6 +21,7 @@ import OrganizationAdministrationPage from '../pages/OrganizationAdministrationP
 import CampaignAdministrationPage from '../pages/CampaignAdministrationPage.vue'
 import QrGovernancePage from '../pages/QrGovernancePage.vue'
 import QrPrintPage from '../pages/QrPrintPage.vue'
+import QrStickerLandingPage from '../pages/QrStickerLandingPage.vue'
 import SystemSettingsPage from '../pages/SystemSettingsPage.vue'
 import RetentionApprovalPage from '../pages/RetentionApprovalPage.vue'
 import AuditReviewPage from '../pages/AuditReviewPage.vue'
@@ -59,9 +60,9 @@ export const router = createRouter({
     // VC-ADR-031: the stable, shareable campaign link. Today it opens the staff intake page with the
     // code pre-filled (sign-in first); a public registrant page can replace the target later without
     // changing links already printed or shared.
-    // VC-ADR-032 (A): a scanned sticker opens <app>#/q/<code>. Signed out → the sign-in page (no API call);
-    // after sign-in the QR check page resolves the code (vehicle.lookup), which then leaves the URL.
-    { path: '/q/:code', name: 'qr-link', redirect: (to) => ({ name: 'qr-resolve', query: /^[a-f0-9]{64}$/i.test(String(to.params.code)) ? { t: String(to.params.code).toLowerCase() } : {} }) },
+    // VC-ADR-032 (A): a scanned sticker opens <app>#/q/<code>: a public page that says what the sticker is
+    // (no API call); officers sign in and land on the QR check page, which resolves the code.
+    { path: '/q/:code', name: 'qr-link', component: QrStickerLandingPage, meta: { title: 'QR ยานพาหนะ', public: true } },
     { path: '/register', name: 'campaign-link', redirect: (to) => ({ name: 'registration-intake', query: typeof to.query.c === 'string' ? { c: to.query.c } : {} }) },
     { path: '/', redirect: { name: 'dashboard' } },
     { path: '/:pathMatch(.*)*', redirect: { name: 'dashboard' } },

@@ -477,8 +477,13 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   const token=need(p.token,'TOKEN');
   if(!/^[a-f0-9]{64}$/i.test(token))throw new Error('INVALID_QR');
   const qr=store.one('vc_qr_tokens',{token_digest:security.sha256(token.toLowerCase())});
-  if(!qr||qr.status!=='ACTIVE'){lookupAudit(a,'NO_MATCH','QR','NOT_FOUND');return null;}
+  if(!qr){lookupAudit(a,'NO_MATCH','QR','NOT_FOUND');return null;}
+  // Owner 2026-11-26 (UX item 2): a signed-in officer is told WHY a sticker does not open a vehicle —
+  // revoked QR vs vehicle no longer active — still without any vehicle field. Signed-out visitors never
+  // reach this call (the sticker page makes no API call), so this is no oracle for the public.
+  if(qr.status!=='ACTIVE'){lookupAudit(a,qr.vehicle_id||'NO_MATCH','QR','QR_REVOKED');throw new Error('QR_REVOKED');}
   const v=store.one('vc_vehicles',{vehicle_id:qr.vehicle_id});
+  if(!v||v.status!=='ACTIVE'){lookupAudit(a,qr.vehicle_id||'NO_MATCH','QR','VEHICLE_NOT_ACTIVE');throw new Error('VEHICLE_NOT_ACTIVE');}
   return vehicleView(v,a,'QR');
  }
  function manageQr(p,a,mode){
