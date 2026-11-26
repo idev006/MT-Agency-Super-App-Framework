@@ -52,7 +52,7 @@ Each fact has one owner; these files still carry a copy. CI fails when a count g
 |---|---|---|
 | photo-slots | `apps/vehicle-contact/backend/gas/src/domain/policies/VehicleLifecycle.js` | 12 |
 | gas-webapp-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 6 |
-| cloud-run-legacy-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 5 |
+| cloud-run-legacy-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 4 |
 | cloud-run-core-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 0 |
 | backend-version | `apps/vehicle-contact/backend/gas/package.json` | 2 |
 
@@ -84,9 +84,8 @@ Each fact has one owner; these files still carry a copy. CI fails when a count g
 
 </details>
 
-<details><summary>cloud-run-legacy-url (5)</summary>
+<details><summary>cloud-run-legacy-url (4)</summary>
 
-- `.github/workflows/deploy-vehicle-core.yml`
 - `apps/vehicle-contact/ops/cloudrun-alert-drill.sh`
 - `apps/vehicle-contact/ops/cloudrun-uptime-alert.sh`
 - `tools/p6vc-api-test-console/worker.mjs`
