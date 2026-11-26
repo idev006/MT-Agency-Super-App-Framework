@@ -61,11 +61,11 @@ export function invalidEnvelope(input) {
 }
 
 // (req, res, application) for requests whose path is FRONTEND_PATH
-export function handleFrontend(req, res, application) {
+export function handleFrontend(req, res, application, headers = {}) {
   const origin = allowedOrigin(req.headers.origin);
   const send = (status, body, extra = {}) => {
     res.writeHead(status, {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store',
-      'x-content-type-options': 'nosniff', ...(origin ? corsHeaders(origin) : {}), ...extra});
+      'x-content-type-options': 'nosniff', ...(origin ? corsHeaders(origin) : {}), ...headers, ...extra});
     res.end(body === null ? '' : JSON.stringify(body));
   };
   if (!origin) return send(403, {error: 'ORIGIN_NOT_ALLOWED'});
@@ -83,7 +83,8 @@ export function handleFrontend(req, res, application) {
     if (!MEDIA.has(op) && raw.length > MAX_BODY) return send(413, {error: 'REQUEST_TOO_LARGE'});
     const invalid = invalidEnvelope(input);
     if (invalid) return send(403, {error: invalid});
-    try { send(200, application.dispatch(input, 'POST')); }
-    catch { send(500, {ok: false, error: {code: 'OPERATION_FAILED'}}); }
+    // dispatch: a value (legacy engine) or a promise (core)
+    Promise.resolve().then(() => application.dispatch(input, 'POST'))
+      .then(result => send(200, result), () => send(500, {ok: false, error: {code: 'OPERATION_FAILED'}}));
   });
 }

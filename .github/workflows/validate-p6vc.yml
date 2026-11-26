@@ -73,6 +73,9 @@ jobs:
           node --check tools/p6vc-api-test-console/worker.test.mjs
           node --check tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs
           node --test tools/p6vc-api-test-console/worker.test.mjs
+      - name: Test Node core (VC-ADR-046)
+        working-directory: apps/vehicle-contact/backend/core
+        run: npm test
       - name: Build and test GAS backend artifact
         working-directory: apps/vehicle-contact/backend/gas
         run: |

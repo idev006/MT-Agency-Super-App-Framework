@@ -15,10 +15,10 @@ const url = process.env.P6VC_WORKER_FRONTEND_URL
   || 'https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/frontend';
 const origin = process.env.P6VC_FRONTEND_ORIGIN || 'https://idev006.github.io';
 const trusted = JSON.parse(fs.readFileSync(new URL('../../apps/vehicle-contact/contracts/trusted-endpoints.v1.json', import.meta.url), 'utf8'));
-const cloudRunGateway = trusted.endpoints.find(e => e.id === 'cloud-run-api').url + '/api/frontend';
+const cloudRunGateways = trusted.endpoints.filter(e => e.kind === 'cloud-run').map(e => e.url + '/api/frontend'); // legacy + core
 const isWorker = /^https:\/\/[a-z0-9.-]+\.workers\.dev\/api\/frontend$/.test(url);
 const isLocal = process.env.P6VC_GATEWAY_LOCAL_TEST === 'ALLOW' && /^http:\/\/127\.0\.0\.1:\d{2,5}\/api\/frontend$/.test(url);
-assert.ok(isWorker || url === cloudRunGateway || isLocal, 'gateway URL must be the Worker (workers.dev) or the trusted Cloud Run /api/frontend');
+assert.ok(isWorker || cloudRunGateways.includes(url) || isLocal, 'gateway URL must be the Worker (workers.dev) or a trusted Cloud Run /api/frontend');
 const reportName = /^[a-z0-9-]+\.json$/.test(process.env.P6VC_GATEWAY_REPORT || '') ? process.env.P6VC_GATEWAY_REPORT : 'p6vc-live-worker-failclosed.json';
 assert.ok(/^https:\/\//.test(origin), 'allowed origin must be https');
 

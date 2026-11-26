@@ -3,7 +3,7 @@
 // service URL right after the switch (a failure there moves traffic back to the previous revision). Also used by the
 // rollback workflow. Public, non-sensitive requests only: no credentials, no vehicle data, no writes.
 //   node candidate-smoke.mjs <https://...run.app> [--version 0.9.36 | --any-version]
-export const RUN_APP_URL = /^https:\/\/(candidate---)?p6vc-api-[a-z0-9-]+\.[a-z0-9-]+\.run\.app\/?$/;
+export const RUN_APP_URL = /^https:\/\/(candidate---)?p6vc-(api|core)-[a-z0-9-]+\.[a-z0-9-]+\.run\.app\/?$/; // legacy + core (VC-ADR-046)
 const msg = (group, action, payload = {}, extra = {}) => ({apiVersion: 'v1', group, action, payload, requestId: 'deploy-smoke', ...extra});
 
 // [name, request, expected ok, expected error code]

@@ -1,0 +1,10 @@
+{
+  "name": "@p6/vehicle-contact-core",
+  "private": true,
+  "type": "module",
+  "description": "P6VC Node core (VC-ADR-046): async engine; phase 1 = front door that forwards every operation to the legacy engine.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}
