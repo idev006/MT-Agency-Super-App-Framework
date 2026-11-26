@@ -6,6 +6,7 @@
 
 Every file that wires the reference operation `qr.markPrinted` — a new operation needs the same places:
 
+- [ ] `apps/vehicle-contact/backend/cloudrun/frontend-gateway.mjs`
 - [ ] `apps/vehicle-contact/backend/gas/scripts/run-live-owner-dev-regression.mjs`
 - [ ] `apps/vehicle-contact/backend/gas/src/api/controllers/OperationController.js`
 - [ ] `apps/vehicle-contact/backend/gas/src/api/dto/OperationPayloadValidator.js`

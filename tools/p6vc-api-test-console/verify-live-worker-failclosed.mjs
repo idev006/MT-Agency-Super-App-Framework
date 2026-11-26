@@ -1,4 +1,7 @@
-// P6VC LIVE Worker edge fail-closed acceptance (E2). Credential-free.
+// P6VC LIVE browser-gateway fail-closed acceptance (E2). Credential-free.
+// One contract, two gateways (VC-ADR-044 PR 2): the Cloudflare Worker /api/frontend and its replacement,
+// Cloud Run /api/frontend (backend/cloudrun/frontend-gateway.mjs). Target = P6VC_WORKER_FRONTEND_URL; report name =
+// P6VC_GATEWAY_REPORT. A local http://127.0.0.1 target is accepted only with P6VC_GATEWAY_LOCAL_TEST=ALLOW (unit test).
 // Probes the deployed Cloudflare Worker /api/frontend gateway and asserts that
 // every malformed / unauthorized / non-allowlisted request is denied AT THE EDGE
 // before reaching GAS. The only request that reaches GAS is public read-only
@@ -11,19 +14,24 @@ import fs from 'node:fs';
 const url = process.env.P6VC_WORKER_FRONTEND_URL
   || 'https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/frontend';
 const origin = process.env.P6VC_FRONTEND_ORIGIN || 'https://idev006.github.io';
-assert.ok(/^https:\/\/[a-z0-9.-]+\.workers\.dev\/api\/frontend$/.test(url), 'worker frontend URL must be https workers.dev /api/frontend');
+const trusted = JSON.parse(fs.readFileSync(new URL('../../apps/vehicle-contact/contracts/trusted-endpoints.v1.json', import.meta.url), 'utf8'));
+const cloudRunGateway = trusted.endpoints.find(e => e.id === 'cloud-run-api').url + '/api/frontend';
+const isWorker = /^https:\/\/[a-z0-9.-]+\.workers\.dev\/api\/frontend$/.test(url);
+const isLocal = process.env.P6VC_GATEWAY_LOCAL_TEST === 'ALLOW' && /^http:\/\/127\.0\.0\.1:\d{2,5}\/api\/frontend$/.test(url);
+assert.ok(isWorker || url === cloudRunGateway || isLocal, 'gateway URL must be the Worker (workers.dev) or the trusted Cloud Run /api/frontend');
+const reportName = /^[a-z0-9-]+\.json$/.test(process.env.P6VC_GATEWAY_REPORT || '') ? process.env.P6VC_GATEWAY_REPORT : 'p6vc-live-worker-failclosed.json';
 assert.ok(/^https:\/\//.test(origin), 'allowed origin must be https');
 
 const SYNTHETIC_TOKEN = 'a'.repeat(64); // not a credential; shape-only probe value
 const runner = {
-  status: 'RUNNING', environment: 'REMOTE_CLOUDFLARE_WORKER', target: url, allowedOrigin: origin,
+  status: 'RUNNING', environment: isWorker ? 'REMOTE_CLOUDFLARE_WORKER' : isLocal ? 'LOCAL_TEST' : 'REMOTE_CLOUD_RUN_GATEWAY', target: url, allowedOrigin: origin,
   sourceCommit: process.env.GITHUB_SHA || null, startedAt: new Date().toISOString(),
   tests: [], scope: 'Edge fail-closed denial probes + public health liveness; no credentials, no mutations',
 };
 const save = () => {
   runner.finishedAt = new Date().toISOString();
   fs.mkdirSync('test-results', { recursive: true });
-  fs.writeFileSync('test-results/p6vc-live-worker-failclosed.json', JSON.stringify(runner, null, 2) + '\n');
+  fs.writeFileSync('test-results/' + reportName, JSON.stringify(runner, null, 2) + '\n');
   console.log('FINAL ' + JSON.stringify({
     status: runner.status,
     pass: runner.tests.filter(x => x.status === 'PASS').length,

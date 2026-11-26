@@ -33,13 +33,13 @@ const counts=report=>{
   failed:Number(report?.failed)||rows.filter(x=>x.status==='FAIL').length
  };
 };
-async function runStage(id,script,reportName,args=[]){
+async function runStage(id,script,reportName,args=[],extraEnv={}){
  const startedAt=new Date().toISOString();
  // Never read a report left by an earlier run (stale evidence): remove it before the stage starts.
  fs.rmSync(join(reportDir,reportName),{force:true});
  const exitCode=await new Promise(resolveExit=>{
   const child=spawn(process.execPath,[join(scriptsRoot,script),...args],{
-   cwd:repoRoot,env:{...process.env,P6VC_GAS_EXEC_URL:gasUrl,P6VC_API_BASE_URL:gasUrl},stdio:'inherit'
+   cwd:repoRoot,env:{...process.env,P6VC_GAS_EXEC_URL:gasUrl,P6VC_API_BASE_URL:gasUrl,...extraEnv},stdio:'inherit'
   });
   child.once('error',()=>resolveExit(127));
   child.once('exit',code=>resolveExit(code??1));
@@ -60,6 +60,11 @@ function skippedStage(id,status,reason){
 persist();
 await runStage('PUBLIC_DIRECT_GAS','smoke-api.mjs','p6vc-live-public-smoke.json');
 await runStage('WORKER_FAIL_CLOSED','../../../../../tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs','p6vc-live-worker-failclosed.json');
+// VC-ADR-044 PR 2: the same gateway contract on Cloud Run /api/frontend (the web app's endpoint once the Worker retires)
+const cloudRunGateway=JSON.parse(fs.readFileSync(new URL('../../../contracts/trusted-endpoints.v1.json',import.meta.url),'utf8'))
+ .endpoints.find(e=>e.id==='cloud-run-api').url+'/api/frontend';
+await runStage('CLOUD_RUN_GATEWAY_FAIL_CLOSED','../../../../../tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs','p6vc-live-cloudrun-gateway.json',[],
+ {P6VC_WORKER_FRONTEND_URL:cloudRunGateway,P6VC_GATEWAY_REPORT:'p6vc-live-cloudrun-gateway.json'});
 const preflightPassed=suite.stages.every(x=>x.status==='PASS');
 let authenticated;
 if(!preflightPassed){
