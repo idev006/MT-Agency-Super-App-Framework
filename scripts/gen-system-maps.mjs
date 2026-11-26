@@ -102,13 +102,43 @@ cc += wiring.map(f => `- [ ] \`${f}\``).join('\n') + '\n\nHard-coded operation c
 cc += (counts.length ? counts.map(f => `- [ ] \`${f}\``).join('\n') : '- none') + '\n\n';
 cc += '## What to deploy for a change in…\n\n| Changed | What | Deploy / follow-up |\n|---|---|---|\n' + DEPLOY.map(([p, w, d]) => `| \`${p}\` | ${w} | ${d} |`).join('\n') + '\n';
 
+// ---- SSOT ratchet (NODE_CORE_ARCHITECTURE §6): copies of single-source facts outside their owner may only go DOWN ----
+// Code and config only (tests, docs and generated files are not counted). Baseline: scripts/ssot-ratchet.json (written here).
+const backendVersion = JSON.parse(read(path.join(app, 'backend/gas/package.json'))).version;
+const FACTS = [
+  {id: 'photo-slots', owner: 'apps/vehicle-contact/backend/gas/src/domain/policies/VehicleLifecycle.js', re: /['"]FRONT_ANGLE['"]/},
+  {id: 'gas-webapp-url', owner: 'apps/vehicle-contact/contracts/trusted-endpoints.v1.json', re: /AKfycby15c-Aux2za0[A-Za-z0-9_-]+/},
+  {id: 'cloud-run-legacy-url', owner: 'apps/vehicle-contact/contracts/trusted-endpoints.v1.json', re: /p6vc-api-46858005337/},
+  {id: 'cloud-run-core-url', owner: 'apps/vehicle-contact/contracts/trusted-endpoints.v1.json', re: /p6vc-core-46858005337/},
+  {id: 'backend-version', owner: 'apps/vehicle-contact/backend/gas/package.json', re: new RegExp('["\']' + backendVersion.replace(/\./g, '\.') + '["\']')}
+];
+const scanned = ['apps', 'tools', 'scripts', '.github'].flatMap(d => walk(path.join(root, d), f => /\.(m?js|vue|ya?ml|toml|sh|json)$/.test(f)))
+  .concat(walk(path.join(root, '.github'), f => /\.ya?ml$/.test(f)))
+  .map(rel).filter((f, i, all) => all.indexOf(f) === i)
+  .filter(f => !/(^|\/)(tests?|e2e|docs|fixtures)\//.test(f) && !/\.test\.(m?js)$/.test(f) && !/package-lock\.json$/.test(f) && f !== 'scripts/ssot-ratchet.json' && f !== 'scripts/gen-system-maps.mjs'); // the generator names patterns, not facts
+const copies = Object.fromEntries(FACTS.map(fact => [fact.id, scanned.filter(f => f !== fact.owner && fact.re.test(read(path.join(root, f)))).sort()]));
+const ratchetFile = path.join(root, 'scripts/ssot-ratchet.json');
+const baseline = fs.existsSync(ratchetFile) ? JSON.parse(read(ratchetFile)) : {};
+const grew = FACTS.filter(f => baseline[f.id] !== undefined && copies[f.id].length > baseline[f.id]);
+const ratchet = Object.fromEntries(FACTS.map(f => [f.id, Math.min(baseline[f.id] ?? Infinity, copies[f.id].length)]));
+cc += '\n## Copies of single-source facts (SSOT ratchet)\n\nEach fact has one owner; these files still carry a copy. CI fails when a count goes **up**; remove copies by importing or generating from the owner (NODE_CORE_ARCHITECTURE §6).\n\n';
+cc += '| Fact | Owner | Copies |\n|---|---|---|\n' + FACTS.map(f => `| ${f.id} | \`${f.owner}\` | ${copies[f.id].length} |`).join('\n') + '\n\n';
+for (const f of FACTS) if (copies[f.id].length) cc += `<details><summary>${f.id} (${copies[f.id].length})</summary>\n\n` + copies[f.id].map(x => `- \`${x}\``).join('\n') + '\n\n</details>\n\n';
+if (grew.length) {
+  console.log('SSOT_RATCHET: NEW COPY of ' + grew.map(f => `${f.id} (${baseline[f.id]} -> ${copies[f.id].length})`).join(', ') + ' — import or generate it from the owner instead');
+  process.exit(1);
+}
+const ratchetJson = JSON.stringify({note: 'Written by scripts/gen-system-maps.mjs. Allowed copies per single-source fact; may only go down.', ...ratchet}, null, 2) + '\n';
+
 const files = {'DATA_ACCESS_MAP.md': dam, 'CHANGE_CHECKLIST.md': cc};
 if (process.argv.includes('--check')) {
   const stale = Object.entries(files).filter(([f, s]) => !fs.existsSync(path.join(outDir, f)) || read(path.join(outDir, f)) !== s).map(([f]) => f);
+  if (!fs.existsSync(ratchetFile) || read(ratchetFile) !== ratchetJson) stale.push('scripts/ssot-ratchet.json (copies went down: lower the ratchet)');
   if (stale.length) { console.log('SYSTEM_MAPS: STALE ' + stale.join(', ') + ' — run: node scripts/gen-system-maps.mjs'); process.exit(1); }
   console.log(`SYSTEM_MAPS: PASSED; ${modules.length} modules, ${TABLES.length} tables, ${N} operations, ${wiring.length} wiring files`);
 } else {
   fs.mkdirSync(outDir, {recursive: true});
   for (const [f, s] of Object.entries(files)) fs.writeFileSync(path.join(outDir, f), s);
+  fs.writeFileSync(ratchetFile, ratchetJson);
   console.log('SYSTEM_MAPS: written ' + Object.keys(files).join(', '));
 }

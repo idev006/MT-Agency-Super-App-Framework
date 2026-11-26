@@ -43,3 +43,60 @@ Hard-coded operation counts (update them, or better: derive from the inventory):
 | `apps/vehicle-contact/frontend/src` | web app | GitHub Pages deploys on merge; check the bundle version on the live site |
 | `.github/workflows/deploy-vehicle-cloudrun.yml` | deploy pipeline | proven only by a real deploy run |
 | `.github/workflows/deploy-vehicle-core.yml` | core deploy pipeline | proven only by a real deploy run (the first run creates p6vc-core) |
+
+## Copies of single-source facts (SSOT ratchet)
+
+Each fact has one owner; these files still carry a copy. CI fails when a count goes **up**; remove copies by importing or generating from the owner (NODE_CORE_ARCHITECTURE §6).
+
+| Fact | Owner | Copies |
+|---|---|---|
+| photo-slots | `apps/vehicle-contact/backend/gas/src/domain/policies/VehicleLifecycle.js` | 12 |
+| gas-webapp-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 6 |
+| cloud-run-legacy-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 4 |
+| cloud-run-core-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 0 |
+| backend-version | `apps/vehicle-contact/backend/gas/package.json` | 2 |
+
+<details><summary>photo-slots (12)</summary>
+
+- `apps/vehicle-contact/backend/gas/scripts/measure-intake-upload-timing.mjs`
+- `apps/vehicle-contact/backend/gas/scripts/reset-dev-data.mjs`
+- `apps/vehicle-contact/backend/gas/scripts/run-live-concurrency.mjs`
+- `apps/vehicle-contact/backend/gas/scripts/run-live-owner-dev-regression.mjs`
+- `apps/vehicle-contact/backend/gas/scripts/run-live-registration-batch.mjs`
+- `apps/vehicle-contact/backend/gas/scripts/run-live-ssot-scenarios.mjs`
+- `apps/vehicle-contact/backend/gas/scripts/synthetic-vehicle-image.mjs`
+- `apps/vehicle-contact/backend/gas/scripts/verify-live-gateway.mjs`
+- `apps/vehicle-contact/backend/gas/src/application/use-cases/MediaRetentionOperations.js`
+- `apps/vehicle-contact/frontend/src/features/registrations/useRegistrationIntake.js`
+- `apps/vehicle-contact/frontend/src/infrastructure/vehicles/gas-vehicle-maintenance-repository.js`
+- `tools/p6vc-api-test-console/worker.mjs`
+
+</details>
+
+<details><summary>gas-webapp-url (6)</summary>
+
+- `.github/workflows/deploy-vehicle-cloudrun.yml`
+- `.github/workflows/p6vc-live-acceptance.yml`
+- `apps/vehicle-contact/backend/gas/scripts/run-live-api-suite.mjs`
+- `apps/vehicle-contact/backend/gas/scripts/verify-live-publish.mjs`
+- `tools/p6vc-api-test-console/worker.mjs`
+- `tools/p6vc-api-test-console/wrangler.toml`
+
+</details>
+
+<details><summary>cloud-run-legacy-url (4)</summary>
+
+- `apps/vehicle-contact/ops/cloudrun-alert-drill.sh`
+- `apps/vehicle-contact/ops/cloudrun-uptime-alert.sh`
+- `tools/p6vc-api-test-console/worker.mjs`
+- `tools/p6vc-api-test-console/wrangler.toml`
+
+</details>
+
+<details><summary>backend-version (2)</summary>
+
+- `apps/vehicle-contact/backend/gas/scripts/expected-live-version.json`
+- `apps/vehicle-contact/backend/gas/src/api/groups/system/SystemGroup.js`
+
+</details>
+
