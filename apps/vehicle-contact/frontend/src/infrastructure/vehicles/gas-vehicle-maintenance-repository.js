@@ -7,7 +7,7 @@ export class VehicleMaintenanceContractError extends Error {
   }
 }
 
-const VEHICLE_FIELDS = ['plate', 'province', 'plateType', 'vehicleType', 'brand', 'model', 'color', 'ownerUserId']
+const VEHICLE_FIELDS = ['plate', 'province', 'plateType', 'vehicleType', 'brand', 'model', 'color', 'ownerUserId', 'stickerCategory']
 const PHOTO_SLOTS = ['FRONT', 'REAR', 'LEFT', 'RIGHT', 'FRONT_ANGLE']
 
 function id(value) {

@@ -1,4 +1,4 @@
-import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition} from '../../domain/policies/VehicleLifecycle.js';
+import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition,stickerCategory} from '../../domain/policies/VehicleLifecycle.js';
 import {qrReason,QR_SYSTEM_REASONS} from '../../domain/policies/QrReasonPolicy.js';
 import {paginate,readPage} from '../pagination/Pagination.js';
 // TUNEUP R1: ACTIVE vehicles with this business key — an equality query (index plate_normalized+province_code+status).
@@ -373,6 +373,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    for(const [client,field] of [['brand','make'],['model','model'],['color','color'],['plateType','plate_type'],['vehicleType','vehicle_type']]){
     if(p[client]!==undefined)patch[field]=need(p[client],client);
    }
+   if(p.stickerCategory!==undefined)patch.sticker_category=stickerCategory(p.stickerCategory);
    if(p.ownerUserId!==undefined){
     const owner=store.one('vc_users',{user_id:need(p.ownerUserId,'OWNER_USER_ID')});
     if(!owner||owner.status!=='ACTIVE')throw new Error('OWNER_NOT_FOUND');
@@ -439,12 +440,14 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    .map(r=>({requestId:r.change_id,vehicleId:r.vehicle_id,submittedAt:r.submitted_at,proposedDelta:JSON.parse(r.proposed_delta)}));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
+ // one list row shape for the owner's list and the admin registry (minimal, non-PII fields)
+ const listRow=v=>({vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,vehicleType:v.vehicle_type,
+  brand:v.make,model:v.model,color:v.color,stickerCategory:v.sticker_category||'',status:v.status,version:Number(v.version)});
  function vehicleListMine(p,a){
   // OWNER-scoped read: filter strictly by the server session identity, never a client-supplied owner id.
   // Single bounded snapshot read; no cross-sheet join (minimal vehicle fields only).
   const items=store.list('vc_vehicles',{owner_user_id:String(a.userId),status:'ACTIVE'})
-   .map(v=>({vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,vehicleType:v.vehicle_type,
-    brand:v.make,model:v.model,color:v.color,status:v.status,version:Number(v.version)}));
+   .map(listRow);
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
  function vehicleList(p){
@@ -452,8 +455,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   // Single bounded snapshot read; no cross-sheet join. Gated by vehicle.list (admin roles only).
   // TUNEUP R1: only the requested window + a COUNT (was the whole collection per page).
   return withListLabels(readPage(store,{name:'vc_vehicles',filter:{status:'ACTIVE'},
-   map:v=>({vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,vehicleType:v.vehicle_type,
-    brand:v.make,model:v.model,color:v.color,status:v.status,version:Number(v.version),createdAt:v.created_at})},p,{defaultLimit:50,maxLegacyLimit:100}));
+   map:v=>({...listRow(v),createdAt:v.created_at})},p,{defaultLimit:50,maxLegacyLimit:100}));
  }
  // S2: the registry showed colour/type codes (WHITE) while detail showed labels (ขาว). Labels for the
  // CURRENT page only, by reference id (equality reads, one parallel round).
@@ -478,9 +480,8 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   if(!/^[a-f0-9]{64}$/i.test(token))throw new Error('INVALID_QR');
   const qr=store.one('vc_qr_tokens',{token_digest:security.sha256(token.toLowerCase())});
   if(!qr){lookupAudit(a,'NO_MATCH','QR','NOT_FOUND');return null;}
-  // Owner 2026-11-26 (UX item 2): a signed-in officer is told WHY a sticker does not open a vehicle —
-  // revoked QR vs vehicle no longer active — still without any vehicle field. Signed-out visitors never
-  // reach this call (the sticker page makes no API call), so this is no oracle for the public.
+  // Owner 2026-11-26: tell a signed-in officer WHY (revoked / vehicle inactive), never a vehicle field; the public
+  // sticker page makes no API call, so this is no oracle for the public.
   if(qr.status!=='ACTIVE'){lookupAudit(a,qr.vehicle_id||'NO_MATCH','QR','QR_REVOKED');throw new Error('QR_REVOKED');}
   const v=store.one('vc_vehicles',{vehicle_id:qr.vehicle_id});
   if(!v||v.status!=='ACTIVE'){lookupAudit(a,qr.vehicle_id||'NO_MATCH','QR','VEHICLE_NOT_ACTIVE');throw new Error('VEHICLE_NOT_ACTIVE');}

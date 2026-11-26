@@ -54,6 +54,7 @@ export function mapVehicleResponse(value, permissions) {
     brand: optionalText(value.brand),
     model: optionalText(value.model),
     color: optionalText(value.color),
+    stickerCategory: optionalText(value.stickerCategory),
     // Backend ≥0.9.14: Thai labels for reference codes ('' when unknown → the UI shows the code).
     labels: Object.freeze({
       vehicleType: optionalText(value.labels?.vehicleType),

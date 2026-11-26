@@ -44,12 +44,40 @@ describe('S5 QR link, export and print', () => {
   })
 
   it('a sticker shows the QR, the plate BESIDE it, province, unit mark and short code', async () => {
-    const html = await renderToString(createSSRApp(QrStickerSheet, { items: [{ vehicleId: 'v1', plate: 'กข1234', province: '65', qrId: 'a1b2c3d4ffff', token: CODE }] }))
+    const html = await renderToString(createSSRApp(QrStickerSheet, { items: [{ vehicleId: 'v1', plate: 'กข1234', province: '65', qrId: 'a1b2c3d4ffff', token: CODE, stickerCategory: 'NCO' }] }))
     expect(html).toContain('data:image/gif;base64,')
     expect(html).toContain('กข1234')
     expect(html).toContain('ตำรวจภูธรภาค 6')
     expect(html).toContain('A1B2C3D4')
-    expect(html).toContain('qr-sheet--a4')
+    expect(html).toContain('qr-sheet--office')
+  })
+
+  it('owner 2026-11-26: colour + size by category (red 8 × 8, others 5 × 5), size can be forced, no category = not printed', async () => {
+    const items = [
+      { vehicleId: 'r', plate: 'ก1', province: '30', qrId: 'q1', token: CODE, stickerCategory: 'GENERAL_OFFICER' },
+      { vehicleId: 'y', plate: 'ก2', province: '30', qrId: 'q2', token: CODE, stickerCategory: 'NCO' },
+      { vehicleId: 'n', plate: 'ก3', province: '30', qrId: 'q3', token: CODE, stickerCategory: '' },
+    ]
+    const byCat = await renderToString(createSSRApp(QrStickerSheet, { items }))
+    expect(byCat).toMatch(/data-sticker="r" data-size="8" data-category="GENERAL_OFFICER"/)
+    expect(byCat).toMatch(/data-sticker="y" data-size="5" data-category="NCO"/)
+    expect(byCat).toContain('--band:#d71920')
+    expect(byCat).toContain('--band:#f2c200;--ink:#111111') // yellow band → dark text
+    expect(byCat).not.toContain('data-sticker="n"')
+    expect(byCat).toContain('พล.ต.ต. ขึ้นไป')
+    const all5 = await renderToString(createSSRApp(QrStickerSheet, { items, sizeMode: '5', mode: 'shop' }))
+    expect(all5).toMatch(/data-sticker="r" data-size="5"/)
+    expect(all5).toContain('qr-sheet--shop')
+    const css = readFileSync(new URL('../src/features/qr-governance/components/QrStickerSheet.vue', import.meta.url), 'utf8')
+    expect(css).toContain('.qr-sticker--5 { width: 50mm; height: 50mm;')
+    expect(css).toContain('.qr-sticker--8 { width: 80mm; height: 80mm;')
+    expect(css).toContain('@page qr5 { size: 56mm 56mm;') // 3 mm bleed each side
+  })
+
+  it('the sticker categories mirror the backend policy exactly', async () => {
+    const { STICKER_CATEGORIES: fe } = await import('../src/domain/reference/sticker-categories.js')
+    const { STICKER_CATEGORIES: be } = await import('../../backend/gas/src/domain/policies/StickerCategoryPolicy.js')
+    expect(JSON.parse(JSON.stringify(fe))).toEqual(JSON.parse(JSON.stringify(be)))
   })
 
   it('the in-app scanner accepts the sticker link of this app', async () => {
