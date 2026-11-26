@@ -6,6 +6,7 @@ import {createAdministrationOperations} from '../../application/use-cases/Admini
 import {createVehicleOperations} from '../../application/use-cases/VehicleOperations.js';
 import {createMediaRetentionOperations} from '../../application/use-cases/MediaRetentionOperations.js';
 import {createReferenceOperations} from '../../application/use-cases/ReferenceOperations.js';
+import {withStickerCategories} from '../../application/use-cases/StickerCategoryOperations.js';
 const permissions={
  'system.config.get':'system.settings.read','system.config.update':'system.settings.manage',
  'auth.changePassword':'session.authenticated','auth.logout':'session.authenticated','auth.session':'session.authenticated','auth.linkGoogle':'session.authenticated',
@@ -32,7 +33,7 @@ const safeErrors=new Set([
  'INVALID_CAMPAIGN','CAMPAIGN_INVALID','FIVE_PHOTOS_REQUIRED','PLATE_PHOTO_NOT_VERIFIED','PHOTO_SLOT_INVARIANT','IDEMPOTENCY_CONFLICT','OWNER_NOT_FOUND','PHOTO_NOT_STAGED','INVALID_SLOT','INVALID_MEDIA',
  'INVALID_MIME','PHOTO_UPLOAD_LIMIT','INVALID_IMAGE_SIZE','IMAGE_SIGNATURE_MISMATCH','PHOTO_NOT_FOUND','VEHICLE_NOT_ACTIVE','VERSION_CONFLICT',
  'CONTACT_NOT_FOUND','PRIMARY_CONTACT_INVARIANT','INVALID_REQUEST_STATE','INVALID_DECISION','OWNERSHIP_NOT_VERIFIED',
- 'INVALID_QR','QR_REVOKED','INVALID_STICKER_CATEGORY','INVALID_QR_REASON','INVALID_VEHICLE_IDS','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
+ 'INVALID_QR','QR_REVOKED','INVALID_STICKER_CATEGORY','INVALID_STICKER_CATEGORIES','STICKER_CATEGORY_REQUIRED','STICKER_CATEGORY_IN_USE','INVALID_QR_REASON','INVALID_VEHICLE_IDS','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
  'DELETION_NOT_AUTHORIZED','DELETION_RETRY_REQUIRED','BUSY','CAMPAIGN_BUSY','SCHEMA_MISMATCH','MISSING_TABLE','IDLE_POLICY_NOT_CONFIGURED',
  'INVALID_LIMIT','INVALID_PAGINATION','NO_CHANGES','ORGANIZATION_INACTIVE','PARENT_NOT_FOUND','INVALID_ORG_TYPE','INVALID_ORG_PARENT',
  'SELF_DEMOTION_DENIED','SELF_ROLE_EXPANSION_DENIED','SELF_SUSPEND_DENIED','RETENTION_POLICY_NOT_CONFIGURED','OPERATION_DISABLED','OPERATION_RECOVERY_REQUIRED',
@@ -41,11 +42,11 @@ const safeErrors=new Set([
 export function createOperationController({store,security,sessions,drivePhotos,allowDestructiveRetention=false,referenceMemo=null}) {
  const admin=createAdministrationOperations({store,security});
  const references=createReferenceOperations({store,security,memo:referenceMemo});
- const handlers={
+ const handlers=withStickerCategories({
   ...createIdentityOperations({store,security,sessions}),...admin,'references.registration':references['references.registration'],
   ...createVehicleOperations({store,security,campaigns:admin,references}),
   ...createMediaRetentionOperations({store,security,drivePhotos,campaigns:admin,allowDestructiveRetention})
- };
+ },{store,security});
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
  if(entries.length!==60||DTO_OPERATIONS.length!==60||entries.some(op=>!DTO_OPERATIONS.includes(op))

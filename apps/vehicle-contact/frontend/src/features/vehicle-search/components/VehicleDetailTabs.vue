@@ -5,7 +5,7 @@ import { formatThaiPhone, orderContacts, photoSlotLabel, relationshipLabel, telH
 import { formatBangkokDateTime } from '../../../domain/time/bangkok-date-time.js'
 import QrHistoryTable from '../../qr-governance/components/QrHistoryTable.vue'
 import VehicleQrImage from '../../qr-governance/components/VehicleQrImage.vue'
-import { stickerCategoryText } from '../../../domain/reference/sticker-categories.js'
+import { stickerText } from '../../../domain/reference/sticker-categories.js'
 
 // R7 (owner: "ทำไมไม่มีภาพรถ และข้อมูลอื่นๆ เพื่อประกอบการพิจารณาครบมั้ย" + "ใช้ tabs บ้าง"):
 // the full vehicle record for decision making, split into tabs. Photos load only when their tab
@@ -54,7 +54,7 @@ const vehicleFacts = computed(() => {
     ['ทะเบียน', v.plate], ['จังหวัด', provinceLabel(v.province) || v.province],
     ['ประเภทรถ', v.labels?.vehicleType || v.vehicleType], ['ประเภทป้าย', v.labels?.plateType || v.plateType],
     ['ยี่ห้อ', v.brand], ['รุ่น', v.model], ['สี', v.labels?.color || v.color],
-    ['ประเภทสติกเกอร์', stickerCategoryText(v.stickerCategory)],
+    ['ประเภทผู้ใช้รถ (สติกเกอร์)', stickerText(v.sticker)],
   ]
 })
 const recordFacts = computed(() => {

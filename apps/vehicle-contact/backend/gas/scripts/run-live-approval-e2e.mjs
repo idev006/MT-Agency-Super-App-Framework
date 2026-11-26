@@ -58,7 +58,7 @@ try{
   const front=app.photos.find(p=>p.slot==='FRONT');
   const photo=ok(await call('registrations.photo',{requestId:item.requestId,photoId:front.photoId}),'photo');
   if(photo.photoId!==front.photoId||photo.slot!=='FRONT'||!photo.base64Image)throw new Error('PHOTO_CONTRACT');
-  const rev=ok(await call('registrations.review',{requestId:item.requestId,decision:'APPROVE',platePhotoVerified:true}),'review');
+  const rev=ok(await call('registrations.review',{requestId:item.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'review');
   if(rev.status!=='APPROVED'||!rev.qrToken)throw new Error('REVIEW_CONTRACT');
   const lk=ok(await call('vehicles.lookup',{plate:app.plate_normalized,province:app.province_code}),'lookup');
   if(!lk||lk.vehicleId!==rev.vehicleId)throw new Error('LOOKUP_MISMATCH:'+app.plate_normalized);
@@ -84,7 +84,7 @@ try{
 
  // Negatives: re-review an approved request; foreign-snapshot photo.
  if(items.length>=1){
-  const replay=await call('registrations.review',{requestId:items[0].requestId,decision:'APPROVE',platePhotoVerified:true});
+  const replay=await call('registrations.review',{requestId:items[0].requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true});
   report.negatives.push({case:'REVIEW_ALREADY_REVIEWED',expected:'INVALID_REQUEST_STATE',actual:replay.error?.code,pass:replay.error?.code==='INVALID_REQUEST_STATE'});
  }
  if(items.length>=2){

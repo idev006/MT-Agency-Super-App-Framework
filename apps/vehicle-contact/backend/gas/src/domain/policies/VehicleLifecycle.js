@@ -56,4 +56,4 @@ export function assertSingleActiveQr(tokens,vehicleId) {
 }
 export { VEHICLE, PHOTO_SLOTS };
 // re-exported so the bounded VehicleOperations module needs no extra import (GAS 800-line build limit)
-export {stickerCategory} from './StickerCategoryPolicy.js';
+export {stickerCode as stickerCategory} from './StickerCategoryPolicy.js';

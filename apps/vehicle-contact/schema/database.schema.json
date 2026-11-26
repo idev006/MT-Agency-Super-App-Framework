@@ -149,7 +149,7 @@
           "type": "string",
           "required": false,
           "classification": "internal",
-          "notes": "Sticker colour/size group (StickerCategoryPolicy; owner 2026-11-26); set by admins via vehicles.update"
+          "notes": "Person type code (StickerCategoryPolicy; configurable list in vc_settings key sticker_categories). Declared by the registrant, required and confirmed at APPROVE, changeable via vehicles.update (ACTIVE types only)"
         }
       ]
     },

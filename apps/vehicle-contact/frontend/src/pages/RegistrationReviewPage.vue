@@ -1,5 +1,5 @@
 <script setup>
-import { computed, inject, onMounted, ref } from 'vue'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { registrationReviewRepositoryKey } from '../application/registrations/registration-review-port.js'
 import ConfirmDialog from '../components/common/ConfirmDialog.vue'
@@ -20,6 +20,15 @@ const { roles, permissions, session, transport } = storeToRefs(auth)
 const work = useRegistrationReview({ repository: inject(registrationReviewRepositoryKey), permissions })
 const pendingDecision = ref(null)
 const platePhotoVerified = ref(false)
+// VC-ADR-038 (workflow A): the reviewer confirms or changes the declared person type — it sets the sticker colour.
+const stickerChoice = ref('')
+const stickerChoices = computed(() => work.selected.value?.stickerCategories || [])
+const chosenSticker = computed(() => stickerChoices.value.find((c) => c.code === stickerChoice.value) || null)
+watch(() => work.selected.value?.requestId, () => {
+  const declared = work.selected.value?.application?.stickerCategory || ''
+  stickerChoice.value = stickerChoices.value.some((c) => c.code === declared) ? declared : ''
+}, { immediate: true })
+const canApprove = computed(() => platePhotoVerified.value && (!stickerChoices.value.length || Boolean(chosenSticker.value)))
 const copied = ref(false)
 const qrCopied = ref(false)
 const { lists } = storeToRefs(useRegistrationReferenceStore())
@@ -70,7 +79,7 @@ async function confirmDecision() {
   const pending = pendingDecision.value
   pendingDecision.value = null
   if (!pending) return
-  await work.review({ ...pending, platePhotoVerified: pending.decision === 'APPROVE' && platePhotoVerified.value })
+  await work.review({ ...pending, platePhotoVerified: pending.decision === 'APPROVE' && platePhotoVerified.value, stickerCategory: pending.decision === 'APPROVE' ? stickerChoice.value : '' })
   platePhotoVerified.value = false
 }
 </script>
@@ -161,8 +170,14 @@ async function confirmDecision() {
               </ul>
               <p class="mt-2 text-sm text-base-content/80">ภาพแสดงในหน่วยความจำเท่านั้น ไม่บันทึกลงเครื่อง และการเปิดภาพแต่ละครั้งถูกบันทึก audit</p>
             </div>
+            <div v-if="stickerChoices.length" class="mt-3 rounded-box border border-base-300 p-3" data-sticker-choice>
+              <label class="field-stack"><span class="label-text font-semibold">ประเภทผู้ใช้รถ (สีสติกเกอร์)</span>
+                <select v-model="stickerChoice" class="select select-bordered w-full" required><option disabled value="">เลือกประเภทผู้ใช้รถ</option><option v-for="c in stickerChoices" :key="c.code" :value="c.code">{{ c.label }} — {{ c.colour }} {{ c.size }}×{{ c.size }} ซม.</option></select></label>
+              <p class="mt-2 flex items-center gap-2 text-sm"><span v-if="chosenSticker" class="inline-block size-4 rounded" :style="{ background: chosenSticker.hex }" aria-hidden="true"></span>
+                <span>ผู้ลงทะเบียนเลือก: <strong>{{ work.selected.value?.sticker?.label || 'ไม่ได้ระบุ' }}</strong> · ต้องกำหนดก่อนอนุมัติ</span></p>
+            </div>
             <label class="mt-3 flex min-h-11 cursor-pointer items-start gap-2 rounded-box border border-base-300 p-3"><input v-model="platePhotoVerified" class="checkbox checkbox-primary mt-0.5" type="checkbox" /><span><strong class="block">ตรวจสอบภาพป้ายทะเบียนแล้ว</strong><small class="text-base-content/80">ต้องยืนยันก่อนอนุมัติ ระบบจะสร้างยานพาหนะ ผู้ประสานงาน และ QR</small></span></label>
-            <div class="sticky bottom-0 z-10 mt-3 flex flex-col-reverse gap-2 border-t border-base-300 bg-base-100 py-2 sm:static sm:flex-row sm:justify-end sm:border-0 sm:py-0"><button class="btn" type="button" @click="requestDecision('REJECT')">ปฏิเสธคำขอ</button><button class="btn btn-primary" type="button" :disabled="!platePhotoVerified" @click="requestDecision('APPROVE')">อนุมัติการลงทะเบียน</button></div>
+            <div class="sticky bottom-0 z-10 mt-3 flex flex-col-reverse gap-2 border-t border-base-300 bg-base-100 py-2 sm:static sm:flex-row sm:justify-end sm:border-0 sm:py-0"><button class="btn" type="button" @click="requestDecision('REJECT')">ปฏิเสธคำขอ</button><button class="btn btn-primary" type="button" :disabled="!canApprove" @click="requestDecision('APPROVE')">อนุมัติการลงทะเบียน</button></div>
           </template>
         </section>
       </div>

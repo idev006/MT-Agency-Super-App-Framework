@@ -28,7 +28,7 @@ const reader={userId:'staff',permissions:['vehicle.lookup','vehicle.contact.read
 
 test('VIEW-01 approval is visible in the vehicle history; labels come back with the view (one read round)',()=>{
   const {fake,store,ops}=boot();
-  ops['registrations.review']({requestId:'r1',decision:'APPROVE',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
+  ops['registrations.review']({requestId:'r1',decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
   assert.equal(store.list('vc_change_audit',{entity_id:'v1'}).length,1,'approval audited under the vehicle id too');
   const r0=fake.state.rounds;
   const view=ops['vehicles.lookup']({plate:'ฮฮ 0154',province:'65'},reader);
@@ -41,7 +41,7 @@ test('VIEW-01 approval is visible in the vehicle history; labels come back with 
 
 test('VIEW-02 no history permission → no history field; unknown codes → empty label, never a crash',()=>{
   const {store,ops}=boot();
-  ops['registrations.review']({requestId:'r1',decision:'APPROVE',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
+  ops['registrations.review']({requestId:'r1',decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
   store.update('vc_vehicles',{vehicle_id:'v1'},{color:'NOT_IN_CATALOG'});
   const view=ops['vehicles.detail']({vehicleId:'v1'},{userId:'s',permissions:['vehicle.lookup']});
   assert.equal(view.history,undefined);
@@ -52,7 +52,7 @@ test('VIEW-02 no history permission → no history field; unknown codes → empt
 import {createMediaRetentionOperations} from '../src/application/use-cases/MediaRetentionOperations.js';
 test('VIEW-03 vehicles.photo returns an ACTIVE photo of an ACTIVE vehicle, logs the view as an access (not history)',()=>{
   const {store,ops}=boot();
-  ops['registrations.review']({requestId:'r1',decision:'APPROVE',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
+  ops['registrations.review']({requestId:'r1',decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
   const reads=[];
   const drivePhotos={read:ref=>{reads.push(ref);return {mime_type:'image/jpeg',base64Image:'AAAA'};}};
   const media=createMediaRetentionOperations({store,security:{now:()=>AT,secretToken:()=>'x'+Math.random().toString(16).slice(2).padEnd(63,'0')},drivePhotos,campaigns:{}});
@@ -70,7 +70,7 @@ test('VIEW-03 vehicles.photo returns an ACTIVE photo of an ACTIVE vehicle, logs 
 test('VIEW-04 view carries agency name, registration/update dates and active-QR status (equality reads only)',()=>{
   const {store,ops}=boot();
   store.insert('vc_organizations',{organization_id:'o',name:'สภ.เมืองพิษณุโลก',org_type:'POLICE',parent_id:'',status:'ACTIVE',created_at:AT,updated_at:AT});
-  ops['registrations.review']({requestId:'r1',decision:'APPROVE',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
+  ops['registrations.review']({requestId:'r1',decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},{userId:'admin',permissions:['vehicle.registration.approve']});
   const view=ops['vehicles.detail']({vehicleId:'v1'},reader);
   assert.deepEqual(view.organization,{id:'o',name:'สภ.เมืองพิษณุโลก'});
   assert.equal(view.registeredAt,AT);

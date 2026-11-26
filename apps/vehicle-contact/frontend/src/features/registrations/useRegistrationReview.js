@@ -109,12 +109,12 @@ export function useRegistrationReview({ repository, permissions }) {
   // the safe action is to resend exactly the same decision, never a different one.
   const lastDecision = ref(null)
 
-  async function review({ requestId, decision, platePhotoVerified = false }) {
+  async function review({ requestId, decision, platePhotoVerified = false, stickerCategory = '' }) {
     if (!canReview.value) { actionPhase.value = 'forbidden'; return false }
-    lastDecision.value = Object.freeze({ requestId, decision, platePhotoVerified })
+    lastDecision.value = Object.freeze({ requestId, decision, platePhotoVerified, stickerCategory })
     actionPhase.value = 'submitting'; failure.value = null; oneTimeQr.value = null
     try {
-      const result = await source.review({ requestId, decision, platePhotoVerified })
+      const result = await source.review({ requestId, decision, platePhotoVerified, stickerCategory })
       if (result.qrToken) oneTimeQr.value = Object.freeze({ token: result.qrToken, qrId: result.qrId, vehicleId: result.vehicleId })
       selected.value = null
       resetPhotos()

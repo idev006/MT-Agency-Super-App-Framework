@@ -50,11 +50,11 @@ test('ACTOR-03 REGISTRATION: anonymous 5-photo staging, idempotent submit, admin
  assert.deepEqual(assertOk(assert,h.call('registrations.submit',payload),'replay same idempotency'),r);
  assert.equal(h.read('vc_campaigns')[0].submitted_count,1,'idempotent replay does not spend campaign quota');
  assertError(assert,h.call('registrations.submit',{...payload,idempotencyKey:'different-key'}),'DUPLICATE_VEHICLE','duplicate pending plate');
- assertError(assert,h.as('sys','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'FORBIDDEN','SYSTEM_ADMIN cannot approve without separate permission');
+ assertError(assert,h.as('sys','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'FORBIDDEN','SYSTEM_ADMIN cannot approve without separate permission');
  assert.equal(assertOk(assert,h.as('reg','registrations.listPending',{}),'pending list')[0].requestId,r.requestId);
  assert.equal(assertOk(assert,h.as('reg','registrations.detail',{requestId:r.requestId}),'pending detail').application.contactPhone,'+66810000001');
- assertError(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:false}),'PLATE_PHOTO_NOT_VERIFIED','photo verification false rejected');
- const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve registration');
+ assertError(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:false}),'PLATE_PHOTO_NOT_VERIFIED','photo verification false rejected');
+ const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve registration');
  assert.equal(approved.status,'APPROVED');
  assert.match(approved.qrToken,/^[a-f0-9]{64}$/);
  assert.equal(h.read('vc_vehicles').length,1);
@@ -83,7 +83,7 @@ test('ACTOR-03 REGISTRATION: anonymous 5-photo staging, idempotent submit, admin
 test('ACTOR-04 REGISTRATION_ADMIN: corrections, duplicate/version guards, owner change approval and QR rotation',()=>{
  const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign(),photos=h.stagePhotos(camp.campaignToken);
  const reg=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,photos)),'submit');
- const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:reg.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:reg.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  const vehicleId=approved.vehicleId;
  assertError(assert,h.as('staff','vehicles.update',{vehicleId,expectedVersion:1,brand:'Not Allowed'}),'FORBIDDEN','staff direct edit denied');
  assertError(assert,h.as('reg','vehicles.update',{vehicleId,expectedVersion:0,color:'Green'}),'VERSION_CONFLICT','stale version rejected');
@@ -111,7 +111,7 @@ test('ACTOR-04 REGISTRATION_ADMIN: corrections, duplicate/version guards, owner 
 test('ACTOR-05 MEDIA: replace slot, retire old file, deny malformed slot and unauthorized staff',()=>{
  const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign(),photos=h.stagePhotos(camp.campaignToken);
  const reg=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,photos)),'submit');
- const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:reg.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:reg.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  const before=h.read('vc_vehicle_photos').find(p=>p.slot==='FRONT');
  assertError(assert,h.as('staff','photos.replace',{vehicleId:approved.vehicleId,slot:'FRONT',base64Image:'AAAA',mimeType:'image/png'}),'FORBIDDEN','staff cannot replace');
  assertError(assert,h.as('reg','photos.replace',{vehicleId:approved.vehicleId,slot:'INVALID',base64Image:'AAAA',mimeType:'image/png'}),'INVALID_SLOT','invalid slot');
@@ -123,7 +123,7 @@ test('ACTOR-05 MEDIA: replace slot, retire old file, deny malformed slot and una
 test('ACTOR-06 CANCEL + RETENTION: QR stops, staff cannot delete, system admin approval, worker delete, audit remains',()=>{
  const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign(),photos=h.stagePhotos(camp.campaignToken);
  const reg=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,photos)),'submit');
- const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:reg.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:reg.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  assertError(assert,h.as('staff','vehicles.cancel',{vehicleId:approved.vehicleId}),'FORBIDDEN','staff cannot cancel');
  assertOk(assert,h.as('reg','vehicles.cancel',{vehicleId:approved.vehicleId}),'cancel vehicle');
  assertError(assert,h.as('staff','qr.resolve',{token:approved.qrToken}),'QR_REVOKED','cancel invalidates QR (cancel revokes it)');
@@ -187,8 +187,8 @@ test('ACTOR-ADR031 the campaign code can be copied at any time; the name is kept
 test('ACTOR-ADR036 SYSTEM_ADMIN: full vehicle view + QR management without registration approval; reactivate users; enable organizations',()=>{
  const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
  const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
- assertError(assert,h.as('sys','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'FORBIDDEN','still no registration approval');
- assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ assertError(assert,h.as('sys','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'FORBIDDEN','still no registration approval');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  const auditBefore=h.read('vc_lookup_audit').length;
  const found=assertOk(assert,h.as('sys','vehicles.lookup',{plate:'กข 1234',province:'TH-10'}),'SYSTEM_ADMIN lookup');
  assert.equal(found.contacts[0].phone,'+66810000001','contacts visible (owner decision)');
@@ -224,7 +224,7 @@ test('ACTOR-ADR036 SYSTEM_ADMIN: full vehicle view + QR management without regis
 test('ACTOR-S3-QR every QR change needs a reason; history keeps who/why/chain; cancel records VEHICLE_CANCELLED; no token in history',()=>{
  const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
  const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
- assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  const vehicleId=h.read('vc_vehicles')[0].vehicle_id;
  const qrRows=()=>h.read('vc_qr_tokens').filter(q=>q.vehicle_id===vehicleId);
  // refused requests write nothing
@@ -263,7 +263,7 @@ test('ACTOR-S3-QR every QR change needs a reason; history keeps who/why/chain; c
 test('ACTOR-S2-360 vehicle detail dimensions are permission-gated on the server (admin / auditor / staff)',()=>{
  const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
  const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
- assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  const vehicleId=h.read('vc_vehicles')[0].vehicle_id;
  const ADMIN_KEYS=['owner','createdByName','updatedByName','registration','changeRequests','retention'];
  // SYSTEM_ADMIN: admin dimensions + access log (audit.read)
@@ -317,7 +317,7 @@ test('ACTOR-D2-FILTERS admin lists filter on the server before paging; unknown f
 test('ACTOR-S5-QR-EXPORT admins get the ACTIVE code of selected vehicles for printing; audited; legacy QR = REISSUE_NEEDED; others denied',()=>{
  const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
  const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
- const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  const vehicleId=h.read('vc_vehicles')[0].vehicle_id;
  const x=assertOk(assert,h.as('sys','qr.export',{vehicleIds:[vehicleId,vehicleId,'missing']}),'export');
  assert.equal(x.items.length,2,'duplicates collapsed');
@@ -340,7 +340,7 @@ test('ACTOR-S5-QR-EXPORT admins get the ACTIVE code of selected vehicles for pri
 test('ACTOR-STICKER category: admins set it (validated), it travels with the vehicle to the list, detail and QR export',()=>{
  const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
  const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
- assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  const v=h.read('vc_vehicles')[0];
  assertError(assert,h.as('reg','vehicles.update',{vehicleId:v.vehicle_id,expectedVersion:1,stickerCategory:'GOLD'}),'INVALID_STICKER_CATEGORY','unknown category refused');
  assert.equal(h.read('vc_vehicles')[0].version,1,'no write on a refused category');
@@ -349,4 +349,51 @@ test('ACTOR-STICKER category: admins set it (validated), it travels with the veh
  assert.equal(assertOk(assert,h.as('reg','vehicles.list',{page:1,pageSize:10}),'list').items[0].stickerCategory,'GENERAL_OFFICER');
  assert.equal(assertOk(assert,h.as('sys','qr.export',{vehicleIds:[v.vehicle_id]}),'export').items[0].stickerCategory,'GENERAL_OFFICER');
  assertError(assert,h.as('staff','vehicles.update',{vehicleId:v.vehicle_id,expectedVersion:2,stickerCategory:'NCO'}),'FORBIDDEN','staff cannot set it');
+});
+
+test('ACTOR-STICKER-CONFIG person types + colours are configurable and follow the workflow (register → approve → maintain → print)',()=>{
+ const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
+ const cfg=assertOk(assert,h.as('sys','system.config.get',{}),'get defaults');
+ assert.equal(cfg.sticker_categories.length,6);
+ assert.deepEqual(cfg.sticker_categories.find(c=>c.code==='NCO'),{code:'NCO',label:'ส.ต.ต. – ด.ต.',colour:'เหลือง',hex:'#f2c200',size:5,active:true,ink:'#111111'});
+ // a system admin adds a type, changes a colour, retires one (never deletes)
+ const next=cfg.sticker_categories.map(({ink,...c})=>c.code==='PUBLIC'?{...c,active:false}:c.code==='SENIOR_OFFICER'?{...c,hex:'#0055AA'}:c)
+  .concat([{code:'RETIRED_OFFICER',label:'ข้าราชการบำนาญ',colour:'ส้ม',hex:'#ff7a00',size:5,active:true}]);
+ assertError(assert,h.as('reg','system.config.update',{values:{sticker_categories:next}}),'FORBIDDEN','only a system admin');
+ assertError(assert,h.as('sys','system.config.update',{values:{sticker_categories:next.slice(1)}}),'STICKER_CATEGORY_IN_USE','cannot delete a type');
+ assertError(assert,h.as('sys','system.config.update',{values:{sticker_categories:[...next.slice(0,-1),{...next.at(-1),hex:'orange'}]}}),'INVALID_STICKER_CATEGORIES','bad colour');
+ const saved=assertOk(assert,h.as('sys','system.config.update',{values:{sticker_categories:next}}),'save');
+ assert.equal(saved.sticker_categories.find(c=>c.code==='SENIOR_OFFICER').hex,'#0055aa');
+ assert.ok(h.read('vc_change_audit').some(x=>x.action==='STICKER_CATEGORIES_UPDATED'),'audited');
+ // register: the public form lists ACTIVE types only; the registrant's choice is checked
+ const choices=assertOk(assert,h.call('campaigns.validate',{campaignToken:camp.campaignToken}),'validate').stickerCategories;
+ assert.ok(choices.some(c=>c.code==='RETIRED_OFFICER')&&!choices.some(c=>c.code==='PUBLIC'));
+ assertError(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken),{stickerCategory:'PUBLIC'})),'INVALID_STICKER_CATEGORY','inactive type refused');
+ const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken),{stickerCategory:'retired_officer'})),'submit');
+ // approve: the reviewer sees the declared type; approving keeps it unless the reviewer changes it
+ const detail=assertOk(assert,h.as('reg','registrations.detail',{requestId:r.requestId}),'detail');
+ assert.equal(detail.sticker.label,'ข้าราชการบำนาญ');assert.ok(detail.stickerCategories.length>=6);
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve (declared type)');
+ const v=h.read('vc_vehicles')[0];
+ assert.equal(v.sticker_category,'RETIRED_OFFICER');
+ // maintain + print: resolved sticker (label, colour, size, text colour) travels with the vehicle
+ const vd=assertOk(assert,h.as('reg','vehicles.detail',{vehicleId:v.vehicle_id}),'detail');
+ assert.deepEqual(vd.sticker,{code:'RETIRED_OFFICER',label:'ข้าราชการบำนาญ',colour:'ส้ม',hex:'#ff7a00',ink:'#111111',size:5,active:true});
+ assertError(assert,h.as('reg','vehicles.update',{vehicleId:v.vehicle_id,expectedVersion:1,stickerCategory:'PUBLIC'}),'INVALID_STICKER_CATEGORY','inactive type refused');
+ assertOk(assert,h.as('reg','vehicles.update',{vehicleId:v.vehicle_id,expectedVersion:1,stickerCategory:'SENIOR_OFFICER'}),'change');
+ assert.equal(assertOk(assert,h.as('reg','vehicles.list',{page:1,pageSize:10}),'list').items[0].sticker.hex,'#0055aa');
+ const x=assertOk(assert,h.as('sys','qr.export',{vehicleIds:[v.vehicle_id]}),'export').items[0];
+ assert.equal(x.sticker.hex,'#0055aa');assert.equal(x.sticker.ink,'#ffffff');assert.equal(x.sticker.size,5);
+});
+
+test('ACTOR-STICKER-REQUIRED approval needs a person type: the declared one or the reviewer\'s choice',()=>{
+ const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
+ const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
+ assertError(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'STICKER_CATEGORY_REQUIRED','no type');
+ assert.equal(h.read('vc_vehicles').length,0,'nothing approved');
+ assertError(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'GOLD',platePhotoVerified:true}),'INVALID_STICKER_CATEGORY','unknown type');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',stickerCategory:'JUNIOR_OFFICER',platePhotoVerified:true}),'approve');
+ assert.equal(h.read('vc_vehicles')[0].sticker_category,'JUNIOR_OFFICER');
+ const s=h.createCampaign(),r2=assertOk(assert,h.call('registrations.submit',h.registrationPayload(s.campaignToken,org,h.stagePhotos(s.campaignToken),{plate:'กข9999'})),'submit 2');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r2.requestId,decision:'REJECT'}),'reject needs no type');
 });

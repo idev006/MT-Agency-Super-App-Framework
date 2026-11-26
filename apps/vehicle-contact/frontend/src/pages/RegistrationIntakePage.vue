@@ -35,10 +35,12 @@ const contactPhoneInput = ref('')
 const files = reactive({})
 const previews = reactive({})
 const fileProblems = reactive({})
-const fields = reactive({ plate: '', province: '', plateType: '', vehicleType: '', brand: '', model: '', color: '', organizationId: '', relationship: '', contactName: '', contactPhone: '' })
+const fields = reactive({ plate: '', province: '', plateType: '', vehicleType: '', brand: '', model: '', color: '', organizationId: '', relationship: '', contactName: '', contactPhone: '', stickerCategory: '' })
 const allPhotosReady = computed(() => REGISTRATION_PHOTO_SLOTS.every((slot) => files[slot.id] instanceof File && !fileProblems[slot.id]))
 const busy = computed(() => ['validating', 'uploading', 'submitting'].includes(work.phase.value))
 const canonicalMode = computed(() => ['ADVISORY', 'ENFORCED'].includes(referenceMode.value))
+// VC-ADR-038: person type (sets the sticker colour; the reviewer confirms it at approval)
+const stickerChoices = computed(() => work.campaign.value?.stickerCategories || [])
 const campaignReady = computed(() => Boolean(work.campaign.value?.valid) && work.campaign.value.token === campaignToken.value)
 const editingLocked = computed(() => busy.value || work.locked.value)
 
@@ -64,6 +66,7 @@ const reviewRows = computed(() => [
   ['ประเภทยานพาหนะ', labelOf('vehicleTypes', fields.vehicleType)], ['ยี่ห้อ', labelOf('brands', fields.brand)], ['รุ่น', fields.model],
   ['สี', labelOf('colors', fields.color)], ['หน่วยงาน', labelOf('organizations', fields.organizationId)],
   ['ผู้ประสานงาน', fields.contactName], ['โทรศัพท์', formatThaiPhone(fields.contactPhone)], ['ความสัมพันธ์', labelOf('relationships', fields.relationship)],
+  ...(stickerChoices.value.length ? [['ประเภทผู้ใช้รถ', stickerChoices.value.find((c) => c.code === fields.stickerCategory)?.label || '—']] : []),
 ])
 
 function selectFile(slot, event) {
@@ -101,7 +104,7 @@ function goTo(index) { if (index < step.value && !editingLocked.value) { stepErr
 
 async function submitRequest() {
   const reference = canonicalMode.value ? { referenceVersion: referenceVersion.value } : {}
-  await work.submit({ campaignToken: campaignToken.value.trim(), fields: { ...fields, ...reference }, files: { ...files } })
+  await work.submit({ campaignToken: campaignToken.value.trim(), fields: Object.fromEntries(Object.entries({ ...fields, ...reference }).filter(([key, value]) => key !== 'stickerCategory' || value)), files: { ...files } })
 }
 function startNext() {
   for (const url of Object.values(previews)) if (url) URL.revokeObjectURL(url)
@@ -192,6 +195,7 @@ watch(referenceVersion, reconcileSelections)
           <label class="field-stack"><span class="label-text font-semibold">ชื่อผู้ประสานงาน</span><input v-model.trim="fields.contactName" class="input input-bordered w-full" required maxlength="200" /></label>
           <label class="field-stack"><span class="label-text font-semibold">เบอร์โทรศัพท์</span><input v-model="contactPhoneInput" class="input input-bordered w-full" type="tel" inputmode="tel" autocomplete="off" required placeholder="081-234-5678" aria-describedby="contact-phone-help" /><span id="contact-phone-help" class="label-text-alt">{{ fields.contactPhone ? `จะบันทึกเป็น ${fields.contactPhone}` : 'กรอกเบอร์มือถือหรือเบอร์บ้าน 9–10 หลัก' }}</span></label>
           <label class="field-stack"><span class="label-text font-semibold">ความสัมพันธ์กับรถ</span><select v-if="canonicalMode" v-model="fields.relationship" class="select select-bordered w-full" required><option disabled value="">เลือกความสัมพันธ์</option><option v-for="item in lists.relationships" :key="item.code" :value="item.code">{{ item.label }}</option></select><input v-else v-model.trim="fields.relationship" class="input input-bordered w-full" required maxlength="100" /></label>
+          <label v-if="stickerChoices.length" class="field-stack"><span class="label-text font-semibold">ประเภทผู้ใช้รถ</span><select v-model="fields.stickerCategory" class="select select-bordered w-full" required aria-describedby="sticker-category-help"><option disabled value="">เลือกประเภทผู้ใช้รถ</option><option v-for="item in stickerChoices" :key="item.code" :value="item.code">{{ item.label }}</option></select><span id="sticker-category-help" class="text-xs text-base-content/70">ใช้กำหนดสีสติกเกอร์ ผู้อนุมัติจะตรวจสอบอีกครั้ง</span></label>
         </div>
       </fieldset>
 

@@ -11,7 +11,6 @@ import { vehicleRegistryRepositoryKey } from '../application/vehicles/vehicle-re
 import { qrGovernanceRepositoryKey } from '../application/qr/qr-governance-port.js'
 import { useVehicleRegistry } from '../features/vehicle-registry/useVehicleRegistry.js'
 import { provinceLabel } from '../domain/reference/provinces.js'
-import { STICKER_CATEGORIES, stickerCategoryOf } from '../domain/reference/sticker-categories.js'
 import { PAPERS, pagesNeeded, sheetCapacity } from '../domain/qr/sticker-layout.js'
 import { useSessionStore } from '../stores/session.js'
 
@@ -44,7 +43,7 @@ const columns = [
   { key: 'pick', label: 'เลือก', kind: 'actions' },
   { key: 'plate', label: 'ทะเบียน', kind: 'name' }, { key: 'province', label: 'จังหวัด', kind: 'nowrap' },
   { key: 'model', label: 'ยี่ห้อ / รุ่น', kind: 'text' }, { key: 'color', label: 'สี', kind: 'nowrap' },
-  { key: 'stickerCategory', label: 'ประเภทสติกเกอร์', kind: 'nowrap' },
+  { key: 'stickerCategory', label: 'ประเภทผู้ใช้รถ', kind: 'nowrap' },
 ]
 
 const phase = ref('idle') // idle | loading | ready | error
@@ -54,20 +53,20 @@ const results = ref([])
 const mode = ref('office') // office: cut guides · sheet: print shop, many per sheet + bleed + crop marks · single: one per page + bleed
 const paper = ref('A4') // A3 | A4 | A5 (office / sheet)
 const sizeMode = ref('category') // category | 5 | 8
-const printable = (x) => x.status === 'READY' && Boolean(stickerCategoryOf(x.stickerCategory))
+const printable = (x) => x.status === 'READY' && Boolean(x.sticker) // VC-ADR-038: colour/size from the configured person type
 const ready = computed(() => results.value.filter(printable))
 const notReady = computed(() => results.value.filter((x) => !printable(x)).map((x) => (x.status === 'READY' ? { ...x, status: 'NO_STICKER_CATEGORY' } : x)))
 const summary = computed(() => {
   const count = {}
   for (const x of ready.value) {
-    const c = STICKER_CATEGORIES[x.stickerCategory]
+    const c = x.sticker
     const size = sizeMode.value === 'category' ? c.size : Number(sizeMode.value)
     const k = `${c.colour} ${size} × ${size} ซม.`
     count[k] = (count[k] || 0) + 1
   }
   return Object.entries(count)
 })
-const sizeOf = (x) => (sizeMode.value === 'category' ? STICKER_CATEGORIES[x.stickerCategory].size : Number(sizeMode.value))
+const sizeOf = (x) => (sizeMode.value === 'category' ? x.sticker.size : Number(sizeMode.value))
 // "A4: 8 × 8 ซม. 6 ดวง/แผ่น · 5 × 5 ซม. 15 ดวง/แผ่น · รวม 2 แผ่น"
 const layout = computed(() => {
   const bySize = {}
@@ -77,7 +76,7 @@ const layout = computed(() => {
   const where = mode.value === 'single' ? 'หน้าละ 1 ดวง' : `${paper.value}: ${per.join(' · ')}`
   return `${where} · รวม ${pagesNeeded(paper.value, mode.value, bySize)} หน้า`
 })
-const STATUS_TEXT = Object.freeze({ NO_STICKER_CATEGORY: 'ยังไม่กำหนดประเภทสติกเกอร์ (สี/ขนาด)', REISSUE_NEEDED: 'QR นี้ออกก่อนระบบเก็บรหัส ต้องออก QR ใหม่ก่อนพิมพ์', NO_ACTIVE_QR: 'ยังไม่มี QR ที่ใช้งานอยู่', VEHICLE_NOT_ACTIVE: 'รถไม่อยู่ในสถานะใช้งาน', NOT_FOUND: 'ไม่พบรถ' })
+const STATUS_TEXT = Object.freeze({ NO_STICKER_CATEGORY: 'ยังไม่กำหนดประเภทผู้ใช้รถ (สี/ขนาดสติกเกอร์)', REISSUE_NEEDED: 'QR นี้ออกก่อนระบบเก็บรหัส ต้องออก QR ใหม่ก่อนพิมพ์', NO_ACTIVE_QR: 'ยังไม่มี QR ที่ใช้งานอยู่', VEHICLE_NOT_ACTIVE: 'รถไม่อยู่ในสถานะใช้งาน', NOT_FOUND: 'ไม่พบรถ' })
 async function prepare() {
   if (!selected.value.size) return
   phase.value = 'loading'; failure.value = ''
@@ -121,7 +120,7 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
           <template #cell-province="{ row }">{{ provinceLabel(row.province) || row.province }}</template>
           <template #cell-model="{ row }">{{ [row.brand, row.model].filter(Boolean).join(' ') || '—' }}</template>
           <template #cell-color="{ row }">{{ row.colorLabel || row.color || '—' }}</template>
-          <template #cell-stickerCategory="{ row }"><span v-if="stickerCategoryOf(row.stickerCategory)" class="inline-flex items-center gap-2"><span class="inline-block size-3 rounded-full" :style="{ background: stickerCategoryOf(row.stickerCategory).hex }" aria-hidden="true"></span>{{ stickerCategoryOf(row.stickerCategory).colour }} · {{ stickerCategoryOf(row.stickerCategory).size }}×{{ stickerCategoryOf(row.stickerCategory).size }}</span><span v-else class="text-warning">ยังไม่กำหนด</span></template>
+          <template #cell-stickerCategory="{ row }"><span v-if="row.sticker" class="inline-flex items-center gap-2"><span class="inline-block size-3 rounded-full" :style="{ background: row.sticker.hex }" aria-hidden="true"></span>{{ row.sticker.label }} · {{ row.sticker.colour }} {{ row.sticker.size }}×{{ row.sticker.size }}</span><span v-else class="text-warning">ยังไม่กำหนด</span></template>
         </DataTable>
         <PaginationControl class="mt-3" :page="registry.page.value" :page-size="registry.pageSize.value" :total-items="registry.pagination.value.total" :disabled="registry.phase.value === 'loading'" label="แบ่งหน้ารายการรถ" @update:page="registry.changePage" @update:page-size="registry.changePageSize" />
       </template>
@@ -140,7 +139,7 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
             <option v-for="(p, k) in PAPERS" :key="k" :value="k">กระดาษ {{ k }} ({{ p.w }} × {{ p.h }} มม.)</option>
           </select></label>
           <label class="field-stack"><span class="sr-only">ขนาด</span><select v-model="sizeMode" class="select select-bordered select-sm">
-            <option value="category">ขนาดตามประเภท (แดง 8 × 8, อื่น ๆ 5 × 5 ซม.)</option>
+            <option value="category">ขนาดตามประเภทผู้ใช้รถ (ตั้งได้ที่หน้าตั้งค่าระบบ)</option>
             <option value="5">5 × 5 ซม. ทุกดวง</option>
             <option value="8">8 × 8 ซม. ทุกดวง</option>
           </select></label>

@@ -21,7 +21,7 @@ describe('registration review: safe resend of the same decision', () => {
     const work = useRegistrationReview({ repository, permissions: ['vehicle.registration.approve'] })
     await work.review({ requestId: 'r-1', decision: 'APPROVE', platePhotoVerified: true })
     expect(work.actionPhase.value).toBe('uncertain')
-    expect(work.lastDecision.value).toEqual({ requestId: 'r-1', decision: 'APPROVE', platePhotoVerified: true })
+    expect(work.lastDecision.value).toEqual({ requestId: 'r-1', decision: 'APPROVE', platePhotoVerified: true, stickerCategory: '' })
     await work.resendDecision()
     expect(review.mock.calls[1][0]).toEqual(review.mock.calls[0][0])
     expect(work.actionPhase.value).toBe('success')

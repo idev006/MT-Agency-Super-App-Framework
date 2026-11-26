@@ -1,6 +1,6 @@
 <script setup>
-import { STICKER_CATEGORIES } from '../domain/reference/sticker-categories.js'
-import { inject, onMounted, ref, watch } from 'vue'
+import { DEFAULT_STICKER_CATEGORIES, toSticker } from '../domain/reference/sticker-categories.js'
+import { computed, inject, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { vehicleMaintenanceRepositoryKey } from '../application/vehicles/vehicle-maintenance-port.js'
@@ -54,6 +54,12 @@ function syncForms(vehicle) {
 }
 
 watch(() => work.vehicle.value, syncForms)
+// VC-ADR-038: the ACTIVE person types from the server (defaults from an older backend); the current one stays visible if retired
+const stickerOptions = computed(() => {
+  const v = work.vehicle.value
+  const list = v?.stickerCategories?.length ? v.stickerCategories : DEFAULT_STICKER_CATEGORIES.map(toSticker)
+  return v?.sticker && !list.some((c) => c.code === v.sticker.code) ? [...list, { ...v.sticker, label: `${v.sticker.label} (ปิดใช้งานแล้ว)` }] : list
+})
 onMounted(() => work.load(route.params.vehicleId))
 watch(() => route.params.vehicleId, (id) => { if (route.name === 'vehicle-maintenance') work.load(id) })
 
@@ -120,7 +126,7 @@ async function confirmCancel() {
             <label class="field-stack"><span class="label-text font-semibold">ยี่ห้อ</span><input v-model.trim="vehicleForm.brand" class="input input-bordered w-full" maxlength="100" /></label>
             <label class="field-stack"><span class="label-text font-semibold">รุ่น</span><input v-model.trim="vehicleForm.model" class="input input-bordered w-full" maxlength="100" /></label>
             <label class="field-stack"><span class="label-text font-semibold">สี</span><select v-if="listFor('colors').length" v-model="vehicleForm.color" class="select select-bordered w-full"><option v-for="o in withCurrent('colors', vehicleForm.color)" :key="o.code" :value="o.code">{{ o.label }}</option></select><input v-else v-model.trim="vehicleForm.color" class="input input-bordered w-full" maxlength="100" /></label>
-            <label class="field-stack"><span class="label-text font-semibold">ประเภทสติกเกอร์ (สี / ขนาด)</span><select v-model="vehicleForm.stickerCategory" class="select select-bordered w-full" data-sticker-category><option value="" disabled>เลือกประเภทผู้ใช้รถ</option><option v-for="(c, code) in STICKER_CATEGORIES" :key="code" :value="code">{{ c.colour }} — {{ c.label }} ({{ c.size }} × {{ c.size }} ซม.)</option></select><span class="text-sm text-base-content/80">สีช่วยจำแนกเท่านั้น ไม่ใช่สิทธิ์ผ่านประตูหรือที่จอด</span></label>
+            <label class="field-stack"><span class="label-text font-semibold">ประเภทผู้ใช้รถ (สี / ขนาดสติกเกอร์)</span><select v-model="vehicleForm.stickerCategory" class="select select-bordered w-full" data-sticker-category><option value="" disabled>เลือกประเภทผู้ใช้รถ</option><option v-for="c in stickerOptions" :key="c.code" :value="c.code">{{ c.label }} — {{ c.colour }} ({{ c.size }} × {{ c.size }} ซม.)</option></select><span class="text-sm text-base-content/80">สีช่วยจำแนกเท่านั้น ไม่ใช่สิทธิ์ผ่านประตูหรือที่จอด</span></label>
             <label class="field-stack"><span class="label-text font-semibold">รหัสเจ้าของ (เปลี่ยนผู้ถือครอง)</span><input v-model.trim="vehicleForm.ownerUserId" class="input input-bordered w-full font-mono" maxlength="80" placeholder="เว้นว่างถ้าไม่เปลี่ยนเจ้าของ" /></label>
           </div>
           <div class="mt-4 flex justify-end"><button class="btn btn-primary" type="button" :disabled="work.actionPhase.value === 'submitting'" @click="saveVehicle"><span v-if="work.actionPhase.value === 'submitting'" class="loading loading-spinner loading-xs"></span>บันทึกข้อมูลยานพาหนะ</button></div>

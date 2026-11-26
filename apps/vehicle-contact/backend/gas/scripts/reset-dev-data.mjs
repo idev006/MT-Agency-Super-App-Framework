@@ -208,7 +208,7 @@ export async function runReset({
         idempotencyKey: 'reset-' + runTag + '-' + plate,
       };
       const submitted = ok(await request('registrations.submit', registration));
-      const approved = ok(await request('registrations.review', {requestId: submitted.requestId, decision: 'APPROVE', platePhotoVerified: true}, adminToken));
+      const approved = ok(await request('registrations.review', {requestId: submitted.requestId, decision: 'APPROVE', stickerCategory: 'NCO', platePhotoVerified: true}, adminToken));
       await step('SEED_VERIFY_' + plate, async () => {
         const lookup = ok(await request('vehicles.lookup', {plate, province: seed.province}, adminToken));
         if (lookup.vehicleId !== approved.vehicleId) throw new Error('LOOKUP_MISMATCH');

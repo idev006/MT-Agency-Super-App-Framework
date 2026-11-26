@@ -1,3 +1,4 @@
+import { stickerOf, toSticker } from '../../domain/reference/sticker-categories.js'
 function mapResult(response, tokenExpected) {
   const data = response?.data
   if (!data || typeof data.vehicleId !== 'string') throw Object.assign(new Error('Invalid QR response'), { code: 'INVALID_ENVELOPE' })
@@ -21,6 +22,7 @@ export function createGasQrGovernanceRepository({ callOperation }) {
       return items.map((x) => Object.freeze({
         vehicleId: text(x.vehicleId), status: text(x.status), plate: text(x.plate), province: text(x.province),
         vehicleType: text(x.vehicleType), brand: text(x.brand), model: text(x.model), color: text(x.color), stickerCategory: text(x.stickerCategory),
+        sticker: toSticker(x.sticker) || stickerOf(text(x.stickerCategory)),
         qrId: text(x.qrId), issuedAt: text(x.issuedAt),
         token: x.status === 'READY' && /^[a-f0-9]{64}$/.test(text(x.token)) ? x.token : '',
       }))

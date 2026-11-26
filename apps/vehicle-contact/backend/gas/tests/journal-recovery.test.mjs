@@ -115,14 +115,14 @@ test('B2B-REVIEW-01 (W1) a failing review write leaves NO partial state — one 
  const h=createAcceptanceHarness(),ctx=submitContext(h);
  const sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
  h.setWriteFailure('vc_vehicle_contacts'); // contact write fails → the whole commit is rejected
- assertError(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'OPERATION_FAILED','injected contact failure');
+ assertError(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'OPERATION_FAILED','injected contact failure');
  h.setWriteFailure(null);
  assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,0,'no vehicle written');
  assert.equal(h.read('vc_registration_requests').find(r=>r.request_id===sub.requestId).status,'PENDING_APPROVAL');
  assert.equal(h.read('vc_vehicle_contacts').filter(c=>c.vehicle_id===sub.vehicleId).length,0,'no contact written');
  assert.equal(h.read('vc_qr_tokens').filter(q=>q.vehicle_id===sub.vehicleId).length,0,'no QR issued');
  assert.equal(h.read('vc_operation_journal').filter(j=>j.operation==='registrations.review'&&j.entity_id===sub.requestId).length,0,'nothing journaled: nothing was written');
- const ok=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'retry succeeds cleanly');
+ const ok=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'retry succeeds cleanly');
  assert.equal(ok.status,'APPROVED');
  assert.equal(h.read('vc_vehicle_photos').filter(x=>x.vehicle_id===sub.vehicleId).length,5);
  assert.equal(h.read('vc_operation_journal').filter(j=>j.operation==='registrations.review'&&j.entity_id===sub.requestId).at(-1).status,'APPLIED');
@@ -132,30 +132,30 @@ test('B2B-REVIEW-02 registrationReview restart cleans a PREPARED partial and rep
  const h=createAcceptanceHarness(),ctx=submitContext(h),sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
  const request=h.read('vc_registration_requests').find(r=>r.request_id===sub.requestId),app=JSON.parse(request.application_json);
  const eventId='evt-review-restart',auditId='audit-review-restart',qrId='qr-review-restart';
- const detail={operation:'registrations.review',requestId:sub.requestId,vehicleId:sub.vehicleId,decision:'APPROVE',actorId:'u-reg',
+ const detail={operation:'registrations.review',requestId:sub.requestId,vehicleId:sub.vehicleId,decision:'APPROVE',stickerCategory:'NCO',actorId:'u-reg',
   contactId:'contact-review-restart',qrId,auditId,correlationId:'review-restart'};
  h.seed('vc_operation_journal',[{event_id:eventId,operation:'registrations.review',entity_id:sub.requestId,actor_id:'u-reg',status:'PREPARED',created_at:h.now(),detail_json:JSON.stringify(detail)}]);
  h.seed('vc_vehicles',[{vehicle_id:sub.vehicleId,plate_normalized:app.plate_normalized,province_code:app.province_code,vehicle_type:app.vehicle_type,
   make:app.make,model:app.model,color:app.color,status:'ACTIVE',version:1,created_at:h.now(),updated_at:h.now(),created_by:'u-reg',updated_by:'u-reg',
   plate_type:app.plate_type,organization_id:app.organization_id}]);
- const recovered=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'restart review recovery');
+ const recovered=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'restart review recovery');
  assert.match(recovered.qrToken,/^[a-f0-9]{64}$/);assert.equal(recovered.qrId,qrId);
  assert.equal(h.read('vc_operation_journal').find(j=>j.event_id===eventId).status,'APPLIED');
  assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,1);
  assert.equal(h.read('vc_vehicle_contacts').filter(c=>c.vehicle_id===sub.vehicleId).length,1);
  assert.equal(h.read('vc_vehicle_photos').filter(p=>p.vehicle_id===sub.vehicleId).length,5);
  assert.equal(h.read('vc_qr_tokens').find(q=>q.qr_id===qrId).token_digest,h.security.sha256(recovered.qrToken));
- const replay=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'review replay');
+ const replay=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'review replay');
  assert.equal(replay.qrToken,recovered.qrToken);assert.equal(h.read('vc_change_audit').filter(a=>a.audit_id===auditId).length,1);
  assert.equal(h.read('vc_qr_tokens').filter(q=>q.vehicle_id===sub.vehicleId).length,1);
 });
 
 test('B2B-REVIEW-03 stale PREPARED marker after terminal writes finalizes without duplicates',()=>{
  const h=createAcceptanceHarness(),ctx=submitContext(h),sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
- const first=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const first=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  const journal=h.read('vc_operation_journal').filter(j=>j.operation==='registrations.review'&&j.entity_id===sub.requestId).at(-1);
  h.store.update('vc_operation_journal',{event_id:journal.event_id},{status:'PREPARED'});
- const replay=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'restart after terminal writes');
+ const replay=assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'restart after terminal writes');
  assert.equal(replay.qrToken,first.qrToken);assert.equal(journalOf(h,sub.requestId,'registrations.review').status,'APPLIED');
  assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,1);
  assert.equal(h.read('vc_qr_tokens').filter(q=>q.vehicle_id===sub.vehicleId).length,1);
@@ -164,7 +164,7 @@ test('B2B-REVIEW-03 stale PREPARED marker after terminal writes finalizes withou
 test('B2B-REVIEW-04 mismatched retry intent fails closed without changing the pending request',()=>{
  const h=createAcceptanceHarness(),ctx=submitContext(h),sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
  h.seed('vc_operation_journal',[{event_id:'evt-review-mismatch',operation:'registrations.review',entity_id:sub.requestId,actor_id:'u-reg',status:'PREPARED',created_at:h.now(),
-  detail_json:JSON.stringify({operation:'registrations.review',requestId:sub.requestId,vehicleId:sub.vehicleId,decision:'APPROVE',actorId:'u-reg',contactId:'c',qrId:'q',auditId:'a',correlationId:'x'})}]);
+  detail_json:JSON.stringify({operation:'registrations.review',requestId:sub.requestId,vehicleId:sub.vehicleId,decision:'APPROVE',stickerCategory:'NCO',actorId:'u-reg',contactId:'c',qrId:'q',auditId:'a',correlationId:'x'})}]);
  assertError(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'REJECT'}),'OPERATION_RECOVERY_REQUIRED','conflicting restart intent');
  assert.equal(h.read('vc_registration_requests').find(r=>r.request_id===sub.requestId).status,'PENDING_APPROVAL');
  assert.equal(h.read('vc_vehicles').filter(v=>v.vehicle_id===sub.vehicleId).length,0);
@@ -173,7 +173,7 @@ test('B2B-REVIEW-04 mismatched retry intent fails closed without changing the pe
 test('DSEQ09-03 executeDeletion partial write removes photos but leaves contacts/vehicle; job DELETION_FAILED (retry required)',()=>{
  const h=createAcceptanceHarness(),ctx=submitContext(h);
  const sub=assertOk(assert,h.call('registrations.submit',ctx.payload),'submit');
- assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:sub.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  const vid=sub.vehicleId;
  h.seed('vc_retention_jobs',[{job_id:'job-del-03',vehicle_id:vid,due_at:'2020-01-01T00:00:00.000Z',status:'DELETION_APPROVED',
   approved_by:'u-sys',approved_at:h.now(),attempts:0,last_error:'',legal_hold:false,created_at:h.now(),updated_at:h.now()}]);
