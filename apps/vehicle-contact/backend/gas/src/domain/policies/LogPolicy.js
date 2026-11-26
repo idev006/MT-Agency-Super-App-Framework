@@ -23,71 +23,89 @@ export const LOG_CATEGORIES = Object.freeze([
   {code: 'CHANGE', match: [{table: 'vc_change_audit'}], fallbackFor: 'vc_change_audit', enabled: true, days: 1825, canDisable: false, minDays: 365, allowForever: true},
   {code: 'LOGIN', match: [{table: 'vc_security_events'}], fallbackFor: 'vc_security_events', enabled: true, days: 90, canDisable: false, minDays: 30, allowForever: false}
 ].map(c => Object.freeze({...c, match: Object.freeze(c.match.map(m => Object.freeze({...m})))})));
-export const LOG_TABLES = Object.freeze([...new Set(LOG_CATEGORIES.flatMap(c => c.match.map(m => m.table)))]);
-const BY_CODE = new Map(LOG_CATEGORIES.map(c => [c.code, c]));
 
-export const defaultLogPolicy = () => Object.fromEntries(LOG_CATEGORIES.map(c => [c.code, {enabled: c.enabled, days: c.days}]));
-
-const validDays = (c, d) => Number.isSafeInteger(d) && (d === 0 ? c.allowForever : d >= c.minDays && d <= LOG_MAX_DAYS);
-
-// Admin input [{code, enabled, days}] → policy {CODE: {enabled, days}}. Strict: every code once, known codes only.
-export function parseLogPolicy(raw) {
-  if (!Array.isArray(raw) || raw.length !== LOG_CATEGORIES.length) throw new Error('INVALID_LOG_POLICY');
-  const out = {};
-  for (const x of raw) {
-    const c = x && typeof x === 'object' ? BY_CODE.get(x.code) : null;
-    if (!c || out[c.code] || typeof x.enabled !== 'boolean' || !validDays(c, x.days)) throw new Error('INVALID_LOG_POLICY');
-    if (!x.enabled && !c.canDisable) throw new Error('LOG_REQUIRED');
-    out[c.code] = {enabled: x.enabled, days: x.days};
+// A log-kind registry (VC-ADR-043 PR 2 "plug-in log kinds"): every rule below works on a given list of kinds, so a new
+// kind is one more entry, not a code change. The exports after it are bound to the five kinds above.
+// A kind: {code, match: [{table, field?, values?}], fallbackFor?, enabled, days, canDisable, minDays, allowForever, sink?}
+export function createLogKinds(kinds) {
+  const byCode = new Map();
+  for (const c of kinds) {
+    if (!c || typeof c.code !== 'string' || byCode.has(c.code) || !Array.isArray(c.match) || !c.match.length) throw new Error('INVALID_LOG_KIND');
+    byCode.set(c.code, c);
   }
-  return out;
-}
+  const fallback = kinds.filter(c => c.fallbackFor).map(c => c.fallbackFor);
+  if (new Set(fallback).size !== fallback.length) throw new Error('INVALID_LOG_KIND');
+  const tables = Object.freeze([...new Set(kinds.flatMap(c => c.match.map(m => m.table)))]);
+  const validDays = (c, d) => Number.isSafeInteger(d) && (d === 0 ? c.allowForever : d >= c.minDays && d <= LOG_MAX_DAYS);
+  if (kinds.some(c => typeof c.enabled !== 'boolean' || !validDays(c, c.days))) throw new Error('INVALID_LOG_KIND');
+  const defaults = () => Object.fromEntries(kinds.map(c => [c.code, {enabled: c.enabled, days: c.days}]));
 
-// Stored JSON → policy; anything unreadable falls back per code to the default (never "log nothing" by accident).
-export function readLogPolicy(value) {
-  const policy = defaultLogPolicy();
-  let list = [];
-  try { list = JSON.parse(value || '[]'); } catch { list = []; }
-  for (const x of Array.isArray(list) ? list : []) {
-    const c = x && BY_CODE.get(x.code);
-    if (!c || typeof x.enabled !== 'boolean' || !validDays(c, x.days)) continue;
-    policy[c.code] = {enabled: c.canDisable ? x.enabled : true, days: x.days};
+  // Admin input [{code, enabled, days}] → policy {CODE: {enabled, days}}. Strict: every code once, known codes only.
+  function parse(raw) {
+    if (!Array.isArray(raw) || raw.length !== kinds.length) throw new Error('INVALID_LOG_POLICY');
+    const out = {};
+    for (const x of raw) {
+      const c = x && typeof x === 'object' ? byCode.get(x.code) : null;
+      if (!c || out[c.code] || typeof x.enabled !== 'boolean' || !validDays(c, x.days)) throw new Error('INVALID_LOG_POLICY');
+      if (!x.enabled && !c.canDisable) throw new Error('LOG_REQUIRED');
+      out[c.code] = {enabled: x.enabled, days: x.days};
+    }
+    return out;
   }
-  return policy;
+  // Stored JSON → policy; anything unreadable falls back per code to the default (never "log nothing" by accident).
+  function read(value) {
+    const policy = defaults();
+    let list = [];
+    try { list = JSON.parse(value || '[]'); } catch { list = []; }
+    for (const x of Array.isArray(list) ? list : []) {
+      const c = x && byCode.get(x.code);
+      if (!c || typeof x.enabled !== 'boolean' || !validDays(c, x.days)) continue;
+      policy[c.code] = {enabled: c.canDisable ? x.enabled : true, days: x.days};
+    }
+    return policy;
+  }
+  // Which kind governs a row about to be written (null = not governed).
+  function category(table, row) {
+    const hit = kinds.find(c => c.match.some(m => m.table === table && m.field && m.values.includes(String(row && row[m.field] || ''))));
+    return hit || kinds.find(c => c.fallbackFor === table) || null;
+  }
+  // COUNT specs per kind: [{table, filter, sign}] — the fallback kind counts its whole table minus what other kinds claim.
+  function countSpecs(code) {
+    const c = byCode.get(code);
+    const own = c.match.flatMap(m => m.field ? m.values.map(v => ({table: m.table, filter: {[m.field]: v}, sign: 1})) : []);
+    if (!c.fallbackFor || c.match.some(m => m.table === c.fallbackFor && m.field)) return own;
+    const claimed = kinds.filter(o => o.code !== code).flatMap(o => o.match.filter(m => m.table === c.fallbackFor && m.field)
+      .flatMap(m => m.values.map(v => ({table: m.table, filter: {[m.field]: v}, sign: -1}))));
+    return [{table: c.fallbackFor, filter: {}, sign: 1}, ...claimed];
+  }
+  // {write, expireAt, code, sink}: expireAt is an ISO time, or null when kept without limit.
+  function decision(policy, table, row, nowIso) {
+    const c = category(table, row);
+    if (!c) return {write: true, expireAt: null, code: null, sink: null};
+    const p = policy[c.code] || {enabled: c.enabled, days: c.days};
+    const enabled = c.canDisable ? p.enabled : true;
+    const base = Date.parse(row && row.created_at || nowIso);
+    const expireAt = p.days > 0 && Number.isFinite(base) ? new Date(base + p.days * 86400000).toISOString() : null;
+    return {write: enabled, expireAt, code: c.code, sink: c.sink || LOG_DEFAULT_SINK};
+  }
+  const list = policy => kinds.map(c => ({code: c.code, enabled: policy[c.code].enabled,
+    days: policy[c.code].days, canDisable: c.canDisable, minDays: c.minDays, maxDays: LOG_MAX_DAYS, allowForever: c.allowForever,
+    defaultEnabled: c.enabled, defaultDays: c.days}));
+  return Object.freeze({kinds, tables, defaults, parse, read, category, countSpecs, decision, list});
 }
+export const LOG_DEFAULT_SINK = 'firestore';
 
-export const loadLogPolicy = store => {
+const DEFAULT_KINDS = createLogKinds(LOG_CATEGORIES);
+export const LOG_TABLES = DEFAULT_KINDS.tables;
+export const defaultLogPolicy = () => DEFAULT_KINDS.defaults();
+export const parseLogPolicy = raw => DEFAULT_KINDS.parse(raw);
+export const readLogPolicy = value => DEFAULT_KINDS.read(value);
+export const loadLogPolicy = (store, kinds = DEFAULT_KINDS) => {
   const row = store.one('vc_settings', {key: LOG_SETTING_KEY});
-  return readLogPolicy(row && row.value);
+  return kinds.read(row && row.value);
 };
-
-// Which category governs a row about to be written (null = not governed).
-export function logCategory(table, row) {
-  const hit = LOG_CATEGORIES.find(c => c.match.some(m => m.table === table && m.field && m.values.includes(String(row && row[m.field] || ''))));
-  return hit || LOG_CATEGORIES.find(c => c.fallbackFor === table) || null;
-}
-
-// COUNT specs per kind: [{table, filter}] — the fallback kind counts its whole table minus what other kinds claim.
-export function logCountSpecs(code) {
-  const c = BY_CODE.get(code);
-  const own = c.match.flatMap(m => m.field ? m.values.map(v => ({table: m.table, filter: {[m.field]: v}, sign: 1})) : []);
-  if (!c.fallbackFor || c.match.some(m => m.table === c.fallbackFor && m.field)) return own;
-  const claimed = LOG_CATEGORIES.filter(o => o.code !== code).flatMap(o => o.match.filter(m => m.table === c.fallbackFor && m.field)
-    .flatMap(m => m.values.map(v => ({table: m.table, filter: {[m.field]: v}, sign: -1}))));
-  return [{table: c.fallbackFor, filter: {}, sign: 1}, ...claimed];
-}
-
-// {write, expireAt}: expireAt is an ISO time, or null when kept without limit.
-export function logDecision(policy, table, row, nowIso) {
-  const c = logCategory(table, row);
-  if (!c) return {write: true, expireAt: null, code: null};
-  const p = policy[c.code] || {enabled: c.enabled, days: c.days};
-  const enabled = c.canDisable ? p.enabled : true;
-  const base = Date.parse(row && row.created_at || nowIso);
-  const expireAt = p.days > 0 && Number.isFinite(base) ? new Date(base + p.days * 86400000).toISOString() : null;
-  return {write: enabled, expireAt, code: c.code};
-}
-
-export const logPolicyList = policy => LOG_CATEGORIES.map(c => ({code: c.code, enabled: policy[c.code].enabled,
-  days: policy[c.code].days, canDisable: c.canDisable, minDays: c.minDays, maxDays: LOG_MAX_DAYS, allowForever: c.allowForever,
-  defaultEnabled: c.enabled, defaultDays: c.days}));
+export const logCategory = (table, row) => DEFAULT_KINDS.category(table, row);
+export const logCountSpecs = code => DEFAULT_KINDS.countSpecs(code);
+export const logDecision = (policy, table, row, nowIso) => DEFAULT_KINDS.decision(policy, table, row, nowIso);
+export const logPolicyList = policy => DEFAULT_KINDS.list(policy);
+export const defaultLogKinds = () => DEFAULT_KINDS;
