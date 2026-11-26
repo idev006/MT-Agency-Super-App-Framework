@@ -9,11 +9,13 @@ import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {createApiHandler} from '../../cloudrun/http-handler.mjs';
 import {createCoreHandler} from '../src/server.mjs';
-import {createLegacyClient} from '../src/adapters/legacy-client.mjs';
+import {createIntegrationManager} from '../src/adapters/outbound/manager.mjs';
 import {createRouter} from '../src/http/routing.mjs';
 
 const listen = handler => new Promise(r => { const s = http.createServer(handler); s.listen(0, '127.0.0.1', () => r(s)); });
 const base = s => `http://127.0.0.1:${s.address().port}`;
+const quiet = () => {};
+const legacyAt = url => createIntegrationManager({overrides: {urls: {'legacy-engine': url}}, log: quiet}).gateway('legacy-engine');
 
 async function pair() {
   const seen = [];
@@ -23,7 +25,7 @@ async function pair() {
     return {ok: true, data: {echo: req.group + '.' + req.action, payload: req.payload}, error: null, requestId: req.requestId || null};
   }};
   const legacy = await listen(createApiHandler(legacyApp));
-  const core = await listen(createCoreHandler({legacy: createLegacyClient({url: base(legacy)})}));
+  const core = await listen(createCoreHandler({legacy: legacyAt(base(legacy))}));
   return {legacy, core, seen, close: () => { legacy.close(); core.close(); }};
 }
 
@@ -56,9 +58,9 @@ test('CORE-02 the browser gateway contract (WF-01..14) holds at the core', async
   } finally { p.close(); }
 });
 
-test('CORE-03 legacy unreachable → clean envelope; a non-trusted legacy URL is refused at start', async () => {
+test('CORE-03 legacy unreachable → clean envelope with the requestId; only local overrides are accepted', async () => {
   const dead = await listen((_req, res) => { res.destroy(); });
-  const core = await listen(createCoreHandler({legacy: createLegacyClient({url: base(dead), timeoutMs: 2000})}));
+  const core = await listen(createCoreHandler({legacy: legacyAt(base(dead))}));
   try {
     const r = await fetch(base(core) + '/', {method: 'POST', headers: {'content-type': 'application/json'},
       body: JSON.stringify({apiVersion: 'v1', group: 'auth', action: 'session', payload: {}, requestId: 'req_12345678'})});
@@ -67,9 +69,9 @@ test('CORE-03 legacy unreachable → clean envelope; a non-trusted legacy URL is
     assert.equal(body.error.code, 'UPSTREAM_UNAVAILABLE');
     assert.equal(body.requestId, 'req_12345678');
   } finally { dead.close(); core.close(); }
-  for (const url of ['https://evil.example', 'http://localhost:9999', '', 'https://p6vc-api-x.y.run.app/path'])
-    assert.throws(() => createLegacyClient({url}), /P6VC_LEGACY_API_URL_INVALID/);
-  assert.doesNotThrow(() => createLegacyClient({url: 'https://p6vc-api-46858005337.asia-southeast3.run.app'}));
+  for (const url of ['https://evil.example', 'http://localhost:9999', 'https://p6vc-api-x.y.run.app'])
+    assert.throws(() => legacyAt(url), /INTEGRATION_OVERRIDE_NOT_LOCAL/);
+  assert.doesNotThrow(() => createIntegrationManager({log: quiet}).gateway('legacy-engine'), 'production URL from the contract');
 });
 
 test('CORE-04 routing: a ported operation is answered by the core, everything else by the legacy', async () => {

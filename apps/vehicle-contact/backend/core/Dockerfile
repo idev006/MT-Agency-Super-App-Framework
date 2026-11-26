@@ -4,6 +4,7 @@ FROM node:22-slim
 WORKDIR /app
 ENV NODE_ENV=production
 COPY schema/database.schema.json schema/database.schema.json
+COPY contracts contracts
 COPY backend/gas/package.json backend/gas/package.json
 COPY backend/gas/src backend/gas/src
 COPY backend/cloudrun backend/cloudrun
