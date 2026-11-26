@@ -19,7 +19,9 @@ const aggregatePath=join(reportDir,'p6vc-live-api-suite.json');
 let sourceCommit=process.env.GITHUB_SHA||null;
 if(!sourceCommit)try{sourceCommit=execFileSync('git',['rev-parse','HEAD'],{cwd:repoRoot,encoding:'utf8'}).trim();}catch{}
 
-const suite={status:'RUNNING',sourceCommit,startedAt:new Date().toISOString(),stages:[],secretsExposed:false};
+// the service under test is part of the evidence (2026-11-27: earlier runs hit GAS /exec via .env without saying so)
+const suite={status:'RUNNING',sourceCommit,target:{id:target.id,kind:target.kind,url:target.url},startedAt:new Date().toISOString(),stages:[],secretsExposed:false};
+console.log('LIVE_SUITE_TARGET '+JSON.stringify(suite.target));
 fs.mkdirSync(reportDir,{recursive:true});
 const persist=()=>fs.writeFileSync(aggregatePath,JSON.stringify(suite,null,2)+'\n');
 const readReport=name=>{

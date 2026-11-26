@@ -60,8 +60,9 @@ prove:
     dir: apps/vehicle-contact/backend/gas
     command: "node scripts/run-live-api-suite.mjs --require-authenticated --require-data-proof"
     gates: [P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE]
+    target_env: "P6VC_API_BASE_URL and P6VC_GAS_EXEC_URL BOTH = https://p6vc-core-46858005337.asia-southeast3.run.app (the .env default is GAS /exec; one alone = CONFLICTING_API_BASE_URL)"
     background: true            # > 10 minutes
-    expect: "LIVE_SUITE status PASS 112/112 (public 11, Worker 14, authenticated 80 covering every op, DATA_PROOF 7)"
+    expect: "LIVE_SUITE status PASS 126/126 (public 11, Worker 14, Cloud Run gateway 14, authenticated 80 covering every op, DATA_PROOF 7); check LIVE_SUITE_TARGET line"
   data_proof:
     dir: .
     command: "P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE node apps/vehicle-contact/backend/gas/scripts/firestore-readback-proof.mjs"
@@ -71,6 +72,7 @@ prove:
     - { needs: "preview_start p6vc-frontend (port 5173)", run: "P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV node scripts/live-print-ui.mjs", dir: apps/vehicle-contact/frontend }
   readback: "@google-cloud/firestore from backend/gas node_modules; env NAMES from gitignored .env: GOOGLE_APPLICATION_CREDENTIALS, FIRESTORE_PROJECT_ID, FIRESTORE_DATABASE_ID (load via backend/gas/scripts/load-env.mjs)"
 gotchas:
+  - "2026-11-27 the local .env points P6VC_GAS_EXEC_URL at GAS /exec: runs before this date proved the GAS runtime, not Cloud Run (Cloud Run only by the deploy smoke). Set the target env (prove.live_suite.target_env); the report now records target."
   - "2026-11-26 DATA_PROOF is BLOCKED (suite FAIL) unless the probe gate env is set for the suite run."
   - "2026-11-26 gen-system-maps finds store rules by 'export function <name>' in any application module; moving one needs the generator rule checked."
   - "2026-11-26 internal error codes (INVALID_SETTINGS, INVALID_SETTING_VALUE) surface as public INVALID_REQUEST; compare tests with the old code first."
