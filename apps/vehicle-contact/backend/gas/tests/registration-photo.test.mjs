@@ -12,6 +12,11 @@ function pendingRegistration(h){
 
 test('PHOTO-01 reviewer reads all five snapshot photos; bytes match staged media; no storage ref leaks',()=>{
  const h=createAcceptanceHarness(),{submitted,photos}=pendingRegistration(h);
+ // VC-ADR-040: photo views follow the PHOTO log switch (off by default; live read-back 0.9.35 found this one always logged)
+ assertOk(assert,h.as('reg','registrations.photo',{requestId:submitted.requestId,photoId:photos[0].photoId}),'view with PHOTO log off');
+ assert.equal(h.read('vc_change_audit').filter(a=>a.action==='REGISTRATION_PHOTO_VIEWED').length,0,'not logged by default');
+ const on=assertOk(assert,h.as('sys','system.config.get',{}),'policy').log_policy.map(({code,enabled,days})=>({code,enabled:code==='PHOTO'?true:enabled,days}));
+ assertOk(assert,h.as('sys','system.config.update',{values:{log_policy:on}}),'switch PHOTO log on');
  for(const staged of photos){
   const data=assertOk(assert,h.as('reg','registrations.photo',{requestId:submitted.requestId,photoId:staged.photoId}),'photo '+staged.slot);
   assert.equal(data.photoId,staged.photoId);
@@ -22,6 +27,7 @@ test('PHOTO-01 reviewer reads all five snapshot photos; bytes match staged media
  }
  const audits=h.read('vc_change_audit').filter(a=>a.action==='REGISTRATION_PHOTO_VIEWED');
  assert.equal(audits.length,5);
+ assert.equal(assertOk(assert,h.as('sys','system.config.get',{}),'counts').log_counts.PHOTO,5,'counted as photo views, not changes');
  assert.ok(audits.every(a=>a.entity_id===submitted.requestId&&a.actor_id==='u-reg'));
 });
 
