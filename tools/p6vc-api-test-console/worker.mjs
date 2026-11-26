@@ -132,17 +132,23 @@ function validFrontendEnvelope(input){
   if(!/^[0-9a-f]{64}$/i.test(input.sessionToken||""))return "INVALID_SESSION_PAYLOAD";
   return null;
  }
+ // Arrays are small (≤10) except where the API takes a list: qr.export vehicleIds (≤100, backend QR_EXPORT_MAX) and the
+ // sticker category list in system.config.update (≤20, backend STICKER_CATEGORY_MAX). Live 2026-11-26: a print sheet of
+ // more than 10 vehicles was refused here (INVALID_OPERATION_PAYLOAD) although the backend allows 100.
+ const ARRAY_MAX={"qr.export":100,"system.config.update":20}[operation]||10;
  const safeValue=(value,depth=0)=>{
   if(depth>3)return false;
   if(value===null||typeof value==="boolean")return true;
   if(typeof value==="number")return Number.isFinite(value);
   if(typeof value==="string")return value.length<=4096;
-  if(Array.isArray(value))return value.length<=10&&value.every(item=>safeValue(item,depth+1));
+  if(Array.isArray(value))return value.length<=ARRAY_MAX&&value.every(item=>safeValue(item,depth+1));
   if(typeof value==="object")return Object.entries(value).length<=10&&Object.entries(value).every(([key,item])=>
    /^[A-Za-z0-9_]{1,80}$/.test(key)&&!["__proto__","constructor","prototype"].includes(key)&&safeValue(item,depth+1));
   return false;
  };
  if(!keys.every(key=>safeValue(input.payload[key])))return "INVALID_OPERATION_PAYLOAD";
+ if(operation==="qr.export"&&(!Array.isArray(input.payload.vehicleIds)||!input.payload.vehicleIds.length
+  ||!input.payload.vehicleIds.every(id=>typeof id==="string"&&id.trim()&&id.length<=256)))return "INVALID_OPERATION_PAYLOAD";
  if(operation==="auth.login"&&(typeof input.payload.username!=="string"||input.payload.username.length<1||input.payload.username.length>100||
    typeof input.payload.password!=="string"||input.payload.password.length<1||input.payload.password.length>128))return "INVALID_LOGIN_PAYLOAD";
  if(operation==="campaigns.validate"&&!/^[0-9a-f]{64}$/i.test(input.payload.campaignToken||""))return "INVALID_OPERATION_PAYLOAD";

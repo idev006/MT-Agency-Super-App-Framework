@@ -574,3 +574,20 @@ test('WORKER-SIVP01 the Worker allowlist equals the Configuration SSOT; other GA
   assert.equal(r.status,503);assert.equal(forwarded,0);
  }finally{globalThis.fetch=original;}
 });
+
+test('lists: qr.export takes up to 100 vehicle ids, sticker list up to 20; other arrays stay ≤10 (live bug 2026-11-26)',async()=>{
+ const fake=await fakeGAS(body=>envelope(true,{operation:body.group+'.'+body.action}));
+ try{
+  const send=(group,action,payload)=>worker.fetch(frontendRequest({apiVersion:'v1',group,action,payload,requestId:'request_123',sessionToken:TOKEN}),env());
+  const ids=n=>Array.from({length:n},(_,i)=>'v'.repeat(10)+i);
+  assert.equal((await send('qr','export',{vehicleIds:ids(20)})).status,200,'20 vehicles (was refused at >10)');
+  assert.equal((await send('qr','export',{vehicleIds:ids(100)})).status,200,'100 vehicles');
+  for(const bad of [{vehicleIds:ids(101)},{vehicleIds:[]},{vehicleIds:['ok',5]},{vehicleIds:'v1'}]){
+   const r=await send('qr','export',bad);assert.equal(r.status,403);assert.equal((await r.json()).error,'INVALID_OPERATION_PAYLOAD');
+  }
+  const cat=i=>({code:'TYPE_'+i,label:'ประเภท '+i,colour:'สี',hex:'#123456',size:5,active:true});
+  assert.equal((await send('system','config.update',{values:{sticker_categories:Array.from({length:20},(_,i)=>cat(i))}})).status,200,'20 types');
+  assert.equal((await send('system','config.update',{values:{sticker_categories:Array.from({length:21},(_,i)=>cat(i))}})).status,403,'21 types');
+  assert.equal((await send('registrations','listPending',{page:1,pageSize:10,extra:ids(11)})).status,403,'other ops unchanged');
+ }finally{fake.restore();}
+});
