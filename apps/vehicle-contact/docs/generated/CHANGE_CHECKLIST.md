@@ -34,9 +34,12 @@ Hard-coded operation counts (update them, or better: derive from the inventory):
 | Changed | What | Deploy / follow-up |
 |---|---|---|
 | `apps/vehicle-contact/backend/gas/src` | backend | GAS push (`PUSH_VEHICLE_GAS`) + `clasp update-deployment -V <new>` + Cloud Run deploy; then live suite + DATA_PROOF |
+| `apps/vehicle-contact/backend/core` | Node core (VC-ADR-046) | `deploy-vehicle-core.yml` (`DEPLOY_VEHICLE_CORE`); a change in backend/cloudrun or backend/gas/src also reaches the core (it imports them) — deploy both |
+| `apps/vehicle-contact/backend/cloudrun` | shared HTTP handler + browser gateway | used by the legacy service AND the core: deploy both |
 | `apps/vehicle-contact/schema/database.schema.json` | new field | a backfill script for existing rows if a filter or rule depends on it |
 | `apps/vehicle-contact/contracts/firestore-indexes.v1.json` | indexes | `ensure-firestore-indexes.mjs --apply` BEFORE the backend deploy |
 | `apps/vehicle-contact/contracts/firestore-field-config.v1.json` | TTL / exemptions | `ensure-firestore-field-config.mjs --apply` |
 | `tools/p6vc-api-test-console/worker.mjs` | Worker (web app gateway) | `npx wrangler@4 deploy` — the web app goes through it; the live API suite calls Cloud Run directly and does NOT catch a stale Worker |
 | `apps/vehicle-contact/frontend/src` | web app | GitHub Pages deploys on merge; check the bundle version on the live site |
 | `.github/workflows/deploy-vehicle-cloudrun.yml` | deploy pipeline | proven only by a real deploy run |
+| `.github/workflows/deploy-vehicle-core.yml` | core deploy pipeline | proven only by a real deploy run (the first run creates p6vc-core) |

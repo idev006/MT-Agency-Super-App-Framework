@@ -61,8 +61,9 @@ persist();
 await runStage('PUBLIC_DIRECT_GAS','smoke-api.mjs','p6vc-live-public-smoke.json');
 await runStage('WORKER_FAIL_CLOSED','../../../../../tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs','p6vc-live-worker-failclosed.json');
 // VC-ADR-044 PR 2: the same gateway contract on Cloud Run /api/frontend (the web app's endpoint once the Worker retires)
-const cloudRunGateway=JSON.parse(fs.readFileSync(new URL('../../../contracts/trusted-endpoints.v1.json',import.meta.url),'utf8'))
- .endpoints.find(e=>e.id==='cloud-run-api').url+'/api/frontend';
+// the gateway of the service under test (core or legacy); a GAS target falls back to the legacy Cloud Run gateway
+const cloudRunGateway=(target.kind==='cloud-run'?target.url:JSON.parse(fs.readFileSync(new URL('../../../contracts/trusted-endpoints.v1.json',import.meta.url),'utf8'))
+ .endpoints.find(e=>e.id==='cloud-run-api').url)+'/api/frontend';
 await runStage('CLOUD_RUN_GATEWAY_FAIL_CLOSED','../../../../../tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs','p6vc-live-cloudrun-gateway.json',[],
  {P6VC_WORKER_FRONTEND_URL:cloudRunGateway,P6VC_GATEWAY_REPORT:'p6vc-live-cloudrun-gateway.json'});
 const preflightPassed=suite.stages.every(x=>x.status==='PASS');

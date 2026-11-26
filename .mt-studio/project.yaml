@@ -34,6 +34,8 @@ deploy:
   by_path:
     - { path: apps/vehicle-contact/contracts/firestore-indexes.v1.json, steps: [indexes] }
     - { path: apps/vehicle-contact/backend/gas/src, steps: [gas_push, gas_pin, cloudrun] }
+    - { path: apps/vehicle-contact/backend/cloudrun, steps: [cloudrun, core] }   # shared handler: both services
+    - { path: apps/vehicle-contact/backend/core, steps: [core] }
     - { path: apps/vehicle-contact/frontend/src, steps: [] }   # Pages on merge
     - { path: tools/p6vc-api-test-console, steps: [worker] }
   steps:
@@ -44,6 +46,8 @@ deploy:
         verify: "clasp list-deployments shows @N", note: "run from apps/vehicle-contact/backend/gas" }
     - { id: cloudrun, run: "gh workflow run deploy-vehicle-cloudrun.yml --ref main -f confirmation=DEPLOY_VEHICLE_CLOUDRUN",
         confirmation: DEPLOY_VEHICLE_CLOUDRUN, verify: "steps 'Smoke the candidate' and 'Smoke the live URL' success", note: "safe deploy: no traffic → smoke → switch → smoke, auto rollback" }
+    - { id: core, run: "gh workflow run deploy-vehicle-core.yml --ref main -f confirmation=DEPLOY_VEHICLE_CORE",
+        confirmation: DEPLOY_VEHICLE_CORE, verify: "step 'Smoke the live URL' success (first run creates p6vc-core)", note: "VC-ADR-046 front door; after the legacy deploy when both change" }
     - { id: worker, run: "npx wrangler@4 deploy (in tools/p6vc-api-test-console)", note: "separate deploy; the live API suite does NOT go through it" }
   rollback:
     - "Cloud Run: workflow rollback-vehicle-cloudrun.yml, confirmation ROLLBACK_VEHICLE_CLOUDRUN"
