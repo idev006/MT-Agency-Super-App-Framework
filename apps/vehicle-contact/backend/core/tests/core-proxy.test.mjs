@@ -9,7 +9,7 @@ import path from 'node:path';
 import {spawn} from 'node:child_process';
 import {createApiHandler} from '../../cloudrun/http-handler.mjs';
 import {createCoreHandler} from '../src/server.mjs';
-import {createLegacyClient} from '../src/infrastructure/legacy-client.mjs';
+import {createLegacyClient} from '../src/adapters/legacy-client.mjs';
 import {createRouter} from '../src/http/routing.mjs';
 
 const listen = handler => new Promise(r => { const s = http.createServer(handler); s.listen(0, '127.0.0.1', () => r(s)); });
