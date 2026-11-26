@@ -6,26 +6,6 @@ export function createAdministrationOperations({store,security}) {
   audit_id:security.secretToken(),actor_id:actor.userId,entity_type:'administration',
   entity_id:id,action,redacted_summary:action,correlation_id:security.secretToken().slice(0,16),created_at:security.now()
  });
- const settings=['idle_timeout_minutes','retention_days'];
- function getSettings(){
-  const byKey=new Map(store.list('vc_settings').map(r=>[r.key,r.value]));
-  return Object.fromEntries(settings.map(k=>[k,byKey.get(k)??null]));
- }
- function updateSettings(p,a){
-  const values=p.values;
-  if(!values||typeof values!=='object'||Array.isArray(values)||!Object.keys(values).length
-   ||Object.keys(values).some(k=>!settings.includes(k)))throw new Error('INVALID_SETTINGS');
-  store.sequence(()=>{
-   for(const [key,value] of Object.entries(values)){
-    if(!Number.isSafeInteger(value)||value<1||value>(key==='idle_timeout_minutes'?480:3650))throw new Error('INVALID_SETTING_VALUE');
-    const row={value:String(value),updated_by:a.userId,updated_at:security.now()};
-    if(store.one('vc_settings',{key}))store.update('vc_settings',{key},row);
-    else store.insert('vc_settings',{key,...row});
-   }
-   audit(a,'SETTINGS_UPDATED','GLOBAL');
-  });
-  return getSettings();
- }
  function listOrgs(p){
   // D2: status / type / q filters before pagination; parentName for display.
   const f=listFilter(p,{status:['ACTIVE','DISABLED'],extra:{type:['POLICE','EXTERNAL']}});
@@ -122,7 +102,8 @@ export function createAdministrationOperations({store,security}) {
   return {campaignId:id,revoked:true};
  }
  return Object.freeze({
- 'system.config.get':getSettings,'system.config.update':updateSettings,
+ // system.config.get/update: application/settings/SettingsRegistry.js (built in OperationController)
+
  'organizations.list':listOrgs,'organizations.create':createOrg,'organizations.update':updateOrg,'organizations.disable':disableOrg,'organizations.enable':enableOrg,
  'campaigns.create':createCampaign,'campaigns.list':listCampaigns,'campaigns.validate':validateCampaign,'campaigns.revoke':revokeCampaign,
  getCampaign

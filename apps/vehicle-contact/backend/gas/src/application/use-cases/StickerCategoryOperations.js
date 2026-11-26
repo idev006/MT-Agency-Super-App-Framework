@@ -1,6 +1,6 @@
 // Person type / sticker colour along the workflow (owner 2026-11-26: "ควรตั้งค่าได้ทั้งสี และ ประเภทบุคคล ... ต้อง
 // ตรวจสอบจาก workflows"). Wraps the existing operations (no new API op) so VehicleOperations stays small:
-//   settings    system.config.get/update  — a system admin edits the list (person type, colour name, colour, size, active)
+//   settings    stickerSettings()         — the settings-registry entry: a system admin edits the list (system.config.get/update)
 //   register    campaigns.validate        — the public form gets the ACTIVE person types to choose from
 //               registrations.submit      — the registrant's choice is checked against the list (optional)
 //   approve     registrations.detail      — the reviewer sees the declared type + the list
@@ -18,24 +18,6 @@ export function withStickerCategories(handlers, {store, security}) {
   const h = {...handlers};
   const wrap = (op, fn) => { const inner = h[op]; h[op] = (p, a) => fn(inner, p || {}, a); };
   const withSticker = (l, row) => ({...row, sticker: resolveSticker(row.stickerCategory, l)});
-
-  wrap('system.config.get', (inner, p, a) => ({...inner(p, a), [STICKER_SETTING_KEY]: full(list())}));
-  wrap('system.config.update', (inner, p, a) => {
-    const values = p.values && typeof p.values === 'object' && !Array.isArray(p.values) ? p.values : null;
-    if (!values || !Object.prototype.hasOwnProperty.call(values, STICKER_SETTING_KEY)) return {...inner(p, a), [STICKER_SETTING_KEY]: full(list())};
-    const next = parseStickerCategories(values[STICKER_SETTING_KEY]);
-    if (list().some(c => !next.some(n => n.code === c.code))) throw new Error('STICKER_CATEGORY_IN_USE'); // deactivate, never delete
-    const rest = {...values}; delete rest[STICKER_SETTING_KEY];
-    if (Object.keys(rest).length) inner({...p, values: rest}, a); // the numeric settings first (they validate and may refuse)
-    const at = security.now(), row = {value: JSON.stringify(next), updated_by: a.userId, updated_at: at};
-    store.sequence(() => {
-      if (store.one('vc_settings', {key: STICKER_SETTING_KEY})) store.update('vc_settings', {key: STICKER_SETTING_KEY}, row);
-      else store.insert('vc_settings', {key: STICKER_SETTING_KEY, ...row});
-      store.insert('vc_change_audit', {audit_id: security.secretToken(), actor_id: a.userId, entity_type: 'administration', entity_id: 'GLOBAL',
-        action: 'STICKER_CATEGORIES_UPDATED', redacted_summary: 'STICKER_CATEGORIES_UPDATED', correlation_id: security.secretToken().slice(0, 16), created_at: at});
-    });
-    return {...handlers['system.config.get']({}, a), [STICKER_SETTING_KEY]: full(next)};
-  });
 
   wrap('campaigns.validate', (inner, p, a) => ({...inner(p, a), stickerCategories: choices(list()).map(({code, label}) => ({code, label}))}));
   wrap('references.registration', (inner, p, a) => ({...inner(p, a), stickerCategories: full(list())}));
@@ -75,3 +57,14 @@ export function withStickerCategories(handlers, {store, security}) {
   wrap('qr.export', (inner, p, a) => { const out = inner(p, a), l = list(); return {...out, items: out.items.map(x => withSticker(l, x))}; });
   return h;
 }
+
+// Settings-registry entry (system.config.get/update): the list with each colour's ink; codes are never deleted.
+export const stickerSettings = () => ({
+  keys: [STICKER_SETTING_KEY],
+  view: store => ({[STICKER_SETTING_KEY]: loadStickerCategories(store).map(c => ({...c, ink: stickerInk(c.hex)}))}),
+  prepare(values, store) {
+    const next = parseStickerCategories(values[STICKER_SETTING_KEY]);
+    if (loadStickerCategories(store).some(c => !next.some(n => n.code === c.code))) throw new Error('STICKER_CATEGORY_IN_USE'); // deactivate, never delete
+    return {rows: [[STICKER_SETTING_KEY, JSON.stringify(next)]], audit: {action: 'STICKER_CATEGORIES_UPDATED'}};
+  }
+});

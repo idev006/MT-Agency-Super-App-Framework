@@ -1,7 +1,7 @@
 // Log policy (VC-ADR-040): a system admin turns each kind of log on/off and sets how long it is kept.
 //   withLogPolicyStore  — wraps the store the operations write through: a row of a switched-off kind is not written;
 //                         a kept row gets expire_at (Firestore TTL deletes it then). One place, so no use case changes.
-//   withLogPolicy       — system.config.get adds log_policy (+ row counts); system.config.update saves it (no new API op).
+//   logPolicySettings   — the settings-registry entry: system.config.get shows log_policy (+ row counts), update saves it.
 // The policy is read at most once a minute per server process (memo) and only when a log row is about to be written.
 import {LOG_EXPIRE_FIELD, LOG_SETTING_KEY, LOG_TABLES, LOG_CATEGORIES, defaultLogPolicy, loadLogPolicy, logCountSpecs, logDecision,
   logPolicyList, parseLogPolicy} from '../../domain/policies/LogPolicy.js';
@@ -70,29 +70,14 @@ const summary = (before, after) => LOG_CATEGORIES.map(c => {
   return parts.length ? `${c.code} ${parts.join(' ')}` : '';
 }).filter(Boolean).join('; ') || 'NO_CHANGE';
 
-export function withLogPolicy(handlers, {store, security, policy, memo = null}) {
-  const h = {...handlers};
-  const getInner = h['system.config.get'], updateInner = h['system.config.update'];
-  const view = () => ({[LOG_SETTING_KEY]: logPolicyList(policy()), log_counts: logCounts(store)});
-  h['system.config.get'] = (p, a) => ({...getInner(p || {}, a), ...view()});
-  h['system.config.update'] = (p, a) => {
-    p = p || {};
-    const values = p.values && typeof p.values === 'object' && !Array.isArray(p.values) ? p.values : null;
-    if (!values || !Object.prototype.hasOwnProperty.call(values, LOG_SETTING_KEY)) return {...updateInner(p, a), ...view()};
-    const next = parseLogPolicy(values[LOG_SETTING_KEY]);
-    const rest = {...values}; delete rest[LOG_SETTING_KEY];
-    if (Object.keys(rest).length) updateInner({...p, values: rest}, a); // the other settings first (they validate and may refuse)
-    const before = loadLogPolicy(store), at = security.now();
-    const row = {value: JSON.stringify(LOG_CATEGORIES.map(c => ({code: c.code, ...next[c.code]}))), updated_by: a.userId, updated_at: at};
-    store.sequence(() => {
-      if (store.one('vc_settings', {key: LOG_SETTING_KEY})) store.update('vc_settings', {key: LOG_SETTING_KEY}, row);
-      else store.insert('vc_settings', {key: LOG_SETTING_KEY, ...row});
-      store.insert('vc_change_audit', {audit_id: security.secretToken(), actor_id: a.userId, entity_type: 'administration', entity_id: 'GLOBAL',
-        action: 'LOG_POLICY_UPDATED', redacted_summary: ('LOG_POLICY_UPDATED ' + summary(before, next)).slice(0, 400),
-        correlation_id: security.secretToken().slice(0, 16), created_at: at});
-    });
-    if (memo) memo.clear(); // this process sees the new policy now; others within a minute
-    return {...getInner({}, a), ...view()};
-  };
-  return h;
-}
+// Settings-registry entry (system.config.get/update): the policy (+ row counts); a change is audited before→after.
+export const logPolicySettings = ({policy, memo = null}) => ({
+  keys: [LOG_SETTING_KEY],
+  view: store => ({[LOG_SETTING_KEY]: logPolicyList(policy()), log_counts: logCounts(store)}),
+  prepare(values, store) {
+    const next = parseLogPolicy(values[LOG_SETTING_KEY]), before = loadLogPolicy(store);
+    return {rows: [[LOG_SETTING_KEY, JSON.stringify(LOG_CATEGORIES.map(c => ({code: c.code, ...next[c.code]})))]],
+      audit: {action: 'LOG_POLICY_UPDATED', summary: 'LOG_POLICY_UPDATED ' + summary(before, next)}};
+  },
+  afterSave() { if (memo) memo.clear(); } // this process sees the new policy now; others within a minute
+});

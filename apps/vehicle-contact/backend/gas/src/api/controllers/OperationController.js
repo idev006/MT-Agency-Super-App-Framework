@@ -6,9 +6,10 @@ import {createAdministrationOperations} from '../../application/use-cases/Admini
 import {createVehicleOperations} from '../../application/use-cases/VehicleOperations.js';
 import {createMediaRetentionOperations} from '../../application/use-cases/MediaRetentionOperations.js';
 import {createReferenceOperations} from '../../application/use-cases/ReferenceOperations.js';
-import {withStickerCategories} from '../../application/use-cases/StickerCategoryOperations.js';
+import {stickerSettings,withStickerCategories} from '../../application/use-cases/StickerCategoryOperations.js';
+import {createSettingsOperations,numericSettings} from '../../application/settings/SettingsRegistry.js';
 import {createSystemResetOperations} from '../../application/use-cases/SystemResetOperations.js';
-import {createLogPolicyReader,withLogPolicy,withLogPolicyStore} from '../../application/use-cases/LogPolicyOperations.js';
+import {createLogPolicyReader,logPolicySettings,withLogPolicyStore} from '../../application/use-cases/LogPolicyOperations.js';
 import {createVehicleListOperations,withPrintStateStore} from '../../application/use-cases/VehicleListOperations.js';
 const permissions={
  'system.config.get':'system.settings.read','system.config.update':'system.settings.manage','system.reset.preview':'system.reset','system.reset.execute':'system.reset',
@@ -49,13 +50,15 @@ export function createOperationController({store:rawStore,security,sessions,driv
  const store=withPrintStateStore(withLogPolicyStore(rawStore,{policy,now:()=>security.now()}));
  const admin=createAdministrationOperations({store,security});
  const references=createReferenceOperations({store,security,memo:referenceMemo});
- const handlers=withLogPolicy(withStickerCategories({
-  ...createIdentityOperations({store,security,sessions}),...admin,'references.registration':references['references.registration'],
+ // system.config.get/update: one settings registry (numeric settings, person type / sticker colour, log policy)
+ const settings=createSettingsOperations({store,security,entries:[numericSettings(),stickerSettings(),logPolicySettings({policy,memo:logPolicyMemo})]});
+ const handlers=withStickerCategories({
+  ...createIdentityOperations({store,security,sessions}),...admin,...settings,'references.registration':references['references.registration'],
   ...createVehicleOperations({store,security,campaigns:admin,references}),
   ...createVehicleListOperations({store,security}),
   ...createMediaRetentionOperations({store,security,drivePhotos,campaigns:admin,allowDestructiveRetention}),
   ...createSystemResetOperations({store,security,drivePhotos,enabled:allowSystemReset})
- },{store,security}),{store,security,policy,memo:logPolicyMemo});
+ },{store,security});
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
  if(entries.length!==63||DTO_OPERATIONS.length!==63||entries.some(op=>!DTO_OPERATIONS.includes(op))

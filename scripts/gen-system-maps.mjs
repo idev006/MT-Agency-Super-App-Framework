@@ -42,11 +42,13 @@ export function scanModule(source) {
 const backend = path.join(app, 'backend/gas/src');
 const modules = walk(path.join(backend, 'application'), p => p.endsWith('.js'))
   .concat(walk(path.join(backend, 'infrastructure/security'), p => p.endsWith('.js')))
-  .map(p => ({file: rel(p), ...scanModule(read(p))}))
-  .filter(m => m.reads.length || m.writes.length || m.ops.length).sort((a, b) => a.file.localeCompare(b.file));
+  .map(p => ({file: rel(p), ...scanModule(read(p))}));
+// a store rule may live in a module that names no table itself (e.g. LogPolicyOperations), so rules search every file
+const allModules = modules.splice(0, modules.length);
+modules.push(...allModules.filter(m => m.reads.length || m.writes.length || m.ops.length).sort((a, b) => a.file.localeCompare(b.file)));
 // store rules: wrappers that change writes on every path (found by name, not guessed)
 const RULES = [['withLogPolicyStore', 'skips switched-off log rows, adds expire_at (VC-ADR-040)'], ['withPrintStateStore', 'a new ACTIVE QR puts the vehicle back to NOT_PRINTED (VC-ADR-042)']]
-  .map(([name, what]) => ({name, what, file: modules.find(m => read(path.join(root, m.file)).includes('export function ' + name))?.file || 'NOT FOUND'}));
+  .map(([name, what]) => ({name, what, file: allModules.find(m => read(path.join(root, m.file)).includes('export function ' + name))?.file || 'NOT FOUND'}));
 // bulk operations whose table names are computed at run time (a static scan cannot list them)
 const BULK = [['SystemResetOperations.js', 'system.reset.execute', 'removes the rows of EVERY table except the master tables (and the kept users / organizations / own session) — VC-ADR-039']]
   .map(([f, op, what]) => ({op, what, file: modules.find(m => m.file.endsWith('/' + f))?.file || 'NOT FOUND'}));
