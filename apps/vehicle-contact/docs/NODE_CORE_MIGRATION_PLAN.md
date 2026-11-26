@@ -41,7 +41,7 @@ schema (`schema/database.schema.json`), indexes, the web app. **No data migratio
 |---|---|---|
 | 0 | Plan, ADR, tracking (this file) | merged |
 | 1 | **Core skeleton + proxy:** `backend/core` package, HTTP server (`/`, `/api/frontend` from PR #245), proxy of every op to legacy, health, deploy workflow for a new service `p6vc-core` (first deploy = create; later = safe deploy), load-test script (baseline) | live suite through `p6vc-core` = same result as legacy; load baseline recorded |
-| 2 | **Officer path:** `vehicles.lookup`, `qr.resolve`, `contacts.read`, `vehicles.detail`, `vehicles.history`, `vehicles.photo` + session check + Log Manager + Firestore SDK store + **Integration Manager foundation** (`adapters/outbound/`: http-client, manager, registry; legacy engine + photo bridge read as the first gateways — VC-ADR-047) + Dependency Rule test | both-engine tests green; live suite + DATA_PROOF; load test vs baseline |
+| 2 | **Officer path:** `vehicles.lookup`, `qr.resolve`, `contacts.read`, `vehicles.detail`, `vehicles.history`, `vehicles.photo` + session check + Log Manager + Firestore SDK store + **Integration Manager foundation** (`adapters/outbound/`: http-client, manager, registry; legacy engine + photo bridge read as the first gateways — VC-ADR-047) + Dependency Rule test + **SSOT ratchet** (copies may only go down; architecture §6) | both-engine tests green; live suite + DATA_PROOF; load test vs baseline |
 | 3 | Auth + users + organisations (`auth.*`, `users.*`, `organizations.*`) | same |
 | 4 | Registration + review (`campaigns.*`, `registrations.*`, `photos.*`, `references.registration`) — media bridge client async | same + photo read-back in Drive |
 | 5 | Vehicles maintenance + QR + print (`vehicles.update/cancel/list/listMine`, `qr.*`) | same |
@@ -60,6 +60,7 @@ use cases are rewritten anyway).
 - route switched in the core's routing table; legacy fallback kept until phase 9
 - deployed with the owner's OK: live suite (all stages) + DATA_PROOF fresher than the suite + read-back of the group's tables
 - generated maps regenerated (`node scripts/gen-system-maps.mjs`); decision log row updated with the evidence
+- no new copy of a fact (SSOT ratchet); copies the group used are removed (architecture §6)
 
 ## 6. Risks and answers
 | Risk | Answer |

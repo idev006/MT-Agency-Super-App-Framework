@@ -99,7 +99,31 @@ contracts/outbound-integrations.v1.json   ONE list: name, endpoint id (contracts
 **Adding a future API** = one registry entry + one trusted endpoint + one gateway (+ a port if it is a new kind of thing) + its
 contract test. No use case touches HTTP.
 
-## 6. Sources
+## 6. Single source of truth in the code (owner 2026-11-27: "พยายามใช้หลักการ SSOT ในการออกแบบโค้ด")
+**Rule:** every fact has **one owner file**; every other place gets it by — in this order of preference —
+1. **import** the owner module (same language: backend, core, web app and scripts are all JavaScript; the web app already imports
+   backend domain files such as `LogPolicy.js`);
+2. **generate** from the owner for places that cannot import (workflow YAML, `wrangler.toml`, shell scripts), with a `--check`
+   in CI like `scripts/gen-system-maps.mjs`;
+3. **check** equality in a test, only when 1 and 2 are impossible.
+A hand copy is not allowed. Measured 2026-11-27 (code only, tests and docs not counted):
+
+| Fact | Owner (single source) | Copies today | How the core removes them |
+|---|---|---|---|
+| Operations, DTO fields, permissions, public ops | `contracts/api-inventory.v1.json`, `api-permissions.v1.json` | controller permission map, Worker allowlist + public ops | the core's facade **loads the contracts**; no hand maps (Worker retires in phase 9) |
+| Photo slots (5) | `domain/policies/VehicleLifecycle.js` | 16 files (web app 4, Worker, 8 scripts, …) | export `PHOTO_SLOTS`; web app + scripts import it |
+| Limits (QR list 100, sticker types 20, payload sizes) | the domain/use-case constant (`QR_EXPORT_MAX`, `STICKER_CATEGORY_MAX`) | gateway (`frontend-gateway.mjs`), Worker | move to `domain/limits.js`; gateway imports |
+| Endpoints (GAS, Cloud Run legacy/core) | `contracts/trusted-endpoints.v1.json` | 2 workflows, 2 ops scripts, 2 live scripts, Worker + wrangler | workflows read the URL with `jq`; scripts import the contract |
+| Error codes | `contracts/error-catalog.v1.json` | controller allowlist | facade loads the catalog |
+| Version | one file (`backend/core/package.json` after phase 9) | 3 files | health and the expected-live marker read it |
+| Settings defaults, log kinds | the registries (`SettingsRegistry`, `LOG_CATEGORIES`) | — (already single) | keep |
+| Tables, fields, indexes, TTL | `schema/database.schema.json`, `contracts/firestore-*.json` | — (already single, CI-checked) | keep |
+
+**Enforcement — an SSOT ratchet** (phase 2, in `gen-system-maps.mjs`): a list of known facts (literal photo-slot list, trusted
+URLs, version string, limits) is searched outside their owner; every hit is listed in `CHANGE_CHECKLIST.md` under "copies";
+CI fails when the count **goes up**. Each port of an operation group must bring its copies to zero.
+
+## 7. Sources
 - Microsoft Azure Architecture Center — N-tier architecture style: https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/n-tier
 - Robert C. Martin — The Clean Architecture (2012): https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html
 - Alistair Cockburn — Hexagonal Architecture: https://alistaircockburn.com/Articles/Hexagonal-Architecture
