@@ -232,7 +232,7 @@ const check=async()=> {
  await test('LIVE-FLOW.QR_ROTATE',async()=>{
   const rotated=expect(await authenticated('qr.replace',tokens.test_registration,{vehicleId:state.approved.vehicleId,reason:'DAMAGED'}),true);
   assert.ok(rotated.token);
-  assert.equal(expect(await authenticated('qr.resolve',tokens.test_staff,{token:state.approved.qrToken}),true),null);
+  assert.equal(expect(await authenticated('qr.resolve',tokens.test_staff,{token:state.approved.qrToken}),false,'QR_REVOKED'),null);
   assert.equal(expect(await authenticated('qr.resolve',tokens.test_staff,{token:rotated.token}),true).vehicleId,state.approved.vehicleId);
  });
  await test('LIVE-FLOW.REPLACE_PHOTO',async()=>{
