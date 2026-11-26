@@ -8,6 +8,7 @@ import {createMediaRetentionOperations} from '../../application/use-cases/MediaR
 import {createReferenceOperations} from '../../application/use-cases/ReferenceOperations.js';
 import {stickerSettings,withStickerCategories} from '../../application/use-cases/StickerCategoryOperations.js';
 import {createSettingsOperations,numericSettings} from '../../application/settings/SettingsRegistry.js';
+import {createLogManager} from '../../application/logging/LogManager.js';
 import {createSystemResetOperations} from '../../application/use-cases/SystemResetOperations.js';
 import {createLogPolicyReader,logPolicySettings,withLogPolicyStore} from '../../application/use-cases/LogPolicyOperations.js';
 import {createVehicleListOperations,withPrintStateStore} from '../../application/use-cases/VehicleListOperations.js';
@@ -47,11 +48,12 @@ export function createOperationController({store:rawStore,security,sessions,driv
  // VC-ADR-040: every operation writes through the log-policy store (switched-off logs are not written; kept ones expire)
  const policy=createLogPolicyReader(rawStore,logPolicyMemo);
  // VC-ADR-042: a new ACTIVE QR puts the vehicle back to NOT_PRINTED on every write path
- const store=withPrintStateStore(withLogPolicyStore(rawStore,{policy,now:()=>security.now()}));
+ const logs=createLogManager({policy,now:()=>security.now()}); // VC-ADR-043: log kinds + sinks (Firestore)
+ const store=withPrintStateStore(withLogPolicyStore(rawStore,{policy,now:()=>security.now(),manager:logs}));
  const admin=createAdministrationOperations({store,security});
  const references=createReferenceOperations({store,security,memo:referenceMemo});
  // system.config.get/update: one settings registry (numeric settings, person type / sticker colour, log policy)
- const settings=createSettingsOperations({store,security,entries:[numericSettings(),stickerSettings(),logPolicySettings({policy,memo:logPolicyMemo})]});
+ const settings=createSettingsOperations({store,security,entries:[numericSettings(),stickerSettings(),logPolicySettings({policy,memo:logPolicyMemo,manager:logs})]});
  const handlers=withStickerCategories({
   ...createIdentityOperations({store,security,sessions}),...admin,...settings,'references.registration':references['references.registration'],
   ...createVehicleOperations({store,security,campaigns:admin,references}),
