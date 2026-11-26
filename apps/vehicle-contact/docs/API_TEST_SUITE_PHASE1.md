@@ -20,7 +20,8 @@
 
 **PASS only means the existing, narrow assertion passed.** Registration, Media and QR now have *synthetic pure-function* behavior checks (draft field requirements, five valid unique slots, and injected 256-bit QR token+SHA-256 digest), but no actual backend CRUD, Drive upload, token persistence or authenticated service is implemented. The source-layer policies are not exposed via the public GAS API.
 
-## Pure-function test modules added\n- [VehicleRegistration.js](../backend/gas/src/domain/policies/VehicleRegistration.js) — draft-only required identifiers and version checks; no business claim about required photo count.\n- [PhotoSlots.js](../backend/gas/src/domain/policies/PhotoSlots.js) — exact five named photo slots, rejects unknown/duplicate/overflow entries.\n- [QrTokenPolicy.js](../backend/gas/src/domain/policies/QrTokenPolicy.js) — accepts injected trusted 32-byte CSPRNG + SHA-256 digest; does not store or publish tokens.\n\n## Test commands
+## Pure-function test modules (removed 2026-11-26, VC-ADR-044)
+The Phase-1 prototypes `VehicleRegistration.js`, `PhotoSlots.js`, `QrTokenPolicy.js`, `SessionPolicy.js` and `SecurityEventPolicy.js` were never used by the running system and were deleted with their tests (they duplicated rules that live in one place each): photo slots → `domain/policies/VehicleLifecycle.js`; sessions → `application/security/SessionService.js`; QR issue → `application/use-cases/VehicleOperations.js`; security events → `application/use-cases/IdentityOperations.js`.
 From `apps/vehicle-contact/backend/gas/`:
 
 ```bash

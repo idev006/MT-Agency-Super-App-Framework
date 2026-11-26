@@ -1,6 +1,0 @@
-PUSH_VEHICLE_GAS_MULTIFILE_V1
-Authorized by project owner request to test multi-file GAS packaging.
-Target: 1hgszMzlCLe5snPx7NY5fj-esZIIJDhXtiitTCXpgQRQKgqkBSXJyPvJX
-Only one trigger for main branch, validated and secured by CI.
-
-Retry after YAML workflow validation correction; source bundle CI passed.
