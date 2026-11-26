@@ -69,6 +69,17 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
    const data=ok(await request('system.config.update',{values:{idle_timeout_minutes:idle,retention_days:retention}},adminToken));
    assert.equal(Number(data.idle_timeout_minutes),idle);assert.equal(Number(data.retention_days),retention);
   });
+  // VC-ADR-039: the reset is checked WITHOUT ever resetting the live DB — preview only counts; execute is sent with a
+  // wrong phrase (refused before anything is read or deleted). Disabled host → OPERATION_DISABLED for both.
+  await test('SYSTEM.RESET.PREVIEW','system.reset.preview',async()=>{
+   const r=await request('system.reset.preview',{},adminToken);
+   if(r.ok){assert.equal(r.data.phrase,'RESET P6VC');assert.match(r.data.planDigest,/^[a-f0-9]{64}$/);assert.ok(r.data.keptByTable.vc_reference_values>0,'master kept');}
+   else assert.equal(r.error?.code,'OPERATION_DISABLED');
+  });
+  await test('SYSTEM.RESET.EXECUTE','system.reset.execute',async()=>{
+   const r=await request('system.reset.execute',{confirmation:'NOT THE PHRASE',password:'x',planDigest:'0'.repeat(64)},adminToken);
+   assert.equal(r.ok,false);assert.ok(['RESET_CONFIRMATION_INVALID','OPERATION_DISABLED'].includes(r.error?.code),r.error?.code);
+  });
 
   const actorRoles={reg:'REGISTRATION_ADMIN',staff:'STAFF',owner:'OWNER',worker:'RETENTION_WORKER'};
   for(const [kind,role] of Object.entries(actorRoles)){

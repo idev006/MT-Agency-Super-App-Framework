@@ -21,6 +21,7 @@ export function createMediaBridgeServer({propertiesService,utilities,driveApp,no
    const photos=createDrivePhotos({driveApp,utilities,folderId:props.getProperty('VEHICLE_PHOTOS_FOLDER_ID')});
    if(op==='upload')return {ok:true,data:photos.upload(args.base64,args.mime),error:null};
    if(op==='read')return {ok:true,data:photos.read(args.storageRef),error:null};
+   if(op==='trashAll')return {ok:true,data:photos.trashAll(25000),error:null}; // VC-ADR-039 system reset
    return {ok:true,data:{trashed:photos.trash(args.storageRef)},error:null};
   }catch(e){const code=String(e&&e.message||'');return fail(SAFE.has(code)?code:'BRIDGE_DRIVE_FAILED');}
  }

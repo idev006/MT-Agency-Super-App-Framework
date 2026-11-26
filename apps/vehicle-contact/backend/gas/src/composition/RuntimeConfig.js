@@ -12,6 +12,7 @@ export const SCRIPT_PROPERTIES=Object.freeze({
   VEHICLE_GOOGLE_CLIENT_ID:{kind:'optional',note:'OIDC audience for auth.googleLogin'},
   VEHICLE_FIRESTORE_PROJECT_ID:{kind:'optional',note:'defaults to project_id inside the SA key'},
   VEHICLE_RETENTION_EXECUTE_ENABLED:{kind:'optional',note:"destructive retention; keep absent (C5 BLOCKED on D5+B3)"},
+  VEHICLE_SYSTEM_RESET_ENABLED:{kind:'optional',note:"VC-ADR-039 system reset for test/set-up; 'true' only on a dev host; keep absent on GAS and before go-live"},
   VEHICLE_BOOTSTRAP_USERNAME:{kind:'admin',note:'bootstrap admin username'},
   VEHICLE_BOOTSTRAP_IDLE_MINUTES:{kind:'admin',note:'bootstrap session idle policy'},
   VEHICLE_BOOTSTRAP_TEMP_PASSWORD:{kind:'gate',note:'consumed + deleted by bootstrap'},

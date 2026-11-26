@@ -36,6 +36,21 @@ export function createGasSystemSettingsRepository({ callOperation }) {
       const response = await callOperation('system.config.update', { values }, { signal })
       return { settings: mapSettings(response.data), requestId: response.requestId }
     },
+    // VC-ADR-039 system reset (system.reset): preview counts, then execute with phrase + password + plan digest
+    async resetPreview({ keepUsers = true, keepCampaigns = false, signal } = {}) {
+      const response = await callOperation('system.reset.preview', { keepUsers, keepCampaigns }, { signal })
+      const d = response.data
+      if (!d || typeof d.planDigest !== 'string' || typeof d.phrase !== 'string') throw new SystemSettingsContractError()
+      const counts = (o) => Object.fromEntries(Object.entries(o && typeof o === 'object' ? o : {}).filter(([, n]) => Number.isSafeInteger(n)))
+      return { phrase: d.phrase, planDigest: d.planDigest, deleteByTable: counts(d.deleteByTable), keptByTable: counts(d.keptByTable),
+        deleteTotal: Number(d.deleteTotal) || 0, driveFiles: Number(d.driveFiles) || 0 }
+    },
+    async resetExecute({ confirmation, password, planDigest, keepUsers = true, keepCampaigns = false }) {
+      const response = await callOperation('system.reset.execute', { confirmation, password, planDigest, keepUsers, keepCampaigns })
+      const d = response.data
+      if (!d || !Number.isSafeInteger(d.deleted)) throw new SystemSettingsContractError()
+      return { deleted: d.deleted, drive: { status: String(d.drive?.status || ''), trashed: Number(d.drive?.trashed) || 0, more: d.drive?.more === true } }
+    },
     async updateStickerCategories({ categories, signal }) {
       const list = categories.map(({ code, label, colour, hex, size, active }) => ({ code, label, colour, hex, size, active }))
       const response = await callOperation('system.config.update', { values: { sticker_categories: list } }, { signal })

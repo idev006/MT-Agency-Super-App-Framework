@@ -3,6 +3,8 @@
 const SCHEMAS={
  'system.config.get':[{},{}],
  'system.config.update':[{values:'o'},{}],
+ 'system.reset.preview':[{},{keepUsers:'b',keepCampaigns:'b'}],
+ 'system.reset.execute':[{confirmation:'s',password:'s',planDigest:'s'},{keepUsers:'b',keepCampaigns:'b'}],
  'auth.login':[{username:'s',password:'x'},{}],
  'auth.googleLogin':[{idToken:'x'},{}],
  'auth.changePassword':[{oldPassword:'x',newPassword:'x'},{}],

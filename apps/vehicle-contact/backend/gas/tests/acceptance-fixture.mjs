@@ -8,7 +8,7 @@ import {createSessionService} from '../src/application/security/SessionService.j
 export const PHOTO_SLOTS=['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'];
 export const SAMPLE_PASSWORD='Synthetic-Staging-Password-2026!';
 export const FIXED_NOW='2026-11-17T12:00:00.000Z';
-export function createAcceptanceHarness(){
+export function createAcceptanceHarness({allowSystemReset=false}={}){
  const tables=new Map(Object.keys(DATABASE_SCHEMA.tables).map(t=>[t,[]]));
  const io={locks:0,writes:0,driveUploads:0,driveDeletes:0};
  let current=FIXED_NOW, counter=100,throwOnDriveTrash=false,throwOnTableWrite=null,throwOnceOnTableWrite=null,writeFailAfter=null,writeFailAfterOnce=null;
@@ -80,7 +80,8 @@ export function createAcceptanceHarness(){
  const drivePhotos={
   upload(base64,mime){io.driveUploads++;const ref='staging-media-'+id().slice(-6);driveState.set(ref,{base64,mime});return{storage_ref:ref,mime_type:mime,size_bytes:200};},
   read(ref){const f=driveState.get(ref);if(!f)throw Error('NOT_FOUND');return{base64Image:f.base64,mime_type:f.mime,size_bytes:200};},
-  trash(ref){if(throwOnDriveTrash)throw Error('TEST_DRIVE_FAILURE');io.driveDeletes++;deletedFiles.add(ref);driveState.delete(ref);return true;}
+  trash(ref){if(throwOnDriveTrash)throw Error('TEST_DRIVE_FAILURE');io.driveDeletes++;deletedFiles.add(ref);driveState.delete(ref);return true;},
+  trashAll(){const n=driveState.size;for(const ref of driveState.keys())deletedFiles.add(ref);driveState.clear();return {trashed:n,more:false};}
  };
  const actors=[
   ['sys','SYSTEM_ADMIN'],['reg','REGISTRATION_ADMIN'],['staff','STAFF'],
@@ -95,7 +96,7 @@ export function createAcceptanceHarness(){
  }
  const sessions=createSessionService({store,security}),tokens={};
  for(const [name]of actors)tokens[name]=sessions.issue(store.one('vc_users',{user_id:'u-'+name})).sessionToken;
- const router=createApiRouter({createProtectedDispatcher:()=>createOperationController({store,security,sessions,drivePhotos,allowDestructiveRetention:true})});
+ const router=createApiRouter({createProtectedDispatcher:()=>createOperationController({store,security,sessions,drivePhotos,allowDestructiveRetention:true,allowSystemReset})});
  const call=(operation,payload={},actor=null,options={})=>{
   const [group,...actions]=operation.split('.');
   const action=actions.join('.');

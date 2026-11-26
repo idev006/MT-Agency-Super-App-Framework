@@ -19,5 +19,6 @@ export function createMediaBridgePhotos({fetchSync, url, secret, utilities, now 
     upload: (base64, mime) => call('upload', {base64, mime}),
     read: storageRef => call('read', {storageRef}),
     trash: storageRef => call('trash', {storageRef}).trashed === true,
+    trashAll: () => call('trashAll', {}), // VC-ADR-039 system reset: {trashed, more}
   });
 }

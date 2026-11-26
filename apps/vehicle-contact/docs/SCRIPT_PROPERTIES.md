@@ -7,7 +7,7 @@
 | Kind | Meaning | Properties |
 |---|---|---|
 | **required** | The API cannot run without it | `VEHICLE_API_ENABLED` (`true`), `VEHICLE_AUTH_PEPPER` (secret, ≥32 chars), `VEHICLE_FIRESTORE_SA_KEY` (secret JSON) |
-| optional | A feature or a default fallback | `VEHICLE_PHOTOS_FOLDER_ID`, `VEHICLE_GOOGLE_CLIENT_ID`, `VEHICLE_FIRESTORE_PROJECT_ID` (default from key), `VEHICLE_FIRESTORE_DATABASE_ID` (default `(default)`), `VEHICLE_RETENTION_EXECUTE_ENABLED` (**keep absent**: C5 BLOCKED) |
+| optional | A feature or a default fallback | `VEHICLE_PHOTOS_FOLDER_ID`, `VEHICLE_GOOGLE_CLIENT_ID`, `VEHICLE_FIRESTORE_PROJECT_ID` (default from key), `VEHICLE_FIRESTORE_DATABASE_ID` (default `(default)`), `VEHICLE_RETENTION_EXECUTE_ENABLED` (**keep absent**: C5 BLOCKED), `VEHICLE_SYSTEM_RESET_ENABLED` (VC-ADR-039; Cloud Run sets it from `P6VC_SYSTEM_RESET=ENABLED`; **keep absent on GAS and in production**) |
 | admin | Maintenance tools only | `VEHICLE_BOOTSTRAP_USERNAME`, `VEHICLE_BOOTSTRAP_IDLE_MINUTES` |
 | gate | Set just before an editor run, then delete (some are consumed automatically) | `VEHICLE_FIRESTORE_POC_APPROVED`, `VEHICLE_BOOTSTRAP_TEMP_PASSWORD`, `VEHICLE_BOOTSTRAP_STAGING_APPROVED`, `VEHICLE_ADMIN_RESET_APPROVAL`, `VEHICLE_ADMIN_RESET_NEW_PASSWORD`, `VEHICLE_ADMIN_RESET_EXPECTED_PROJECT_ID`, `VEHICLE_ADMIN_RESET_EXPECTED_USER_ID`, `VEHICLE_REFERENCE_SEED_APPROVED_SHA256`, `VEHICLE_REFERENCE_SEED_RECOVERY_APPROVED` |
 | state | Written by the system; do not edit by hand | `VEHICLE_REFERENCE_SEED_JOURNAL`, `VEHICLE_ADMIN_RESET_STATE` |

@@ -25,6 +25,20 @@
       "enabled": false
     },
     {
+      "id": "VC-SYSTEM-004",
+      "operation": "system.reset.preview",
+      "requiredPermission": "system.reset",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
+      "id": "VC-SYSTEM-005",
+      "operation": "system.reset.execute",
+      "requiredPermission": "system.reset",
+      "identitySource": "SERVER_VERIFIED_SESSION",
+      "enabled": false
+    },
+    {
       "id": "VC-AUTH-001",
       "operation": "auth.login",
       "requiredPermission": null,

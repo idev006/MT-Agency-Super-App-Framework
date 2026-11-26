@@ -1,17 +1,21 @@
 <script setup>
-import { inject, onMounted } from 'vue'
+import { computed, inject, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { systemSettingsRepositoryKey } from '../application/settings/system-settings-port.js'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import SystemSettingsForm from '../features/settings/components/SystemSettingsForm.vue'
 import StickerCategorySettings from '../features/settings/components/StickerCategorySettings.vue'
+import SystemResetPanel from '../features/settings/components/SystemResetPanel.vue'
 import { useSystemSettings } from '../features/settings/useSystemSettings.js'
 import { useSessionStore } from '../stores/session.js'
 
 const auth = useSessionStore()
 const { roles, permissions, session, transport } = storeToRefs(auth)
-const systemSettings = useSystemSettings({ repository: inject(systemSettingsRepositoryKey), permissions })
+const settingsRepository = inject(systemSettingsRepositoryKey)
+const systemSettings = useSystemSettings({ repository: settingsRepository, permissions })
+// VC-ADR-039: shown only to sessions with system.reset (the server also checks it and its own switch)
+const canReset = computed(() => (permissions.value || []).includes('system.reset') && typeof settingsRepository?.resetPreview === 'function')
 onMounted(() => systemSettings.load())
 async function saveStickers(list, done) { if (await systemSettings.saveStickerCategories(list)) done() }
 </script>
@@ -32,6 +36,7 @@ async function saveStickers(list, done) { if (await systemSettings.saveStickerCa
       <SystemSettingsForm :settings="systemSettings.settings.value" :can-manage="systemSettings.canManage.value" :busy="systemSettings.savePhase.value === 'submitting'" @save="systemSettings.save" />
       <StickerCategorySettings class="mt-6" :categories="systemSettings.settings.value?.stickerCategories || []" :can-manage="systemSettings.canManage.value"
         :phase="systemSettings.stickerPhase.value" :failure-code="systemSettings.stickerFailure.value?.code || ''" @save="saveStickers" />
+      <SystemResetPanel v-if="canReset" class="mt-6" :repository="settingsRepository" />
     </template>
   </PageTemplateComponent>
 </template>

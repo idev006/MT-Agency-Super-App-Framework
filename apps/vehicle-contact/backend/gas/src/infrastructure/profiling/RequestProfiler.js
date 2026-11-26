@@ -35,7 +35,7 @@ export function createRequestProfiler(nowMs=()=>Date.now()){
   function wrapDrivePhotos(d){
     if(!d)return d;
     const w=name=>(...args)=>timed(()=>{io.driveCalls++;return d[name](...args);},ms=>{io.driveMs+=ms;});
-    return {upload:w('upload'),read:w('read'),trash:w('trash')};
+    return {upload:w('upload'),read:w('read'),trash:w('trash'),...(typeof d.trashAll==='function'?{trashAll:w('trashAll')}:{})};
   }
   function report(){
     const fetchMs=fetches.reduce((a,f)=>a+f.ms,0);

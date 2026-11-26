@@ -69,6 +69,8 @@ export function runtimeProperties(env) {
     VEHICLE_FIRESTORE_PROJECT_ID: env.FIRESTORE_PROJECT_ID,
     VEHICLE_FIRESTORE_DATABASE_ID: env.FIRESTORE_DATABASE_ID || '(default)',
     VEHICLE_AUTH_PEPPER: env.P6VC_AUTH_PEPPER,
+    // VC-ADR-039: the system reset works only when the deploy sets P6VC_SYSTEM_RESET=ENABLED (off by default; off before go-live)
+    VEHICLE_SYSTEM_RESET_ENABLED: env.P6VC_SYSTEM_RESET === 'ENABLED' ? 'true' : 'false',
   };
   return {
     getScriptProperties: () => ({
