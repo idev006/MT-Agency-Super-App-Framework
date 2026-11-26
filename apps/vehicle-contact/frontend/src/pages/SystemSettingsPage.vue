@@ -7,6 +7,7 @@ import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import SystemSettingsForm from '../features/settings/components/SystemSettingsForm.vue'
 import StickerCategorySettings from '../features/settings/components/StickerCategorySettings.vue'
 import SystemResetPanel from '../features/settings/components/SystemResetPanel.vue'
+import LogPolicySettings from '../features/settings/components/LogPolicySettings.vue'
 import { useSystemSettings } from '../features/settings/useSystemSettings.js'
 import { useSessionStore } from '../stores/session.js'
 
@@ -18,10 +19,11 @@ const systemSettings = useSystemSettings({ repository: settingsRepository, permi
 const canReset = computed(() => (permissions.value || []).includes('system.reset') && typeof settingsRepository?.resetPreview === 'function')
 onMounted(() => systemSettings.load())
 async function saveStickers(list, done) { if (await systemSettings.saveStickerCategories(list)) done() }
+async function saveLogPolicy(list, done) { if (await systemSettings.saveLogPolicy(list)) done() }
 </script>
 
 <template>
-  <PageTemplateComponent eyebrow="การดูแลระบบ" title="ตั้งค่าระบบ" description="กำหนดอายุ session นโยบายการเก็บข้อมูล และประเภทบุคคล/สีสติกเกอร์">
+  <PageTemplateComponent eyebrow="การดูแลระบบ" title="ตั้งค่าระบบ" description="กำหนดอายุ session นโยบายการเก็บข้อมูล ประเภทบุคคล/สีสติกเกอร์ และการบันทึกประวัติ">
     <template #breadcrumbs><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">ตั้งค่าระบบ</span></template>
     <template #actions><span v-if="!systemSettings.canManage.value" class="badge badge-ghost">อ่านอย่างเดียว</span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
@@ -36,6 +38,8 @@ async function saveStickers(list, done) { if (await systemSettings.saveStickerCa
       <SystemSettingsForm :settings="systemSettings.settings.value" :can-manage="systemSettings.canManage.value" :busy="systemSettings.savePhase.value === 'submitting'" @save="systemSettings.save" />
       <StickerCategorySettings class="mt-6" :categories="systemSettings.settings.value?.stickerCategories || []" :can-manage="systemSettings.canManage.value"
         :phase="systemSettings.stickerPhase.value" :failure-code="systemSettings.stickerFailure.value?.code || ''" @save="saveStickers" />
+      <LogPolicySettings v-if="systemSettings.settings.value?.logPolicy" class="mt-6" :policy="systemSettings.settings.value.logPolicy" :counts="systemSettings.settings.value.logCounts"
+        :can-manage="systemSettings.canManage.value" :phase="systemSettings.logPhase.value" :failure-code="systemSettings.logFailure.value?.code || ''" @save="saveLogPolicy" />
       <SystemResetPanel v-if="canReset" class="mt-6" :repository="settingsRepository" />
     </template>
   </PageTemplateComponent>

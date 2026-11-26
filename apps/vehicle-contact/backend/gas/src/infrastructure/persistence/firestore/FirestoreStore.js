@@ -34,7 +34,9 @@ export function createFirestoreStore({firestore}){
   const checkLimit=limit=>{if(!Number.isSafeInteger(limit)||limit<1||limit>MAX_LIMIT)throw new Error('INVALID_LIMIT');};
   // Reads expose canonical columns only; the internal ordering field never leaks out.
   const strip=fields=>{const out={};for(const k of Object.keys(fields))if(k!==SEQ_FIELD&&k!==TTL_FIELD)out[k]=fields[k];return out;};
-  const withTtl=(name,doc)=>{const r=TTL_RULES[name];if(!r)return doc;const base=Date.parse(doc[r.from]);
+  // VC-ADR-040: a caller (the log policy) may set expire_at itself (ISO time); it wins over the fixed rule.
+  const withTtl=(name,doc)=>{if(doc[TTL_FIELD]){const t=new Date(doc[TTL_FIELD]);if(!Number.isFinite(t.getTime()))throw new Error('INVALID_EXPIRY');return {...doc,[TTL_FIELD]:t};}
+    const r=TTL_RULES[name];if(!r)return doc;const base=Date.parse(doc[r.from]);
     return Number.isFinite(base)?{...doc,[TTL_FIELD]:new Date(base+r.days*86400000)}:doc;};
   // W1a: _seq is a time-ordered integer (epoch-ms*1000 + per-execution counter), strictly
   // increasing within an execution and time-ordered across executions. It needs NO counter
@@ -212,7 +214,7 @@ export function createFirestoreStore({firestore}){
     }
     function withLock(fn){return fn();}
     function sequence(fn){return gw.runTransaction(tx=>fn(build(tx)));}
-    return Object.freeze({one,list,listNewest,count,insert,update,remove,withLock,sequence,readMany,patch,writeMany});
+    return Object.freeze({one,list,listNewest,count,insert,update,remove,withLock,sequence,readMany,patch,writeMany,supportsTtl:true});
   }
   return build(firestore);
 }

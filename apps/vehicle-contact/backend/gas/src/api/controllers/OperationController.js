@@ -8,6 +8,7 @@ import {createMediaRetentionOperations} from '../../application/use-cases/MediaR
 import {createReferenceOperations} from '../../application/use-cases/ReferenceOperations.js';
 import {withStickerCategories} from '../../application/use-cases/StickerCategoryOperations.js';
 import {createSystemResetOperations} from '../../application/use-cases/SystemResetOperations.js';
+import {createLogPolicyReader,withLogPolicy,withLogPolicyStore} from '../../application/use-cases/LogPolicyOperations.js';
 const permissions={
  'system.config.get':'system.settings.read','system.config.update':'system.settings.manage','system.reset.preview':'system.reset','system.reset.execute':'system.reset',
  'auth.changePassword':'session.authenticated','auth.logout':'session.authenticated','auth.session':'session.authenticated','auth.linkGoogle':'session.authenticated',
@@ -34,21 +35,24 @@ const safeErrors=new Set([
  'INVALID_CAMPAIGN','CAMPAIGN_INVALID','FIVE_PHOTOS_REQUIRED','PLATE_PHOTO_NOT_VERIFIED','PHOTO_SLOT_INVARIANT','IDEMPOTENCY_CONFLICT','OWNER_NOT_FOUND','PHOTO_NOT_STAGED','INVALID_SLOT','INVALID_MEDIA',
  'INVALID_MIME','PHOTO_UPLOAD_LIMIT','INVALID_IMAGE_SIZE','IMAGE_SIGNATURE_MISMATCH','PHOTO_NOT_FOUND','VEHICLE_NOT_ACTIVE','VERSION_CONFLICT',
  'CONTACT_NOT_FOUND','PRIMARY_CONTACT_INVARIANT','INVALID_REQUEST_STATE','INVALID_DECISION','OWNERSHIP_NOT_VERIFIED',
- 'INVALID_QR','QR_REVOKED','INVALID_STICKER_CATEGORY','RESET_CONFIRMATION_INVALID','RESET_PLAN_STALE','INVALID_STICKER_CATEGORIES','STICKER_CATEGORY_REQUIRED','STICKER_CATEGORY_IN_USE','INVALID_QR_REASON','INVALID_VEHICLE_IDS','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
+ 'INVALID_QR','QR_REVOKED','INVALID_STICKER_CATEGORY','RESET_CONFIRMATION_INVALID','RESET_PLAN_STALE','INVALID_STICKER_CATEGORIES','INVALID_LOG_POLICY','LOG_REQUIRED','STICKER_CATEGORY_REQUIRED','STICKER_CATEGORY_IN_USE','INVALID_QR_REASON','INVALID_VEHICLE_IDS','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
  'DELETION_NOT_AUTHORIZED','DELETION_RETRY_REQUIRED','BUSY','CAMPAIGN_BUSY','SCHEMA_MISMATCH','MISSING_TABLE','IDLE_POLICY_NOT_CONFIGURED',
  'INVALID_LIMIT','INVALID_PAGINATION','NO_CHANGES','ORGANIZATION_INACTIVE','PARENT_NOT_FOUND','INVALID_ORG_TYPE','INVALID_ORG_PARENT',
  'SELF_DEMOTION_DENIED','SELF_ROLE_EXPANSION_DENIED','SELF_SUSPEND_DENIED','RETENTION_POLICY_NOT_CONFIGURED','OPERATION_DISABLED','OPERATION_RECOVERY_REQUIRED',
  'REFERENCE_DATA_INVALID','REFERENCE_DATA_BOUNDS','REFERENCE_VERSION_STALE','INVALID_REFERENCE_VALUE'
 ]);
-export function createOperationController({store,security,sessions,drivePhotos,allowDestructiveRetention=false,allowSystemReset=false,referenceMemo=null}) {
+export function createOperationController({store:rawStore,security,sessions,drivePhotos,allowDestructiveRetention=false,allowSystemReset=false,referenceMemo=null,logPolicyMemo=null}) {
+ // VC-ADR-040: every operation writes through the log-policy store (switched-off logs are not written; kept ones expire)
+ const policy=createLogPolicyReader(rawStore,logPolicyMemo);
+ const store=withLogPolicyStore(rawStore,{policy,now:()=>security.now()});
  const admin=createAdministrationOperations({store,security});
  const references=createReferenceOperations({store,security,memo:referenceMemo});
- const handlers=withStickerCategories({
+ const handlers=withLogPolicy(withStickerCategories({
   ...createIdentityOperations({store,security,sessions}),...admin,'references.registration':references['references.registration'],
   ...createVehicleOperations({store,security,campaigns:admin,references}),
   ...createMediaRetentionOperations({store,security,drivePhotos,campaigns:admin,allowDestructiveRetention}),
   ...createSystemResetOperations({store,security,drivePhotos,enabled:allowSystemReset})
- },{store,security});
+ },{store,security}),{store,security,policy,memo:logPolicyMemo});
  delete handlers.getCampaign;
  const entries=Object.keys(handlers);
  if(entries.length!==62||DTO_OPERATIONS.length!==62||entries.some(op=>!DTO_OPERATIONS.includes(op))

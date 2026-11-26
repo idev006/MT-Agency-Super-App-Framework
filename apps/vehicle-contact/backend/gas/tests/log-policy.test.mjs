@@ -1,0 +1,103 @@
+// VC-ADR-040 log policy: a system admin sets which logs are written and how long they are kept.
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createAcceptanceHarness, assertOk, assertError} from './acceptance-fixture.mjs';
+import {LOG_CATEGORIES, defaultLogPolicy, logDecision, parseLogPolicy, readLogPolicy} from '../src/domain/policies/LogPolicy.js';
+import {withLogPolicyStore} from '../src/application/use-cases/LogPolicyOperations.js';
+import {createFirestoreStore, TTL_FIELD} from '../src/infrastructure/persistence/firestore/FirestoreStore.js';
+import {createFirestoreRestGateway} from '../src/infrastructure/persistence/firestore/FirestoreRestGateway.js';
+import {createFakeFirestoreRest, makeFakeUtilities, fakeServiceAccountKey, PROJECT, DATABASE} from './fake-firestore-rest-server.mjs';
+
+const listOf = policy => LOG_CATEGORIES.map(c => ({code: c.code, ...policy[c.code]}));
+
+function approvedVehicle(h) {
+  const org = h.createOrganization(), camp = h.createCampaign();
+  const r = assertOk(assert, h.call('registrations.submit', h.registrationPayload(camp.campaignToken, org, h.stagePhotos(camp.campaignToken))), 'submit');
+  return assertOk(assert, h.as('reg', 'registrations.review', {requestId: r.requestId, decision: 'APPROVE', stickerCategory: 'NCO', platePhotoVerified: true}), 'approve');
+}
+const sources = h => h.read('vc_lookup_audit').map(x => x.lookup_source);
+
+test('LOG-01 defaults: settings show 5 kinds with counts; photo views are not logged, searches and contact reads are', () => {
+  const h = createAcceptanceHarness();
+  const cfg = assertOk(assert, h.as('sys', 'system.config.get', {}), 'get');
+  assert.deepEqual(cfg.log_policy.map(c => [c.code, c.enabled, c.days, c.canDisable]),
+    [['LOOKUP', true, 365, true], ['CONTACT', true, 365, false], ['PHOTO', false, 90, true], ['CHANGE', true, 1825, false], ['LOGIN', true, 90, false]]);
+  assert.equal(typeof cfg.log_counts.LOOKUP, 'number');
+  const v = approvedVehicle(h);
+  assertOk(assert, h.as('staff', 'vehicles.lookup', {plate: 'กข 1234', province: 'TH-10'}), 'lookup');
+  assertOk(assert, h.as('staff', 'contacts.read', {vehicleId: v.vehicleId}), 'contact');
+  const photo = h.read('vc_vehicle_photos')[0];
+  assertOk(assert, h.as('staff', 'vehicles.photo', {vehicleId: v.vehicleId, photoId: photo.photo_id}), 'photo');
+  assert.deepEqual(sources(h).sort(), ['CONTACT', 'PLATE'], 'no PHOTO row');
+  const after = assertOk(assert, h.as('sys', 'system.config.get', {}), 'counts');
+  assert.equal(after.log_counts.LOOKUP, 1); assert.equal(after.log_counts.CONTACT, 1); assert.equal(after.log_counts.PHOTO, 0);
+});
+
+test('LOG-02 a system admin switches logs; required logs cannot be switched off; bad days refused; the change is audited', () => {
+  const h = createAcceptanceHarness();
+  const v = approvedVehicle(h);
+  const next = {...defaultLogPolicy(), LOOKUP: {enabled: false, days: 365}, PHOTO: {enabled: true, days: 30}, CHANGE: {enabled: true, days: 0}};
+  assertError(assert, h.as('reg', 'system.config.update', {values: {log_policy: listOf(next)}}), 'FORBIDDEN', 'system admin only');
+  assertError(assert, h.as('sys', 'system.config.update', {values: {log_policy: listOf({...next, CONTACT: {enabled: false, days: 365}})}}), 'LOG_REQUIRED', 'contact log stays');
+  assertError(assert, h.as('sys', 'system.config.update', {values: {log_policy: listOf({...next, LOOKUP: {enabled: true, days: 5}})}}), 'INVALID_LOG_POLICY', 'below minimum');
+  assertError(assert, h.as('sys', 'system.config.update', {values: {log_policy: listOf({...next, LOGIN: {enabled: true, days: 0}})}}), 'INVALID_LOG_POLICY', 'only CHANGE may be kept forever');
+  assertError(assert, h.as('sys', 'system.config.update', {values: {log_policy: listOf(next).slice(1)}}), 'INVALID_LOG_POLICY', 'every kind');
+  const saved = assertOk(assert, h.as('sys', 'system.config.update', {values: {log_policy: listOf(next), idle_timeout_minutes: 40}}), 'save');
+  assert.equal(saved.log_policy.find(c => c.code === 'PHOTO').enabled, true);
+  assert.equal(saved.idle_timeout_minutes, '40', 'other settings saved in the same call');
+  const audit = h.read('vc_change_audit').find(x => x.action === 'LOG_POLICY_UPDATED');
+  assert.match(audit.redacted_summary, /LOOKUP OFF; PHOTO ON 90->30d; CHANGE 1825->0d/);
+  const before = h.read('vc_lookup_audit').length;
+  assertOk(assert, h.as('staff', 'vehicles.lookup', {plate: 'กข 1234', province: 'TH-10'}), 'lookup');
+  assertOk(assert, h.as('staff', 'contacts.read', {vehicleId: v.vehicleId}), 'contact');
+  assertOk(assert, h.as('staff', 'vehicles.photo', {vehicleId: v.vehicleId, photoId: h.read('vc_vehicle_photos')[0].photo_id}), 'photo');
+  assert.deepEqual(sources(h).slice(before).sort(), ['CONTACT', 'PHOTO'], 'lookup not logged; contact + photo logged');
+});
+
+test('LOG-03 the store wrapper: off rows are skipped in insert / writeMany / readMany / sequence; kept rows get expire_at', () => {
+  const rows = [], NOW = '2026-11-26T00:00:00.000Z';
+  const base = {supportsTtl: true, insert: (t, d) => { rows.push([t, d]); return d; }, writeMany: ops => { for (const o of ops) rows.push([o.table, o.data || o.key]); },
+    readMany: (reqs, opts) => { for (const [t, d] of opts.inserts || []) rows.push([t, d]); return reqs.map(() => null); }, sequence: fn => fn(base), one: () => null};
+  const s = withLogPolicyStore(base, {policy: () => ({...defaultLogPolicy(), CHANGE: {enabled: true, days: 0}}), now: () => NOW});
+  s.insert('vc_lookup_audit', {lookup_source: 'PHOTO', created_at: NOW});
+  s.insert('vc_lookup_audit', {lookup_source: 'QR', created_at: NOW});
+  s.writeMany([{op: 'insert', table: 'vc_lookup_audit', data: {lookup_source: 'PHOTO', created_at: NOW}}, {op: 'insert', table: 'vc_change_audit', data: {created_at: NOW}}]);
+  s.readMany([{kind: 'one'}], {inserts: [['vc_lookup_audit', {lookup_source: 'PHOTO', created_at: NOW}], ['vc_lookup_audit', {lookup_source: 'CONTACT', created_at: NOW}]]});
+  s.sequence(tx => tx.insert('vc_security_events', {created_at: NOW}));
+  s.insert('vc_vehicles', {vehicle_id: 'v'});
+  assert.deepEqual(rows.map(([t, d]) => [t, d.lookup_source || '', d.expire_at || '']), [
+    ['vc_lookup_audit', 'QR', '2027-11-26T00:00:00.000Z'],
+    ['vc_change_audit', '', ''], // kept without limit
+    ['vc_lookup_audit', 'CONTACT', '2027-11-26T00:00:00.000Z'],
+    ['vc_security_events', '', '2027-02-24T00:00:00.000Z'],
+    ['vc_vehicles', '', '']]);
+  // a store without TTL (tests, tools) gets the same rows, never an extra field
+  const plain = [], p = withLogPolicyStore({insert: (t, d) => plain.push(d)}, {policy: defaultLogPolicy, now: () => NOW});
+  p.insert('vc_lookup_audit', {lookup_source: 'PLATE', created_at: NOW});
+  assert.equal('expire_at' in plain[0], false);
+});
+
+test('LOG-04 Firestore keeps the expiry the policy set (a real timestamp), over the fixed rule', () => {
+  const NOW = '2026-11-26T00:00:00.000Z', fake = createFakeFirestoreRest(), key = fakeServiceAccountKey();
+  const gw = createFirestoreRestGateway({utilities: makeFakeUtilities(), urlFetchApp: fake, clientEmail: key.client_email,
+    privateKey: key.private_key, projectId: PROJECT, databaseId: DATABASE, clock: () => NOW});
+  const raw = createFirestoreStore({firestore: gw});
+  assert.equal(raw.supportsTtl, true);
+  const store = withLogPolicyStore(raw, {policy: () => ({...defaultLogPolicy(), LOGIN: {enabled: true, days: 30}}), now: () => NOW});
+  store.insert('vc_lookup_audit', {audit_id: 'a1', actor_id: 'u', vehicle_id: 'v', lookup_source: 'PLATE', result: 'FOUND', correlation_id: 'c', created_at: NOW});
+  store.insert('vc_security_events', {event_id: 'e1', username_digest: 'd', status: 'FAILED', created_at: NOW});
+  assert.deepEqual(fake.state.rawFields('vc_lookup_audit', 'a1')[TTL_FIELD], {timestampValue: '2027-11-26T00:00:00.000Z'});
+  assert.deepEqual(fake.state.rawFields('vc_security_events', 'e1')[TTL_FIELD], {timestampValue: '2026-12-26T00:00:00.000Z'});
+  assert.equal(TTL_FIELD in raw.one('vc_lookup_audit', {audit_id: 'a1'}), false, 'reads never show it');
+});
+
+test('LOG-05 the stored policy is read safely: unreadable → defaults; a required log stored as off is still written', () => {
+  assert.deepEqual(readLogPolicy('not json'), defaultLogPolicy());
+  assert.deepEqual(readLogPolicy(null), defaultLogPolicy());
+  const p = readLogPolicy(JSON.stringify([{code: 'CONTACT', enabled: false, days: 120}, {code: 'PHOTO', enabled: true, days: 1}, {code: 'X', enabled: true, days: 50}]));
+  assert.deepEqual(p.CONTACT, {enabled: true, days: 120});
+  assert.deepEqual(p.PHOTO, defaultLogPolicy().PHOTO, 'below the minimum → default');
+  assert.equal(logDecision(p, 'vc_lookup_audit', {lookup_source: 'CONTACT', created_at: '2026-01-01T00:00:00.000Z'}).write, true);
+  assert.equal(logDecision(p, 'vc_lookup_audit', {lookup_source: 'UNKNOWN'}).code, 'LOOKUP', 'an unknown source counts as a search');
+  assert.throws(() => parseLogPolicy('x'), /INVALID_LOG_POLICY/);
+});

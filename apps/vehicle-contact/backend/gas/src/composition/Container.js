@@ -14,6 +14,8 @@ export function createApplication(deps={}) {
   let prof=null; // request-scoped profiler, only for requestId "prof_*"
   // TUNEUP R2: process-lifetime memo for reference rows (Cloud Run passes referenceCacheMs; GAS: off).
   const referenceMemo=deps.referenceCacheMs>0?createProcessMemo(deps.referenceCacheMs):null;
+  // VC-ADR-040: the log policy is read at most once a minute per process (GAS: once per execution).
+  const logPolicyMemo=createProcessMemo(deps.logPolicyCacheMs>=0?deps.logPolicyCacheMs:60000);
   const raw=()=>({
     propertiesService:deps.propertiesService||(typeof PropertiesService!=='undefined'?PropertiesService:null),
     utilities:deps.utilities||(typeof Utilities!=='undefined'?Utilities:null),
@@ -52,7 +54,7 @@ export function createApplication(deps={}) {
     };
     const controller=createOperationController({store,security,sessions,drivePhotos:prof?prof.wrapDrivePhotos(drivePhotos):drivePhotos,
       allowDestructiveRetention:props.getProperty('VEHICLE_RETENTION_EXECUTE_ENABLED')==='true',
-      allowSystemReset:props.getProperty('VEHICLE_SYSTEM_RESET_ENABLED')==='true',referenceMemo});
+      allowSystemReset:props.getProperty('VEHICLE_SYSTEM_RESET_ENABLED')==='true',referenceMemo,logPolicyMemo});
     return prof?{dispatch:req=>prof.phase('controller',()=>controller.dispatch(req))}:controller;
   }
 

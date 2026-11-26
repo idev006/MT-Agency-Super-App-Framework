@@ -12,8 +12,8 @@ The permission column is from `contracts/api-permissions.v1.json` and retains **
 | Canonical v1 operation | Inventory ID | Owning UC / specification | Proposed contract permission | Planned or tested TC | Live DEV API evidence / explicit exclusion |
 |---|---|---|---|---|---|
 | `system.health` | `VC-SYSTEM-001` | [UC-ADMIN-03](use-cases/UC-ADMIN-03/specification.md) | PUBLIC | LIVE-01 | PASS — public direct-GAS smoke; browser/business UAT open |
-| `system.config.get` | `VC-SYSTEM-002` | [UC-ADMIN-03](use-cases/UC-ADMIN-03/specification.md) | `system.settings.read` | LIVE-01 | PASS — authenticated direct-GAS; browser/business UAT open |
-| `system.config.update` | `VC-SYSTEM-003` | [UC-ADMIN-03](use-cases/UC-ADMIN-03/specification.md) | `system.settings.manage` | LIVE-01 | PASS — authenticated direct-GAS; browser/business UAT open |
+| `system.config.get` | `VC-SYSTEM-002` | [UC-ADMIN-03](use-cases/UC-ADMIN-03/specification.md) | `system.settings.read` | LIVE-01, LOG-01 (log_policy, VC-ADR-040) | PASS — authenticated direct-GAS; browser/business UAT open |
+| `system.config.update` | `VC-SYSTEM-003` | [UC-ADMIN-03](use-cases/UC-ADMIN-03/specification.md) | `system.settings.manage` | LIVE-01, LOG-02 (log_policy, VC-ADR-040) | PASS — authenticated direct-GAS; browser/business UAT open |
 | `system.reset.preview` | `VC-SYSTEM-004` | [UC-ADMIN-03](use-cases/UC-ADMIN-03/specification.md) | `system.reset` | ACTOR-SYSTEM-RESET, live SYSTEM.RESET.PREVIEW | SOURCE — VC-ADR-039 |
 | `system.reset.execute` | `VC-SYSTEM-005` | [UC-ADMIN-03](use-cases/UC-ADMIN-03/specification.md) | `system.reset` | ACTOR-SYSTEM-RESET, live SYSTEM.RESET.EXECUTE (wrong phrase only) | SOURCE — VC-ADR-039 |
 | `auth.login` | `VC-AUTH-001` | [UC-AUTH-01](use-cases/UC-AUTH-01/specification.md) | PUBLIC | TC-AUTH-01 | PASS — public/direct-GAS; B4 delivered; security signoff open |

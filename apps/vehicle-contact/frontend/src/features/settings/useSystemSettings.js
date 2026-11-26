@@ -47,5 +47,16 @@ export function useSystemSettings({ repository, permissions }) {
     catch (error) { stickerFailure.value = failureOf(error); stickerPhase.value = UNCERTAIN_FAILURES.has(stickerFailure.value.code) ? 'uncertain' : 'error'; return false }
   }
 
-  return { phase, settings, failure, savePhase, saveFailure, canRead, canManage, load, save, stickerPhase, stickerFailure, saveStickerCategories }
+  // VC-ADR-040: save which logs are kept and for how long (system admin)
+  const logPhase = ref('idle'), logFailure = ref(null)
+  async function saveLogPolicy(policy) {
+    logFailure.value = null
+    if (!canManage.value || typeof source.updateLogPolicy !== 'function') { logPhase.value = 'forbidden'; return false }
+    logPhase.value = 'submitting'
+    try { settings.value = (await source.updateLogPolicy({ policy })).settings; logPhase.value = 'success'; return true }
+    catch (error) { logFailure.value = failureOf(error); logPhase.value = UNCERTAIN_FAILURES.has(logFailure.value.code) ? 'uncertain' : 'error'; return false }
+  }
+
+  return { phase, settings, failure, savePhase, saveFailure, canRead, canManage, load, save, stickerPhase, stickerFailure, saveStickerCategories,
+    logPhase, logFailure, saveLogPolicy }
 }
