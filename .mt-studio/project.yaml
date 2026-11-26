@@ -16,6 +16,7 @@ context:
   decisions: apps/vehicle-contact/docs/DECISION_LOG.md
   decision_prefix: VC-ADR-
   use_cases: apps/vehicle-contact/docs/use-cases/   # validated by scripts/validate-usecase-ssot.mjs
+  plans: [apps/vehicle-contact/docs/NODE_CORE_MIGRATION_PLAN.md]   # status: GitHub milestone 'Node core (VC-ADR-046)'
 commands:
   - { dir: apps/vehicle-contact/backend/gas, run: "npm run check:summary", what: "backend build + all tests" }
   - { dir: apps/vehicle-contact/frontend, run: "npm run test:summary", what: "frontend unit" }
