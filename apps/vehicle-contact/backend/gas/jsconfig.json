@@ -1,0 +1,12 @@
+{
+  "//": "Editor/LSP only (cross-file go-to-definition, find-references). Not pushed to GAS: clasp rootDir is dist/.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "checkJs": false,
+    "allowJs": true
+  },
+  "include": ["src/**/*.js", "tests/**/*.mjs", "tests/**/*.js", "scripts/**/*.mjs", "scripts/**/*.js", "api-smoke/**/*.mjs", "api-smoke/**/*.js"],
+  "exclude": ["node_modules", "dist", "test-results"]
+}
