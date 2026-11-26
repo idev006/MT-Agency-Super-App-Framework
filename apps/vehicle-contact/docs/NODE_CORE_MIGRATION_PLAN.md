@@ -10,11 +10,15 @@ The business code was written for Google Apps Script, which is synchronous. On C
 Live suite latency today: p50 ≈ 5.3 s, p95 ≈ 18 s. GAS still receives the whole code base (52 files) although it only stores photos.
 
 ## 2. Target
+Architecture (layers, Dependency Rule, C4 views, sources): [NODE_CORE_ARCHITECTURE.md](NODE_CORE_ARCHITECTURE.md).
 ```
 backend/core/        NEW  Node.js 22, ESM, async/await, Firestore Node SDK; one Cloud Run service "p6vc-core" (front door)
-  http/                   server, /api/frontend browser gateway, / server-to-server, proxy to legacy for not-yet-ported ops
-  application/            use cases, async, one group at a time
-  infrastructure/         Firestore SDK store, media-bridge client, scheduled jobs
+  http/                   driving adapter: server, /api/frontend gateway, /, routing table (core | legacy)
+  facade/                 64 operations: route, DTO, permission, envelope
+  application/            use cases, async, one folder per operation group
+  domain/                 pure rules (imported from backend/gas/src/domain until phase 9)
+  ports/                  interfaces the use cases need (Store, MediaStore, Clock, ...)
+  adapters/               driven: Firestore SDK store, media-bridge client, legacy client, scheduled jobs
 backend/gas-bridge/  NEW  GAS = photo bridge only (≈4 files, own small build)
 backend/gas/         OLD  legacy engine; bug fixes only; deleted in phase 9
 ```
