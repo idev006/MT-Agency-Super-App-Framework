@@ -3,6 +3,8 @@ name: Deploy P6 Vehicle Contact API to Cloud Run (manual only)
 # VC-ADR-033: the unchanged application hosted on Cloud Run (Bangkok). Keyless: GitHub OIDC ->
 # Workload Identity Federation -> deployer service account. Nothing here holds a secret; the auth
 # pepper is mounted from Secret Manager by Cloud Run itself.
+# VC-ADR-041 (owner: Cloud Run only, but no outage): deploy WITHOUT traffic -> smoke the candidate -> switch -> smoke
+# the live URL -> on failure traffic goes back to the previous revision. Manual rollback: rollback-vehicle-cloudrun.yml.
 # Repository variables (non-secret identifiers, set once after the owner runs
 # apps/vehicle-contact/ops/cloudrun-setup.sh in Cloud Shell): GCP_WIF_PROVIDER, GCP_DEPLOYER_SA.
 on:
@@ -71,8 +73,17 @@ jobs:
           docker push "$IMAGE"
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy revision
+      - name: Remember the revision serving now (the rollback target)
+        id: prev
         run: |
+          PREV=$(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format=json \
+            | jq -r '[.status.traffic[] | select((.percent // 0) == 100)][0].revisionName // empty')
+          echo "Serving now: ${PREV:-none}"
+          echo "revision=$PREV" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy revision WITHOUT traffic (tag candidate)
+        run: |
+          # VC-ADR-041 safe deploy: users stay on the current revision until the new one passes the smoke.
           # concurrency=1: the business code is synchronous (UrlFetch contract); scale out instances.
           # No session cache across instances (VC-ADR-030/033): revocation stays immediate.
           gcloud run deploy "$SERVICE" \
@@ -85,11 +96,35 @@ jobs:
             --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),RUNTIME_SA_EMAIL=${RUNTIME_SA},MEDIA_BRIDGE_URL=${MEDIA_BRIDGE_URL},P6VC_SYSTEM_RESET=${{ vars.P6VC_SYSTEM_RESET || 'DISABLED' }}" \
             --set-secrets "P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest,P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest" \
             --labels "app=p6vc,commit=${GITHUB_SHA::12}" \
+            --no-traffic --tag candidate \
             --quiet
 
-      - name: Health probe
+      - name: Smoke the candidate (no user traffic yet)
+        id: candidate
+        run: |
+          DESC=$(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format=json)
+          NEW=$(echo "$DESC" | jq -r '.status.latestCreatedRevisionName')
+          CAND=$(echo "$DESC" | jq -r '.status.traffic[] | select(.tag == "candidate") | .url')
+          echo "revision=$NEW" >> "$GITHUB_OUTPUT"
+          echo "Candidate $NEW at $CAND"
+          node apps/vehicle-contact/backend/cloudrun/candidate-smoke.mjs "$CAND"
+
+      - name: Switch traffic to the candidate
+        run: |
+          gcloud run services update-traffic "$SERVICE" --project "$PROJECT_ID" --region "$REGION" \
+            --to-revisions "${{ steps.candidate.outputs.revision }}=100" --quiet
+
+      - name: Smoke the live URL; roll back on failure
         run: |
           URL=$(gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(status.url)')
-          echo "Service URL: $URL"
-          curl -fsS "$URL" | tee /tmp/health.json
-          grep -q '"status":"ready"' /tmp/health.json
+          if node apps/vehicle-contact/backend/cloudrun/candidate-smoke.mjs "$URL"; then
+            echo "LIVE OK on ${{ steps.candidate.outputs.revision }}"
+          else
+            PREV="${{ steps.prev.outputs.revision }}"
+            if [ -n "$PREV" ]; then
+              echo "::error::live smoke failed - moving traffic back to $PREV"
+              gcloud run services update-traffic "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --to-revisions "$PREV=100" --quiet
+              node apps/vehicle-contact/backend/cloudrun/candidate-smoke.mjs "$URL" --any-version || true
+            fi
+            exit 1
+          fi
