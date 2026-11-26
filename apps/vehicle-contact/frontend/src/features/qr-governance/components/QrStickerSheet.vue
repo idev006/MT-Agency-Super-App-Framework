@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { qrImageDataUrl } from '../../../infrastructure/media/qr-image.js'
 import { stickerShortCode, vehicleQrLink } from '../../../domain/qr/vehicle-qr-link.js'
 import { provinceLabel } from '../../../domain/reference/provinces.js'
-import { STICKER_CATEGORIES, bandTextColour } from '../../../domain/reference/sticker-categories.js'
+import { stickerOf } from '../../../domain/reference/sticker-categories.js'
 import { PAPERS } from '../../../domain/qr/sticker-layout.js'
 
 // S5 sticker at its REAL size: 5 × 5 cm or 8 × 8 cm, colour by the vehicle user's category (StickerCategoryPolicy).
@@ -14,23 +14,22 @@ import { PAPERS } from '../../../domain/qr/sticker-layout.js'
 //   mode 'single': print shop — one per page, page = sticker + 3 mm bleed
 // Each size starts on its own page. No name, phone or personal data is printed.
 const props = defineProps({
-  items: { type: Array, required: true }, // READY export items { vehicleId, plate, province, qrId, token, stickerCategory }
+  items: { type: Array, required: true }, // READY export items { vehicleId, plate, province, qrId, token, sticker | stickerCategory }
   mode: { type: String, default: 'office' }, // 'office' | 'sheet' | 'single'
   sizeMode: { type: String, default: 'category' }, // 'category' | '5' | '8'
   paper: { type: String, default: 'A4' }, // A3 | A4 | A5 (office / sheet)
   unitMark: { type: String, default: 'ตำรวจภูธรภาค 6' },
 })
-const ORDER = Object.keys(STICKER_CATEGORIES)
 const paperName = computed(() => (PAPERS[props.paper] ? props.paper : 'A4'))
 const stickers = computed(() => props.items
-  .filter((x) => STICKER_CATEGORIES[x.stickerCategory])
-  .map((x) => {
-    const cat = STICKER_CATEGORIES[x.stickerCategory]
+  .map((x) => ({ x, cat: x.sticker || stickerOf(x.stickerCategory) })) // VC-ADR-038: the configured colour/size from the server
+  .filter(({ cat }) => cat)
+  .map(({ x, cat }) => {
     const size = props.sizeMode === '5' ? 5 : props.sizeMode === '8' ? 8 : cat.size
-    return { ...x, cat, size, ink: bandTextColour(x.stickerCategory), provinceName: provinceLabel(x.province) || x.province,
+    return { ...x, cat, size, ink: cat.ink, provinceName: provinceLabel(x.province) || x.province,
       shortCode: stickerShortCode(x.qrId), image: qrImageDataUrl(vehicleQrLink(x.token), { cellSize: 10, margin: 2 }) }
   })
-  .sort((a, b) => b.size - a.size || ORDER.indexOf(a.stickerCategory) - ORDER.indexOf(b.stickerCategory) || a.plate.localeCompare(b.plate, 'th')))
+  .sort((a, b) => b.size - a.size || a.cat.label.localeCompare(b.cat.label, 'th') || a.plate.localeCompare(b.plate, 'th')))
 const groups = computed(() => [8, 5].map((size) => ({ size, list: stickers.value.filter((s) => s.size === size) })).filter((g) => g.list.length))
 // crop marks (mm) around one cell in 'sheet' mode: cell = mark zone 4 + bleed 3 + trim + bleed 3 + mark zone 4
 const marks = (size) => {
@@ -48,7 +47,7 @@ const marks = (size) => {
           <line v-for="(m, i) in marks(s.size).lines" :key="i" :x1="m[0]" :y1="m[1]" :x2="m[2]" :y2="m[3]" stroke="#000" stroke-width="0.15" />
         </svg>
         <div class="qr-bleed">
-          <article class="qr-sticker" :class="`qr-sticker--${s.size}`" :style="{ '--band': s.cat.hex, '--ink': s.ink }" :data-sticker="s.vehicleId" :data-size="s.size" :data-category="s.stickerCategory">
+          <article class="qr-sticker" :class="`qr-sticker--${s.size}`" :style="{ '--band': s.cat.hex, '--ink': s.ink }" :data-sticker="s.vehicleId" :data-size="s.size" :data-category="s.cat.code">
             <div class="qr-sticker__head">
               <strong class="qr-sticker__plate">{{ s.plate }}</strong>
               <span class="qr-sticker__province">{{ s.provinceName }}</span>

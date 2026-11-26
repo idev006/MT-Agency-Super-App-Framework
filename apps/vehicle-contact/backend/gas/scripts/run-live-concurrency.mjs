@@ -109,7 +109,7 @@ export async function runConcurrency({env=process.env,fetchImpl=fetch,parallel=4
 
     // C2 — concurrent approvals of the same request.
     if(requestId){
-      const c2=await Promise.all(Array.from({length:Math.max(2,parallel-1)},()=>call('registrations.review',{requestId,decision:'APPROVE',platePhotoVerified:true},admin)));
+      const c2=await Promise.all(Array.from({length:Math.max(2,parallel-1)},()=>call('registrations.review',{requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},admin)));
       const okR=c2.find(r=>r&&r.ok);vehicleId=okR?okR.data.vehicleId:null;
       const vid=vehicleId||reqRows[0]?.vehicle_id||'none';
       const journals=(await where('vc_operation_journal','entity_id',requestId)).filter(j=>j.operation==='registrations.review'&&j.status==='APPLIED');

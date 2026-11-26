@@ -4,7 +4,7 @@
 }
 
 :root {
-  font-family: "Pridi", "Leelawadee UI", Tahoma, serif;
+  font-family: "Krub", "Leelawadee UI", Tahoma, sans-serif; /* owner 2026-11-26: Krub */
   font-size: 16px;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -28,12 +28,18 @@ textarea {
   font: inherit;
 }
 
-.pridi-extralight { font-family: "Pridi", serif; font-weight: 200; font-style: normal; }
-.pridi-light { font-family: "Pridi", serif; font-weight: 300; font-style: normal; }
-.pridi-regular { font-family: "Pridi", serif; font-weight: 400; font-style: normal; }
-.pridi-medium { font-family: "Pridi", serif; font-weight: 500; font-style: normal; }
-.pridi-semibold { font-family: "Pridi", serif; font-weight: 600; font-style: normal; }
-.pridi-bold { font-family: "Pridi", serif; font-weight: 700; font-style: normal; }
+.krub-extralight { font-family: "Krub", sans-serif; font-weight: 200; font-style: normal; }
+.krub-light { font-family: "Krub", sans-serif; font-weight: 300; font-style: normal; }
+.krub-regular { font-family: "Krub", sans-serif; font-weight: 400; font-style: normal; }
+.krub-medium { font-family: "Krub", sans-serif; font-weight: 500; font-style: normal; }
+.krub-semibold { font-family: "Krub", sans-serif; font-weight: 600; font-style: normal; }
+.krub-bold { font-family: "Krub", sans-serif; font-weight: 700; font-style: normal; }
+.krub-extralight-italic { font-family: "Krub", sans-serif; font-weight: 200; font-style: italic; }
+.krub-light-italic { font-family: "Krub", sans-serif; font-weight: 300; font-style: italic; }
+.krub-regular-italic { font-family: "Krub", sans-serif; font-weight: 400; font-style: italic; }
+.krub-medium-italic { font-family: "Krub", sans-serif; font-weight: 500; font-style: italic; }
+.krub-semibold-italic { font-family: "Krub", sans-serif; font-weight: 600; font-style: italic; }
+.krub-bold-italic { font-family: "Krub", sans-serif; font-weight: 700; font-style: italic; }
 
 .field-stack {
   display: grid;
@@ -174,7 +180,7 @@ textarea {
 
 .route-plate strong {
   display: block;
-  font-family: "Pridi", serif;
+  font-family: "Krub", sans-serif;
   font-size: clamp(1.15rem, 4vw, 2rem);
   font-weight: 900;
   letter-spacing: 0.02em;

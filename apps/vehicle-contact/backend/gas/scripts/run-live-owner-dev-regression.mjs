@@ -60,7 +60,9 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
    denied(await request('auth.linkGoogle',{password:testPassword,idToken:'invalid-development-token'},adminToken),'OPERATION_FAILED'));
 
   let settings;
-  await test('SYSTEM.CONFIG.GET','system.config.get',async()=>{settings=ok(await request('system.config.get',{},adminToken));});
+  await test('SYSTEM.CONFIG.GET','system.config.get',async()=>{settings=ok(await request('system.config.get',{},adminToken));
+   // VC-ADR-038: the person-type / sticker-colour list comes with the settings (defaults until a system admin saves one)
+   assert.ok(Array.isArray(settings.sticker_categories)&&settings.sticker_categories.some(c=>c.code==='NCO'&&c.active&&/^#[0-9a-f]{6}$/.test(c.hex)),'sticker categories');});
   await test('SYSTEM.CONFIG.UPDATE','system.config.update',async()=>{
    const idle=Math.max(1,Number(settings?.idle_timeout_minutes)||30);
    const retention=Math.max(1,Number(settings?.retention_days)||365);
@@ -184,7 +186,7 @@ export function createRegressionCases({request:rawRequest,username,testPassword,
    assert.ok(typeof photo.base64Image==='string'&&photo.base64Image.length>0);
   });
   await test('REGISTRATIONS.REVIEW','registrations.review',async()=>{
-   state.approved=ok(await request('registrations.review',{requestId:state.registration.requestId,decision:'APPROVE',platePhotoVerified:true},state.tokens.reg));
+   state.approved=ok(await request('registrations.review',{requestId:state.registration.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},state.tokens.reg));
    assert.equal(state.approved.status,'APPROVED');
   });
   await test('VEHICLES.LOOKUP','vehicles.lookup',async()=>{

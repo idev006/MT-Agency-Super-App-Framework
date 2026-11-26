@@ -65,7 +65,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     if(activeByPlate(store,app.plate_normalized,app.province_code).some(v=>v.vehicle_id!==request.vehicle_id))throw new Error('DUPLICATE_VEHICLE');
     store.insert('vc_vehicles',{vehicle_id:request.vehicle_id,plate_normalized:app.plate_normalized,province_code:app.province_code,
      vehicle_type:app.vehicle_type,make:app.make,model:app.model,color:app.color,status:'ACTIVE',version:1,
-     created_at:now(),updated_at:now(),created_by:detail.actorId,updated_by:detail.actorId,plate_type:app.plate_type,organization_id:app.organization_id});
+     created_at:now(),updated_at:now(),created_by:detail.actorId,updated_by:detail.actorId,plate_type:app.plate_type,organization_id:app.organization_id,sticker_category:detail.stickerCategory||''});
     store.insert('vc_vehicle_contacts',{contact_id:detail.contactId,vehicle_id:request.vehicle_id,display_name:app.contactName,phone_e164:app.contactPhone,
      relationship:app.relationship,is_primary:true,status:'ACTIVE',verified_at:now(),created_at:now(),updated_at:now()});
     for(const f of app.photos)store.insert('vc_vehicle_photos',{photo_id:f.photoId,vehicle_id:request.vehicle_id,
@@ -107,7 +107,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   plate_type:need(p.plateType,'PLATE_TYPE'),vehicle_type:need(p.vehicleType,'VEHICLE_TYPE'),
   make:need(p.brand,'BRAND'),model:need(p.model,'MODEL'),color:need(p.color,'COLOR'),
   organization_id:need(p.organizationId,'ORGANIZATION_ID'),relationship:need(p.relationship,'RELATIONSHIP'),
-  contactName:need(p.contactName,'CONTACT_NAME'),contactPhone:phone(p.contactPhone)
+  contactName:need(p.contactName,'CONTACT_NAME'),contactPhone:phone(p.contactPhone),sticker_category:p.stickerCategory||''
  });
  function reconcileSubmitTimeout(idemKey){
   // A previous attempt may have died (GAS timeout/restart) after PREPARED but before the
@@ -308,7 +308,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    }
    if(r.status!=='PENDING_APPROVAL')throw new Error('INVALID_REQUEST_STATE');
    const eventId=id(),detail={operation:'registrations.review',requestId,vehicleId:r.vehicle_id,decision,actorId:a.userId,
-    contactId:id(),qrId:decision==='APPROVE'?id():'',auditId:id(),correlationId:id().slice(0,16)};
+    contactId:id(),qrId:decision==='APPROVE'?id():'',auditId:id(),correlationId:id().slice(0,16),stickerCategory:p.stickerCategory||app.sticker_category||''};
    return commitReview(eventId,detail,r,app,vehicles||[],versioned.version);
   });
   }
@@ -325,7 +325,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   if(approve){
    writes.push({op:'insert',table:'vc_vehicles',data:{vehicle_id:request.vehicle_id,plate_normalized:app.plate_normalized,province_code:app.province_code,
     vehicle_type:app.vehicle_type,make:app.make,model:app.model,color:app.color,status:'ACTIVE',version:1,
-    created_at:at,updated_at:at,created_by:detail.actorId,updated_by:detail.actorId,plate_type:app.plate_type,organization_id:app.organization_id}});
+    created_at:at,updated_at:at,created_by:detail.actorId,updated_by:detail.actorId,plate_type:app.plate_type,organization_id:app.organization_id,sticker_category:detail.stickerCategory||''}});
    writes.push({op:'insert',table:'vc_vehicle_contacts',data:{contact_id:detail.contactId,vehicle_id:request.vehicle_id,display_name:app.contactName,
     phone_e164:app.contactPhone,relationship:app.relationship,is_primary:true,status:'ACTIVE',verified_at:at,created_at:at,updated_at:at}});
    for(const f of app.photos)writes.push({op:'insert',table:'vc_vehicle_photos',data:{photo_id:f.photoId,vehicle_id:request.vehicle_id,

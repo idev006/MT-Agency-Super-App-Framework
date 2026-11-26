@@ -64,3 +64,35 @@ test('QR print → PDF: real page sizes (A4 sheet, 56 mm single page with bleed)
   await page.getByRole('combobox', { name: 'รูปแบบ' }).selectOption('single')
   expect(await boxes()).toEqual([[56, 56]]) // 50 mm + 3 mm bleed each side
 })
+
+test('person types + sticker colours (VC-ADR-038): a system admin changes a colour → the print uses it', async ({ page, api }) => {
+  await signIn(page, '/#/app/admin/settings')
+  const table = page.getByRole('table', { name: 'ประเภทบุคคลและสีสติกเกอร์' })
+  await expect(table).toBeVisible()
+  await expectTableRules(page)
+  await expect(table.getByRole('row')).toHaveCount(7) // header + 6 default types
+  // change the colour of "พล.ต.ต. ขึ้นไป" (vehicle v1) to orange
+  await table.getByRole('row', { name: /พล\.ต\.ต\. ขึ้นไป/ }).getByRole('button', { name: 'แก้ไข' }).click()
+  const dialog = page.getByRole('dialog', { name: 'แก้ไขประเภทบุคคล' })
+  await dialog.getByLabel('ชื่อสี').fill('ส้ม')
+  await dialog.getByLabel('รหัสสี').fill('#ff7a00')
+  await dialog.getByRole('button', { name: 'บันทึก' }).click()
+  await expect(page.getByText('บันทึกประเภทบุคคลและสีสติกเกอร์แล้ว')).toBeVisible()
+  const sent = api.calls.filter((c) => c.op === 'system.config.update').at(-1).payload.values.sticker_categories
+  expect(sent).toHaveLength(6)
+  expect(sent[0]).toEqual({ code: 'GENERAL_OFFICER', label: 'พล.ต.ต. ขึ้นไป', colour: 'ส้ม', hex: '#ff7a00', size: 8, active: true })
+  // add a new person type
+  await page.getByRole('button', { name: 'เพิ่มประเภท' }).click()
+  const add = page.getByRole('dialog', { name: 'เพิ่มประเภทบุคคล' })
+  await add.getByLabel('ประเภทบุคคล').fill('ข้าราชการบำนาญ')
+  await add.getByLabel('ชื่อสี').fill('ฟ้า')
+  await add.getByRole('button', { name: 'บันทึก' }).click()
+  await expect(table.getByRole('row')).toHaveCount(8)
+  // the print page now draws v1 in orange
+  await page.goto('/#/app/admin/qr-print')
+  await page.getByRole('button', { name: 'เลือกทั้งหน้า' }).click()
+  await page.getByRole('button', { name: 'สร้างแผ่น QR' }).click()
+  const sticker = page.locator('.qr-print-area [data-sticker="v1"]')
+  await expect(sticker).toHaveCSS('background-color', 'rgb(255, 122, 0)')
+  await expect(sticker).toHaveCSS('color', 'rgb(17, 17, 17)') // dark text on orange
+})

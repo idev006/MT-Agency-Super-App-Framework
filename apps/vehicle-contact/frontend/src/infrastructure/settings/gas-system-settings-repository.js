@@ -1,3 +1,4 @@
+import { DEFAULT_STICKER_CATEGORIES, toSticker, toStickerList } from '../../domain/reference/sticker-categories.js'
 export class SystemSettingsContractError extends Error {
   constructor() {
     super('System settings response does not match the contract')
@@ -18,6 +19,8 @@ function mapSettings(value) {
   return Object.freeze({
     idleTimeoutMinutes: parse(value.idle_timeout_minutes, 480),
     retentionDays: parse(value.retention_days, 3650, { optional: true }),
+    // VC-ADR-038: person types + sticker colours (backend ≥0.9.33; the defaults before that)
+    stickerCategories: Array.isArray(value.sticker_categories) ? toStickerList(value.sticker_categories) : DEFAULT_STICKER_CATEGORIES.map(toSticker),
   })
 }
 
@@ -31,6 +34,11 @@ export function createGasSystemSettingsRepository({ callOperation }) {
     async update({ idleTimeoutMinutes, retentionDays, signal }) {
       const values = { idle_timeout_minutes: idleTimeoutMinutes, retention_days: retentionDays }
       const response = await callOperation('system.config.update', { values }, { signal })
+      return { settings: mapSettings(response.data), requestId: response.requestId }
+    },
+    async updateStickerCategories({ categories, signal }) {
+      const list = categories.map(({ code, label, colour, hex, size, active }) => ({ code, label, colour, hex, size, active }))
+      const response = await callOperation('system.config.update', { values: { sticker_categories: list } }, { signal })
       return { settings: mapSettings(response.data), requestId: response.requestId }
     },
   })

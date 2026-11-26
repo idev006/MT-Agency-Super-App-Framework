@@ -2,6 +2,7 @@
 // permissions come from the backend's own ROLE_PERMISSIONS so roles never drift. Data is synthetic and
 // deliberately includes long Thai names and 64-char ids to exercise the table rules.
 import { ROLE_PERMISSIONS } from '../../backend/gas/src/application/security/SessionService.js'
+import { DEFAULT_STICKER_CATEGORIES, resolveSticker, stickerInk } from '../../backend/gas/src/domain/policies/StickerCategoryPolicy.js'
 
 const CODE = (n) => n.toString(16).padStart(2, '0').repeat(32)
 const at = (m) => new Date(Date.UTC(2026, 10, 25, 4, 0) + m * 60000).toISOString()
@@ -38,11 +39,16 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
   const revokedCode = CODE(172) // a sticker whose QR was replaced
   const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
   const calls = []
+  // VC-ADR-038: the configurable person types (system.config) and each vehicle's resolved sticker
+  let stickerConfig = DEFAULT_STICKER_CATEGORIES.map((c) => ({ ...c }))
+  const withInk = (list) => list.map((c) => ({ ...c, ink: stickerInk(c.hex) }))
+  const sticker = (v) => resolveSticker(v.stickerCategory || '', stickerConfig)
 
   const detail = (v, withAdmin) => ({
     vehicleId: v.vehicleId, plate: v.plate, province: v.province, status: v.status, vehicleType: v.vehicleType, plateType: 'STANDARD',
     brand: v.brand, model: v.model, color: v.color, labels: { vehicleType: v.vehicleTypeLabel, color: v.colorLabel, plateType: 'ป้ายทะเบียนปกติ' },
     organization: { id: 'o2', name: orgName('o2') }, registeredAt: v.createdAt, updatedAt: at(-10), version: v.version,
+    stickerCategory: v.stickerCategory || '', sticker: sticker(v), stickerCategories: withInk(stickerConfig.filter((c) => c.active)),
     qr: { active: v.qr !== 'NO_ACTIVE_QR', issuedAt: v.createdAt },
     contacts: [{ name: 'นายทดสอบ ระบบ', phone: '+66800000001', relationship: 'OWNER', isPrimary: true, verifiedAt: v.createdAt },
       { name: 'นางสาวผู้ประสานงานสำรอง ที่มีชื่อยาว', phone: '+66800000002', relationship: 'FAMILY', isPrimary: false, verifiedAt: v.createdAt }],
@@ -85,7 +91,12 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
       else if (p.state) rows = rows.filter((c) => c.state === p.state)
       return page(rows, p)
     },
-    'vehicles.list': (p) => page(vehicles.map(({ qr, ...v }) => ({ stickerCategory: '', ...v })), p),
+    'system.config.get': () => ({ idle_timeout_minutes: '30', retention_days: '365', sticker_categories: withInk(stickerConfig) }),
+    'system.config.update': (p) => {
+      if (p.values?.sticker_categories) stickerConfig = p.values.sticker_categories.map((c) => ({ ...c, hex: c.hex.toLowerCase() }))
+      return { idle_timeout_minutes: '30', retention_days: '365', sticker_categories: withInk(stickerConfig) }
+    },
+    'vehicles.list': (p) => page(vehicles.map(({ qr, ...v }) => ({ stickerCategory: '', ...v, sticker: sticker(v) })), p),
     'vehicles.detail': (p) => { const v = vehicles.find((x) => x.vehicleId === p.vehicleId); return v ? detail(v, true) : { error: 'NOT_FOUND' } },
     'qr.history': (p) => ({ items: [
       { qrId: 'q2', status: 'ACTIVE', issuedAt: at(-60), issuedByName: 'ผู้ดูแลระบบทดสอบ', reason: 'DAMAGED', note: 'สติกเกอร์ซีดจนอ่านไม่ได้', replacesQrId: 'q1', revokedAt: '', revokedByName: '', revokeReason: '', revokeNote: '' },
@@ -95,7 +106,7 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
       const items = p.vehicleIds.map((id) => {
         const v = vehicles.find((x) => x.vehicleId === id)
         if (!v) return { vehicleId: id, status: 'NOT_FOUND' }
-        const base = { vehicleId: v.vehicleId, plate: v.plate, province: v.province, vehicleType: v.vehicleType, brand: v.brand, model: v.model, color: v.color, stickerCategory: v.stickerCategory || '' }
+        const base = { vehicleId: v.vehicleId, plate: v.plate, province: v.province, vehicleType: v.vehicleType, brand: v.brand, model: v.model, color: v.color, stickerCategory: v.stickerCategory || '', sticker: sticker(v) }
         return v.qr === 'READY' ? { ...base, status: 'READY', qrId: 'a1b2c3d4e5f60718', issuedAt: v.createdAt, token: qrCode[v.vehicleId] } : { ...base, status: v.qr }
       })
       return { items, exportedAt: at(0), ready: items.filter((x) => x.status === 'READY').length }

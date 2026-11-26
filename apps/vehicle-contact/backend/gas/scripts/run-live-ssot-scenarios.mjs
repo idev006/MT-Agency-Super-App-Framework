@@ -74,9 +74,9 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
       const subs=await Promise.all([call('registrations.submit',reg(main,p,a,'ss-'+tag+'-3a')),call('registrations.submit',reg(main,p,b,'ss-'+tag+'-3b'))]);
       const ids=subs.filter(r=>r.ok).map(r=>r.data.requestId);pendings.push(...ids);
       if(ids.length<2){record('C3b_DUPLICATE_PLATE_APPROVAL',true,{note:'race not reproduced (only '+ids.length+' pending) — duplicate blocked at submit',pending:ids.length});return;}
-      const first=await call('registrations.review',{requestId:ids[0],decision:'APPROVE',platePhotoVerified:true},admin);
+      const first=await call('registrations.review',{requestId:ids[0],decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},admin);
       if(first.ok)vehicles.push(first.data.vehicleId);
-      const second=await call('registrations.review',{requestId:ids[1],decision:'APPROVE',platePhotoVerified:true},admin);
+      const second=await call('registrations.review',{requestId:ids[1],decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},admin);
       if(second.ok)vehicles.push(second.data.vehicleId);
       const d={activeVehiclesForPlate:(await where('vc_vehicles','plate_normalized',p)).filter(v=>v.status==='ACTIVE').length,
         firstApprovalCode:code(first),secondApprovalCode:code(second)};
@@ -86,7 +86,7 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
     await tryScenario('C4_APPROVE_VS_REJECT_RACE',async()=>{
       const p=plate(2),ph=await stage(main);
       const s=await must('registrations.submit',reg(main,p,ph,'ss-'+tag+'-4'));
-      const [ap,rj]=await Promise.all([call('registrations.review',{requestId:s.requestId,decision:'APPROVE',platePhotoVerified:true},admin),
+      const [ap,rj]=await Promise.all([call('registrations.review',{requestId:s.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},admin),
         call('registrations.review',{requestId:s.requestId,decision:'REJECT'},admin)]);
       const req=(await where('vc_registration_requests','request_id',s.requestId))[0]||{};
       const v=(await where('vc_vehicles','vehicle_id',s.vehicleId)).filter(x=>x.status==='ACTIVE');
@@ -109,7 +109,7 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
     await tryScenario('C6_CHANGE_REVIEW_RACE',async()=>{
       const p=plate(20),ph=await stage(main);
       const s=await must('registrations.submit',reg(main,p,ph,'ss-'+tag+'-6'));
-      const a=await must('registrations.review',{requestId:s.requestId,decision:'APPROVE',platePhotoVerified:true},admin);vehicles.push(a.vehicleId);
+      const a=await must('registrations.review',{requestId:s.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},admin);vehicles.push(a.vehicleId);
       // changes.submit needs vehicle.change.submit (OWNER role) + ownership: create a synthetic
       // OWNER, make them the vehicle owner, and submit as them (V62 run 1: admin got FORBIDDEN).
       const oname='p6vc_owner_c6'+tag,otemp='Synthetic-Temp-'+tag+'-Cc3!',opass='Synthetic-Pass-'+tag+'-Dd4!';
@@ -163,7 +163,7 @@ export async function runScenarios({env=process.env,fetchImpl=fetch,persist=true
     await tryScenario('S4_QR_REVOKE_RESOLVE',async()=>{
       const p=plate(3),ph=await stage(main);
       const s=await must('registrations.submit',reg(main,p,ph,'ss-'+tag+'-q'));
-      const a=await must('registrations.review',{requestId:s.requestId,decision:'APPROVE',platePhotoVerified:true},admin);vehicles.push(a.vehicleId);
+      const a=await must('registrations.review',{requestId:s.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},admin);vehicles.push(a.vehicleId);
       const before=await call('qr.resolve',{token:a.qrToken},staff);
       await must('qr.revoke',{vehicleId:a.vehicleId,reason:'ADMIN_REVOKE'},admin);
       const after=await call('qr.resolve',{token:a.qrToken},staff);

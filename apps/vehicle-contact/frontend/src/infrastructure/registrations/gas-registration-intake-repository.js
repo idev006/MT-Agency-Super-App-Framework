@@ -18,7 +18,10 @@ export function createGasRegistrationIntakeRepository({ callPublicOperation }) {
     async validateCampaign(campaignToken) {
       const response = await callPublicOperation('campaigns.validate', { campaignToken })
       if (response.data?.valid !== true) throw new RegistrationIntakeContractError()
-      return { campaignId: text(response.data.campaignId), valid: true, requestId: response.requestId }
+      // VC-ADR-038: the person types the registrant can choose from (ACTIVE only; [] from an older backend)
+      const stickerCategories = (Array.isArray(response.data.stickerCategories) ? response.data.stickerCategories : [])
+        .filter((c) => typeof c?.code === 'string' && typeof c?.label === 'string').map((c) => Object.freeze({ code: c.code, label: c.label }))
+      return { campaignId: text(response.data.campaignId), valid: true, stickerCategories, requestId: response.requestId }
     },
     async uploadPhoto({ campaignToken, slot, base64Image, mimeType }) {
       const response = await callPublicOperation('photos.upload', { campaignToken, slot, base64Image, mimeType })

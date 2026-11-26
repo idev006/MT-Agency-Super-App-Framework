@@ -41,14 +41,14 @@ describe('SYSTEM_ADMIN governance repository contracts', () => {
       .mockResolvedValueOnce({ data: { idle_timeout_minutes: '45', retention_days: '365' }, requestId: 'get' })
       .mockResolvedValueOnce({ data: { idle_timeout_minutes: '60', retention_days: '730' }, requestId: 'update' })
     const repository = createGasSystemSettingsRepository({ callOperation })
-    expect((await repository.get()).settings).toEqual({ idleTimeoutMinutes: 45, retentionDays: 365 })
-    expect((await repository.update({ idleTimeoutMinutes: 60, retentionDays: 730 })).settings).toEqual({ idleTimeoutMinutes: 60, retentionDays: 730 })
+    expect((await repository.get()).settings).toMatchObject({ idleTimeoutMinutes: 45, retentionDays: 365 })
+    expect((await repository.update({ idleTimeoutMinutes: 60, retentionDays: 730 })).settings).toMatchObject({ idleTimeoutMinutes: 60, retentionDays: 730 })
     expect(callOperation).toHaveBeenLastCalledWith('system.config.update', { values: { idle_timeout_minutes: 60, retention_days: 730 } }, { signal: undefined })
   })
 
   it('preserves an unconfigured retention policy as empty instead of inventing a value', async () => {
     const repository = createGasSystemSettingsRepository({ callOperation: vi.fn().mockResolvedValue({ data: { idle_timeout_minutes: '30', retention_days: null }, requestId: 'get' }) })
-    expect((await repository.get()).settings).toEqual({ idleTimeoutMinutes: 30, retentionDays: null })
+    expect((await repository.get()).settings).toMatchObject({ idleTimeoutMinutes: 30, retentionDays: null })
   })
 
   it('fails closed for malformed successful responses', async () => {

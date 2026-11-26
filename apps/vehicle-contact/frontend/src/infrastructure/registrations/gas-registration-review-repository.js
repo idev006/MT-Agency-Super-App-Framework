@@ -1,3 +1,4 @@
+import { toSticker, toStickerList } from '../../domain/reference/sticker-categories.js'
 import { callPaginatedOperation, mapPaginatedData } from '../api/pagination-contract.js'
 
 export class RegistrationReviewContractError extends Error {
@@ -52,8 +53,12 @@ function mapDetail(value) {
       relationship: typeof application.relationship === 'string' ? application.relationship : '',
       contactName: typeof application.contactName === 'string' ? application.contactName : '',
       contactPhone: typeof application.contactPhone === 'string' ? application.contactPhone : '',
+      stickerCategory: typeof application.sticker_category === 'string' ? application.sticker_category : '',
       photos: Object.freeze(photos),
     }),
+    // VC-ADR-038: the declared person type + the ACTIVE types the reviewer can choose from
+    sticker: toSticker(value.sticker),
+    stickerCategories: toStickerList(value.stickerCategories),
   })
 }
 
@@ -84,11 +89,11 @@ export function createGasRegistrationReviewRepository({ callOperation }) {
         requestId: response.requestId,
       }
     },
-    async review({ requestId, decision, platePhotoVerified = false }) {
+    async review({ requestId, decision, platePhotoVerified = false, stickerCategory = '' }) {
       const response = await callOperation('registrations.review', {
         requestId,
         decision,
-        ...(decision === 'APPROVE' ? { platePhotoVerified } : {}),
+        ...(decision === 'APPROVE' ? { platePhotoVerified, ...(stickerCategory ? { stickerCategory } : {}) } : {}),
       })
       if (!response.data || response.data.requestId !== requestId || !['APPROVED', 'REJECTED'].includes(response.data.status)) {
         throw new RegistrationReviewContractError()

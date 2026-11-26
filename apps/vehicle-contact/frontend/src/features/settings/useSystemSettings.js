@@ -37,5 +37,15 @@ export function useSystemSettings({ repository, permissions }) {
     }
   }
 
-  return { phase, settings, failure, savePhase, saveFailure, canRead, canManage, load, save }
+  // VC-ADR-038: save the whole person-type / sticker-colour list (system admin)
+  const stickerPhase = ref('idle'), stickerFailure = ref(null)
+  async function saveStickerCategories(categories) {
+    stickerFailure.value = null
+    if (!canManage.value || typeof source.updateStickerCategories !== 'function') { stickerPhase.value = 'forbidden'; return false }
+    stickerPhase.value = 'submitting'
+    try { settings.value = (await source.updateStickerCategories({ categories })).settings; stickerPhase.value = 'success'; return true }
+    catch (error) { stickerFailure.value = failureOf(error); stickerPhase.value = UNCERTAIN_FAILURES.has(stickerFailure.value.code) ? 'uncertain' : 'error'; return false }
+  }
+
+  return { phase, settings, failure, savePhase, saveFailure, canRead, canManage, load, save, stickerPhase, stickerFailure, saveStickerCategories }
 }

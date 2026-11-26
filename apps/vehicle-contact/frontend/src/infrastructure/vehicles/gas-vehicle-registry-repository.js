@@ -1,3 +1,4 @@
+import { stickerOf, toSticker } from '../../domain/reference/sticker-categories.js'
 import { callPaginatedOperation, mapPaginatedData } from '../api/pagination-contract.js'
 
 export class VehicleRegistryContractError extends Error {
@@ -30,6 +31,7 @@ function mapVehicle(value) {
     model: optionalText(value.model),
     color: optionalText(value.color),
     stickerCategory: optionalText(value.stickerCategory),
+    sticker: toSticker(value.sticker) || stickerOf(optionalText(value.stickerCategory)),
     colorLabel: optionalText(value.colorLabel),
     vehicleTypeLabel: optionalText(value.vehicleTypeLabel),
     createdAt: optionalText(value.createdAt),

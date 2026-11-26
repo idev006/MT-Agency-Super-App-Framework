@@ -5,6 +5,7 @@ import { systemSettingsRepositoryKey } from '../application/settings/system-sett
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import SystemSettingsForm from '../features/settings/components/SystemSettingsForm.vue'
+import StickerCategorySettings from '../features/settings/components/StickerCategorySettings.vue'
 import { useSystemSettings } from '../features/settings/useSystemSettings.js'
 import { useSessionStore } from '../stores/session.js'
 
@@ -12,10 +13,11 @@ const auth = useSessionStore()
 const { roles, permissions, session, transport } = storeToRefs(auth)
 const systemSettings = useSystemSettings({ repository: inject(systemSettingsRepositoryKey), permissions })
 onMounted(() => systemSettings.load())
+async function saveStickers(list, done) { if (await systemSettings.saveStickerCategories(list)) done() }
 </script>
 
 <template>
-  <PageTemplateComponent eyebrow="การดูแลระบบ" title="ตั้งค่าระบบ" description="กำหนดอายุ session และนโยบายการเก็บข้อมูลภายในช่วงที่ backend อนุญาต">
+  <PageTemplateComponent eyebrow="การดูแลระบบ" title="ตั้งค่าระบบ" description="กำหนดอายุ session นโยบายการเก็บข้อมูล และประเภทบุคคล/สีสติกเกอร์">
     <template #breadcrumbs><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">ตั้งค่าระบบ</span></template>
     <template #actions><span v-if="!systemSettings.canManage.value" class="badge badge-ghost">อ่านอย่างเดียว</span></template>
     <template #context><OperationalContextStrip :roles="roles" :transport="transport" :expires-at="session?.expiresAt" /></template>
@@ -28,6 +30,8 @@ onMounted(() => systemSettings.load())
       <div v-else-if="systemSettings.savePhase.value === 'error'" class="alert alert-error mb-4"><span>บันทึกการตั้งค่าไม่สำเร็จ</span></div>
       <div v-else-if="systemSettings.savePhase.value === 'success'" class="alert alert-success mb-4"><span>บันทึกการตั้งค่าระบบแล้ว</span></div>
       <SystemSettingsForm :settings="systemSettings.settings.value" :can-manage="systemSettings.canManage.value" :busy="systemSettings.savePhase.value === 'submitting'" @save="systemSettings.save" />
+      <StickerCategorySettings class="mt-6" :categories="systemSettings.settings.value?.stickerCategories || []" :can-manage="systemSettings.canManage.value"
+        :phase="systemSettings.stickerPhase.value" :failure-code="systemSettings.stickerFailure.value?.code || ''" @save="saveStickers" />
     </template>
   </PageTemplateComponent>
 </template>

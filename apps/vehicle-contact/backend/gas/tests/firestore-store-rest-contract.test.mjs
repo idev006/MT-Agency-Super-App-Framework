@@ -147,7 +147,7 @@ test('V57 regression: registrations.review only issues queries backed by the liv
   store.insert('vc_registration_requests',{request_id:'r1',vehicle_id:'v1',campaign_id:'c1',status:'PENDING_APPROVAL',submitted_at:'2026-11-23T00:00:00.000Z',
     reviewed_by:'',reviewed_at:'',idempotency_key:'k1',application_json:JSON.stringify({plate_normalized:'TST1',province_code:'10',plate_type:'NORMAL',
     vehicle_type:'CAR',make:'M',model:'X',color:'W',organization_id:'org1',relationship:'OWNER',contactName:'N',contactPhone:'+66810000001',photos})});
-  const out=ops['registrations.review']({requestId:'r1',decision:'APPROVE',platePhotoVerified:true},{userId:'u1'});
+  const out=ops['registrations.review']({requestId:'r1',decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true},{userId:'u1'});
   assert.equal(out.status,'APPROVED');
   assert.ok(out.qrToken&&out.qrId);
   assert.equal(store.one('vc_vehicles',{vehicle_id:'v1'}).status,'ACTIVE');

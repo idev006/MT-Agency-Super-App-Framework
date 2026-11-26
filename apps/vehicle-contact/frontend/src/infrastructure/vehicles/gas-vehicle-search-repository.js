@@ -1,3 +1,4 @@
+import { stickerOf, toSticker, toStickerList } from '../../domain/reference/sticker-categories.js'
 const READ_CONTACT = 'vehicle.contact.read'
 const READ_PHOTOS = 'vehicle.photos.read'
 const READ_HISTORY = 'vehicle.history.read'
@@ -55,6 +56,9 @@ export function mapVehicleResponse(value, permissions) {
     model: optionalText(value.model),
     color: optionalText(value.color),
     stickerCategory: optionalText(value.stickerCategory),
+    // VC-ADR-038: resolved person type / sticker (backend ≥0.9.33) + the ACTIVE types to choose from
+    sticker: toSticker(value.sticker) || stickerOf(optionalText(value.stickerCategory)),
+    stickerCategories: toStickerList(value.stickerCategories),
     // Backend ≥0.9.14: Thai labels for reference codes ('' when unknown → the UI shows the code).
     labels: Object.freeze({
       vehicleType: optionalText(value.labels?.vehicleType),

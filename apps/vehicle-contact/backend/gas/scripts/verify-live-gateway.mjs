@@ -208,7 +208,7 @@ const check=async()=> {
  });
  const approved=await criticalStep('LIVE-FLOW.APPROVE',async()=>{
   state.approved=expect(await authenticated('registrations.review',tokens.test_registration,{
-   requestId:state.registration.requestId,decision:'APPROVE',platePhotoVerified:true
+   requestId:state.registration.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true
   }),true);assert.equal(state.approved.status,'APPROVED');
  });
  if(!approved.ok){runner.reason='Approval failed; stop lifecycle';return;}

@@ -22,7 +22,7 @@ test('EDGE-02 registration rejection creates no active vehicle or QR, does not a
  assert.equal(h.read('vc_qr_tokens').length,0);
  assert.equal(h.read('vc_vehicles').length,0);
  assert.equal(h.read('vc_campaigns')[0].submitted_count,1);
- assertError(assert,h.as('reg','registrations.review',{requestId:result.requestId,decision:'APPROVE',platePhotoVerified:true}),'INVALID_REQUEST_STATE','already reviewed');
+ assertError(assert,h.as('reg','registrations.review',{requestId:result.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'INVALID_REQUEST_STATE','already reviewed');
 });
 test('EDGE-03 same idempotency key with changed body denied; duplicate pending business key denied',()=>{
  const h=createAcceptanceHarness(),{payload}=submitted(h);
@@ -52,7 +52,7 @@ test('EDGE-05 invalid/revoked/expired campaign cannot stage files or submit reco
 });
 test('EDGE-06 QR invalid token, unknown valid-shaped token and multiple-active QR protect identity',()=>{
  const h=createAcceptanceHarness(),{result}=submitted(h);
- const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:result.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const approved=assertOk(assert,h.as('reg','registrations.review',{requestId:result.requestId,decision:'APPROVE',stickerCategory:'NCO',platePhotoVerified:true}),'approve');
  assertError(assert,h.as('staff','qr.resolve',{token:'bad'}),'INVALID_QR','invalid QR syntax');
  assert.equal(assertOk(assert,h.as('staff','qr.resolve',{token:'f'.repeat(64)}),'unregistered QR'),null);
  h.seed('vc_qr_tokens',[{qr_id:'qr-duplicate-test',vehicle_id:approved.vehicleId,token_digest:'invalid-digest-synthetic',
