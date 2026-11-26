@@ -11,6 +11,7 @@ import { vehicleRegistryRepositoryKey } from '../application/vehicles/vehicle-re
 import { qrGovernanceRepositoryKey } from '../application/qr/qr-governance-port.js'
 import { useVehicleRegistry } from '../features/vehicle-registry/useVehicleRegistry.js'
 import { provinceLabel } from '../domain/reference/provinces.js'
+import { STICKER_CATEGORIES, stickerCategoryOf } from '../domain/reference/sticker-categories.js'
 import { useSessionStore } from '../stores/session.js'
 
 // S5 (owner 2026-11-25: "หน้าที่ผู้ใช้สามารถสั่ง export qr ของรถที่เลือกได้ เพื่อนำไปให้โรงพิมพ์ จัดพิมพ์").
@@ -42,15 +43,29 @@ const columns = [
   { key: 'pick', label: 'เลือก', kind: 'actions' },
   { key: 'plate', label: 'ทะเบียน', kind: 'name' }, { key: 'province', label: 'จังหวัด', kind: 'nowrap' },
   { key: 'model', label: 'ยี่ห้อ / รุ่น', kind: 'text' }, { key: 'color', label: 'สี', kind: 'nowrap' },
+  { key: 'stickerCategory', label: 'ประเภทสติกเกอร์', kind: 'nowrap' },
 ]
 
 const phase = ref('idle') // idle | loading | ready | error
 const failure = ref('')
 const results = ref([])
-const layout = ref('a4')
-const ready = computed(() => results.value.filter((x) => x.status === 'READY'))
-const notReady = computed(() => results.value.filter((x) => x.status !== 'READY'))
-const STATUS_TEXT = Object.freeze({ REISSUE_NEEDED: 'QR นี้ออกก่อนระบบเก็บรหัส ต้องออก QR ใหม่ก่อนพิมพ์', NO_ACTIVE_QR: 'ยังไม่มี QR ที่ใช้งานอยู่', VEHICLE_NOT_ACTIVE: 'รถไม่อยู่ในสถานะใช้งาน', NOT_FOUND: 'ไม่พบรถ' })
+// owner 2026-11-26: two print sizes (5 × 5 / 8 × 8 cm); colour + default size by the vehicle user's category
+const mode = ref('office') // office: A4 with cut guides · shop: one sticker per page with 3 mm bleed
+const sizeMode = ref('category') // category | 5 | 8
+const printable = (x) => x.status === 'READY' && Boolean(stickerCategoryOf(x.stickerCategory))
+const ready = computed(() => results.value.filter(printable))
+const notReady = computed(() => results.value.filter((x) => !printable(x)).map((x) => (x.status === 'READY' ? { ...x, status: 'NO_STICKER_CATEGORY' } : x)))
+const summary = computed(() => {
+  const count = {}
+  for (const x of ready.value) {
+    const c = STICKER_CATEGORIES[x.stickerCategory]
+    const size = sizeMode.value === 'category' ? c.size : Number(sizeMode.value)
+    const k = `${c.colour} ${size} × ${size} ซม.`
+    count[k] = (count[k] || 0) + 1
+  }
+  return Object.entries(count)
+})
+const STATUS_TEXT = Object.freeze({ NO_STICKER_CATEGORY: 'ยังไม่กำหนดประเภทสติกเกอร์ (สี/ขนาด)', REISSUE_NEEDED: 'QR นี้ออกก่อนระบบเก็บรหัส ต้องออก QR ใหม่ก่อนพิมพ์', NO_ACTIVE_QR: 'ยังไม่มี QR ที่ใช้งานอยู่', VEHICLE_NOT_ACTIVE: 'รถไม่อยู่ในสถานะใช้งาน', NOT_FOUND: 'ไม่พบรถ' })
 async function prepare() {
   if (!selected.value.size) return
   phase.value = 'loading'; failure.value = ''
@@ -94,6 +109,7 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
           <template #cell-province="{ row }">{{ provinceLabel(row.province) || row.province }}</template>
           <template #cell-model="{ row }">{{ [row.brand, row.model].filter(Boolean).join(' ') || '—' }}</template>
           <template #cell-color="{ row }">{{ row.colorLabel || row.color || '—' }}</template>
+          <template #cell-stickerCategory="{ row }"><span v-if="stickerCategoryOf(row.stickerCategory)" class="inline-flex items-center gap-2"><span class="inline-block size-3 rounded-full" :style="{ background: stickerCategoryOf(row.stickerCategory).hex }" aria-hidden="true"></span>{{ stickerCategoryOf(row.stickerCategory).colour }} · {{ stickerCategoryOf(row.stickerCategory).size }}×{{ stickerCategoryOf(row.stickerCategory).size }}</span><span v-else class="text-warning">ยังไม่กำหนด</span></template>
         </DataTable>
         <PaginationControl class="mt-3" :page="registry.page.value" :page-size="registry.pageSize.value" :total-items="registry.pagination.value.total" :disabled="registry.phase.value === 'loading'" label="แบ่งหน้ารายการรถ" @update:page="registry.changePage" @update:page-size="registry.changePageSize" />
       </template>
@@ -103,9 +119,14 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
       <div class="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
         <h2 id="qr-sheet-title" class="text-lg font-semibold">แผ่น QR พร้อมพิมพ์ {{ ready.length }} ดวง</h2>
         <div class="flex flex-wrap items-center gap-2">
-          <label class="field-stack"><span class="sr-only">รูปแบบ</span><select v-model="layout" class="select select-bordered select-sm">
-            <option value="a4">A4 — 3 × 8 ดวง (พิมพ์เองที่สำนักงาน)</option>
-            <option value="single">1 ดวงต่อหน้า (ส่งโรงพิมพ์)</option>
+          <label class="field-stack"><span class="sr-only">รูปแบบ</span><select v-model="mode" class="select select-bordered select-sm">
+            <option value="office">พิมพ์เองที่สำนักงาน (A4 มีเส้นตัด)</option>
+            <option value="shop">ส่งโรงพิมพ์ (1 ดวงต่อหน้า + ตัดตก 3 มม.)</option>
+          </select></label>
+          <label class="field-stack"><span class="sr-only">ขนาด</span><select v-model="sizeMode" class="select select-bordered select-sm">
+            <option value="category">ขนาดตามประเภท (แดง 8 × 8, อื่น ๆ 5 × 5 ซม.)</option>
+            <option value="5">5 × 5 ซม. ทุกดวง</option>
+            <option value="8">8 × 8 ซม. ทุกดวง</option>
           </select></label>
           <button class="btn btn-primary btn-sm" type="button" :disabled="!ready.length" @click="print">พิมพ์ / บันทึกเป็น PDF</button>
           <button class="btn btn-sm" type="button" @click="clearSheet">กลับไปเลือกรถ</button>
@@ -113,12 +134,13 @@ onBeforeUnmount(() => { results.value = [] }) // codes never outlive the page
       </div>
       <div v-if="notReady.length" class="alert alert-warning mb-4 items-start print:hidden" role="status">
         <div><strong>{{ notReady.length }} คันพิมพ์ไม่ได้</strong>
-          <ul class="mt-1 list-disc pl-5 text-sm"><li v-for="x in notReady" :key="x.vehicleId">{{ x.plate || x.vehicleId.slice(0, 8) }} — {{ STATUS_TEXT[x.status] || x.status }}<RouterLink v-if="x.status === 'REISSUE_NEEDED' || x.status === 'NO_ACTIVE_QR'" class="link ml-2" :to="{ name: 'qr-governance', query: { vehicleId: x.vehicleId } }">ไปออก QR</RouterLink></li></ul>
+          <ul class="mt-1 list-disc pl-5 text-sm"><li v-for="x in notReady" :key="x.vehicleId">{{ x.plate || x.vehicleId.slice(0, 8) }} — {{ STATUS_TEXT[x.status] || x.status }}<RouterLink v-if="x.status === 'REISSUE_NEEDED' || x.status === 'NO_ACTIVE_QR'" class="link ml-2" :to="{ name: 'qr-governance', query: { vehicleId: x.vehicleId } }">ไปออก QR</RouterLink><RouterLink v-else-if="x.status === 'NO_STICKER_CATEGORY'" class="link ml-2" :to="{ name: 'vehicle-maintenance', params: { vehicleId: x.vehicleId } }">กำหนดประเภท</RouterLink></li></ul>
         </div>
       </div>
-      <p class="mb-3 text-sm text-base-content/80 print:hidden">ตอนพิมพ์ให้เลือกขนาดกระดาษ A4 และปิด "หัวกระดาษและท้ายกระดาษ" ส่งโรงพิมพ์: เลือก "บันทึกเป็น PDF" ระบบบันทึกการส่งออกนี้ไว้ใน Audit แล้ว</p>
+      <p class="mb-3 text-sm text-base-content/80 print:hidden">ตอนพิมพ์: ปิด "หัวกระดาษและท้ายกระดาษ" และตั้งมาตราส่วน 100% (ไม่ย่อ/ขยาย) เพื่อให้ได้ขนาดจริง · พิมพ์เอง: กระดาษ A4 · ส่งโรงพิมพ์: เลือก "บันทึกเป็น PDF" (ขนาดหน้าตามสติกเกอร์ + ตัดตก 3 มม.) ระบบบันทึกการส่งออกนี้ไว้ใน Audit แล้ว</p>
+      <p v-if="summary.length" class="mb-3 flex flex-wrap gap-2 text-sm print:hidden" data-sheet-summary><span v-for="[k, n] in summary" :key="k" class="badge badge-outline">{{ k }}: {{ n }} ดวง</span></p>
       <div class="qr-print-area rounded-box bg-white p-4">
-        <QrStickerSheet :items="ready" :layout="layout" />
+        <QrStickerSheet :items="ready" :mode="mode" :size-mode="sizeMode" />
       </div>
     </section>
   </PageTemplateComponent>

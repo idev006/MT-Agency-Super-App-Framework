@@ -20,7 +20,7 @@ export function createGasQrGovernanceRepository({ callOperation }) {
       if (!Array.isArray(items)) throw Object.assign(new Error('Invalid QR export'), { code: 'INVALID_ENVELOPE' })
       return items.map((x) => Object.freeze({
         vehicleId: text(x.vehicleId), status: text(x.status), plate: text(x.plate), province: text(x.province),
-        vehicleType: text(x.vehicleType), brand: text(x.brand), model: text(x.model), color: text(x.color),
+        vehicleType: text(x.vehicleType), brand: text(x.brand), model: text(x.model), color: text(x.color), stickerCategory: text(x.stickerCategory),
         qrId: text(x.qrId), issuedAt: text(x.issuedAt),
         token: x.status === 'READY' && /^[a-f0-9]{64}$/.test(text(x.token)) ? x.token : '',
       }))

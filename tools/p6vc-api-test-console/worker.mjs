@@ -41,7 +41,7 @@ const FRONTEND_PAYLOAD_FIELDS=Object.freeze({
  "registrations.photo":[["requestId","photoId"],[]],"vehicles.photo":[["vehicleId","photoId"],[]],
  "vehicles.lookup":[["plate","province"],[]],
  "vehicles.detail":[["vehicleId"],[]],
- "vehicles.update":[["vehicleId","expectedVersion"],["plate","province","plateType","vehicleType","brand","model","color","ownerUserId"]],
+ "vehicles.update":[["vehicleId","expectedVersion"],["plate","province","plateType","vehicleType","brand","model","color","ownerUserId","stickerCategory"]],
  "vehicles.cancel":[["vehicleId"],[]],
  "vehicles.history":[["vehicleId"],[]],
  "vehicles.listMine":[[],["limit","page","pageSize"]],

@@ -20,7 +20,7 @@ export function createQrExport({store, need, id, now}) {
       const v = rows[2 * i], qrs = rows[2 * i + 1] || [];
       if (!v) return {vehicleId, status: STATUS.MISSING};
       const base = {vehicleId, plate: v.plate_normalized || '', province: v.province_code || '', vehicleType: v.vehicle_type || '',
-        brand: v.make || '', model: v.model || '', color: v.color || ''};
+        brand: v.make || '', model: v.model || '', color: v.color || '', stickerCategory: v.sticker_category || ''};
       if (v.status !== 'ACTIVE') return {...base, status: STATUS.INACTIVE};
       if (qrs.length !== 1) return {...base, status: STATUS.NONE};
       const q = qrs[0], token = typeof q.qr_token === 'string' && /^[a-f0-9]{64}$/.test(q.qr_token) ? q.qr_token : '';

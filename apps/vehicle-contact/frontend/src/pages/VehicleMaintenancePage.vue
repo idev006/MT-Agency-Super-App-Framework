@@ -1,4 +1,5 @@
 <script setup>
+import { STICKER_CATEGORIES } from '../domain/reference/sticker-categories.js'
 import { inject, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -24,7 +25,7 @@ const work = useVehicleMaintenance({
 
 const slotLabels = { FRONT: 'ด้านหน้า', REAR: 'ด้านหลัง', LEFT: 'ด้านซ้าย', RIGHT: 'ด้านขวา', FRONT_ANGLE: 'มุมเฉียงหน้า' }
 const slots = Object.keys(slotLabels)
-const vehicleForm = ref({ plate: '', province: '', plateType: '', vehicleType: '', brand: '', model: '', color: '', ownerUserId: '' })
+const vehicleForm = ref({ plate: '', province: '', plateType: '', vehicleType: '', brand: '', model: '', color: '', ownerUserId: '', stickerCategory: '' })
 const contactForm = ref({ contactName: '', contactPhone: '' })
 const photoFiles = ref({})
 const confirmingCancel = ref(false)
@@ -46,7 +47,7 @@ function syncForms(vehicle) {
   vehicleForm.value = {
     plate: vehicle.plate || '', province: vehicle.province || '', plateType: vehicle.plateType || '',
     vehicleType: vehicle.vehicleType || '', brand: vehicle.brand || '', model: vehicle.model || '',
-    color: vehicle.color || '', ownerUserId: '',
+    color: vehicle.color || '', ownerUserId: '', stickerCategory: vehicle.stickerCategory || '',
   }
   const primary = (vehicle.contacts || []).find((item) => item.isPrimary) || (vehicle.contacts || [])[0]
   contactForm.value = { contactName: primary?.name || '', contactPhone: formatThaiPhone(primary?.phone || '') }
@@ -119,6 +120,7 @@ async function confirmCancel() {
             <label class="field-stack"><span class="label-text font-semibold">ยี่ห้อ</span><input v-model.trim="vehicleForm.brand" class="input input-bordered w-full" maxlength="100" /></label>
             <label class="field-stack"><span class="label-text font-semibold">รุ่น</span><input v-model.trim="vehicleForm.model" class="input input-bordered w-full" maxlength="100" /></label>
             <label class="field-stack"><span class="label-text font-semibold">สี</span><select v-if="listFor('colors').length" v-model="vehicleForm.color" class="select select-bordered w-full"><option v-for="o in withCurrent('colors', vehicleForm.color)" :key="o.code" :value="o.code">{{ o.label }}</option></select><input v-else v-model.trim="vehicleForm.color" class="input input-bordered w-full" maxlength="100" /></label>
+            <label class="field-stack"><span class="label-text font-semibold">ประเภทสติกเกอร์ (สี / ขนาด)</span><select v-model="vehicleForm.stickerCategory" class="select select-bordered w-full" data-sticker-category><option value="" disabled>เลือกประเภทผู้ใช้รถ</option><option v-for="(c, code) in STICKER_CATEGORIES" :key="code" :value="code">{{ c.colour }} — {{ c.label }} ({{ c.size }} × {{ c.size }} ซม.)</option></select><span class="text-sm text-base-content/80">สีช่วยจำแนกเท่านั้น ไม่ใช่สิทธิ์ผ่านประตูหรือที่จอด</span></label>
             <label class="field-stack"><span class="label-text font-semibold">รหัสเจ้าของ (เปลี่ยนผู้ถือครอง)</span><input v-model.trim="vehicleForm.ownerUserId" class="input input-bordered w-full font-mono" maxlength="80" placeholder="เว้นว่างถ้าไม่เปลี่ยนเจ้าของ" /></label>
           </div>
           <div class="mt-4 flex justify-end"><button class="btn btn-primary" type="button" :disabled="work.actionPhase.value === 'submitting'" @click="saveVehicle"><span v-if="work.actionPhase.value === 'submitting'" class="loading loading-spinner loading-xs"></span>บันทึกข้อมูลยานพาหนะ</button></div>

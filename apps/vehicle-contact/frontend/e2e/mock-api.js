@@ -30,7 +30,7 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
     { campaignId: 'c3', name: 'แคมเปญเก่า', startsAt: at(-60 * 24 * 60), endsAt: at(-60 * 24 * 30), maxSubmissions: 10, submittedCount: 10, status: 'ACTIVE', state: 'ENDED', campaignToken: CODE(203) },
   ]
   const vehicles = [
-    { vehicleId: 'v1', plate: 'กข1234', province: '30', status: 'ACTIVE', vehicleType: 'RY01', brand: 'TOYOTA', model: 'Yaris Ativ', color: 'WHITE', colorLabel: 'ขาว', vehicleTypeLabel: 'รถยนต์นั่งส่วนบุคคลไม่เกิน 7 คน', createdAt: at(-120), version: 3, qr: 'READY' },
+    { vehicleId: 'v1', plate: 'กข1234', province: '30', status: 'ACTIVE', vehicleType: 'RY01', brand: 'TOYOTA', model: 'Yaris Ativ', color: 'WHITE', colorLabel: 'ขาว', vehicleTypeLabel: 'รถยนต์นั่งส่วนบุคคลไม่เกิน 7 คน', createdAt: at(-120), version: 3, qr: 'READY', stickerCategory: 'GENERAL_OFFICER' },
     { vehicleId: 'v2', plate: '1กก9999', province: '10', status: 'ACTIVE', vehicleType: 'RY03', brand: 'HONDA', model: 'Wave 110i', color: 'RED', colorLabel: 'แดง', vehicleTypeLabel: 'รถจักรยานยนต์ส่วนบุคคล', createdAt: at(-90), version: 1, qr: 'REISSUE_NEEDED' },
     { vehicleId: 'v3', plate: 'ฮฮ7', province: '30', status: 'ACTIVE', vehicleType: 'RY01', brand: 'BYD', model: 'Dolphin', color: 'GREY', colorLabel: 'เทา', vehicleTypeLabel: 'รถยนต์นั่งส่วนบุคคลไม่เกิน 7 คน', createdAt: at(-30), version: 1, qr: 'NO_ACTIVE_QR' },
   ]
@@ -85,7 +85,7 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
       else if (p.state) rows = rows.filter((c) => c.state === p.state)
       return page(rows, p)
     },
-    'vehicles.list': (p) => page(vehicles.map(({ qr, ...v }) => v), p),
+    'vehicles.list': (p) => page(vehicles.map(({ qr, ...v }) => ({ stickerCategory: '', ...v })), p),
     'vehicles.detail': (p) => { const v = vehicles.find((x) => x.vehicleId === p.vehicleId); return v ? detail(v, true) : { error: 'NOT_FOUND' } },
     'qr.history': (p) => ({ items: [
       { qrId: 'q2', status: 'ACTIVE', issuedAt: at(-60), issuedByName: 'ผู้ดูแลระบบทดสอบ', reason: 'DAMAGED', note: 'สติกเกอร์ซีดจนอ่านไม่ได้', replacesQrId: 'q1', revokedAt: '', revokedByName: '', revokeReason: '', revokeNote: '' },
@@ -95,7 +95,7 @@ export function createMockApi({ roles = ['SYSTEM_ADMIN', 'REGISTRATION_ADMIN'] }
       const items = p.vehicleIds.map((id) => {
         const v = vehicles.find((x) => x.vehicleId === id)
         if (!v) return { vehicleId: id, status: 'NOT_FOUND' }
-        const base = { vehicleId: v.vehicleId, plate: v.plate, province: v.province, vehicleType: v.vehicleType, brand: v.brand, model: v.model, color: v.color }
+        const base = { vehicleId: v.vehicleId, plate: v.plate, province: v.province, vehicleType: v.vehicleType, brand: v.brand, model: v.model, color: v.color, stickerCategory: v.stickerCategory || '' }
         return v.qr === 'READY' ? { ...base, status: 'READY', qrId: 'a1b2c3d4e5f60718', issuedAt: v.createdAt, token: qrCode[v.vehicleId] } : { ...base, status: v.qr }
       })
       return { items, exportedAt: at(0), ready: items.filter((x) => x.status === 'READY').length }

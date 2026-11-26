@@ -7,7 +7,7 @@ export function createVehicleView({store,now,id}){
   const auditRow={audit_id:id(),actor_id:actor.userId,vehicle_id:v.vehicle_id,lookup_source:source,result:'FOUND',
    correlation_id:id().slice(0,16),created_at:now()};
   const response={vehicleId:v.vehicle_id,plate:v.plate_normalized,province:v.province_code,status:v.status,
-   vehicleType:v.vehicle_type,plateType:v.plate_type,brand:v.make,model:v.model,color:v.color,version:Number(v.version)};
+   vehicleType:v.vehicle_type,plateType:v.plate_type,brand:v.make,model:v.model,color:v.color,stickerCategory:v.sticker_category||'',version:Number(v.version)};
   // Contacts and photos are independent reads: fetched in ONE parallel round when the store
   // supports readMany (Firestore), sequentially otherwise. Permission gating is unchanged.
   const wantContacts=actor.permissions.includes('vehicle.contact.read');

@@ -29,6 +29,7 @@ function mapVehicle(value) {
     brand: optionalText(value.brand),
     model: optionalText(value.model),
     color: optionalText(value.color),
+    stickerCategory: optionalText(value.stickerCategory),
     colorLabel: optionalText(value.colorLabel),
     vehicleTypeLabel: optionalText(value.vehicleTypeLabel),
     createdAt: optionalText(value.createdAt),

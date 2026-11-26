@@ -34,6 +34,12 @@ test('QR print: pick vehicles → sheet with READY stickers, others listed with 
   await expect(page.getByText('2 คันพิมพ์ไม่ได้')).toBeVisible()
   await expect(page.getByText(/ต้องออก QR ใหม่ก่อนพิมพ์/)).toBeVisible()
   expect(api.calls.find((c) => c.op === 'qr.export').payload.vehicleIds.sort()).toEqual(['v1', 'v2', 'v3'])
-  await page.getByRole('combobox', { name: 'รูปแบบ' }).selectOption('single')
-  await expect(page.locator('[data-qr-sheet]')).toHaveClass(/qr-sheet--single/)
+  // red (พล.ต.ต. ขึ้นไป) = 8 × 8 cm by default; the printed size is real: 80 mm at 96 dpi ≈ 302 px
+  await expect(sticker).toHaveAttribute('data-size', '8')
+  expect(Math.round((await sticker.boundingBox()).width)).toBe(302)
+  await expect(page.locator('[data-sheet-summary]')).toContainText('แดง 8 × 8 ซม.: 1 ดวง')
+  await page.getByRole('combobox', { name: 'ขนาด' }).selectOption('5')
+  expect(Math.round((await sticker.boundingBox()).width)).toBe(189) // 50 mm
+  await page.getByRole('combobox', { name: 'รูปแบบ' }).selectOption('shop')
+  await expect(page.locator('[data-qr-sheet]')).toHaveClass(/qr-sheet--shop/)
 })

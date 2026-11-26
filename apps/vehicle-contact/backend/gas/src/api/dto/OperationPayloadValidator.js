@@ -37,7 +37,7 @@ const SCHEMAS={
  'vehicles.lookup':[{plate:'s',province:'s'},{}],
  'vehicles.detail':[{vehicleId:'s'},{}],
  'vehicles.update':[{vehicleId:'s',expectedVersion:'n'},
-   {plate:'s',province:'s',plateType:'s',vehicleType:'s',brand:'s',model:'s',color:'s',ownerUserId:'s'}],
+   {plate:'s',province:'s',plateType:'s',vehicleType:'s',brand:'s',model:'s',color:'s',ownerUserId:'s',stickerCategory:'s'}],
  'vehicles.cancel':[{vehicleId:'s'},{}],
  'vehicles.history':[{vehicleId:'s'},{}],
  'vehicles.listMine':[{}, {limit:'n',page:'n',pageSize:'n'}],

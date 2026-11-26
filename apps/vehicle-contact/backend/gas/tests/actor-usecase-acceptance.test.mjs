@@ -336,3 +336,17 @@ test('ACTOR-S5-QR-EXPORT admins get the ACTIVE code of selected vehicles for pri
  assertError(assert,h.as('sys','qr.export',{vehicleIds:[]}),'INVALID_VEHICLE_IDS','empty selection');
  assertError(assert,h.as('sys','qr.export',{vehicleIds:Array.from({length:101},(_,i)=>'v'+i)}),'INVALID_VEHICLE_IDS','max 100');
 });
+
+test('ACTOR-STICKER category: admins set it (validated), it travels with the vehicle to the list, detail and QR export',()=>{
+ const h=createAcceptanceHarness(),org=h.createOrganization(),camp=h.createCampaign();
+ const r=assertOk(assert,h.call('registrations.submit',h.registrationPayload(camp.campaignToken,org,h.stagePhotos(camp.campaignToken))),'submit');
+ assertOk(assert,h.as('reg','registrations.review',{requestId:r.requestId,decision:'APPROVE',platePhotoVerified:true}),'approve');
+ const v=h.read('vc_vehicles')[0];
+ assertError(assert,h.as('reg','vehicles.update',{vehicleId:v.vehicle_id,expectedVersion:1,stickerCategory:'GOLD'}),'INVALID_STICKER_CATEGORY','unknown category refused');
+ assert.equal(h.read('vc_vehicles')[0].version,1,'no write on a refused category');
+ assertOk(assert,h.as('reg','vehicles.update',{vehicleId:v.vehicle_id,expectedVersion:1,stickerCategory:'general_officer'}),'set');
+ assert.equal(h.read('vc_vehicles')[0].sticker_category,'GENERAL_OFFICER');
+ assert.equal(assertOk(assert,h.as('reg','vehicles.list',{page:1,pageSize:10}),'list').items[0].stickerCategory,'GENERAL_OFFICER');
+ assert.equal(assertOk(assert,h.as('sys','qr.export',{vehicleIds:[v.vehicle_id]}),'export').items[0].stickerCategory,'GENERAL_OFFICER');
+ assertError(assert,h.as('staff','vehicles.update',{vehicleId:v.vehicle_id,expectedVersion:2,stickerCategory:'NCO'}),'FORBIDDEN','staff cannot set it');
+});
