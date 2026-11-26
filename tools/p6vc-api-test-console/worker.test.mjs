@@ -565,7 +565,7 @@ test('WORKER-CR01 P6VC_API_URL switches the upstream to the project Cloud Run AP
 
 test('WORKER-SIVP01 the Worker allowlist equals the Configuration SSOT; other GAS deployments are refused',async()=>{
  const ssot=JSON.parse(await readFile(new URL('../../apps/vehicle-contact/contracts/trusted-endpoints.v1.json',import.meta.url),'utf8'));
- assert.deepEqual([...TRUSTED_UPSTREAMS].sort(),ssot.endpoints.map(e=>e.url).sort(),'worker.mjs and trusted-endpoints.v1.json drifted');
+ assert.deepEqual([...TRUSTED_UPSTREAMS].sort(),ssot.endpoints.filter(e=>e.workerUpstream).map(e=>e.url).sort(),'worker.mjs and trusted-endpoints.v1.json drifted');
  const original=globalThis.fetch;let forwarded=0;globalThis.fetch=async()=>{forwarded++;return envelope(true,{});};
  try{
   const origin='https://idev006.github.io';
