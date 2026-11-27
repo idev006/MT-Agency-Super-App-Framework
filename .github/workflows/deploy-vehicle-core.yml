@@ -46,7 +46,7 @@ jobs:
       - name: Core tests (+ the backend gate the core imports)
         run: |
           (cd apps/vehicle-contact/backend/gas && npm install --no-audit --no-fund && npm run check)
-          (cd apps/vehicle-contact/backend/core && npm test)
+          (cd apps/vehicle-contact/backend/core && npm ci --no-audit --no-fund && npm test)
 
       - name: Authenticate to Google Cloud (keyless)
         uses: google-github-actions/auth@v2
