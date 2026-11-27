@@ -8,7 +8,6 @@
 // hashPassword, verifyPassword, verifyGoogle.
 import {accessFrom, sessionCacheKey} from './SessionAuthorizeFlow.js';
 export const LOGIN_FAILURE_LIMIT = 6, LOGIN_WINDOW_MS = 15 * 60000, SESSION_HOURS = 8;
-const SECURITY_EVENT_SCAN = 5000; // = the store's MAX_LIMIT (legacy listNewest default)
 const required = (value, name, max = 256) => { if (typeof value !== 'string' || !value.trim() || value.length > max) throw new Error('INVALID_' + name); return value.trim(); };
 const mustChange = user => user.password_change_required === true || String(user.password_change_required) === 'true';
 const auditRow = (event, actor, target, deps) => ({audit_id: deps.id(), actor_id: actor || 'SYSTEM', entity_type: 'account', entity_id: target,
@@ -51,7 +50,10 @@ export function* endSessionFlow(actor, deps) {
 export function* loginFlow(p, deps) {
   const username = required(p.username, 'USERNAME', 100).normalize('NFKC').toLowerCase();
   const digest = deps.sha256('username:' + username), since = Date.parse(deps.now()) - LOGIN_WINDOW_MS;
-  const [events, user, policy] = yield {reads: [{kind: 'newest', name: 'vc_security_events', filter: {username_digest: digest}, limit: SECURITY_EVENT_SCAN},
+  // rate limit: only the newest LOGIN_FAILURE_LIMIT failures of this username are needed ("6 failures in 15 min" ⇔ the 6th
+  // newest failure is inside the window). Was: every event of the username (up to 5,000 rows per login — 1,198 for the
+  // load-test account, measured 2026-11-27). Index: username_digest + status + _seq desc.
+  const [events, user, policy] = yield {reads: [{kind: 'newest', name: 'vc_security_events', filter: {username_digest: digest, status: 'FAILED'}, limit: LOGIN_FAILURE_LIMIT},
     {kind: 'one', name: 'vc_users', filter: {username_normalized: username}}, {kind: 'one', name: 'vc_settings', filter: {key: 'idle_timeout_minutes'}}]};
   if (events.filter(x => Date.parse(x.created_at) > since && x.status === 'FAILED').length >= LOGIN_FAILURE_LIMIT) throw new Error('LOGIN_RATE_LIMIT');
   // never reveal whether the username exists (message AND timing): verify unconditionally — stored null = the hasher's dummy
