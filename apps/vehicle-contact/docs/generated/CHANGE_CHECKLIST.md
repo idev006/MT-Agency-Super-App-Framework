@@ -44,6 +44,7 @@ Hard-coded operation counts (update them, or better: derive from the inventory):
 | `.github/workflows/deploy-vehicle-cloudrun.yml` | deploy pipeline | proven only by a real deploy run |
 | `.github/workflows/deploy-vehicle-core.yml` | core deploy pipeline | proven only by a real deploy run (the first run creates p6vc-core) |
 | `.github/workflows/deploy-vehicle-jobs.yml` | core jobs pipeline (Cloud Run Job p6vc-housekeeping) | proven only by a real run: its JOB report (DRY_RUN by default; APPLY needs `APPLY_DRIVE_HOUSEKEEPING`) |
+| `.github/workflows/run-vehicle-jobs.yml` | daily start of the core jobs (GitHub schedule 03:30 Bangkok) | starts the job as deployed (image + mode come from deploy-vehicle-jobs); proven by a run that ends in success |
 
 ## Copies of single-source facts (SSOT ratchet)
 

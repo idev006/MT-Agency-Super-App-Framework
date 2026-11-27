@@ -1,0 +1,52 @@
+name: Run P6 Vehicle Contact core jobs (daily + manual)
+
+# VC-ADR-046 phase 2c-2: the daily trigger of the core's Cloud Run Jobs. GitHub's schedule instead of Cloud Scheduler
+# (owner 2026-11-27: "GitHub daily" — no extra Google API or role; the deployer may already run the job). It only STARTS
+# the job as deployed by deploy-vehicle-jobs.yml (image + mode live there); it deploys nothing.
+# Schedule: 20:30 UTC = 03:30 Asia/Bangkok (GitHub may start a scheduled run some minutes late — fine for a daily cleanup).
+on:
+  schedule:
+    - cron: '30 20 * * *'
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type RUN_VEHICLE_JOBS to start the jobs now (in the mode they were deployed with)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: run-p6-vehicle-jobs
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: mt-iam-core-2026
+  REGION: asia-southeast3
+  JOB: p6vc-housekeeping
+
+jobs:
+  run:
+    name: Start the housekeeping job and wait
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || inputs.confirmation == 'RUN_VEHICLE_JOBS')
+    timeout-minutes: 20
+    steps:
+      - name: Authenticate to Google Cloud (keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Run ${{ env.JOB }} (fails when the job reports PARTIAL or fails)
+        run: |
+          MODE=$(gcloud run jobs describe "$JOB" --project "$PROJECT_ID" --region "$REGION" \
+            --format='value(spec.template.spec.template.spec.containers[0].env)' | grep -o "P6VC_JOB_MODE[^;]*" || true)
+          echo "Job mode: ${MODE:-unknown}"
+          EXEC=$(gcloud run jobs execute "$JOB" --project "$PROJECT_ID" --region "$REGION" --wait --format='value(metadata.name)')
+          echo "Execution ${EXEC} succeeded — its JOB report (counters only) is in Cloud Logging for this execution"
