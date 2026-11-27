@@ -23,6 +23,7 @@ import {withPrintState} from '../use-cases/print-state.mjs';
 import {vehiclesList, qrMarkPrinted} from '../use-cases/vehicle-list.mjs';
 import {configGet, configUpdate} from '../use-cases/settings.mjs';
 import {resetPreview, resetExecute} from '../use-cases/system-reset.mjs';
+import {qrHistory} from '../use-cases/qr-history.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -57,7 +58,9 @@ export const USE_CASES = Object.freeze({
   'system.config.update': configUpdate,
   // N1a PR 3: disabled by default; execute re-checks the admin password and the current plan
   'system.reset.preview': resetPreview,
-  'system.reset.execute': resetExecute
+  'system.reset.execute': resetExecute,
+  // N1b PR 1: QR history uses the core's async Firestore store.
+  'qr.history': qrHistory
 });
 const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)

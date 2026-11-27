@@ -21,6 +21,7 @@ const OUT = resolve(CORE, 'tests/generated');
 
 // the legacy test files held against the core (grows with N1b–N3)
 export const FILES = [
+  'actor-usecase-acceptance.test.mjs',
   'admin-vehicle-list.test.mjs',
   'print-filters.test.mjs',
   'settings-registry.test.mjs',
@@ -54,6 +55,17 @@ export function transform(source, file = 'input') {
     if (n.type === 'VariableDeclarator' && n.id.type === 'Identifier' && n.init?.type === 'CallExpression'
       && n.init.callee.type === 'Identifier' && n.init.callee.name === 'createAcceptanceHarness') harnessNames.add(n.id.name);
   });
+  // The actor acceptance file aliases h.as as `u = h.as.bind(h)`; the alias still returns a Promise on the core.
+  const boundHarnessNames = new Set();
+  walk(ast, n => {
+    if (n.type !== 'VariableDeclarator' || n.id.type !== 'Identifier' || n.init?.type !== 'CallExpression') return;
+    const bind = n.init.callee, member = bind?.object;
+    if (bind?.type === 'MemberExpression' && !bind.computed && bind.property.name === 'bind'
+      && member?.type === 'MemberExpression' && !member.computed && HARNESS_METHODS.has(member.property.name)
+      && member.object.type === 'Identifier' && harnessNames.has(member.object.name)
+      && n.init.arguments[0]?.type === 'Identifier' && n.init.arguments[0].name === member.object.name)
+      boundHarnessNames.add(n.id.name);
+  });
   // local functions by name (declarations and const x = () => …). Names repeat across tests (each test has its own `list`);
   // a call is awaited when ANY function of that name is async — awaiting a plain value is harmless
   const localFns = new Map(), named = new Set();
@@ -64,8 +76,10 @@ export function transform(source, file = 'input') {
   });
   const awaited = new Set(); // CallExpression nodes to wrap
   const asyncFns = new Set();
-  const isHarnessCall = n => n.type === 'CallExpression' && n.callee.type === 'MemberExpression' && !n.callee.computed
-    && n.callee.object.type === 'Identifier' && harnessNames.has(n.callee.object.name) && HARNESS_METHODS.has(n.callee.property.name);
+  const isHarnessCall = n => n.type === 'CallExpression' && (
+    (n.callee.type === 'MemberExpression' && !n.callee.computed && n.callee.object.type === 'Identifier'
+      && harnessNames.has(n.callee.object.name) && HARNESS_METHODS.has(n.callee.property.name))
+    || (n.callee.type === 'Identifier' && boundHarnessNames.has(n.callee.name)));
   const isAsyncLocalCall = n => n.type === 'CallExpression' && n.callee.type === 'Identifier'
     && [...(localFns.get(n.callee.name) || [])].some(fn => asyncFns.has(fn));
   for (let changed = true; changed;) {
