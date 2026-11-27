@@ -46,19 +46,21 @@ const rows = files.map(f => {
 rows.sort((a,b) => (b.git||'').localeCompare(a.git||'') || a.f.localeCompare(b.f));
 
 const readFirst = [
-  ['CURRENT_DELIVERY_STATUS.md','สถานะรันไทม์/หลักฐานปัจจุบัน — จุดกลับมาทำงาน (authority ลำดับ 2 ใน PROJECT_HANDOVER §2)'],
-  ['PROJECT_HANDOVER.md','ลำดับความน่าเชื่อถือ, กฎความปลอดภัย, next actions, prompt มาตรฐาน (§1)'],
-  ['HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md','handoff ล่าสุด Phase 3 + acceptance review §10'],
-  ['BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md','หลักฐาน cutover: suite 97/97 + dual-store audit §4.3 + rollback window §6.1'],
-  ['FIRESTORE_CUTOVER_ROLLBACK_RUNBOOK.md','ขั้นตอน rollback/monitoring'],
-  ['DECISION_LOG.md','VC-ADR ทั้งหมด (019/020/021/022 = Firestore/runtime/PDPA/rollback)'],
+  ['CURRENT_DELIVERY_STATUS.md','ความจริงปัจจุบัน: อะไรรันอยู่ เวอร์ชัน หลักฐานล่าสุด งานที่กำลังทำ — จุดกลับมาทำงาน'],
+  ['PROJECT_HANDOVER.md','prompt สำหรับ AI ตัวต่อไป, กฎ owner, ผังโค้ด, วิธีย้าย operation ไป core, deploy + proof, next actions'],
+  ['ROADMAP.md','ลำดับงานที่เหลือ (issue ละข้อ) + สถานะ'],
+  ['NODE_CORE_FINISH_PLAN.md','แผน VC-ADR-051: backend ทั้งหมดเป็น native async Node (N1a–N4) + blueprint diagrams'],
+  ['DECISION_LOG.md','VC-ADR ทั้งหมด + หลักฐาน deploy แต่ละรอบ (คอลัมน์สถานะ)'],
+  ['generated/DATA_ACCESS_MAP.md','(generated, CI-checked) โมดูลไหนอ่าน/เขียนตารางไหน'],
+  ['generated/CHANGE_CHECKLIST.md','(generated, CI-checked) ไฟล์ที่ต้องแตะเมื่อเพิ่ม operation + สิ่งที่ต้อง deploy'],
+  ['CLOUD_RUN_RELEASE_AND_ROLLBACK_RUNBOOK.md','ขั้นตอน release / rollback ของ Cloud Run'],
 ];
 const missingReadFirst = readFirst.filter(([f]) => !fs.existsSync(path.join(dir,f)));
 
 const out = [];
 out.push('# P6 Vehicle Contact — Docs Index');
 out.push('');
-out.push('**Document ID:** P6VC-DOCS-INDEX-001 | **Generated:** 2026-11-23 (Asia/Bangkok)');
+out.push('**Document ID:** P6VC-DOCS-INDEX-001 | **Generated:** ' + (process.env.P6VC_DOCS_INDEX_DATE || new Date().toISOString().slice(0, 10)) + ' (Asia/Bangkok)');
 out.push('**Purpose:** จุดเดียวที่บอกว่าเอกสารไหนคือ "ความจริงปัจจุบัน", เอกสารไหนเป็นหลักฐาน ณ วันที่, และเล่มไหนถูกแทนที่แล้ว — ลดความเสี่ยงเอกสารเก่าขัดกับสถานะจริง (handoff acceptance review PR #143)');
 out.push('');
 out.push('**กติกาการใช้ (ตาม [PROJECT_HANDOVER](PROJECT_HANDOVER.md) §2):** ลำดับความน่าเชื่อถือ = โค้ดจริงบน `main` + owner decision → `CURRENT_DELIVERY_STATUS.md` → แผนงาน → ADR/ข้อกำหนด → เอกสารหลักฐานตามวันที่. เอกสารหลักฐาน **พิสูจน์เฉพาะวันที่/ขอบเขตที่ระบุ**; ตัวเลขปัจจุบันชนะตัวเลขเก่าเสมอ');

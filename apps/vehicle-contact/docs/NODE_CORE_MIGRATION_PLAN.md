@@ -1,5 +1,7 @@
 # Node core migration plan (VC-ADR-046)
 
+**Status:** phases 0–3 DONE; the remaining work follows [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md) (VC-ADR-051, native async use cases) — this file keeps the original scope and rules.
+
 **Owner direction (2026-11-26):** "ให้เขียนโค้ดสำหรับ nodejs ขึ้นมาอีกชุด จะดีกว่า จะได้จัดการ GAS ด้วยเลย" → "เขียนแผน และ project management แล้วดำเนินการ".
 **This file is the scope and the rules. Status lives in one place only:** GitHub milestone [**"Node core (VC-ADR-046)"**](https://github.com/idev006/MT-Agency-Super-App-Framework/milestone/1) — one issue per phase (P0 #246 … P9 #255), closed by its PR.
 

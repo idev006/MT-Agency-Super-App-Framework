@@ -1,102 +1,46 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
-**Last verified:** 2026-11-23 Asia/Bangkok — **live DEV runtime is FIRESTORE-ONLY on GAS @53 / `backendVersion` 0.9.4** (`persistence{engine:firestore,dualWrite:false}` health-verified; **Slice G+F deployed + G6 re-verify GREEN 103/103**, source `78d3064`, evidence §5.6). Prior @52/0.9.3 cutover: owner-approved early exit of the monitoring window ~09:30 +07, Sheets frozen read-only. Cutover Phases 0→2 EXECUTED + verified at @51: forward dual-write smoke PASS (independent read-back both stores) + quiesced backfill **25/25 checksum+seqParity** (2,277 rows). Phase 3 flip done; the **first** full suite at @51/0.9.2 **FAILED 26/97 on latency** (one `registrations.submit` 40 s timeout cascading). Root cause POC-diagnosed (GAS `UrlFetchApp` ~1 s/call × call count, NOT Firestore/OAuth); **targeted round-trip optimization shipped as 0.9.3** (offline 224/224) + post-signin frontend connection panel (FE 192/192). **0.9.3 DEPLOYED: owner `PUSH_VEHICLE_GAS` → CI version 52 → clasp self-publish @52 (main `0cc74ba`, PR #139). Full live suite re-run COMPLETE + GREEN: 97/97 PASS** (authenticated 72/72, 56/56 ops, cleanup 7/7, 0 residue); `registrations.submit` PASS 32.1 s (prior 40 s timeout resolved). Latency still marginal after clearing dual-write (p50 8.4 s, p95 22.4 s, max 35.9 s submit; p50 −14% vs dual-write ON) — GAS `UrlFetchApp` call count remains the dominant cost. **Phase 3 is GREEN: the independent post-suite dual-store read-back audit is PASS — fresh gviz export 25 tables / 2,464 rows vs Firestore 2,464/2,464 docs matched, 0 missing, 0 extras, 0 field mismatches, `divergenceOpen=0`** (data proof, not just API OK). **Firestore-only re-verification GREEN (2026-11-23, after dual-write cleared): suite 97/97 + direct Firestore read-back 6/6 + Sheets-absence proof — evidence §4.4.** Owner runtime decision = **GAS Firestore REST** (cost), PDPA does not block synthetic DEV ([VC-ADR-022](DECISION_LOG.md)); owner direction "APIs for all actors/use cases, authorize every call" recorded as [VC-ADR-023](DECISION_LOG.md); [test automation design](TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md) **G1–G8 APPROVED ([VC-ADR-024](DECISION_LOG.md)); Slice A (G1+G2+G6) DONE — live chain PASS (evidence §4.5)**, slices B–F pending. Synthetic only; real-data go-live BLOCKED (#55). Prior: Firestore DEV integration 72/72 + Node-pipeline rehearsal 25/25. [Live cutover evidence](BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md) · [continuation handoff](HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md) · [VC-ADR-021](DECISION_LOG.md).
-**Current main:** PR **#148** merged @ **`ed79bb5`** (Slice G — Firestore-only runtime dispatch, retire Sheets, VC-ADR-026; includes Slice F lookup-audit fix from #147); live source commit **`78d3064`** (main HEAD). **Slice G+F DEPLOYED + LIVE-VERIFIED (2026-11-23):** owner `PUSH_VEHICLE_GAS` → CI version **53** → owner-authorized clasp self-publish **@53** → `backendVersion` **0.9.4** health-verified (`firestore`, `dualWrite:false`) → **G6 chain re-verify GREEN 103/103** (authenticated 72/72, 56/56 ops, cleanup 7/7, DATA_PROOF 6/6 plate `TST26897003`, latency p50 8,587/p95 18,515 ms, p95 −17.2%, budget OK; evidence §5.6). Owner chose runtime-only scope (admin maintenance stays Sheets-bound temporarily) + folded Slice F into one deploy cycle. **First post-publish verify run FAILED 22/72 on a transient `registrations.review` 40 s abort cascade (NOT a regression); clean re-run PASS 103/103.** **TUNEUP L1+L2 DEPLOYED V54 @54 / 0.9.5 + G6 GREEN 103/103 (DATA_PROOF 6/6, p50 7.5 s; evidence §5.8).** GAS CRUD POC PASS 7/7 in the real editor runtime (HEAD v55, not published). **Refactor/tuneup batch (VC-ADR-028) LIVE on V58/0.9.8: G6 103/103; submit 26.5→13.0 s, review 21.4→7.4 s (§5.9).** Next candidates: `users.assignRoles` / `auth.changePassword` (session/revocation → owner security review first). Open: 4 synthetic users residue (gated prune), pepper rotation recommended. Prior: PR **#145** @ **`de13a21`** (Firestore-only early-exit evidence + test-automation design); **Slice A test-automation tooling (G1+G2+G6) delivered in PR #146** — committed Firestore DATA_PROOF stage + latency guard + `verify-live-publish` chain, **live-verified end-to-end**. Prior live runtime source = `0cc74ba` (PR #139, 0.9.3 latency optimization + frontend connection panel, V52). Prior: #138 synthetic-DEV cutover rehearsal @ `436c6e3` (V51/0.9.2); #117 B2b durable journaling @ `14a61a5` (V50). Full test includes an **independent read-only Sheets SSOT data audit** (25/25 sheets, 0 display errors, 10/10 fixtures, clean FK, B2b journals APPLIED) — an API `OK` is not treated as data proof.
-**Handoff baseline:** PR **#111**, merged `main` @ **`ad7630e`**
-**Source/content baseline:** PR **#110**, merged `main` @ **`bf3553d`**
-**Status:** DEV engineering evidence is strong; **production readiness and all human sign-offs remain OPEN**.
+**Last verified:** 2026-11-27 (Asia/Bangkok) — backend **0.9.58** live, proven through the Node core (live suite 126/126 + DATA_PROOF 7/7 fresher than the suite).
+**Status:** DEV / synthetic data only. Engine move to native async Node in progress (20 of 64 operations on the core). Not production-ready; go-live items in [ROADMAP.md](ROADMAP.md) R14 / R16 / R17.
+**Main:** `61cf743` (#318) + docs. Before any work: `git fetch origin main`, compare, read open PRs / issues / CI.
 
-Read this page first. The [PM plan](PROJECT_MANAGEMENT_PLAN_20261121.md) owns slice state and dependencies; the [production readiness plan](PRODUCTION_READINESS_PLAN_20261121.md) owns release gates; [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) contains the next-AI prompt, precedence and diagrams. Dated evidence documents retain the versions and counts measured on their dates.
+This page is the **current truth only** (short on purpose). History up to 2026-11-26 lives in this file's git history, the
+[DECISION_LOG.md](DECISION_LOG.md) evidence column and the dated `*_EVIDENCE_*` documents (they prove only their own date).
+Next steps, rules and the ready-to-paste prompt: [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md).
 
-## 1. Verified runtime and source boundary
+## 1. What runs (DEV, Google Cloud asia-southeast3 + GAS)
 
-| Component | Current verified state |
+| Component | Now | Notes |
+|---|---|---|
+| Web app | **FE 0.9.22**, GitHub Pages (auto on every merge to main) | photos shown by Drive link (thumbnail at once, full size on tap, API fallback) |
+| Cloudflare Worker `tools/p6vc-api-test-console` | browser → legacy API (until N4) | separate deploy `npx wrangler@4 deploy`; the live suite does NOT go through it |
+| **p6vc-core** (Cloud Run, Node 22 ESM, async, gRPC Firestore) | front door; answers **20 / 64** ops, forwards the rest to p6vc-api | 2 vCPU, 512 Mi, cpu-boost, `UV_THREADPOOL_SIZE=2×vCPU`, secrets: media bridge + `p6vc-auth-pepper` |
+| p6vc-api (Cloud Run, legacy engine) | the sync GAS-style backend (`backend/gas/src`), concurrency 1 | frozen (VC-ADR-051): no new features, deleted at N4 |
+| GAS web app | **@108**, photo bridge (upload / read / trash / list / organize / stat, HMAC signed) + old API | pinned deployment id = `MEDIA_BRIDGE_URL` in `.github/workflows/deploy-vehicle-cloudrun.yml` |
+| Cloud Run Jobs | `p6vc-housekeeping` (mode APPLY: Drive trash, 30-day undo), `p6vc-photo-audit` (read-only) | daily 03:30 Bangkok by `.github/workflows/run-vehicle-jobs.yml` |
+| Firestore `(default)` | 25 tables, **38** composite indexes (`contracts/firestore-indexes.v1.json`), TTL on log tables | indexes are deployed **before** the backend |
+| Google Drive | photos: `รถ/<province>/<province> <plate> · <vehicle id 8>/<SIDE>.<ext>`, shared by link | owner: photos are not secret |
+
+Operations on the core (`backend/core/src/facade/operations.mjs`):
+- shared flows (`FLOWS`): vehicles.lookup / detail / history / photo, qr.resolve, contacts.read, auth.* (6), campaigns.validate, references.registration, photos.upload, registrations.submit
+- native async use cases (`USE_CASES`, `backend/core/src/use-cases/`): vehicles.list, qr.markPrinted, system.config.get, system.config.update
+
+## 2. Last proof (2026-11-27, 0.9.58)
+
+| Check | Result |
 |---|---|
-| GAS Backend API | Published Web App **Version 59** (@59), `backendVersion` **0.9.9** (S1: Google Sheets fully removed, VC-ADR-029; G6 103/103, §5.10); previously **Version 58** (@58), `backendVersion` **0.9.8**, `status:ready`, `persistence{engine:firestore,dualWrite:false}`; **56 operations**; G6 re-verify **103/103**, DATA_PROOF 6/6, p50 6.4 s / p95 13.7 s (evidence §5.9). V57/0.9.7 failed G6 and was rolled back (§5.9). History: V56 / 0.9.6, V54 / 0.9.5 (§5.8), V53 / 0.9.4 (§5.6); V52 / 0.9.3 — **Live DEV runtime = FIRESTORE-ONLY** (dual-write cleared 2026-11-23 ~02:30Z, owner-approved early exit; Sheets frozen read-only shadow); 0.9.3 adds the round-trip latency optimization (insert=3/update=2/remove=2, `users.list` 38→7, `config.get` 2→1). Published via owner `PUSH_VEHICLE_GAS` → CI version 52 → owner-authorized clasp self-publish @52 (2026-11-23, main `0cc74ba`/PR #139). First Phase 3 suite at @51/0.9.2 failed on latency; **0.9.3 suite re-run GREEN 97/97** (submit 32.1 s, 56/56 ops, cleanup 7/7); post-suite independent dual-store audit **PASS 25/25 tables · 2,464/2,464 docs · divergence 0** (dual-write era, historical); **Firestore-only re-verification GREEN: suite 97/97 + direct read-back 6/6 + Sheets-absence proof** (evidence §4.4). Sheets adapter retained (rollback + maintenance; decommission needs owner approval). |
-| Frontend | **0.8.0**, deployed on GitHub Pages; C6 approved-vehicle registry is present. |
-| Cloudflare Worker | Version **`20180237-7441-481a-9540-e7ca2c9c79eb`**; live fail-closed probes passed. |
-| GAS HEAD maintenance source | Display-error repair + **B2b durable journaling** (`backendVersion` **0.9.2**) **published in V49**. On 2026-11-22 the owner-authorized `PUSH_VEHICLE_GAS` CI workflow pushed HEAD `8fd9d3a` source and created **GAS version 50** ([run 45010301788](https://github.com/idev006/MT-Agency-Super-App-Framework/actions/runs/45010301788); 57 modules incl. the bundled-not-wired F2 Firestore adapter + DB-agnostic schema metadata; runtime-identical to V49). Version 50 was **subsequently PUBLISHED** to the Worker-facing pinned deployment via the owner-authorized clasp self-deploy path (owner `approve`); **V50/0.9.2 was live at that time**, runtime-identical to V49; **superseded by V51 (Phase 3 flags) and V52/0.9.3 (current — see row 1)**. Health re-probed `0.9.2`/`ready` direct (×2, no 404) **and** Worker→GAS end-to-end **200** with a valid envelope. Source push, version creation and Web App publication remain distinct facts; the CI workflow never publishes. [Evidence](GAS_TEST_EVIDENCE.md). |
+| Deploy chain (`scripts/p6vc-deploy-backend.sh`) | GAS @108, p6vc-api, p6vc-core, jobs KEEP — all exit 0; `/` = 0.9.58 |
+| Live suite through the core | **126/126 PASS** (public 11, Worker 14, core gateway 14, authenticated 80 covering 64/64 ops, DATA_PROOF 7), latency p50 160 ms |
+| DATA_PROOF (independent Firestore read-back) | 7/7, started 16:39:04.4Z after the inventory ended 16:39:04.3Z |
+| Engine answering | `x-p6vc-answered-by: core` for the 20 ops above |
+| Offline | legacy `npm run check` 900 pass / 0 fail · core `npm test` 67/67 (26 generated) · frontend 296/296 · maps + SSOT validators PASS |
+| Load (0.9.51, login) | p50 271 ms at 1 / 940 ms at 50 / 2,371 ms at 100 in flight, 0/300 errors; p95 ≈ 5 s at 100 (a 2nd instance cold-starts) → owner cost decision R14 |
 
-`f14458d` is the `sourceCommit` recorded in the executed live report while harness changes were still uncommitted. It is **not** the merge/content baseline; use **`bf3553d` / PR #110** for source reconciliation. Runtime endpoints, credentials and session material are intentionally not reproduced here.
+## 3. Work in flight
 
-These are DEV facts, not PDPA, security, UAT or production-release approval.
+- **N1a** ([#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311)): PR 1 (0.9.57) and PR 2 (0.9.58) deployed and proven; **next: PR 3 `system.reset.preview/execute`** (destructive → synthetic DEV only, execute stays off unless `P6VC_SYSTEM_RESET=ENABLED`). `system.health` stays on the legacy engine until N4 (the deploy smoke checks its version).
+- Then N1b → N2 → N3 → (R10, R11) → N4, photos R03 / R04, go-live R14 / R16 / R17 — order and done-criteria in [ROADMAP.md](ROADMAP.md), plan + diagrams in [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md).
 
-## 2. Current verification evidence
+## 4. Open owner decisions / actions (not engineering)
 
-| Layer | Verified result | Scope boundary |
-|---|---|---|
-| Offline GAS | `npm --prefix apps/vehicle-contact/backend/gas run check` **PASS** | Build, contracts, RBAC, compiled-GAS and repair regressions; see the automation runbook for the executed inventory. |
-| Live automation | **97/97 PASS**, **56/56 operations**, cleanup **7/7**, all five roles | 11 public direct-GAS + 14 Worker fail-closed + 72 authenticated **direct-GAS** cases. The 72 authenticated cases are **not** an all-through-Worker claim. |
-| DEV fixture reset | 11 vehicles logically retired; 10 new `ACTIVE`; each has 1 contact, 5 photos and QR `MATCH`; cleanup **2/2** | Domain lifecycle preserved related records and audit history; no physical table clear. |
-| Post-seed Sheets audit | **25/25 sheets**, zero visible errors before/after, zero repairs, no incomplete sheets | Confirms the reset did not recreate display corruption. |
-| **Independent Sheets data audit** | **25/25 sheets, 0 display errors, 25/25 headers OK, 10/10 ACTIVE fixtures complete** (1 contact / 5 photos / 1 QR / 1 APPROVED reg), **12 clean FK checks** | Raw-cell recheck via read-only `gviz` CSV **independent of the API** (an API `OK` is not data proof). Empty `vc_roles`/`vc_role_permissions` confirmed **by design** (frozen code catalog `ROLE_PERMISSIONS`). [Evidence](SHEETS_DATA_AUDIT_EVIDENCE_20261122.md). |
-
-Canonical evidence and commands: [LIVE_API_AUTOMATION.md](LIVE_API_AUTOMATION.md). Reports are sanitized and gitignored. Optional protected GitHub secrets `P6VC_TEST_USERNAME` / `P6VC_TEST_PASSWORD` are needed only for a **future manual GitHub Actions full-suite run**; they are **not** a blocker for the completed local 97/97 run.
-
-## 3. Delivery state
-
-### DONE-EVIDENCED
-
-- **A1–A3:** primary journey and live DEV verification; the earlier 10/10 approval and 70/70, 55-operation results remain dated history, superseded for current coverage by 97/97 and 56/56 above.
-- **B1 / B2 / B4:** organization-cycle rejection, submit reconciliation plus tested manual recovery, and login constant-work hardening; published in V48.
-- **C1–C4:** change review, unified vehicle detail, maintenance with version-conflict UX, and OWNER `my-vehicles`; source/tests delivered. Browser/business acceptance is still OPEN.
-- **C6:** admin approved-vehicle registry using least-privilege `vehicles.list`, minimal non-PII projection and server-side `ACTIVE` filtering; [C6 evidence](C6_ADMIN_VEHICLE_REGISTRY_EVIDENCE_20261121.md). VC-ADR-017 ratification remains OPEN.
-- **E2:** cross-role authorization regression and live Worker fail-closed verification; [E2 evidence](E2_WORKER_FAILCLOSED_EVIDENCE_20261121.md).
-- **Display repair:** root-cause fixes and narrow, idempotent editor repair completed; final and post-seed audits cover 25/25 sheets with zero visible errors. [Incident and runbook](GAS_NUMBERFORMAT_DISPLAY_CORRUPTION_INCIDENT_20261121.md).
-- **Live automation and DEV reset:** canonical workflow, sanitized reports, fail-closed gates and lifecycle-based fixtures completed as measured above.
-- **E1/E3 preparation:** [datastore decision packet](E1_INDEXED_DATASTORE_MIGRATION_DESIGN_20261121.md) and [sign-off dossier](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md) are prepared; neither is an approval.
-
-### ENGINEERING FOLLOW-UPS
-
-| Work | State | Next boundary |
-|---|---|---|
-| QR camera | **DONE — engineering source (PR #112)** | Protected WIP recovered onto remote `main` base, direct adapter-cleanup tests pass, and source is delivered in PR #112. Physical Android/iOS and browser/business acceptance remain OPEN; source delivery is not device acceptance or deployment approval. |
-| B2b durable journaling | **DONE — engineering + published/live-verified** | Durable PREPARED→APPLIED/ROLLED_BACK/RECOVERY_REQUIRED journal + compensation + automatic restart convergence + idempotent replay for `registrationReview` and `assignRoles`; deterministic derived QR token; 6 injected-failure/restart tests; GAS check **164/164 EXIT 0**; `backendVersion` 0.9.1→0.9.2. **Published V49** via owner-authorized clasp (carried in live **V50**, runtime-identical); live suite **97/97**, Sheets audit **0 errors**, journals all **APPLIED** (0 stuck). [B2b evidence §9](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md). [Runbook](OPERATION_JOURNAL_RECOVERY_RUNBOOK_20261121.md) §3.3/§3.5 manual steps retained only for `RECOVERY_REQUIRED`. Destructive retention stays disabled. |
-| C5 RETENTION_WORKER console | **BLOCKED — not in progress** | Wait for human **D5 + B3** decisions. Destructive retention remains disabled; no real-data rehearsal. |
-| Firestore migration (F1–F4 / D-E1 Option 2) | **DONE (synthetic DEV) — Phase 3 GREEN + FIRESTORE-ONLY live on V52/0.9.3** (dual-write cleared 2026-11-23, owner-approved early exit of the monitoring window; re-verified suite 97/97 + direct Firestore read-back 6/6 + Sheets-absence proof). Next = [test-automation slices G1–G8](TEST_AUTOMATION_INTEGRATION_DESIGN_20261123.md) (**Slice A G1+G2+G6 DONE**, live-verified; B–F pending) + latency levers (measure-first; owner chose backend round-trip reduction = Slice F). Production/real-data cutover BLOCKED (#55). | Swappable engines behind one 8-method store port; Sheets adapter KEPT as warm shadow/rollback (live runtime is **Firestore SoR + Sheets warm shadow**; suite 97/97 + post-suite dual-store audit PASS 2,464/2,464 docs, divergence 0). F3a gateway + F3b dual-write/backfill/reverse-dual-write/cutover-runbook merged-but-unwired. **Live Firestore DEV (Bangkok) verified end-to-end via the local Node bridge: [#69 API pipeline 72/72](BACKEND_FIRESTORE_LIVE_API_SUITE_EVIDENCE_20261122.md) (302 write read-backs, 0 audit failures) + [#70 frontend E2E all roles/pages](FRONTEND_FIRESTORE_E2E_EVIDENCE_20261123.md) (225 write read-backs, 0 audit failures).** Honest boundary: Node bridge ≠ GAS V8 runtime. Cutover (#54) gated on **#55 PDPA/security** + `PUSH_VEHICLE_GAS` + owner publication; production Firestore provisioning still an owner gate. **[#55 new-store review dossier (decision-ready, NOT an approval)](FIRESTORE_NEW_STORE_PDPA_SECURITY_REVIEW_55_20261123.md)** prepared 2026-11-23: synthetic-DEV engine cutover feasible after #55 sign-off + push (live V50 lacks F3a/F3b) + publication; **real-data production separately blocked** by the preliminary PDPA legal/DPO go-live gate + owner "ห้ามข้อมูลจริง" rule. **2026-11-23:** owner blanket-approval intent ("อนุมัติเสมอ") recorded as [VC-ADR-020](DECISION_LOG.md) but the real-data gate **stays BLOCKED** (named legal/DPO sign-off still required; no real data exists/processed). Synthetic-DEV integration suite re-run on merged `main` **72/72** (302 write read-backs, 0 failures) + first live **Phase 0→2 cutover rehearsal** on the current synthetic Sheets (25 tables / 2,260 rows read-only export → backfill **25/25 checksum+seqParity**, divergenceOpen 0 → independent audit re-read → cleanup residue 0); [rehearsal evidence](BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md). **Live runtime is Firestore SoR + Sheets warm shadow on V52/0.9.3** (Phases 1/3 executed; the earlier live runs at V48/V50/Sheets are historical); production/real-data cutover still needs **#55 legal-counsel + DPO sign-off**. |
-
-### HUMAN GATES — ALL OPEN
-
-**Single decision sheet:** [Owner decision briefing](OWNER_DECISION_BRIEFING_20261122.md) collects D-E1/D3/D5/B3, VC-ADR-014/015/017, the four sign-offs and the human acceptance actions into one actionable page (options + recommendations + consequence map). It presents choices; it approves nothing.
-
-- PDPA, security, UAT and production-release sign-offs.
-- Browser/business acceptance of the delivered journeys, including gallery/copy, C1–C4 and C6, plus physical QR-device acceptance.
-- Decisions/ratifications **D-E1, D3, D5, B3** and **VC-ADR-014 / 015 / 017**.
-- Credential rotation and confirmation of the approved release-credential handling process.
-- Catalog `ENFORCED` mode remains separately gated; current catalog mode is `ADVISORY`.
-
-## 4. Exact next actions
-
-1. **Obtain QR device acceptance** after reviewed Pages publication using named Android/iOS devices; record camera permission, switching, decode and cleanup evidence separately from the [offline engineering evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md).
-2. **B2b durable journaling is delivered AND published** (V49→V50 / 0.9.2 live, runtime-identical; GAS check 164/164, live suite 97/97, Sheets audit 0 errors, journals all APPLIED). Remaining engineering is essentially complete; the critical path is the owner human gates in the [decision briefing](OWNER_DECISION_BRIEFING_20261122.md). Do not enable destructive retention.
-3. **Keep C5 blocked** until the owner ratifies D5 and B3; only then implement the permission-gated console and synthetic two-person/`legal_hold` rehearsal.
-4. **Arrange human browser/business acceptance** for the delivered screens and journeys. Capture sanitized evidence; do not convert API automation into UAT approval.
-5. **Resolve release decisions and rotate credentials** through the owner/security process, then use the [production readiness plan](PRODUCTION_READINESS_PLAN_20261121.md) for any release-candidate deployment and final sign-off.
-
-## 5. QR recovery result
-
-The protected WIP was recovered from the documented stash onto remote `main` @ `ad7630e`, resolved against Frontend **0.8.0**, committed at `d92e08c` and pushed as PR **#112**. Focused QR/resolve tests pass **16/16**, the Frontend suite passes **192/192**, build and dependency audit pass, and direct adapter-cleanup paths are covered. See [QR camera recovery evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md).
-
-Do not recreate or reapply the historical stash over PR #112. Physical Android/iOS acceptance remains required and must not be inferred from offline tests.
-
-## 6. Safety and deployment rules
-
-- GitHub source is canonical; generated `.gs` and deployed artifacts are not a second source tree.
-- The GitHub Actions GAS source-push workflow requires the owner’s exact per-push phrase **`PUSH_VEHICLE_GAS`**. A separately owner-authorized assistant `clasp` self-deploy path may be used within its approved scope; neither path removes authorization or evidence requirements.
-- Source push and source-version creation are **not** Web App publication. Record push, created version, publication/deployment and health verification as separate facts.
-- Never expose credentials, session tokens, private endpoints, raw PII or secret-bearing logs. Live authenticated tests require their documented synthetic-DEV write guard and cleanup.
-- Frontend permissions are UX only; GAS is the authorization authority. Never infer access from a client-supplied role.
-- No schema mutation, destructive retention, production `ENFORCED` mode or production release without explicit authorization.
-
-## 7. Evidence index
-
-- [Owner decision briefing (one sitting)](OWNER_DECISION_BRIEFING_20261122.md) · [QR physical device acceptance plan](QR_DEVICE_ACCEPTANCE_PLAN_20261122.md)
-- [World-class test suite plan](WORLD_CLASS_TEST_SUITE_PLAN_20261122.md) · [Data model ER diagram (25 Sheets)](DATA_MODEL_ER_DIAGRAM_20261122.md)
-- [DEV clean-init reset evidence (Mode A-full executed + Mode B source)](DEV_CLEAN_RESET_EVIDENCE_20261122.md)
-- [Independent Sheets SSOT data audit (raw-cell, read-only)](SHEETS_DATA_AUDIT_EVIDENCE_20261122.md)
-- [Current live automation, reset and audit](LIVE_API_AUTOMATION.md)
-- [A2/A3 historical live DEV evidence](LIVE_DEV_E2E_EVIDENCE_20261121.md)
-- [QR camera recovery engineering evidence](QR_CAMERA_RECOVERY_EVIDENCE_20261122.md)
-- [B1 org cycle](BACKEND_ORG_CYCLE_CHECK_EVIDENCE_20261121.md) · [B2 journal recovery](BACKEND_JOURNAL_RECOVERY_EVIDENCE_20261121.md) · [B2b durable journaling](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md) · [B4 login hardening](BACKEND_LOGIN_CONSTANT_WORK_EVIDENCE_20261121.md)
-- [C1 change review](C1_CHANGE_REVIEW_SCREEN_EVIDENCE_20261121.md) · [C2 detail](C2_VEHICLE_DETAIL_SCREEN_EVIDENCE_20261121.md) · [C3 maintenance](C3_VEHICLE_MAINTENANCE_SCREEN_EVIDENCE_20261121.md) · [C4 my vehicles](C4_MY_VEHICLES_SCREEN_EVIDENCE_20261121.md)
-- [Decision log](DECISION_LOG.md) · [Architecture SSOT](ARCHITECTURE_SSOT.md) · [Code map](CODE_MAP_20261121.md) · [Logical ER SSOT](DATA_MODEL_ER_DIAGRAM_20261122.md) · [Use-case SSOT](use-cases/README.md) · [F2 Firestore adapter](BACKEND_FIRESTORE_ADAPTER_F2_EVIDENCE_20261122.md) · [F4 Firestore DEV infra + connectivity read-back](BACKEND_FIRESTORE_INFRA_F4_EVIDENCE_20261122.md) · [POC #1 GAS Firestore REST + SA OAuth (offline 10/10 + live run #2 PASS 8/8; incident CLOSED)](BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md) · [POC #1 live-shape incident](FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md) · [F3a real REST gateway + backend selection flag (offline 19/19, check exit 0)](BACKEND_FIRESTORE_GATEWAY_F3A_EVIDENCE_20261122.md) · [F3b-1 dual-write wrapper + divergence journal (offline 13/13, check exit 0)](BACKEND_FIRESTORE_DUALWRITE_F3B1_EVIDENCE_20261122.md) · [F3b-2/3 backfill + read-back audit + reverse dual-write + cutover runbook (offline 8/8+14/14)](BACKEND_FIRESTORE_BACKFILL_F3B2_EVIDENCE_20261122.md) · [POC #2/#3 Node bridge → live Firestore (live PASS 290 s; calibration + F1 contract + latency; 4 root-caused bugs)](BACKEND_FIRESTORE_LIVE_POC2_POC3_EVIDENCE_20261122.md) · [#69 full automated API/use-case pipeline on live Firestore DEV (PASS 72/72, 56/56 ops, 302 write read-backs, 0 audit failures, residue 0; latency report)](BACKEND_FIRESTORE_LIVE_API_SUITE_EVIDENCE_20261122.md) · [#70 frontend E2E every page/role on live Firestore DEV (all 5 roles + UI-created account, full intake→approve→search→maintenance→QR→password-change→user-mgmt pipeline, 225 write read-backs, 0 audit failures, RBAC matrix; local Node bridge ≠ GAS runtime)](FRONTEND_FIRESTORE_E2E_EVIDENCE_20261123.md) · [Firestore integration test + synthetic-DEV cutover rehearsal (72/72 + Phase 0→2 backfill 25/25 checksum+seqParity, residue 0; NOT a production cutover)](BACKEND_FIRESTORE_CUTOVER_REHEARSAL_EVIDENCE_20261123.md)
+R14 capacity (min instances / cost) · R16 production switches (GAS trigger `dailyDrivePhotoHousekeeping` removal, protect the pepper secret, Google OIDC decision, `P6VC_SYSTEM_RESET` off, Drive storage, legal/PDPA at go-live) · R17 old log retention (preview + confirm) · live UI checks of each deployed screen.

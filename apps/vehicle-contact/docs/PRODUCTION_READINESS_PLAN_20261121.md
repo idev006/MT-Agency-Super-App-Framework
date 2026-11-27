@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — Production Readiness Plan
 
+**Status:** HISTORICAL TRACKER (2026-11-21) — the gate list (PDPA, security, UAT, release) is still informative; current go-live items: ROADMAP R14 / R16 / R17. Current state: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) · [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) · [ROADMAP.md](ROADMAP.md).
+
 **Document:** P6VC-PROD-PLAN-001 | **Opened:** 2026-11-21 | **Last verified:** 2026-11-22 09:17 Asia/Bangkok
 **Baseline:** handoff PR **#111**, merged `main` @ **`ad7630e`**; implementation/content PR **#110** @ **`bf3553d`**
 **Status:** ACTIVE GATE TRACKER — **NOT PRODUCTION-READY AND NOT RELEASE-APPROVED**. The original 48-hour target is historical, not a remaining schedule or approval.

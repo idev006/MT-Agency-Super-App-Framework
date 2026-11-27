@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — Project Management / Delivery Execution Plan
 
+**Status:** SUPERSEDED 2026-11-27 — slice state of 2026-11-21; current order and status: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) · [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) · [ROADMAP.md](ROADMAP.md).
+
 **Document:** P6VC-PM-PLAN-001 | **Opened:** 2026-11-21 | **Last verified:** 2026-11-22 09:17 Asia/Bangkok
 **Baseline:** handoff PR **#111**, merged `main` @ **`ad7630e`**; implementation/content PR **#110** @ **`bf3553d`**; published GAS **V48 / 0.9.1**, Frontend **0.8.0**, 56 operations, 25 Sheets
 **Status:** ACTIVE slice/gate SSOT. Resume from [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); release gates are detailed in [PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md).

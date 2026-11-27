@@ -16,9 +16,12 @@ context:
   decisions: apps/vehicle-contact/docs/DECISION_LOG.md
   decision_prefix: VC-ADR-
   use_cases: apps/vehicle-contact/docs/use-cases/   # validated by scripts/validate-usecase-ssot.mjs
-  plans: [apps/vehicle-contact/docs/NODE_CORE_MIGRATION_PLAN.md]   # status: GitHub milestone 'Node core (VC-ADR-046)'
+  plans: [apps/vehicle-contact/docs/NODE_CORE_FINISH_PLAN.md, apps/vehicle-contact/docs/ROADMAP.md]   # VC-ADR-051; status: GitHub milestones + ROADMAP table
+  handover: [apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md, apps/vehicle-contact/docs/PROJECT_HANDOVER.md]   # read first
 commands:
   - { dir: apps/vehicle-contact/backend/gas, run: "npm run check:summary", what: "backend build + all tests" }
+  - { dir: apps/vehicle-contact/backend/core, run: "npm test", what: "Node core tests + generated legacy acceptance copies + their --check (CI)" }
+  - { dir: apps/vehicle-contact/backend/core, run: "node scripts/gen-core-acceptance.mjs", what: "regenerate tests/generated after a listed legacy test changes" }
   - { dir: apps/vehicle-contact/frontend, run: "npm run test:summary", what: "frontend unit" }
   - { dir: apps/vehicle-contact/frontend, run: "npm run test:e2e:summary", what: "frontend e2e (mock API)" }
   - { dir: ., run: "node scripts/validate-ssot.mjs && node scripts/validate-usecase-ssot.mjs", what: "SSOT validators (CI)" }
@@ -30,6 +33,7 @@ versioning:
     - apps/vehicle-contact/backend/gas/scripts/expected-live-version.json   # the deploy smoke asserts this
     - apps/vehicle-contact/frontend/package.json                            # frontend version (FE)
 deploy:
+  chain: "P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <sha> <desc> [--indexes]  # gas_push → gas_pin → cloudrun → core → core_jobs (KEEP); only after the owner's OK"
   on_merge:
     - "GitHub Pages: workflow 'Build and deploy Pages from SSOT' runs on every push to main (also docs-only PRs)"
   by_path:
@@ -74,6 +78,10 @@ prove:
     - { needs: "preview_start p6vc-frontend (port 5173)", run: "P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV node scripts/live-print-ui.mjs", dir: apps/vehicle-contact/frontend }
   readback: "@google-cloud/firestore from backend/gas node_modules; env NAMES from gitignored .env: GOOGLE_APPLICATION_CREDENTIALS, FIRESTORE_PROJECT_ID, FIRESTORE_DATABASE_ID (load via backend/gas/scripts/load-env.mjs)"
 gotchas:
+  - "2026-11-27 an operation moved to the core: tests that used it as a 'forwarded' example (core-proxy.test.mjs) must switch to an op still on the legacy engine."
+  - "2026-11-27 the core memoises the log policy for 60 s; only the core's own system.config.update refreshes it (other instances within a minute)."
+  - "2026-11-27 a test literal like `x.length, 64` is reported by gen-system-maps as a hard-coded operation count."
+  - "2026-11-27 Git Bash heredocs drop backslashes in code; write code with Write/Edit or python."
   - "2026-11-27 the local .env points P6VC_GAS_EXEC_URL at GAS /exec: runs before this date proved the GAS runtime, not Cloud Run (Cloud Run only by the deploy smoke). Set the target env (prove.live_suite.target_env); the report now records target."
   - "2026-11-26 DATA_PROOF is BLOCKED (suite FAIL) unless the probe gate env is set for the suite run."
   - "2026-11-26 gen-system-maps finds store rules by 'export function <name>' in any application module; moving one needs the generator rule checked."

@@ -1,5 +1,7 @@
 # Handoff — Firestore Phase 3 continuation (synthetic DEV)
 
+**Status:** SUPERSEDED 2026-11-27 — historical handoff (GAS runtime, 0.9.3); current: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) · [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) · [ROADMAP.md](ROADMAP.md).
+
 > **⚠️ SUPERSEDED (2026-11-23 late session) — historical phase handoff, do NOT use as current state.**
 > The steps this doc describes as "next" are **all DONE**: the ~24 h monitoring window was **early-exited** (owner-approved), `VEHICLE_FIRESTORE_DUALWRITE` was **cleared** (Firestore-only), and **Slice G+F (VC-ADR-026) retired the Sheets runtime data path** → live **V53 / `backendVersion` 0.9.4**, G6 re-verify **GREEN 103/103** (DATA_PROOF 6/6). The Sheets "warm shadow" / engine-flip rollback described below is **retired**; rollback is now **version-based**.
 > **Current state lives in [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) + [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md); measured proof in [BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md §5.6](BACKEND_FIRESTORE_LIVE_CUTOVER_EVIDENCE_20261123.md).** The body below is retained as dated evidence of the V52/0.9.3 Phase-3 state only. **Next engineering step = authorize-path tuneup (SECURITY-GATED, owner review) + test-plan Slices B–E.**

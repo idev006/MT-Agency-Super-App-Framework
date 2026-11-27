@@ -29,8 +29,8 @@ Status labels: `status:todo` → `status:in-progress` → closed (with the evide
 | R16 | Production switches + owner actions (reset off, Drive storage, legal, pepper, Google login, GAS trigger) | [#307](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/307) | before real data | todo |
 | R17 | Apply the new log retention to old rows (preview + confirm) | [#308](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/308) | owner confirmation | todo |
 
-Progress of the engine move: **16 of 64 operations** answered by the core (officer path 6, auth 6, public registration 4);
-N1a–N3 move the other 48 as native async Node ([NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md), VC-ADR-051), N4 cuts over.
+Progress of the engine move: **20 of 64 operations** answered by the core (officer path 6, auth 6, public registration 4,
+N1a 4: vehicles.list, qr.markPrinted, system.config.get/update); N1a PR 3 + N1b–N3 move the other 44 as native async Node ([NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md), VC-ADR-051), N4 cuts over.
 
 ## Done (evidence in DECISION_LOG.md)
 - Node core phases 0–2: front door, Integration Manager, shared flows, store rules, async Firestore (gRPC), officer path.
