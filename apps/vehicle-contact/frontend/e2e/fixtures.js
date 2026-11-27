@@ -3,7 +3,7 @@
 import { test as base, expect } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 import { createMockApi } from './mock-api.js'
-import { WORKER_URL } from '../playwright.config.js'
+import { CORE_URL } from '../playwright.config.js'
 
 const AXE = readFileSync(new URL('../node_modules/axe-core/axe.min.js', import.meta.url), 'utf8')
 
@@ -14,7 +14,7 @@ export const test = base.extend({
     const api = createMockApi()
     await page.route('**/*', (route) => {
       const url = route.request().url()
-      if (url.startsWith(WORKER_URL)) return api.handle(route)
+      if (url.startsWith(CORE_URL)) return api.handle(route)
       if (url.startsWith('http://localhost:') || url.startsWith('data:')) return route.continue()
       return route.abort() // hermetic: nothing leaves the machine
     })

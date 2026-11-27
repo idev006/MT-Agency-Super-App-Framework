@@ -46,11 +46,10 @@ jobs:
         working-directory: apps/vehicle-contact/frontend
         env:
           VITE_BASE_PATH: /MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/
-          VITE_WORKER_API_URL: https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/frontend
         run: |
           npm ci
           npm test
-          npm run build
+          VITE_CORE_API_URL="$(node ../../../scripts/print-core-frontend-url.mjs)" npm run build
       - name: Frontend E2E (real browser, mocked API, desktop + phone)
         working-directory: apps/vehicle-contact/frontend
         env:

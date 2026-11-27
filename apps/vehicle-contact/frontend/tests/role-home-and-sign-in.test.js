@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { loadPendingCount, pendingSourcesFor, PENDING_WORK_SOURCES } from '../src/application/dashboard/pending-work.js'
 import { signInMessage } from '../src/application/auth/sign-in-messages.js'
-import { defaultTransport } from '../src/stores/session.js'
 
 const src = (path) => readFileSync(new URL(`../src/${path}`, import.meta.url), 'utf8')
 
@@ -36,12 +35,6 @@ describe('R2 pending work', () => {
 })
 
 describe('R1 sign-in', () => {
-  it('defaults to the Worker only when a valid Worker endpoint is configured', () => {
-    expect(defaultTransport('https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/frontend')).toBe('worker')
-    expect(defaultTransport('')).toBe('direct')
-    expect(defaultTransport('http://evil.example/api/frontend')).toBe('direct')
-  })
-
   it('shows Thai guidance for known codes and keeps the client message otherwise', () => {
     expect(signInMessage({ code: 'INVALID_CREDENTIALS', message: 'INVALID_CREDENTIALS' })).toMatch(/ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง/)
     expect(signInMessage({ code: 'HTTP_502', message: 'x' })).toMatch(/ขัดข้องชั่วคราว/)

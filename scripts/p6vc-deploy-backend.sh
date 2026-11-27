@@ -5,8 +5,8 @@
 # The Cloudflare Worker (tools/p6vc-api-test-console) is NOT deployed here (separate: npx wrangler@4 deploy).
 # GitHub Pages deploys by itself on every merge to main.
 #
-# Owner rule: every deploy needs the owner's OK for THAT round ("Merge + deploy"). This script refuses to run without
-#   P6VC_OWNER_OK=MERGE_AND_DEPLOY   — set it only after the owner said so in this round.
+# Owner 2026-11-28 (VC-ADR-052) approved subsequent synthetic-DEV merges/deploys once. This script still refuses without
+#   P6VC_OWNER_OK=MERGE_AND_DEPLOY   — set this execution guard for each run under that approval.
 #
 # usage (from anywhere in the repo, Git Bash):
 #   P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <merged main short sha> "<short description>" [--indexes]

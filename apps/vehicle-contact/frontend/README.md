@@ -1,6 +1,6 @@
-# P6 Vehicle Contact Frontend POC
+# P6 Vehicle Contact Frontend
 
-Vue 3 + Vite SPA สำหรับพิสูจน์การเชื่อมต่อจากเบราว์เซอร์ไปยัง GAS Backend API ทั้งโหมดทดลองโดยตรงและโหมดหลักผ่าน Cloudflare Worker
+Vue 3 + Vite SPA เชื่อมต่อ `p6vc-core` ที่ `/api/frontend` โดยตรงผ่าน HTTPS. ตัว core ส่งต่อ operation ที่ยังย้ายไม่เสร็จไปยัง legacy API; เบราว์เซอร์ไม่เรียก GAS หรือ Cloudflare Worker. GAS API จัดการไฟล์รูปบน Google Drive ให้ backend เท่านั้น.
 
 ## UI/UX governance
 
@@ -17,32 +17,29 @@ Vue 3 + Vite SPA สำหรับพิสูจน์การเชื่อ
 ## ขอบเขต POC
 
 - เปลี่ยนธีม daisyUI 5.8.x ได้ทั้งหมดและบันทึกเฉพาะชื่อธีมใน `localStorage`
-- เรียก `system.health` เพื่อพิสูจน์ browser CORS/redirect/API envelope
+- เรียก `system.health` เพื่อพิสูจน์ browser CORS/API envelope
 - เรียก `auth.login`, `auth.session` และ `auth.logout` ด้วยข้อมูลที่ผู้ใช้กรอกเอง
-- เลือก transport ได้ทั้ง Direct GAS และ Cloudflare Worker `/api/frontend`
+- Endpoint มาจาก build เท่านั้น (`VITE_CORE_API_URL`) และต้องตรงกับ core ใน trusted-endpoints contract
 - เก็บ session token ใน `sessionStorage` เพื่อรองรับ refresh ภายใน tab และล้างเมื่อ sign out
 - จดจำ username ได้ และมีตัวเลือก POC ให้จดจำ password พร้อมคำเตือนชัดเจน
-- ไม่ใช้ Cloudflare bridge key ใน SPA
-- Dashboard และ sidebar สร้างเมนูจาก permission ที่ `auth.session` คืนมา โดย GAS เป็น SSOT ของสิทธิ์
+- Dashboard และ sidebar สร้างเมนูจาก permission ที่ `auth.session` คืนมา โดย backend เป็น SSOT ของสิทธิ์
 - แสดง logical error และ request ID สำหรับวิเคราะห์ปัญหา
 
 SPA มี vehicle search และ QR resolver แล้ว โดย QR camera adapter เริ่มใช้งานกล้องเมื่อผู้ใช้กดเท่านั้น รองรับสลับ/เลือกกล้องและอ่านไฟล์ภาพแบบจำกัดชนิด/ขนาด พร้อมปิด decoder และ media tracks เมื่ออ่านสำเร็จ ล้มเหลว ซ่อนหน้า หรือออกจากหน้า การรองรับจริงบน Android/iOS ยังคงต้องมีหลักฐาน physical-device acceptance แยกจาก automated tests
 
-## ผล browser integration ล่าสุด
+## การพัฒนาบน localhost
 
-วันที่ 2026-11-18 ทดสอบจาก Brave ที่ origin `http://127.0.0.1:5173` แล้ว Direct GAS ยังไม่ผ่าน browser gate แต่ Cloudflare Worker mode ผ่านครบ `auth.login` → `auth.session` → Dashboard ด้วย role `SYSTEM_ADMIN` ดูหลักฐานที่ `../docs/FRONTEND_POC_EVIDENCE_20261118.md`
-
-Source ของ Cloudflare BFF endpoint อยู่ที่ `../../../tools/p6vc-api-test-console/worker.mjs` เส้นทาง `/api/frontend` และตั้ง `VITE_WORKER_API_URL` ให้ชี้มายังเส้นทางนี้
+ใช้ Vite และ Playwright กับ mock API เพื่อทดสอบโดยไม่ส่งคำขอไป cloud. หากต้องการเชื่อมต่อ DEV core จาก Vite ให้ตั้ง `VITE_CORE_API_URL` ตามผลของ `node ../../../scripts/print-core-frontend-url.mjs` ใน `.env.local` ที่ไม่ commit. Core อนุญาต CORS จาก localhost สำหรับการทดสอบนี้. ผลทดสอบ browser ปี 2026-11-18 ใน `../docs/FRONTEND_POC_EVIDENCE_20261118.md` เป็นประวัติของเส้นทางเดิม.
 
 ## เริ่มใช้งาน
 
 ```powershell
-Copy-Item .env.example .env.local
-npm install
+npm ci
+$env:VITE_CORE_API_URL = (node ../../../scripts/print-core-frontend-url.mjs).Trim()
 npm run dev
 ```
 
-เปิด URL ที่ Vite แสดง แล้วกด **ทดสอบการเชื่อมต่อ** ก่อนทดลอง login
+เปิด URL ที่ Vite แสดง แล้วกด **ทดสอบการเชื่อมต่อ** ก่อนทดลอง login ด้วยบัญชีสังเคราะห์บน DEV. สำหรับการทดสอบแบบไม่แตะระบบ cloud ให้ใช้ `npm run test:e2e` ซึ่งสกัดทุกคำขอออกนอกเครื่องและตอบด้วย mock API.
 
 ### Local visual QA โดยไม่ใช้บัญชีจริง
 

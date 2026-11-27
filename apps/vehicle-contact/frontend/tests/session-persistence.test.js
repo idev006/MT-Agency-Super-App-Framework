@@ -1,6 +1,7 @@
 import { createPinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useSessionStore } from '../src/stores/session.js'
+import trustedEndpoints from '../../contracts/trusted-endpoints.v1.json'
 
 function memoryStorage(initial = {}) {
   const data = new Map(Object.entries(initial))
@@ -11,7 +12,7 @@ function memoryStorage(initial = {}) {
   }
 }
 
-const workerEndpoint = 'https://p6vc.example.workers.dev/api/frontend'
+const coreEndpoint = `${trustedEndpoints.endpoints.find((item) => item.id === 'cloud-run-core').url}/api/frontend`
 const sessionData = {
   userId: 'staff-1', displayName: 'เจ้าหน้าที่ทดสอบ', organizationId: 'org-1', roles: ['STAFF'],
   permissions: ['session.authenticated', 'vehicle.lookup'], expiresAt: '2026-11-20T02:00:00.000Z', mustChangePassword: false,
@@ -23,18 +24,17 @@ describe('session and endpoint refresh persistence', () => {
     globalThis.localStorage = memoryStorage()
     globalThis.sessionStorage = memoryStorage()
     // Hermetic: the endpoint comes from the build environment only (never from this machine's .env).
-    vi.stubEnv('VITE_WORKER_API_URL', workerEndpoint)
-    vi.stubEnv('VITE_GAS_API_URL', '')
+    vi.stubEnv('VITE_CORE_API_URL', coreEndpoint)
   })
   afterEach(() => vi.unstubAllEnvs())
 
-  it('the build decides the channel: saved channel/URL overrides from older versions are ignored and removed', () => {
+  it('the build fixes the core route: saved channel/URL overrides are ignored and removed', () => {
     globalThis.localStorage.setItem('p6vc-api-transport', 'direct')
     globalThis.localStorage.setItem('p6vc-gas-endpoint', 'https://script.google.com/macros/s/attacker-chosen/exec')
     globalThis.localStorage.setItem('p6vc-worker-endpoint', 'https://evil.example/api/frontend')
     const store = useSessionStore(createPinia())
-    expect(store.directEndpoint).not.toContain('attacker-chosen')
-    expect(store.workerEndpoint).not.toContain('evil.example')
+    expect(store.transport).toBe('core')
+    expect(store.endpoint).toBe(coreEndpoint)
     for (const key of ['p6vc-api-transport', 'p6vc-gas-endpoint', 'p6vc-worker-endpoint']) expect(globalThis.localStorage.getItem(key)).toBeNull()
   })
 

@@ -6,6 +6,7 @@ project:
   app_dir: apps/vehicle-contact
   default_branch: main
 rules_extra:
+  - "Owner 2026-11-28 (VC-ADR-052): one-time approval 'อนุมัติแผน DEV นี้' covers subsequent synthetic-DEV merges/deploys and clasp publication; do not re-ask per round. Keep CI, live proof and the P6VC_OWNER_OK execution guard. Excludes real data, permanent deletes, system.reset.execute and creating a new p6vc-auth-pepper version."
   - "PDPA: do not block or caveat development on PDPA; legal writes consent at go-live (owner 2026-11-26). Synthetic DEV data still applies."
   - "Before go-live: switch off the system reset (P6VC_SYSTEM_RESET=ENABLED on the test system)."
 context:
@@ -33,7 +34,7 @@ versioning:
     - apps/vehicle-contact/backend/gas/scripts/expected-live-version.json   # the deploy smoke asserts this
     - apps/vehicle-contact/frontend/package.json                            # frontend version (FE)
 deploy:
-  chain: "P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <sha> <desc> [--indexes]  # gas_push → gas_pin → cloudrun → core → core_jobs (KEEP); only after the owner's OK"
+  chain: "P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <sha> <desc> [--indexes]  # gas_push → gas_pin → cloudrun → core → core_jobs (KEEP); VC-ADR-052 supplies one-time DEV approval; set the guard per run"
   on_merge:
     - "GitHub Pages: workflow 'Build and deploy Pages from SSOT' runs on every push to main (also docs-only PRs)"
   by_path:
