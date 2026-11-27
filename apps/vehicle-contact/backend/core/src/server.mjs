@@ -9,9 +9,13 @@ import {createFirestoreStoreAsync} from './adapters/firestore/store.mjs';
 import {createCoreFacade} from './facade/operations.mjs';
 import {createRouter} from './http/routing.mjs';
 
-// Firestore client from the environment (Cloud Run: the runtime service account); built on the first ported call
+// Firestore client from the environment (Cloud Run: the runtime service account); built on the first ported call.
+// gRPC transport (the SDK default), NOT preferRest: one HTTP/2 connection multiplexes the concurrent calls of an instance.
+// Measured 2b-3 (same reads, same machine): REST 17-31 ms CPU per request and p50 470 ms at 10 in flight; gRPC 3-10 ms
+// and 145 ms. On Cloud Run's 1 vCPU, REST made the core's lookup p50 grow with load (364 ms at 1 -> 3 s at 50).
+// preferRest stays right for short one-off scripts (faster start, no long-lived connection).
 export const firestoreStoreFromEnv = (env = process.env) => () => createFirestoreStoreAsync({gateway: createSdkGateway({
-  db: new Firestore({projectId: env.FIRESTORE_PROJECT_ID, databaseId: env.FIRESTORE_DATABASE_ID || '(default)', preferRest: true})})});
+  db: new Firestore({projectId: env.FIRESTORE_PROJECT_ID, databaseId: env.FIRESTORE_DATABASE_ID || '(default)'})})});
 
 // integrations: the Integration Manager (VC-ADR-047); every outbound call goes through it
 export function createCoreHandler({integrations = createIntegrationManager(), legacy = integrations.gateway('legacy-engine'),

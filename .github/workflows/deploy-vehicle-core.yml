@@ -89,7 +89,7 @@ jobs:
             --image "${{ steps.image.outputs.image }}" \
             --service-account "$RUNTIME_SA" \
             --concurrency 80 --min-instances 0 --max-instances 5 \
-            --cpu 1 --memory 256Mi --timeout 60 \
+            --cpu 1 --memory 256Mi --timeout 60 --cpu-boost \
             --allow-unauthenticated \
             --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default)" \
             --set-secrets "P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest" \

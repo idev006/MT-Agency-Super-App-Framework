@@ -1,40 +1,73 @@
-// Load baseline (VC-ADR-046 phase 1/2). Public, read-only, synthetic: campaigns.validate with a random unknown token
-// (one Firestore read, no write, answer CAMPAIGN_INVALID) — the same probe the deploy smoke uses.
-// Gate: P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD. Target: a trusted endpoint id (cloud-run-api | cloud-run-core).
-//   P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD node scripts/load-test.mjs cloud-run-core 1,10,30,50
-// Each level sends 3 x concurrency requests in waves. Report: test-results/p6vc-load-<id>.json (cwd).
+// Load test (VC-ADR-046 phase 1/2/2b-3). Synthetic DEV only. Target: a trusted endpoint id (cloud-run-api | cloud-run-core).
+// Probes:
+//   validate — public, read-only: campaigns.validate with a random unknown token (one Firestore read, answer CAMPAIGN_INVALID).
+//   lookup   — authenticated officer path: vehicles.lookup of a real synthetic vehicle (session check + vehicle read + one
+//              access-audit row per call, kept by the log policy). Signs in once with the synthetic account from the
+//              gitignored .env, signs out at the end. Needs P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV as well.
+// Gate: P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD.
+//   P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD node scripts/load-test.mjs cloud-run-core 1,10,30,50 [validate|lookup]
+// Each level sends 3 x concurrency requests in waves; the first level is preceded by one warm-up call (reported apart, so a
+// cold start does not hide in the numbers). Prints timings and counts only — never data, tokens or credentials.
+// Report: test-results/p6vc-load-<id>-<probe>.json (cwd).
 import fs from 'node:fs';
 import {randomBytes} from 'node:crypto';
 
 if (process.env.P6VC_ALLOW_LOAD_TEST !== 'RUN_SYNTHETIC_LOAD') { console.error('LOAD_TEST_GATE_CLOSED'); process.exit(2); }
-const [id = 'cloud-run-core', levelsArg = '1,10,30,50'] = process.argv.slice(2);
+const [id = 'cloud-run-core', levelsArg = '1,10,30,50', probe = 'validate'] = process.argv.slice(2);
 const trusted = JSON.parse(fs.readFileSync(new URL('../../../contracts/trusted-endpoints.v1.json', import.meta.url), 'utf8'));
 const endpoint = trusted.endpoints.find(e => e.id === id && e.kind === 'cloud-run');
 if (!endpoint) { console.error('UNKNOWN_CLOUD_RUN_ENDPOINT'); process.exit(2); }
+if (!['validate', 'lookup'].includes(probe)) { console.error('UNKNOWN_PROBE'); process.exit(2); }
 const levels = levelsArg.split(',').map(Number).filter(n => Number.isInteger(n) && n >= 1 && n <= 100);
+
+async function post(group, action, payload, token) {
+  const r = await fetch(endpoint.url + '/', {method: 'POST', headers: {'content-type': 'application/json'}, signal: AbortSignal.timeout(60000),
+    body: JSON.stringify({apiVersion: 'v1', group, action, payload, ...(token ? {sessionToken: token} : {}), requestId: 'load_' + randomBytes(6).toString('hex')})});
+  return {status: r.status, body: await r.json(), answeredBy: r.headers.get('x-p6vc-answered-by')};
+}
+
+let request, signOut = async () => {};
+if (probe === 'validate') {
+  request = async () => { const r = await post('campaigns', 'validate', {campaignToken: randomBytes(32).toString('hex')});
+    return {ok: r.status === 200 && r.body?.error?.code === 'CAMPAIGN_INVALID', answeredBy: r.answeredBy}; };
+} else {
+  await import('../../gas/scripts/load-env.mjs');
+  if (process.env.P6VC_ALLOW_OWNER_DEV_WRITES !== 'RUN_SYNTHETIC_OWNER_DEV') { console.error('OWNER_DEV_GATE_CLOSED'); process.exit(2); }
+  const user = process.env.P6VC_TEST_USERNAME, password = process.env.P6VC_TEST_PASSWORD;
+  if (!user || !password) { console.error('TEST_CREDENTIALS_MISSING'); process.exit(2); }
+  const login = await post('auth', 'login', {username: user, password});
+  if (!login.body.ok) { console.error('LOGIN_FAILED ' + login.body.error?.code); process.exit(1); }
+  const token = login.body.data.sessionToken;
+  signOut = async () => { await post('auth', 'logout', {}, token).catch(() => {}); };
+  const v = (await post('vehicles', 'list', {page: 1, pageSize: 1}, token)).body.data?.items?.[0];
+  if (!v) { await signOut(); console.error('NO_SYNTHETIC_VEHICLE'); process.exit(1); }
+  request = async () => { const r = await post('vehicles', 'lookup', {plate: v.plate, province: v.province}, token);
+    return {ok: r.status === 200 && r.body?.ok === true && !!r.body.data, answeredBy: r.answeredBy}; };
+}
 
 async function one() {
   const t = performance.now();
-  try {
-    const r = await fetch(endpoint.url + '/', {method: 'POST', headers: {'content-type': 'application/json'}, signal: AbortSignal.timeout(60000),
-      body: JSON.stringify({apiVersion: 'v1', group: 'campaigns', action: 'validate', payload: {campaignToken: randomBytes(32).toString('hex')}, requestId: 'load_' + randomBytes(6).toString('hex')})});
-    const j = await r.json();
-    return {ms: performance.now() - t, ok: r.status === 200 && j?.error?.code === 'CAMPAIGN_INVALID'};
-  } catch { return {ms: performance.now() - t, ok: false}; }
+  try { const r = await request(); return {ms: performance.now() - t, ...r}; } catch { return {ms: performance.now() - t, ok: false}; }
 }
 const pct = (xs, p) => { const s = [...xs].sort((a, b) => a - b); return Math.round(s[Math.min(s.length - 1, Math.floor(p / 100 * s.length))]); };
 
-const report = {target: endpoint.url, id, probe: 'campaigns.validate unknown token (read-only)', startedAt: new Date().toISOString(), levels: []};
-for (const c of levels) {
-  const results = [];
-  const t0 = performance.now();
-  for (let wave = 0; wave < 3; wave++) results.push(...await Promise.all(Array.from({length: c}, one)));
-  const ms = results.map(r => r.ms);
-  const row = {concurrency: c, requests: results.length, errors: results.filter(r => !r.ok).length,
-    p50: pct(ms, 50), p95: pct(ms, 95), max: Math.round(Math.max(...ms)), seconds: Math.round((performance.now() - t0) / 100) / 10};
-  report.levels.push(row);
-  console.log(`LOAD c=${c} n=${row.requests} errors=${row.errors} p50=${row.p50}ms p95=${row.p95}ms max=${row.max}ms total=${row.seconds}s`);
-}
+const report = {target: endpoint.url, id, probe, startedAt: new Date().toISOString(), levels: []};
+try {
+  const warm = await one();
+  report.warmUp = {ms: Math.round(warm.ms), ok: warm.ok, answeredBy: warm.answeredBy || null};
+  console.log(`WARMUP ${Math.round(warm.ms)}ms ok=${warm.ok} answered-by=${warm.answeredBy}`);
+  for (const c of levels) {
+    const results = [];
+    const t0 = performance.now();
+    for (let wave = 0; wave < 3; wave++) results.push(...await Promise.all(Array.from({length: c}, one)));
+    const ms = results.map(r => r.ms);
+    const by = [...new Set(results.map(r => r.answeredBy || 'none'))].join('+');
+    const row = {concurrency: c, requests: results.length, errors: results.filter(r => !r.ok).length, answeredBy: by,
+      p50: pct(ms, 50), p95: pct(ms, 95), max: Math.round(Math.max(...ms)), seconds: Math.round((performance.now() - t0) / 100) / 10};
+    report.levels.push(row);
+    console.log(`LOAD ${probe} c=${c} n=${row.requests} errors=${row.errors} p50=${row.p50}ms p95=${row.p95}ms max=${row.max}ms total=${row.seconds}s answered-by=${by}`);
+  }
+} finally { await signOut(); }
 report.finishedAt = new Date().toISOString();
 fs.mkdirSync('test-results', {recursive: true});
-fs.writeFileSync(`test-results/p6vc-load-${id}.json`, JSON.stringify(report, null, 2) + '\n');
+fs.writeFileSync(`test-results/p6vc-load-${id}-${probe}.json`, JSON.stringify(report, null, 2) + '\n');
