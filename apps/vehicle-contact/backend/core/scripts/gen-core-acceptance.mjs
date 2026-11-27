@@ -24,9 +24,8 @@ export const FILES = [
   'admin-vehicle-list.test.mjs',
   'print-filters.test.mjs',
   'settings-registry.test.mjs',
-  'photo-policy.test.mjs'
-  // log-policy.test.mjs joins with system.config.* on the core: the core memoises the log policy for a minute, so a change
-  // saved through the legacy engine is not seen at once (LOG-02); the core's own config.update will refresh it
+  'photo-policy.test.mjs',
+  'log-policy.test.mjs'
 ];
 const HARNESS_METHODS = new Set(['call', 'as', 'stagePhotos', 'createCampaign', 'createOrganization']);
 const TEST_FUNCTIONS = new Set(['test', 'it', 'describe']);

@@ -79,3 +79,41 @@ test('N1A-06 the generated acceptance copies are current (node scripts/gen-core-
   const script = path.resolve(import.meta.dirname, '../scripts/gen-core-acceptance.mjs');
   assert.doesNotThrow(() => execFileSync(process.execPath, [script, '--check'], {stdio: 'pipe'}));
 });
+
+test('N1A-07 system.config.* on the core: one read round, one batch write, all or nothing, memo refreshed after the commit', async () => {
+  const {configGet, configUpdate} = await import('../src/use-cases/settings.mjs');
+  const {createLogManager} = await import('../../gas/src/application/logging/LogManager.js');
+  const {defaultLogPolicy} = await import('../../gas/src/domain/policies/LogPolicy.js');
+  const logs = createLogManager({policy: () => defaultLogPolicy(), now: () => '2026-11-27T00:00:00.000Z'});
+  const rows = [{key: 'idle_timeout_minutes', value: '30'}];
+  const log = [];
+  const store = {readMany: async reqs => (log.push(['readMany', reqs.length]), reqs.map(r => (r.kind === 'count' ? 3 : rows.map(x => ({...x}))))),
+    writeMany: async ops => (log.push(['writeMany', ops]), true)};
+  let refreshed = 0;
+  const ctx = {store, logs, now: () => '2026-11-27T00:00:00.000Z', id: () => 'f'.repeat(64), refreshLogPolicy: () => { refreshed++; }};
+  const got = await configGet({}, null, ctx);
+  assert.equal(got.idle_timeout_minutes, '30'); assert.ok(got.log_counts && typeof got.log_counts === 'object');
+  assert.deepEqual(log.map(x => x[0]), ['readMany'], 'get = one round');
+  log.length = 0;
+  await assert.rejects(configUpdate({values: {idle_timeout_minutes: 40, retention_days: 0}}, {userId: 'u'}, ctx), /INVALID_SETTING_VALUE/);
+  assert.equal(log.filter(x => x[0] === 'writeMany').length, 0, 'a bad key → nothing written'); assert.equal(refreshed, 0);
+  log.length = 0;
+  await configUpdate({values: {idle_timeout_minutes: 40, retention_days: 90}}, {userId: 'u'}, ctx);
+  const writes = log.filter(x => x[0] === 'writeMany');
+  assert.equal(writes.length, 1, 'one batch');
+  assert.deepEqual(writes[0][1].map(o => [o.op, o.table, o.key?.key || o.data?.key || o.data?.action]),
+    [['update', 'vc_settings', 'idle_timeout_minutes'], ['insert', 'vc_settings', 'retention_days'], ['insert', 'vc_change_audit', 'SETTINGS_UPDATED']]);
+  assert.equal(refreshed, 1, 'log-policy memo refreshed after the commit');
+  assert.deepEqual(log.map(x => x[0]), ['readMany', 'writeMany', 'readMany']);
+});
+
+test('N1A-08 system.config.* are answered by the core; a COUNT the store cannot answer → log_counts null, settings still shown', async () => {
+  const h = createAcceptanceHarness();
+  assert.equal(h.engineFor('system.config.get'), 'core'); assert.equal(h.engineFor('system.config.update'), 'core');
+  const {configGet} = await import('../src/use-cases/settings.mjs');
+  const {createLogManager} = await import('../../gas/src/application/logging/LogManager.js');
+  const {defaultLogPolicy} = await import('../../gas/src/domain/policies/LogPolicy.js');
+  const store = {readMany: async () => { throw new Error('COUNT_UNSUPPORTED'); }, list: async () => [{key: 'retention_days', value: '90'}]};
+  const got = await configGet({}, null, {store, logs: createLogManager({policy: () => defaultLogPolicy(), now: () => ''}), now: () => '', id: () => 'x'});
+  assert.equal(got.retention_days, '90'); assert.equal(got.log_counts, null);
+});

@@ -53,17 +53,21 @@ export function createLogManager({policy, now, kinds = null, sinks = null}) {
   }
 
   // Row counts per kind (COUNT aggregation: ~1 read per 1,000 rows, never the rows). null when the store cannot count.
+  // the COUNT reads and how their results become the per-kind counts (pure — the Node core runs the reads asynchronously)
+  const plan = () => registry.kinds.flatMap(c => registry.countSpecs(c.code).map(s => ({code: c.code, ...s})));
+  const countRequests = () => plan().map(s => ({kind: 'count', name: s.table, filter: s.filter}));
+  function countsFrom(all) {
+    const out = Object.fromEntries(registry.kinds.map(c => [c.code, 0]));
+    plan().forEach((s, i) => { out[s.code] += s.sign * Number(all[i]); });
+    return Object.fromEntries(Object.entries(out).map(([k, n]) => [k, Number.isFinite(n) ? Math.max(0, n) : null]));
+  }
   function counts(store) {
-    const plan = registry.kinds.flatMap(c => registry.countSpecs(c.code).map(s => ({code: c.code, ...s})));
     try {
-      const reqs = plan.map(s => ({kind: 'count', name: s.table, filter: s.filter}));
-      const all = typeof store.readMany === 'function' ? store.readMany(reqs)
-        : reqs.map(r => typeof store.count === 'function' ? store.count(r.name, r.filter) : store.list(r.name, r.filter).length);
-      const out = Object.fromEntries(registry.kinds.map(c => [c.code, 0]));
-      plan.forEach((s, i) => { out[s.code] += s.sign * Number(all[i]); });
-      return Object.fromEntries(Object.entries(out).map(([k, n]) => [k, Number.isFinite(n) ? Math.max(0, n) : null]));
+      const reqs = countRequests();
+      return countsFrom(typeof store.readMany === 'function' ? store.readMany(reqs)
+        : reqs.map(r => typeof store.count === 'function' ? store.count(r.name, r.filter) : store.list(r.name, r.filter).length));
     } catch { return null; }
   }
 
-  return Object.freeze({kinds: registry, route, wrapStore, counts});
+  return Object.freeze({kinds: registry, route, wrapStore, counts, countRequests, countsFrom});
 }

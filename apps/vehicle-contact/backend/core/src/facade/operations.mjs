@@ -21,6 +21,7 @@ import {createLogManager} from '../../../gas/src/application/logging/LogManager.
 import {LOG_SETTING_KEY, defaultLogPolicy, readLogPolicy} from '../../../gas/src/domain/policies/LogPolicy.js';
 import {withPrintState} from '../use-cases/print-state.mjs';
 import {vehiclesList, qrMarkPrinted} from '../use-cases/vehicle-list.mjs';
+import {configGet, configUpdate} from '../use-cases/settings.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -49,7 +50,10 @@ export const FLOWS = Object.freeze({
 export const USE_CASES = Object.freeze({
   // N1a: the admin vehicle list + QR print state (VC-ADR-042)
   'vehicles.list': vehiclesList,
-  'qr.markPrinted': qrMarkPrinted
+  'qr.markPrinted': qrMarkPrinted,
+  // N1a PR 2: the settings registry (numeric settings, person types, log policy, photo policy)
+  'system.config.get': configGet,
+  'system.config.update': configUpdate
 });
 const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)
@@ -69,7 +73,7 @@ const randomId = () => randomBytes(32).toString('hex'); // 64 hex, the format of
 export function createCoreFacade({store, media = null, passwords = null, google = null, memo = createMemo(), now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS, useCases = USE_CASES}) {
   const overlap = Object.keys(useCases).filter(op => Object.prototype.hasOwnProperty.call(flows, op));
   if (overlap.length) throw new Error('OPERATION_IN_FLOWS_AND_USE_CASES:' + overlap.join(','));
-  let raw = null, logged = null, mediaPort = null;
+  let raw = null, logged = null, logs = null, mediaPort = null;
   // the log policy (VC-ADR-040) for the core's store: loaded asynchronously, memoised, defaults when unreadable
   const policy = {value: defaultLogPolicy(), at: -Infinity};
   async function refreshPolicy(s) {
@@ -81,7 +85,7 @@ export function createCoreFacade({store, media = null, passwords = null, google 
   // the same Log Manager as the legacy engine decides every log row the core writes (switched off → not written; kept → expire_at);
   // and the QR print-state rule (VC-ADR-042) on every write path — the legacy controller's order (print state outside the logs)
   const storeOf = () => {
-    if (!logged) { raw = typeof store === 'function' ? store() : store; logged = withPrintState(createLogManager({policy: () => policy.value, now}).wrapStore(raw)); }
+    if (!logged) { raw = typeof store === 'function' ? store() : store; logs = createLogManager({policy: () => policy.value, now}); logged = withPrintState(logs.wrapStore(raw)); }
     return logged;
   };
   const mediaOf = () => (mediaPort ||= typeof media === 'function' ? media() : media);
@@ -102,7 +106,8 @@ export function createCoreFacade({store, media = null, passwords = null, google 
         const principal = PUBLIC_OPERATIONS.includes(op) ? null
           : await runFlowAsync(sessionAuthorizeFlow({token: request.sessionToken, permission: OPERATION_PERMISSIONS[op], ...authOptionsFor(op)}, {sha256, now}), {store: s});
         const media = MEDIA_OPERATIONS.has(op) ? mediaOf() : null;
-        const result = own(useCases) ? await useCases[op](payload, principal, {store: s, now, id, sha256, media})
+        const result = own(useCases) ? await useCases[op](payload, principal, {store: s, now, id, sha256, media, logs,
+            refreshLogPolicy: () => { policy.at = -Infinity; }})
           : await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, passwords, google, memo, media});
         return apiSuccess(result, requestId);
       } catch (e) {

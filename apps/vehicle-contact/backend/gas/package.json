@@ -1,7 +1,7 @@
 {
   "name": "@p6/vehicle-contact-gas",
   "private": true,
-  "version": "0.9.57",
+  "version": "0.9.58",
   "type": "module",
   "scripts": {
     "check:summary": "node ../../../../scripts/test-summary.mjs backend-check -- npm run check",
