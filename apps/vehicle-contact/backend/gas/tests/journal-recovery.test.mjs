@@ -215,9 +215,11 @@ test('G7-RACE-02 a same-key retry that sees the winner\'s pending request / CLAI
  const first=assertOk(assert,h.call('registrations.submit',ctx.payload),'winner commits');
  const realReadMany=h.store.readMany;
  let stale=true;
- // Stale view of BOTH the idempotency row and the orphan query, fresh view of everything else.
+ // Stale view of BOTH the idempotency row and the orphan query IN THE PARALLEL ROUND (read before the winner committed),
+ // fresh view of everything else — incl. the later single re-read of the idempotency row (the submit is a shared flow since
+ // wave 2b: that re-read also goes through readMany, where the legacy code used store.one).
  h.store.readMany=reqs=>reqs.map(r=>{
-  if(stale&&r.name==='vc_idempotency')return null;
+  if(stale&&reqs.length>1&&r.name==='vc_idempotency')return null;
   if(stale&&r.name==='vc_registration_requests'&&r.filter&&r.filter.idempotency_key)return [];
   return r.kind==='one'?h.store.one(r.name,r.filter):r.kind==='versioned'?{row:h.store.one(r.name,r.filter),version:null}:h.store.list(r.name,r.filter);
  });

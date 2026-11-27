@@ -91,6 +91,11 @@ try {
   await pair('campaigns.validate', {campaignToken: 'a'.repeat(64)}, null);
   await pair('references.registration', {}, token);
   await pair('photos.upload', {campaignToken: 'b'.repeat(64), slot: 'FRONT', base64Image: 'AAAA', mimeType: 'image/png'}, null);
+  // wave 2b: registrations.submit — only cases that write nothing (the full success path is DATA_PROOF in the live suite)
+  const form = {plate: 'ทด 9999', province: 'TH-10', plateType: 'PRIVATE', vehicleType: 'SEDAN', brand: 'X', model: 'Y', color: 'Z',
+    organizationId: 'no-such-org', relationship: 'OWNER', contactName: 'Synthetic', contactPhone: '+66810000001', photos: [], idempotencyKey: 'cmp-' + Date.now()};
+  await pair('registrations.submit', {...form, campaignToken: 'c'.repeat(64)}, null);
+  await pair('registrations.submit', {...form, campaignToken: 'c'.repeat(64), contactPhone: '0812345678'}, null);
 } finally {
   if (createdCampaign) await call(LEGACY, 'campaigns', 'revoke', {campaignId: createdCampaign}, token);
   await call(LEGACY, 'auth', 'logout', {}, token);
