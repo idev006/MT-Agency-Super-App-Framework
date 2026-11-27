@@ -32,11 +32,12 @@ async function pair() {
 test('CORE-01 every operation is forwarded unchanged; health too; responses carry x-p6vc-engine: core', async () => {
   const p = await pair();
   try {
-    const env = {apiVersion: 'v1', group: 'vehicles', action: 'lookup', payload: {plate: 'กข 1234', province: 'TH-10'}, sessionToken: 'a'.repeat(64), requestId: 'req_12345678'};
+    // an operation the core has NOT ported (vehicles.lookup is answered by the core since phase 2b)
+    const env = {apiVersion: 'v1', group: 'vehicles', action: 'list', payload: {page: 1, pageSize: 10}, sessionToken: 'a'.repeat(64), requestId: 'req_12345678'};
     const r = await fetch(base(p.core) + '/', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify(env)});
     assert.equal(r.headers.get('x-p6vc-engine'), 'core');
     const body = await r.json();
-    assert.deepEqual(body, {ok: true, data: {echo: 'vehicles.lookup', payload: env.payload}, error: null, requestId: 'req_12345678'});
+    assert.deepEqual(body, {ok: true, data: {echo: 'vehicles.list', payload: env.payload}, error: null, requestId: 'req_12345678'});
     assert.deepEqual(p.seen.at(-1), {method: 'POST', req: env}, 'legacy received the exact envelope');
     const h = await (await fetch(base(p.core) + '/')).json();
     assert.equal(h.data.backendVersion, '9.9.9', 'health comes from the legacy engine (deploy smoke checks the version end to end)');
@@ -94,7 +95,7 @@ test('CORE-05 x-p6vc-answered-by tells which engine answered (core for a ported 
     const post = op => fetch(base(core) + '/', {method: 'POST', headers: {'content-type': 'application/json'},
       body: JSON.stringify({apiVersion: 'v1', group: op.split('.')[0], action: op.split('.')[1], payload: {}, requestId: 'req_12345678'})});
     assert.equal((await post('vehicles.history')).headers.get('x-p6vc-answered-by'), 'core');
-    assert.equal((await post('vehicles.lookup')).headers.get('x-p6vc-answered-by'), 'legacy');
+    assert.equal((await post('vehicles.list')).headers.get('x-p6vc-answered-by'), 'legacy');
     assert.equal((await fetch(base(core) + '/')).headers.get('x-p6vc-answered-by'), 'legacy', 'health = legacy');
   } finally { core.close(); p.close(); }
 });

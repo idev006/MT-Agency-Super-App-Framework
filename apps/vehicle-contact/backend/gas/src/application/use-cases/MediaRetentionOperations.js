@@ -1,4 +1,6 @@
 import {paginate,pageWindow,pageOf} from '../pagination/Pagination.js';
+import {runFlowSync} from '../flows/FlowRunner.js';
+import {vehiclePhotoFlow} from '../flows/VehicleReadFlows.js';
 export function createMediaRetentionOperations({store,security,drivePhotos,campaigns,allowDestructiveRetention=false}) {
  const need=(v,name)=>{if(typeof v!=='string'||!v.trim()||v.length>256)throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -75,19 +77,8 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
  // R7 (owner: "ทำไมไม่มีภาพรถ"): approved-vehicle evidence photo bytes for roles holding
  // vehicle.photos.read (the permission that already lists them). Only an ACTIVE photo of an ACTIVE
  // vehicle; every view is logged in vc_lookup_audit (source PHOTO), not in the change history.
- function vehiclePhoto(p,actor){
-  const vehicleId=need(p.vehicleId,'VEHICLE_ID'),photoId=need(p.photoId,'PHOTO_ID');
-  // Speed: vehicle + photo rows in one parallel round (were two sequential reads).
-  const [vehicle,photo]=typeof store.readMany==='function'
-   ?store.readMany([{kind:'one',name:'vc_vehicles',filter:{vehicle_id:vehicleId}},{kind:'one',name:'vc_vehicle_photos',filter:{photo_id:photoId}}])
-   :[store.one('vc_vehicles',{vehicle_id:vehicleId}),store.one('vc_vehicle_photos',{photo_id:photoId})];
-  if(!vehicle||vehicle.status!=='ACTIVE')throw new Error('VEHICLE_NOT_ACTIVE');
-  if(!photo||photo.vehicle_id!==vehicleId||photo.status!=='ACTIVE')throw new Error('PHOTO_NOT_FOUND');
-  const media=drivePhotos.read(photo.storage_ref);
-  store.insert('vc_lookup_audit',{audit_id:id(),actor_id:actor.userId,vehicle_id:vehicleId,lookup_source:'PHOTO',result:'FOUND',
-   correlation_id:id().slice(0,16),created_at:now()});
-  return {photoId,slot:photo.slot,mimeType:media.mime_type,base64Image:media.base64Image};
- }
+ // vehicles.photo: the shared flow (VC-ADR-046 phase 2b), the photo read through the media port
+ function vehiclePhoto(p,actor){return runFlowSync(vehiclePhotoFlow(p,actor,{now,id,sha256:x=>security.sha256(x)}),{store,media:drivePhotos});}
  function dueJobs(p){
   const cutoff=Date.parse(now()),items=store.list('vc_retention_jobs',{status:'WAITING_RETENTION'}).filter(j=>
    j.status==='WAITING_RETENTION'&&Date.parse(j.due_at)<=cutoff&&j.legal_hold!==true&&String(j.legal_hold)!=='true')

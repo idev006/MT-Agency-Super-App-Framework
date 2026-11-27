@@ -28,15 +28,29 @@ if (!login.body.ok) { console.error('LOGIN_FAILED ' + login.body.error?.code); p
 const token = login.body.data.sessionToken;
 try {
   const list = await call(LEGACY, 'vehicles', 'list', {page: 1, pageSize: 5}, token);
-  const ids = (list.body.data?.items || []).map(v => v.vehicleId).slice(0, 3);
-  const cases = [...ids.map(id => ['vehicles.history', {vehicleId: id}, token]), ['vehicles.history', {vehicleId: 'no-such-vehicle'}, token],
-    ['vehicles.history', {vehicleId: ids[0] || 'x'}, null], ['vehicles.history', {}, token]];
+  const items = (list.body.data?.items || []).slice(0, 3);
+  const detail0 = items[0] ? await call(LEGACY, 'vehicles', 'detail', {vehicleId: items[0].vehicleId}, token) : null;
+  const photoId = detail0?.body.data?.photos?.[0]?.photoId;
+  // a sticker token for qr.resolve (qr.export is an audited admin read of the stored token — synthetic DEV only)
+  const exported = items[0] ? await call(LEGACY, 'qr', 'export', {vehicleIds: [items[0].vehicleId]}, token) : null;
+  const qrToken = exported?.body.data?.items?.[0]?.token; // export row field `token` (READY rows only)
+  const cases = [];
+  for (const v of items) cases.push(['vehicles.lookup', {plate: v.plate, province: v.province}, token], ['vehicles.detail', {vehicleId: v.vehicleId}, token],
+    ['vehicles.history', {vehicleId: v.vehicleId}, token], ['contacts.read', {vehicleId: v.vehicleId}, token]);
+  if (qrToken) cases.push(['qr.resolve', {token: qrToken}, token]);
+  if (photoId) cases.push(['vehicles.photo', {vehicleId: items[0].vehicleId, photoId}, token]);
+  cases.push(['vehicles.lookup', {plate: 'ZZ 9999', province: items[0]?.province || 'TH-10'}, token], ['qr.resolve', {token: 'f'.repeat(64)}, token],
+    ['vehicles.detail', {vehicleId: 'no-such-vehicle'}, token], ['vehicles.history', {vehicleId: 'x'}, null], ['contacts.read', {}, token]);
+  // the admin detail shows the newest access-log rows, which include the row the PREVIOUS call just wrote: compared apart
+  const strip = (op, b) => (op === 'vehicles.detail' && b.ok && b.data ? (({accessLog, ...rest}) => ({body: {...b, data: rest}, accessLog}))(b.data) : {body: b});
   for (const [op, payload, t] of cases) {
     if (!FLOWS[op]) continue;
     const [g, a] = op.split('.');
     const legacy = await call(LEGACY, g, a, payload, t), core = await call(CORE, g, a, payload, t);
-    const equal = JSON.stringify(legacy.body) === JSON.stringify(core.body);
-    const size = b => (b.ok ? (Array.isArray(b.data) ? b.data.length : 1) : 'error ' + b.error?.code);
+    const L = strip(op, legacy.body), C = strip(op, core.body);
+    const equal = JSON.stringify(L.body) === JSON.stringify(C.body)
+      && (!L.accessLog || (C.accessLog.length >= L.accessLog.length && C.accessLog.length <= L.accessLog.length + 1));
+    const size = b => (b.ok ? (b.data === null ? 'null' : Array.isArray(b.data) ? b.data.length : Object.keys(b.data).length + ' fields') : 'error ' + b.error?.code);
     rows.push({op, equal, answeredBy: core.answeredBy, legacy: size(legacy.body), core: size(core.body)});
   }
 } finally {

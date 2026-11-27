@@ -6,7 +6,7 @@
 //   approve     registrations.detail      — the reviewer sees the declared type + the list
 //               registrations.review      — APPROVE needs a type (the reviewer's choice, else the declared one)
 //   maintain    vehicles.update           — change it later (ACTIVE types only)
-//   show/print  vehicles.list/listMine/detail, qr.export — each vehicle carries its resolved sticker (label, colour, size)
+//   show/print  vehicles.list/listMine, qr.export — each vehicle carries its resolved sticker (detail: in its shared flow)
 // Codes are never deleted (a vehicle may use one): an admin sets a type inactive instead.
 import {STICKER_SETTING_KEY, loadStickerCategories, parseStickerCategories, resolveSticker, stickerCategory, stickerInk}
   from '../../domain/policies/StickerCategoryPolicy.js';
@@ -50,10 +50,7 @@ export function withStickerCategories(handlers, {store, security}) {
       return Array.isArray(out) ? out.map(x => withSticker(l, x)) : {...out, items: (out.items || []).map(x => withSticker(l, x))};
     });
   }
-  wrap('vehicles.detail', (inner, p, a) => {
-    const out = inner(p, a), l = list();
-    return out ? {...withSticker(l, out), stickerCategories: choices(l)} : out;
-  });
+  // vehicles.detail: decorated inside the shared detail flow (application/flows/VehicleReadFlows.js) — one source
   wrap('qr.export', (inner, p, a) => { const out = inner(p, a), l = list(); return {...out, items: out.items.map(x => withSticker(l, x))}; });
   return h;
 }

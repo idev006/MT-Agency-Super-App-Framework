@@ -6,13 +6,12 @@ const activeByPlate=(store,plate,province)=>store.list('vc_vehicles',{plate_norm
 import {createChangeReview} from './ChangeReviewOperation.js';
 import {createQrHistory} from './QrHistoryOperation.js';
 import {createQrExport} from './QrExportOperation.js';
-import {createVehicle360} from './Vehicle360.js';
-import {createVehicleView} from './VehicleView.js';
 import {runFlowSync} from '../flows/FlowRunner.js';
-import {vehicleHistoryFlow} from '../flows/VehicleReadFlows.js';
+import {vehicleHistoryFlow,vehicleLookupFlow,vehicleDetailFlow,contactReadFlow,qrResolveFlow} from '../flows/VehicleReadFlows.js';
 export function createVehicleOperations({store,security,campaigns,references}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
+ const deps={now,id,sha256:x=>security.sha256(x)}; // what the shared flows need
  const phone=v=>{if(typeof v!=='string'||!/^\+[1-9][0-9]{6,14}$/.test(v))throw new Error('INVALID_PHONE_E164');return v;};
  const audit=(actor,kind,entity,action,identity={})=>store.insert('vc_change_audit',{
   audit_id:identity.auditId||id(),actor_id:actor&&actor.userId||'PUBLIC_CAMPAIGN',entity_type:kind,entity_id:entity,
@@ -92,12 +91,6 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    throw error;
   }
  }
- function lookupAudit(actor,vehicleId,source,result){
-  // Append-only log: insert is already an atomic transaction that maintains _seq ordering,
-  // so an outer sequence() wrapper was a redundant second transaction (2 extra round-trips).
-  store.insert('vc_lookup_audit',{audit_id:id(),actor_id:actor.userId,vehicle_id:vehicleId,
-   lookup_source:source,result,correlation_id:id().slice(0,16),created_at:now()});
- }
  function activeVehicle(vehicleId){
   const row=store.one('vc_vehicles',{vehicle_id:need(vehicleId,'VEHICLE_ID')});
   if(!row||row.status!=='ACTIVE')throw new Error('VEHICLE_NOT_ACTIVE');
@@ -152,7 +145,6 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   return true;
  };
  const changeReview=createChangeReview({store,need,now,id,readAll,writeAll});
- const vehicleView=createVehicleView({store,now,id});
  function registrationSubmit(p){
   const payload=body(p),key=payload.plate_normalized+'|'+payload.province_code;
   const idem=need(p.idempotencyKey,'IDEMPOTENCY_KEY',100);
@@ -350,17 +342,10 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   if(approve){result.qrToken=token;result.qrId=detail.qrId;}
   return result;
  }
- function vehicleLookup(p,a){
-  const [plate,province]=vehicleBusinessKey(p.plate,p.province).split('|');
-  // TUNEUP R1: equality query on the business key (was a full read of vc_vehicles per lookup).
-  // Firestore holds every plate/province as a string (checked 2026-11-25: 66/66).
-  const list=activeByPlate(store,plate,province);
-  if(list.length>1)throw new Error('DUPLICATE_ACTIVE_VEHICLE');
-  if(!list.length){lookupAudit(a,'NO_MATCH','PLATE','NOT_FOUND');return null;}
-  return vehicleView(list[0],a,'PLATE');
- }
- // VC-ADR-036 S2: detail = the view + permission-gated Vehicle 360 dimensions (admins / auditors only).
- function vehicleDetail(p,a){const v=activeVehicle(p.vehicleId),view=vehicleView(v,a,'DETAIL');return view?Object.assign(view,vehicle360(v,a)):view;}
+ // officer-path reads: the shared flows (VC-ADR-046 phase 2b) — the Node core runs the same ones
+ function vehicleLookup(p,a){return runFlowSync(vehicleLookupFlow(p,a,deps),{store});}
+ // detail = view + Vehicle 360 + sticker (VC-ADR-036 S2, VC-ADR-038)
+ function vehicleDetail(p,a){return runFlowSync(vehicleDetailFlow(p,a,deps),{store});}
  // vehicles.history: the shared flow (VC-ADR-046 phase 2b) — the Node core runs the same one
  function vehicleHistory(p){return runFlowSync(vehicleHistoryFlow(p),{store});}
  function vehicleUpdate(p,a){
@@ -410,10 +395,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
    return {vehicleId,status:'INACTIVE'};
   });
  }
- function contactRead(p,a){
-  const v=activeVehicle(p.vehicleId),list=store.list('vc_vehicle_contacts',{vehicle_id:v.vehicle_id}).filter(x=>x.status==='ACTIVE');
-  lookupAudit(a,v.vehicle_id,'CONTACT','FOUND');return list.map(x=>({name:x.display_name,phone:x.phone_e164,relationship:x.relationship}));
- }
+ function contactRead(p,a){return runFlowSync(contactReadFlow(p,a,deps),{store});}
  function contactUpdate(p,a){
   const v=activeVehicle(p.vehicleId);
   return store.withLock(()=>{
@@ -460,18 +442,7 @@ export function createVehicleOperations({store,security,campaigns,references}) {
     reviewedAt:r.reviewed_at,proposedDelta:JSON.parse(r.proposed_delta)}));
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
- function resolveQr(p,a){
-  const token=need(p.token,'TOKEN');
-  if(!/^[a-f0-9]{64}$/i.test(token))throw new Error('INVALID_QR');
-  const qr=store.one('vc_qr_tokens',{token_digest:security.sha256(token.toLowerCase())});
-  if(!qr){lookupAudit(a,'NO_MATCH','QR','NOT_FOUND');return null;}
-  // Owner 2026-11-26: tell a signed-in officer WHY (revoked / vehicle inactive), never a vehicle field; the public
-  // sticker page makes no API call, so this is no oracle for the public.
-  if(qr.status!=='ACTIVE'){lookupAudit(a,qr.vehicle_id||'NO_MATCH','QR','QR_REVOKED');throw new Error('QR_REVOKED');}
-  const v=store.one('vc_vehicles',{vehicle_id:qr.vehicle_id});
-  if(!v||v.status!=='ACTIVE'){lookupAudit(a,qr.vehicle_id||'NO_MATCH','QR','VEHICLE_NOT_ACTIVE');throw new Error('VEHICLE_NOT_ACTIVE');}
-  return vehicleView(v,a,'QR');
- }
+ function resolveQr(p,a){return runFlowSync(qrResolveFlow(p,a,deps),{store});}
  function manageQr(p,a,mode){
   const vehicleId=need(p.vehicleId,'VEHICLE_ID');
   const why=qrReason(mode,p.reason,p.note); // VC-ADR-036: every QR change carries a reason
@@ -494,7 +465,6 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  }
  const qrHistory=createQrHistory({store,need});
  const qrExport=createQrExport({store,need,id,now});
- const vehicle360=createVehicle360({store});
  return Object.freeze({
   'registrations.submit':registrationSubmit,'registrations.listPending':registrationPending,
   'registrations.detail':registrationDetail,'registrations.review':registrationReview,
