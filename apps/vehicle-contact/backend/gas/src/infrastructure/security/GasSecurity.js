@@ -1,4 +1,5 @@
 import {pbkdf2Sha256} from './Pbkdf2.js';
+import {createPasswordHasher,fixedEqual} from '../../application/security/PasswordHash.js';
 // GAS cryptography adapter; secrets are Script Properties, never browser-supplied.
 export function createGasSecurity({utilities,urlFetchApp,propertiesService,clock}) {
  const props=propertiesService.getScriptProperties();
@@ -13,29 +14,16 @@ export function createGasSecurity({utilities,urlFetchApp,propertiesService,clock
   if(typeof purpose!=='string'||!purpose||purpose.length>500)throw new Error('INVALID_SECRET_PURPOSE');
   return hex(mac('derived:'+purpose,pepper));
  }
- function fixedEqual(a,b) {
-  if(typeof a!=='string'||typeof b!=='string'||a.length!==b.length)return false;
-  let difference=0;for(let i=0;i<a.length;i++)difference|=a.charCodeAt(i)^b.charCodeAt(i);
-  return difference===0;
- }
  // PBKDF2-HMAC-SHA256 with pure JS inner rounds to avoid slow GAS service calls.
  function pbkdf2(password,saltHex,iterations){
   const key=utilities.newBlob(password).getBytes();
   return hex(pbkdf2Sha256(key,bytes(saltHex),iterations));
  }
- function hashPassword(password){
-  if(typeof password!=='string'||password.length<12||password.length>128)throw new Error('INVALID_PASSWORD');
-  const salt=secretToken().slice(0,32),iterations=150000;
-  return 'pbkdf2-sha256$'+iterations+'$'+salt+'$'+pbkdf2(password,salt,iterations);
- }
- function verifyPassword(password,stored) {
-  if(typeof password!=='string'||typeof stored!=='string')return false;
-  const parts=stored.split('$');
-  if(parts.length!==4||parts[0]!=='pbkdf2-sha256'||!/^[a-f0-9]{32}$/.test(parts[2])||!/^[a-f0-9]{64}$/.test(parts[3]))return false;
-  const rounds=Number(parts[1]);
-  if(!Number.isSafeInteger(rounds)||rounds<100000||rounds>900000)return false;
-  return fixedEqual(pbkdf2(password,parts[2],rounds),parts[3]);
- }
+ // the hash rule lives in application/security/PasswordHash.js (one source with the Node core); here only the GAS-safe
+ // pure-JS PBKDF2 and the salt source
+ const passwords=createPasswordHasher({derive:pbkdf2,randomSaltHex:()=>secretToken().slice(0,32)});
+ const hashPassword=password=>passwords.hash(password);
+ const verifyPassword=(password,stored)=>passwords.verify(password,stored);
  function verifyGoogle(idToken) {
   const audience=props.getProperty('VEHICLE_GOOGLE_CLIENT_ID');
   if(!audience)throw new Error('GOOGLE_OIDC_NOT_CONFIGURED');

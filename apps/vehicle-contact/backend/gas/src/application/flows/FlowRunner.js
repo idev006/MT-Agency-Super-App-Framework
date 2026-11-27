@@ -10,6 +10,11 @@
 //   {mediaRead: {ref}}                   → {base64Image, mime_type, ...} (photo file through the media port)
 //   {mediaList: {pageToken}}             → {files: [{id, createdMs, trashed}], nextPageToken} (one page of the photo folder)
 //   {mediaTrash: {ref}}                  → true (photo file to the Drive trash)
+//   {transaction: () => subFlow}         → the sub-flow's result, its effects performed on ONE read-write transaction
+//        (store.sequence). A FACTORY, not a generator: Firestore re-runs a contended transaction, so each run needs a fresh
+//        sub-flow. A sub-flow must keep its effects to the store (no media / cache) — only the store is rolled back.
+//   {hashPassword: password}             → 'pbkdf2-sha256$…' (the password port; one hash rule, engine-specific PBKDF2)
+//   {verifyPassword: {password, stored}} → boolean
 //   {cacheGet: key}                      → string | null   (no cache → null; cache errors are ignored)
 //   {cachePut: {key, value, seconds}}    → null
 function readsFallback(store, reads) {
@@ -22,8 +27,13 @@ function readsFallback(store, reads) {
 }
 
 // Returns the effect's result, or a promise of it when the store is asynchronous.
-function perform(effect, {store, cache, media}) {
+function perform(effect, {store, cache, media, passwords, run}) {
   if (!effect || typeof effect !== 'object') throw new Error('INVALID_EFFECT');
+  if (typeof effect.transaction === 'function') return store.sequence(s => run(effect.transaction(), {store: s, passwords}));
+  if (effect.hashPassword !== undefined || effect.verifyPassword) {
+    if (!passwords) throw new Error('PASSWORDS_NOT_CONFIGURED');
+    return effect.verifyPassword ? passwords.verify(effect.verifyPassword.password, effect.verifyPassword.stored) : passwords.hash(effect.hashPassword);
+  }
   if (Array.isArray(effect.reads)) {
     const inserts = Array.isArray(effect.inserts) ? effect.inserts : [];
     if (typeof store.readMany === 'function') return store.readMany(effect.reads, inserts.length ? {inserts} : {});
@@ -53,23 +63,23 @@ function perform(effect, {store, cache, media}) {
   throw new Error('INVALID_EFFECT');
 }
 
-export function runFlowSync(flow, {store, cache = null, media = null}) {
+export function runFlowSync(flow, {store, cache = null, media = null, passwords = null}) {
   let step = flow.next();
   while (!step.done) {
     let result;
-    try { result = perform(step.value, {store, cache, media}); }
+    try { result = perform(step.value, {store, cache, media, passwords, run: runFlowSync}); }
     catch (e) { step = flow.throw(e); continue; } // same as runFlowAsync: the flow sees store errors
     step = flow.next(result);
   }
   return step.value;
 }
 
-export async function runFlowAsync(flow, {store, cache = null, media = null}) {
+export async function runFlowAsync(flow, {store, cache = null, media = null, passwords = null}) {
   if (typeof store.readMany !== 'function') throw new Error('ASYNC_STORE_NEEDS_READMANY');
   let step = flow.next();
   while (!step.done) {
     let result;
-    try { result = await perform(step.value, {store, cache, media}); }
+    try { result = await perform(step.value, {store, cache, media, passwords, run: runFlowAsync}); }
     catch (e) { step = flow.throw(e); continue; } // the flow sees the store error exactly as the sync engine does
     step = flow.next(result);
   }
