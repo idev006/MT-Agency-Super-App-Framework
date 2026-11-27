@@ -91,6 +91,7 @@ jobs:
             --concurrency 80 --min-instances 0 --max-instances 5 \
             --cpu 1 --memory 256Mi --timeout 60 \
             --allow-unauthenticated \
+            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default)" \
             --labels "app=p6vc,component=core,commit=${GITHUB_SHA::12}" \
             $NO_TRAFFIC --quiet
 

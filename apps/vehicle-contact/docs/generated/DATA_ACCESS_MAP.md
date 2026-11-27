@@ -16,7 +16,7 @@
 | Table | Written by | Read by |
 |---|---|---|
 | `vc_campaigns` | `application/use-cases/AdministrationOperations.js` `application/use-cases/VehicleOperations.js` | `application/use-cases/AdministrationOperations.js` `application/use-cases/Vehicle360.js` `application/use-cases/VehicleOperations.js` |
-| `vc_change_audit` | `application/settings/SettingsRegistry.js` `application/use-cases/AdministrationOperations.js` `application/use-cases/ChangeReviewOperation.js` `application/use-cases/IdentityOperations.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/QrExportOperation.js` `application/use-cases/SystemResetOperations.js` `application/use-cases/VehicleListOperations.js` `application/use-cases/VehicleOperations.js` `infrastructure/security/AdminPasswordReset.js` | `application/use-cases/IdentityOperations.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` `application/use-cases/VehicleView.js` |
+| `vc_change_audit` | `application/settings/SettingsRegistry.js` `application/use-cases/AdministrationOperations.js` `application/use-cases/ChangeReviewOperation.js` `application/use-cases/IdentityOperations.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/QrExportOperation.js` `application/use-cases/SystemResetOperations.js` `application/use-cases/VehicleListOperations.js` `application/use-cases/VehicleOperations.js` `infrastructure/security/AdminPasswordReset.js` | `application/flows/VehicleReadFlows.js` `application/use-cases/IdentityOperations.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` `application/use-cases/VehicleView.js` |
 | `vc_change_requests` | `application/use-cases/ChangeReviewOperation.js` `application/use-cases/VehicleOperations.js` | `application/use-cases/ChangeReviewOperation.js` `application/use-cases/Vehicle360.js` `application/use-cases/VehicleOperations.js` |
 | `vc_idempotency` | `application/use-cases/VehicleOperations.js` | `application/use-cases/VehicleOperations.js` |
 | `vc_lookup_audit` | `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` `application/use-cases/VehicleView.js` | `application/use-cases/MediaRetentionOperations.js` `application/use-cases/Vehicle360.js` |
@@ -46,6 +46,7 @@
 | Module | Operations | Writes | Reads |
 |---|---|---|---|
 | `application/flows/SessionAuthorizeFlow.js` | — | `vc_sessions` | `vc_sessions` `vc_user_permissions` `vc_user_roles` `vc_users` |
+| `application/flows/VehicleReadFlows.js` | — | — | `vc_change_audit` |
 | `application/security/SessionService.js` | — | `vc_sessions` | `vc_sessions` `vc_settings` `vc_user_permissions` `vc_user_roles` |
 | `application/settings/SettingsRegistry.js` | `system.config.get` `system.config.update` | `vc_change_audit` `vc_settings` | `vc_settings` |
 | `application/use-cases/AdministrationOperations.js` | `campaigns.create` `campaigns.list` `campaigns.revoke` `campaigns.validate` `organizations.create` `organizations.disable` `organizations.enable` `organizations.list` `organizations.update` | `vc_campaigns` `vc_change_audit` `vc_organizations` | `vc_campaigns` `vc_organizations` |

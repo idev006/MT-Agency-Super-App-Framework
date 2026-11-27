@@ -77,11 +77,24 @@ test('CORE-03 legacy unreachable → clean envelope with the requestId; only loc
 test('CORE-04 routing: a ported operation is answered by the core, everything else by the legacy', async () => {
   const calls = [];
   const router = createRouter({legacy: {dispatch: async e => (calls.push('legacy:' + e.group + '.' + e.action), {ok: true})},
-    handlers: {'qr.resolve': async () => (calls.push('core:qr.resolve'), {ok: true, data: 'core'})}});
+    core: {operations: ['qr.resolve'], dispatch: async () => (calls.push('core:qr.resolve'), {ok: true, data: 'core'})}});
   assert.equal(router.engineFor('qr.resolve'), 'core');
   assert.equal(router.engineFor('vehicles.lookup'), 'legacy');
   await router.dispatch({group: 'qr', action: 'resolve'});
   await router.dispatch({group: 'vehicles', action: 'lookup'});
   await router.dispatch({group: 'qr', action: 'resolve'}, 'GET'); // GET is health only → legacy
   assert.deepEqual(calls, ['core:qr.resolve', 'legacy:vehicles.lookup', 'legacy:qr.resolve']);
+});
+
+test('CORE-05 x-p6vc-answered-by tells which engine answered (core for a ported operation, legacy otherwise)', async () => {
+  const p = await pair();
+  const core = await listen(createCoreHandler({legacy: legacyAt(base(p.legacy)),
+    core: {operations: ['vehicles.history'], dispatch: async () => ({ok: true, data: [], error: null, requestId: null})}}));
+  try {
+    const post = op => fetch(base(core) + '/', {method: 'POST', headers: {'content-type': 'application/json'},
+      body: JSON.stringify({apiVersion: 'v1', group: op.split('.')[0], action: op.split('.')[1], payload: {}, requestId: 'req_12345678'})});
+    assert.equal((await post('vehicles.history')).headers.get('x-p6vc-answered-by'), 'core');
+    assert.equal((await post('vehicles.lookup')).headers.get('x-p6vc-answered-by'), 'legacy');
+    assert.equal((await fetch(base(core) + '/')).headers.get('x-p6vc-answered-by'), 'legacy', 'health = legacy');
+  } finally { core.close(); p.close(); }
 });

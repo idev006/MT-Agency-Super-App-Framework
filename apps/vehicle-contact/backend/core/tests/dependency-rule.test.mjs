@@ -24,7 +24,7 @@ const ALLOWED = {
   domain: ['domain'],
   ports: [],
   application: ['domain', 'ports', 'application'],
-  facade: ['application', 'domain', 'ports', 'facade', 'node'],
+  facade: ['application', 'domain', 'ports', 'facade', 'node', 'outside-core'], // outside-core: legacy api rules + shared flows until phase 9
   http: ['http', 'ports', 'application', 'facade', 'domain', 'outside-core'], // outside-core: the shared cloudrun handler
   adapters: ['adapters', 'ports', 'domain', 'node', 'outside-core', 'package:@google-cloud/firestore']
 };

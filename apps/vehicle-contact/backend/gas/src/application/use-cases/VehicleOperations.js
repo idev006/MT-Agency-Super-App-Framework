@@ -8,6 +8,8 @@ import {createQrHistory} from './QrHistoryOperation.js';
 import {createQrExport} from './QrExportOperation.js';
 import {createVehicle360} from './Vehicle360.js';
 import {createVehicleView} from './VehicleView.js';
+import {runFlowSync} from '../flows/FlowRunner.js';
+import {vehicleHistoryFlow} from '../flows/VehicleReadFlows.js';
 export function createVehicleOperations({store,security,campaigns,references}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -359,7 +361,8 @@ export function createVehicleOperations({store,security,campaigns,references}) {
  }
  // VC-ADR-036 S2: detail = the view + permission-gated Vehicle 360 dimensions (admins / auditors only).
  function vehicleDetail(p,a){const v=activeVehicle(p.vehicleId),view=vehicleView(v,a,'DETAIL');return view?Object.assign(view,vehicle360(v,a)):view;}
- function vehicleHistory(p){const idValue=need(p.vehicleId,'VEHICLE_ID');return store.list('vc_change_audit',{entity_id:idValue}).slice(-100);}
+ // vehicles.history: the shared flow (VC-ADR-046 phase 2b) — the Node core runs the same one
+ function vehicleHistory(p){return runFlowSync(vehicleHistoryFlow(p),{store});}
  function vehicleUpdate(p,a){
   const idValue=need(p.vehicleId,'VEHICLE_ID');
   return store.withLock(()=>{
