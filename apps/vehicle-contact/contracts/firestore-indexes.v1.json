@@ -133,6 +133,24 @@
       "purpose": "existing (live READY 2026-11-25)"
     },
     {
+      "collection": "vc_security_events",
+      "fields": [
+        {
+          "fieldPath": "username_digest",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "_seq",
+          "order": "DESCENDING"
+        }
+      ],
+      "purpose": "login rate limit: newest 6 FAILED of a username (VC-ADR-048 tune-up, 2026-11-27)"
+    },
+    {
       "collection": "vc_sessions",
       "fields": [
         {
