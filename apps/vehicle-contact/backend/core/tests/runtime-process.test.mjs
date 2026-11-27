@@ -43,7 +43,11 @@ test('RT-02 SIGTERM: stop accepting, let the in-flight request finish, then exit
 test('RT-03 a server that never drains is forced to exit within the timeout', async () => {
   const proc = new EventEmitter();
   const stuck = {close: () => {}, closeIdleConnections: () => {}}; // close() never calls back
+  // the force timer is unref'd (it must never keep a process alive by itself); in production the open connections keep
+  // the event loop running — here a plain timer stands in for them
+  const keepAlive = setTimeout(() => {}, 3000);
   const t = performance.now();
   const code = await new Promise(resolve => installGracefulShutdown(stuck, {proc, log: () => {}, timeoutMs: 100, exit: resolve}) && proc.emit('SIGTERM'));
+  clearTimeout(keepAlive);
   assert.equal(code, 0); assert.ok(performance.now() - t < 2000);
 });
