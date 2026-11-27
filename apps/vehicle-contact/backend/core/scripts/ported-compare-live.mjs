@@ -24,6 +24,7 @@ async function call(base, group, action, payload, token) {
 }
 
 const rows = [];
+let createdCampaign = null;
 const login = await call(LEGACY, 'auth', 'login', {username: user, password}, null);
 if (!login.body.ok) { console.error('LOGIN_FAILED ' + login.body.error?.code); process.exit(1); }
 const token = login.body.data.sessionToken;
@@ -69,8 +70,15 @@ try {
   authRow('auth.session', await call(LEGACY, 'auth', 'session', {}, tL), await call(CORE, 'auth', 'session', {}, tC));
   // phase 3 wave 2a: the public registration path. A tiny synthetic PNG is uploaded once per engine (2 staged files per run;
   // the daily housekeeping trashes unclaimed uploads after 7 days); photoId is random per call → masked.
-  const campaigns = (await call(LEGACY, 'campaigns', 'list', {page: 1, pageSize: 50}, token)).body.data?.items || [];
-  const open = campaigns.find(c => c.state === 'OPEN' && c.campaignToken);
+  // no OPEN campaign on DEV → a synthetic one for this run (1 h, 10 submissions), revoked in the finally below
+  let open = ((await call(LEGACY, 'campaigns', 'list', {page: 1, pageSize: 50}, token)).body.data?.items || []).find(c => c.state === 'OPEN' && c.campaignToken);
+  if (!open) {
+    const now = Date.now();
+    const made = await call(LEGACY, 'campaigns', 'create', {name: 'synthetic-compare-live', startsAt: new Date(now - 60000).toISOString(),
+      endsAt: new Date(now + 3600000).toISOString(), maxSubmissions: 10}, token);
+    if (made.body.ok) { createdCampaign = made.body.data.campaignId; open = made.body.data; }
+    else console.log('CAMPAIGN_CREATE ' + made.body.error?.code);
+  }
   const maskId = b => JSON.parse(JSON.stringify(b, (k, v) => (k === 'photoId' && typeof v === 'string' ? '<id>' : v)));
   const pair = async (op, payload, t, mask = x => x) => { const [g, a] = op.split('.');
     const l = await call(LEGACY, g, a, payload, t), c = await call(CORE, g, a, payload, t); const L = mask(l.body), C = mask(c.body);
@@ -84,6 +92,7 @@ try {
   await pair('references.registration', {}, token);
   await pair('photos.upload', {campaignToken: 'b'.repeat(64), slot: 'FRONT', base64Image: 'AAAA', mimeType: 'image/png'}, null);
 } finally {
+  if (createdCampaign) await call(LEGACY, 'campaigns', 'revoke', {campaignId: createdCampaign}, token);
   await call(LEGACY, 'auth', 'logout', {}, token);
 }
 for (const r of rows) console.log(`${r.equal ? 'EQUAL    ' : 'NOT EQUAL'} ${r.op} answered-by=${r.answeredBy} legacy=${r.legacy} core=${r.core}`);
