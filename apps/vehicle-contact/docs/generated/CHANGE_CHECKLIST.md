@@ -34,7 +34,7 @@ Hard-coded operation counts (update them, or better: derive from the inventory):
 | Changed | What | Deploy / follow-up |
 |---|---|---|
 | `apps/vehicle-contact/backend/gas/src` | backend | GAS push (`PUSH_VEHICLE_GAS`) + `clasp update-deployment -V <new>` + Cloud Run deploy; then live suite + DATA_PROOF |
-| `apps/vehicle-contact/backend/core` | Node core (VC-ADR-046) | `deploy-vehicle-core.yml` (`DEPLOY_VEHICLE_CORE`); a change in backend/cloudrun or backend/gas/src also reaches the core (it imports them) — deploy both |
+| `apps/vehicle-contact/backend/core` | Node core (VC-ADR-046) | `deploy-vehicle-core.yml` (`DEPLOY_VEHICLE_CORE`); a change in backend/cloudrun or backend/gas/src also reaches the core (it imports them) — deploy both; then `deploy-vehicle-jobs.yml` (`DEPLOY_VEHICLE_JOBS`) so the Cloud Run Jobs run the new core image (a job keeps the image it was deployed with) |
 | `apps/vehicle-contact/backend/cloudrun` | shared HTTP handler + browser gateway | used by the legacy service AND the core: deploy both |
 | `apps/vehicle-contact/schema/database.schema.json` | new field | a backfill script for existing rows if a filter or rule depends on it |
 | `apps/vehicle-contact/contracts/firestore-indexes.v1.json` | indexes | `ensure-firestore-indexes.mjs --apply` BEFORE the backend deploy |
@@ -43,6 +43,7 @@ Hard-coded operation counts (update them, or better: derive from the inventory):
 | `apps/vehicle-contact/frontend/src` | web app | GitHub Pages deploys on merge; check the bundle version on the live site |
 | `.github/workflows/deploy-vehicle-cloudrun.yml` | deploy pipeline | proven only by a real deploy run |
 | `.github/workflows/deploy-vehicle-core.yml` | core deploy pipeline | proven only by a real deploy run (the first run creates p6vc-core) |
+| `.github/workflows/deploy-vehicle-jobs.yml` | core jobs pipeline (Cloud Run Job p6vc-housekeeping) | proven only by a real run: its JOB report (DRY_RUN by default; APPLY needs `APPLY_DRIVE_HOUSEKEEPING`) |
 
 ## Copies of single-source facts (SSOT ratchet)
 
