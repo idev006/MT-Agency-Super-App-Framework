@@ -91,8 +91,9 @@ test('TUNE-05 reference rows are memoized per process; organizations stay live a
   const memo = createProcessMemo(1000, () => now);
   const refs = createReferenceOperations({store, security: {sha256: s => String(s.length)}, memo});
   refs['references.registration'](); refs['references.registration']();
-  assert.deepEqual(reads[0].sort(), ['vc_organizations', 'vc_reference_values', 'vc_settings']);
-  assert.deepEqual(reads[1].sort(), ['vc_organizations', 'vc_settings'], 'second call: reference rows from the memo, organizations live');
+  // vc_settings twice: the enforcement setting + the person-type (sticker) list, read in the same round (wave 2a)
+  assert.deepEqual(reads[0].sort(), ['vc_organizations', 'vc_reference_values', 'vc_settings', 'vc_settings']);
+  assert.deepEqual(reads[1].sort(), ['vc_organizations', 'vc_settings', 'vc_settings'], 'second call: reference rows from the memo, organizations live');
   now = 1001; refs['references.registration']();
   assert.ok(reads[2].includes('vc_reference_values'), 'the memo expires');
   const noMemo = createReferenceOperations({store, security: {sha256: s => String(s.length)}});

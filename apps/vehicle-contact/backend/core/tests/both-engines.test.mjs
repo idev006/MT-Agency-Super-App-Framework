@@ -72,7 +72,8 @@ test('BOTH-01 the six officer-path operations: the core answers exactly like the
 test('BOTH-02 the core answers only operations it has a flow for', async () => {
   const {h} = world();
   assert.deepEqual([...Object.keys(FLOWS)].sort(), ['auth.changePassword', 'auth.googleLogin', 'auth.linkGoogle', 'auth.login', 'auth.logout', 'auth.session',
-    'contacts.read', 'qr.resolve', 'vehicles.detail', 'vehicles.history', 'vehicles.lookup', 'vehicles.photo']);
+    'campaigns.validate', 'contacts.read', 'photos.upload', 'qr.resolve', 'references.registration', 'vehicles.detail', 'vehicles.history',
+    'vehicles.lookup', 'vehicles.photo']);
   const core = createCoreFacade({store: asyncOf(h.store), now: () => h.security.now(), sha256: x => h.security.sha256(x)});
   const r = await core.dispatch(env(h, 'vehicles.update', {vehicleId: 'x', expectedVersion: 1}, 'reg'), 'POST');
   assert.equal(r.error.code, 'NOT_FOUND', 'an operation without a flow is not answered by the core');
@@ -144,4 +145,39 @@ test('BOTH-03 auth.*: the core answers every step exactly like the legacy engine
   assert.deepEqual(outcomes['Google: unknown → link (wrong password, ok, again) → login; bad token'],
     ['INVALID_CREDENTIALS', 'OK', 'INVALID_CREDENTIALS', 'OK', 'IDENTITY_ALREADY_LINKED', 'OK', outcomes['Google: unknown → link (wrong password, ok, again) → login; bad token'][6]]);
   assert.notEqual(outcomes['Google: unknown → link (wrong password, ok, again) → login; bad token'][6], 'OK');
+});
+
+// ---- phase 3 wave 2a: the public registration path — answers, staging rows and the Drive files identical ----
+const REG_CASES = [
+  ['validate a campaign', w => ['campaigns.validate', {campaignToken: w.camp.campaignToken}]],
+  ['validate an unknown campaign', () => ['campaigns.validate', {campaignToken: 'a'.repeat(64)}]],
+  ['validate a malformed code', () => ['campaigns.validate', {campaignToken: 'not-a-code'}]],
+  ['reference lists (registration admin)', () => ['references.registration', {}, 'reg']],
+  ['reference lists without the permission', () => ['references.registration', {}, 'staff']],
+  ['upload a photo', w => ['photos.upload', {campaignToken: w.camp.campaignToken, slot: 'FRONT', base64Image: 'AAAA-binary-fake', mimeType: 'image/png'}]],
+  ['upload with a wrong slot', w => ['photos.upload', {campaignToken: w.camp.campaignToken, slot: 'ROOF', base64Image: 'AAAA-binary-fake', mimeType: 'image/png'}]],
+  ['upload to an unknown campaign', () => ['photos.upload', {campaignToken: 'b'.repeat(64), slot: 'FRONT', base64Image: 'AAAA-binary-fake', mimeType: 'image/png'}]]
+];
+function regWorld() {
+  const h = createAcceptanceHarness();
+  const org = h.createOrganization(), camp = h.createCampaign();
+  return {h, org, camp};
+}
+test('BOTH-04 campaigns.validate, references.registration, photos.upload: same answers, same staging rows, same Drive files', async () => {
+  const outcomes = [];
+  for (const [name, make] of REG_CASES) {
+    const A = regWorld(), B = regWorld();
+    const [op, payload, actor] = make(A);
+    const want = A.h.call(op, payload, actor || null);
+    const media = {read: async r => B.h.drivePhotos.read(r), upload: async (b, m) => B.h.drivePhotos.upload(b, m), trash: async r => B.h.drivePhotos.trash(r)};
+    const core = createCoreFacade({store: {...asyncOf(B.h.store), count: async (t, f) => B.h.store.list(t, f).length}, media,
+      now: () => B.h.security.now(), sha256: x => B.h.security.sha256(x), id: () => B.h.security.secretToken()});
+    const got = await core.dispatch(env(B.h, ...make(B)), 'POST');
+    assert.deepEqual(got, want, name);
+    assert.deepEqual(B.h.store.list('vc_photo_staging'), A.h.store.list('vc_photo_staging'), name + ': staging rows');
+    assert.deepEqual([...B.h.driveState.keys()], [...A.h.driveState.keys()], name + ': Drive files');
+    outcomes.push(want.ok ? 'OK' : want.error.code);
+  }
+  assert.deepEqual(outcomes, ['OK', 'CAMPAIGN_INVALID', 'CAMPAIGN_INVALID', 'OK', 'FORBIDDEN', 'OK', 'INVALID_SLOT', 'CAMPAIGN_INVALID'],
+    'real successes and the expected failures');
 });

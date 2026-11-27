@@ -1,6 +1,7 @@
 import {paginate,pageWindow,pageOf} from '../pagination/Pagination.js';
 import {runFlowSync} from '../flows/FlowRunner.js';
 import {vehiclePhotoFlow} from '../flows/VehicleReadFlows.js';
+import {photoUploadFlow} from '../flows/RegistrationFlows.js';
 export function createMediaRetentionOperations({store,security,drivePhotos,campaigns,allowDestructiveRetention=false}) {
  const need=(v,name)=>{if(typeof v!=='string'||!v.trim()||v.length>256)throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -8,30 +9,8 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   audit_id:id(),actor_id:actor&&actor.userId||'PUBLIC_CAMPAIGN',entity_type:kind,entity_id:entity,action,
   redacted_summary:action,correlation_id:id().slice(0,16),created_at:now()
  });
- function uploadPhoto(p) {
-  const campaign=campaigns.getCampaign(p.campaignToken);
-  if(!['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'].includes(p.slot))throw new Error('INVALID_SLOT');
-  const photoId=id();
-  // Upload may be slow: never hold the script lock while transferring bytes to Drive.
-  const item=drivePhotos.upload(p.base64Image,p.mimeType);
-  try{
-   return store.withLock(()=>{
-    const current=campaigns.getCampaign(p.campaignToken);
-    const maxUploads=Math.min(5000,Math.max(20,Number(current.max_submissions)*10));
-    // TUNEUP R1: COUNT instead of reading every staged photo of the campaign on each upload.
-    const staged=typeof store.count==='function'?store.count('vc_photo_staging',{campaign_id:current.campaign_id}):store.list('vc_photo_staging',{campaign_id:current.campaign_id}).length;
-    if(staged>=maxUploads)
-     throw new Error('PHOTO_UPLOAD_LIMIT');
-    store.insert('vc_photo_staging',{photo_id:photoId,campaign_id:current.campaign_id,slot:p.slot,
-     storage_ref:item.storage_ref,mime_type:item.mime_type,size_bytes:item.size_bytes,
-     status:'STAGED',created_at:now(),used_at:''});
-    return {photoId,slot:p.slot};
-   });
-  }catch(e){
-   try{drivePhotos.trash(item.storage_ref);}catch(_){/* orphan needs operational reconciliation */}
-   throw e;
-  }
- }
+ // photos.upload = the shared flow (application/flows/RegistrationFlows.js, phase 3 wave 2a)
+ const uploadPhoto=p=>runFlowSync(photoUploadFlow(p,{now,id,sha256:x=>security.sha256(x)}),{store,media:drivePhotos});
  function photosList(p) {
   const vehicleId=need(p.vehicleId,'VEHICLE_ID');
   const vehicle=store.one('vc_vehicles',{vehicle_id:vehicleId});

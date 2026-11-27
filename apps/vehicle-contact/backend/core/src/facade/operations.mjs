@@ -13,6 +13,8 @@ import {vehicleHistoryFlow, vehicleLookupFlow, vehicleDetailFlow, contactReadFlo
   from '../../../gas/src/application/flows/VehicleReadFlows.js';
 import {loginFlow, googleLoginFlow, changePasswordFlow, logoutFlow, sessionInfoFlow, linkGoogleFlow}
   from '../../../gas/src/application/flows/AuthFlows.js';
+import {campaignValidateFlow, referencesRegistrationFlow, photoUploadFlow} from '../../../gas/src/application/flows/RegistrationFlows.js';
+import {REFERENCE_CACHE_MS} from '../../../cloudrun/runtime.mjs';
 import {createLogManager} from '../../../gas/src/application/logging/LogManager.js';
 import {LOG_SETTING_KEY, defaultLogPolicy, readLogPolicy} from '../../../gas/src/domain/policies/LogPolicy.js';
 
@@ -31,8 +33,18 @@ export const FLOWS = Object.freeze({
   'auth.changePassword': (p, a, d) => changePasswordFlow(p, a, d),
   'auth.logout': (p, a, d) => logoutFlow(p, a, d),
   'auth.session': (p, a) => sessionInfoFlow(p, a),
-  'auth.linkGoogle': (p, a, d) => linkGoogleFlow(p, a, d)
+  'auth.linkGoogle': (p, a, d) => linkGoogleFlow(p, a, d),
+  // phase 3 wave 2a: the public registration path (photos through the bridge; reference rows in a process memo)
+  'campaigns.validate': (p, a, d) => campaignValidateFlow(p, d),
+  'references.registration': (p, a, d) => referencesRegistrationFlow(p, d),
+  'photos.upload': (p, a, d) => photoUploadFlow(p, d)
 });
+const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload']);
+// a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)
+export function createMemo(ttlMs = REFERENCE_CACHE_MS, nowMs = () => Date.now()) {
+  const m = new Map();
+  return Object.freeze({get: k => { const e = m.get(k); return e && nowMs() < e.exp ? e.value : undefined; }, put: (k, value) => { m.set(k, {value, exp: nowMs() + ttlMs}); }});
+}
 const POLICY_MEMO_MS = 60000; // the log policy is re-read at most once a minute per instance (as the legacy engine)
 
 const sha256Hex = text => createHash('sha256').update(String(text), 'utf8').digest('hex'); // = legacy security.sha256 (UTF-8, hex)
@@ -42,7 +54,7 @@ const randomId = () => randomBytes(32).toString('hex'); // 64 hex, the format of
 // sessions, so the core must read them live (a cached session could outlive a revocation)
 // media: the MediaStore port (photo bridge) or a function returning it — built on the first photo request
 // passwords: the PasswordHasher port (server.mjs injects node:crypto PBKDF2); google: the Google OIDC port (none yet)
-export function createCoreFacade({store, media = null, passwords = null, google = null, now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS}) {
+export function createCoreFacade({store, media = null, passwords = null, google = null, memo = createMemo(), now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS}) {
   let raw = null, logged = null, mediaPort = null;
   // the log policy (VC-ADR-040) for the core's store: loaded asynchronously, memoised, defaults when unreadable
   const policy = {value: defaultLogPolicy(), at: -Infinity};
@@ -73,8 +85,8 @@ export function createCoreFacade({store, media = null, passwords = null, google 
         await refreshPolicy(raw);
         const principal = PUBLIC_OPERATIONS.includes(op) ? null
           : await runFlowAsync(sessionAuthorizeFlow({token: request.sessionToken, permission: OPERATION_PERMISSIONS[op], ...authOptionsFor(op)}, {sha256, now}), {store: s});
-        const result = await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, passwords, google,
-          media: op === 'vehicles.photo' ? mediaOf() : null});
+        const result = await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, passwords, google, memo,
+          media: MEDIA_OPERATIONS.has(op) ? mediaOf() : null});
         return apiSuccess(result, requestId);
       } catch (e) {
         return apiFailure(publicErrorCode(e), 'Request could not be completed', requestId);

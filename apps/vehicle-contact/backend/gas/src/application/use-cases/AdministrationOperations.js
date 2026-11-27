@@ -1,6 +1,9 @@
 import {paginate} from '../pagination/Pagination.js';
 import {listFilter} from '../pagination/ListFilter.js';
+import {getCampaignFlow,campaignValidateFlow} from '../flows/RegistrationFlows.js';
+import {runFlowSync} from '../flows/FlowRunner.js';
 export function createAdministrationOperations({store,security}) {
+ const flowDeps=Object.freeze({now:()=>security.now(),id:()=>security.secretToken(),sha256:x=>security.sha256(x)});
  const required=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const audit=(actor,action,id)=>store.insert('vc_change_audit',{
   audit_id:security.secretToken(),actor_id:actor.userId,entity_type:'administration',
@@ -51,14 +54,8 @@ export function createAdministrationOperations({store,security}) {
   store.sequence(()=>{store.update('vc_organizations',{organization_id:id},{status:'ACTIVE',updated_at:security.now()});audit(a,'ORG_ENABLED',id)});
   return {organizationId:id,enabled:true};
  }
- function getCampaign(token,{requireCapacity=true}={}){
-  if(typeof token!=='string'||!/^[a-f0-9]{64}$/i.test(token))throw new Error('CAMPAIGN_INVALID');
-  const row=store.one('vc_campaigns',{token_digest:security.sha256(token.toLowerCase())});
-  const now=Date.parse(security.now());
-  if(!row||row.status!=='ACTIVE'||row.revoked_at||Date.parse(row.starts_at)>now||Date.parse(row.ends_at)<=now
-   ||requireCapacity&&Number(row.submitted_count)>=Number(row.max_submissions))throw new Error('CAMPAIGN_INVALID');
-  return row;
- }
+ // the campaign check is the shared flow (application/flows/RegistrationFlows.js, phase 3 wave 2a)
+ function getCampaign(token,{requireCapacity=true}={}){return runFlowSync(getCampaignFlow(token,{requireCapacity},flowDeps),{store});}
  function createCampaign(p,a){
   const start=Date.parse(p.startsAt),end=Date.parse(p.endsAt),now=Date.parse(security.now()),max=p.maxSubmissions;
   if(!Number.isFinite(start)||!Number.isFinite(end)||start>=end||end<=now
@@ -92,10 +89,7 @@ export function createAdministrationOperations({store,security}) {
   })).filter(x=>(!f.state||(f.state==='CURRENT'?['OPEN','UPCOMING'].includes(x.state):x.state===f.state))&&f.text(x.name)).reverse(); // R6 (E2E P3): newest first — a new campaign was landing on the last page.
   return paginate(items,p,{defaultLimit:50,maxLegacyLimit:100});
  }
- function validateCampaign(p){
-  const row=getCampaign(p.campaignToken);
-  return {valid:true,campaignId:row.campaign_id};
- }
+ const validateCampaign=p=>runFlowSync(campaignValidateFlow(p,flowDeps),{store}); // incl. the active person types
  function revokeCampaign(p,a){
   const id=required(p.campaignId,'CAMPAIGN_ID');
   store.withLock(()=>{store.update('vc_campaigns',{campaign_id:id},{status:'REVOKED',revoked_at:security.now()});audit(a,'CAMPAIGN_REVOKED',id)});

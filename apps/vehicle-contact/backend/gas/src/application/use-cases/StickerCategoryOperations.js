@@ -19,8 +19,7 @@ export function withStickerCategories(handlers, {store, security}) {
   const wrap = (op, fn) => { const inner = h[op]; h[op] = (p, a) => fn(inner, p || {}, a); };
   const withSticker = (l, row) => ({...row, sticker: resolveSticker(row.stickerCategory, l)});
 
-  wrap('campaigns.validate', (inner, p, a) => ({...inner(p, a), stickerCategories: choices(list()).map(({code, label}) => ({code, label}))}));
-  wrap('references.registration', (inner, p, a) => ({...inner(p, a), stickerCategories: full(list())}));
+  // campaigns.validate / references.registration: decorated inside their shared flows (application/flows/RegistrationFlows.js)
   wrap('registrations.submit', (inner, p, a) => {
     const q = {...p};
     if (q.stickerCategory === '' || q.stickerCategory === undefined) delete q.stickerCategory;
