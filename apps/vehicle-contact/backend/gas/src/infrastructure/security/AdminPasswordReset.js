@@ -1,4 +1,5 @@
 import {createGasSecurity} from './GasSecurity.js';
+import {parsePasswordHash} from '../../application/security/PasswordHash.js';
 
 // TRUSTED GAS EDITOR ONLY. Never register this operation as a doGet/doPost route.
 // Explicitly approved one-time recovery for the EXISTING admin identity, not bootstrap.
@@ -37,7 +38,7 @@ export function createOneTimeAdminPasswordReset({store,projectId,utilities,prope
   const roles=store.list('vc_user_roles',{user_id:user.user_id});
   if(!roles.some(r=>r.role_id==='SYSTEM_ADMIN'&&r.status==='ACTIVE'))
    invalid('RESET_ADMIN_ROLE_MISMATCH');
-  if(!user.password_hash||!/^pbkdf2-sha256\$\d+\$[a-f0-9]{32}\$[a-f0-9]{64}$/i.test(user.password_hash))
+  if(!parsePasswordHash(user.password_hash)) // plain or peppered (application/security/PasswordHash.js)
    invalid('RESET_EXISTING_HASH_FORMAT_INVALID');
   const sessions=store.list('vc_sessions',{user_id:user.user_id});
   if(sessions.length>=5000)invalid('RESET_SESSIONS_EXCEED_SCAN_LIMIT');

@@ -14,7 +14,8 @@
 //        (store.sequence). A FACTORY, not a generator: Firestore re-runs a contended transaction, so each run needs a fresh
 //        sub-flow. A sub-flow must keep its effects to the store (no media / cache) — only the store is rolled back.
 //   {hashPassword: password}             → 'pbkdf2-sha256$…' (the password port; one hash rule, engine-specific PBKDF2)
-//   {verifyPassword: {password, stored}} → boolean
+//   {verifyPassword: {password, stored}} → boolean (stored null = the dummy check for an unknown user: same work, false)
+//   {passwordNeedsRehash: stored}        → boolean (a port without needsRehash → false)
 //   {verifyGoogle: idToken}              → {sub} (the Google OIDC port; none configured → GOOGLE_OIDC_NOT_CONFIGURED)
 //   {cacheRemove: [key, ...]}            → null (no cache → nothing; cache errors are ignored)
 //   {cacheGet: key}                      → string | null   (no cache → null; cache errors are ignored)
@@ -38,6 +39,7 @@ function perform(effect, {store, cache, media, passwords, google, run}) {
     if (cache) for (const k of effect.cacheRemove) try { cache.remove(k); } catch { /* optional */ }
     return null;
   }
+  if (effect.passwordNeedsRehash !== undefined) return !!(passwords && typeof passwords.needsRehash === 'function' && passwords.needsRehash(effect.passwordNeedsRehash));
   if (effect.hashPassword !== undefined || effect.verifyPassword) {
     if (!passwords) throw new Error('PASSWORDS_NOT_CONFIGURED');
     return effect.verifyPassword ? passwords.verify(effect.verifyPassword.password, effect.verifyPassword.stored) : passwords.hash(effect.hashPassword);

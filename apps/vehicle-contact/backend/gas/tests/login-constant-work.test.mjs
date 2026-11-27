@@ -1,18 +1,15 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-import {resolve} from 'node:path';
 import {createAcceptanceHarness,assertOk,assertError,SAMPLE_PASSWORD} from './acceptance-fixture.mjs';
 
 // Count verifyPassword invocations and capture the stored hash each call receives.
 function spyVerify(h){const calls=[];const orig=h.security.verifyPassword;h.security.verifyPassword=(p,stored)=>{calls.push(stored);return orig(p,stored);};return calls;}
-const DUMMY_RE=/^pbkdf2-sha256\$150000\$[a-f0-9]{32}\$[a-f0-9]{64}$/;
 
 test('LOGIN-CONST-01: unknown username still performs one password verification (dummy hash)',()=>{
  const h=createAcceptanceHarness(),calls=spyVerify(h);
  assertError(assert,h.call('auth.login',{username:'no-such-user',password:SAMPLE_PASSWORD}),'INVALID_CREDENTIALS','unknown user');
  assert.equal(calls.length,1,'verifyPassword must run exactly once even for an unknown username');
- assert.match(calls[0],DUMMY_RE,'unknown user is verified against a real-cost dummy hash');
+ assert.equal(calls[0],null,'unknown user gets the dummy check (verify with no stored hash = full cost, false)');
 });
 
 test('LOGIN-CONST-02: known username with wrong password performs one verification',()=>{
@@ -28,7 +25,7 @@ test('LOGIN-CONST-03: inactive user performs one verification (dummy) and is den
  const calls=spyVerify(h);
  assertError(assert,h.call('auth.login',{username:'staff',password:SAMPLE_PASSWORD}),'INVALID_CREDENTIALS','suspended user');
  assert.equal(calls.length,1);
- assert.match(calls[0],DUMMY_RE,'inactive user is verified against the dummy hash');
+ assert.equal(calls[0],null,'inactive user gets the dummy check');
 });
 
 test('LOGIN-CONST-04: valid credentials perform one verification and succeed',()=>{
@@ -38,12 +35,16 @@ test('LOGIN-CONST-04: valid credentials perform one verification and succeed',()
  assert.equal(calls.length,1);
 });
 
-test('LOGIN-CONST-05: dummy hash cost matches GasSecurity.hashPassword (drift guard)',async()=>{
- // the round count of new hashes comes from the ONE hash rule (application/security/PasswordHash.js)
- const {PBKDF2_ROUNDS:realRounds,MIN_ROUNDS,MAX_ROUNDS}=await import('../src/application/security/PasswordHash.js');
- // the dummy hash lives with the login flow (application/flows/AuthFlows.js)
- const {DUMMY_PASSWORD_HASH}=await import('../src/application/flows/AuthFlows.js');
- const dummyRounds=Number(DUMMY_PASSWORD_HASH.split('$')[1]);
- assert.ok(Number.isSafeInteger(realRounds)&&realRounds>=MIN_ROUNDS&&realRounds<=MAX_ROUNDS,'real rounds within verifyPassword acceptance range');
- assert.equal(dummyRounds,realRounds,'dummy hash must use the same PBKDF2 cost as real hashes');
+test('LOGIN-CONST-05: the dummy check costs exactly what a new hash costs on that engine (plain and peppered)',async()=>{
+ const {createPasswordHasher,PBKDF2_ROUNDS,PEPPERED_ROUNDS}=await import('../src/application/security/PasswordHash.js');
+ const {createHmac}=await import('node:crypto');
+ for(const pepper of [null,'p'.repeat(40)]){
+  const rounds=[];
+  const h=createPasswordHasher({derive:(pw,salt,n)=>{rounds.push(n);return 'a'.repeat(64);},randomSaltHex:()=>'0'.repeat(32),
+   pepper,hmacHex:(k,t)=>createHmac('sha256',k).update(t).digest('hex')});
+  h.hash('Synthetic-Passw0rd!');
+  assert.equal(h.verify('Synthetic-Passw0rd!',null),false,'the dummy never verifies');
+  assert.equal(rounds[0],pepper?PEPPERED_ROUNDS:PBKDF2_ROUNDS);
+  assert.equal(rounds[1],rounds[0],'dummy rounds = new-hash rounds');
+ }
 });

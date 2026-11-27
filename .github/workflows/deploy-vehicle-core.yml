@@ -98,7 +98,7 @@ jobs:
             --cpu "$CORE_CPU" --memory 512Mi --timeout 60 --cpu-boost \
             --allow-unauthenticated \
             --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),UV_THREADPOOL_SIZE=$((CORE_CPU * 2))" \
-            --set-secrets "P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest" \
+            --set-secrets "P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest,P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest" \
             --labels "app=p6vc,component=core,commit=${GITHUB_SHA::12}" \
             $NO_TRAFFIC --quiet
 

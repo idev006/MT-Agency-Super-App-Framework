@@ -8,7 +8,8 @@ import {runFlowSync} from '../flows/FlowRunner.js';
 export {ROLE_PERMISSIONS};
 export function createSessionService({store,security,cache=null}) {
  const deps=Object.freeze({now:()=>security.now(),id:()=>security.secretToken(),sha256:x=>security.sha256(x)});
- const passwords={hash:p=>security.hashPassword(p),verify:(p,stored)=>security.verifyPassword(p,stored)};
+ const passwords={hash:p=>security.hashPassword(p),verify:(p,stored)=>security.verifyPassword(p,stored),
+  needsRehash:stored=>typeof security.passwordNeedsRehash==='function'&&security.passwordNeedsRehash(stored)};
  const google={verify:idToken=>security.verifyGoogle(idToken)};
  // run any auth flow on this engine (store, snapshot cache, password + Google ports)
  const run=flow=>runFlowSync(flow,{store,cache,passwords,google});
