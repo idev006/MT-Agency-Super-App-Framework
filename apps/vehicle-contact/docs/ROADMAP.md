@@ -15,7 +15,7 @@ Status labels: `status:todo` → `status:in-progress` → closed (with the evide
 | # | Item | Issue | Depends on | Status |
 |---|---|---|---|---|
 | R01 | Prove the per-vehicle photo folders live (0.9.55) | [#294](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/294) | — | **done** (evidence VC-ADR-046 0.9.53–0.9.55) |
-| R02 | Photos by Drive link instead of base64 (PR B) | [#295](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/295) | R01 | deploying (0.9.56) |
+| R02 | Photos by Drive link instead of base64 (PR B) | [#295](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/295) | R01 | **done** (0.9.56: 5 photos 3.5–5.6 s → 0.7–1.5 s) |
 | R03 | Web app resizes by the admin policy; replace resizes; admin fields (PR 2) | [#296](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/296) | — | todo |
 | R04 | Move existing photos into their vehicle folders (PR C, dry run first) | [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) | R01 | todo |
 | N1a | Foundation + system / list ops as native async Node (7 ops) — VC-ADR-051 | [#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311) | — | todo |
