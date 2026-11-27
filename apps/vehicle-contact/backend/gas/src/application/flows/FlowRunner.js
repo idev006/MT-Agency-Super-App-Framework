@@ -6,7 +6,10 @@
 //        → array of results in order (rows written in the same round as the reads, like store.readMany)
 //   {insert: {table, row}}               → the row (append-only, e.g. an access-audit row; the store's log policy applies)
 //   {patch: {table, filter, fields}}     → true (field-masked write by primary key; update() where patch is missing)
+//   {remove: {table, filter}}            → true (one row; a job's cleanup, e.g. an expired photo staging row)
 //   {mediaRead: {ref}}                   → {base64Image, mime_type, ...} (photo file through the media port)
+//   {mediaList: {pageToken}}             → {files: [{id, createdMs, trashed}], nextPageToken} (one page of the photo folder)
+//   {mediaTrash: {ref}}                  → true (photo file to the Drive trash)
 //   {cacheGet: key}                      → string | null   (no cache → null; cache errors are ignored)
 //   {cachePut: {key, value, seconds}}    → null
 function readsFallback(store, reads) {
@@ -28,7 +31,13 @@ function perform(effect, {store, cache, media}) {
     return readsFallback(store, effect.reads);
   }
   if (effect.insert) return store.insert(effect.insert.table, effect.insert.row);
-  if (effect.mediaRead) { if (!media) throw new Error('MEDIA_NOT_CONFIGURED'); return media.read(effect.mediaRead.ref); }
+  if (effect.remove) return store.remove(effect.remove.table, effect.remove.filter);
+  if (effect.mediaRead || effect.mediaList || effect.mediaTrash) {
+    if (!media) throw new Error('MEDIA_NOT_CONFIGURED');
+    if (effect.mediaRead) return media.read(effect.mediaRead.ref);
+    if (effect.mediaList) return media.list(effect.mediaList.pageToken ?? null);
+    return media.trash(effect.mediaTrash.ref);
+  }
   if (effect.patch) {
     const {table, filter, fields} = effect.patch;
     return typeof store.patch === 'function' ? store.patch(table, filter, fields) : store.update(table, filter, fields);

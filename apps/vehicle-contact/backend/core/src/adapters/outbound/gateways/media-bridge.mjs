@@ -1,5 +1,5 @@
 // Gateway: photo files in the owner's Google Drive through the signed GAS bridge (port MediaStore, VC-ADR-034/047).
-// Same wire contract as backend/cloudrun/media-bridge-client.mjs, but async. Retries only read / trash (registry).
+// Same wire contract as backend/cloudrun/media-bridge-client.mjs, but async. Retries only read / trash / list (registry).
 import {signMediaBridge} from '../signers/hmac-media-bridge.mjs';
 
 export function createMediaBridgeGateway({http, secret, idempotent = [], now = () => new Date().toISOString()}) {
@@ -19,6 +19,7 @@ export function createMediaBridgeGateway({http, secret, idempotent = [], now = (
     upload: (base64, mime) => call('upload', {base64, mime}),
     read: storageRef => call('read', {storageRef}),
     trash: async storageRef => (await call('trash', {storageRef})).trashed === true,
-    trashAll: () => call('trashAll', {})
+    trashAll: () => call('trashAll', {}),
+    list: pageToken => call('list', pageToken ? {pageToken} : {})
   });
 }
