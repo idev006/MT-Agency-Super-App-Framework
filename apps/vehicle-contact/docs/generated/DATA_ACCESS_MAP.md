@@ -31,12 +31,12 @@
 | `vc_role_permissions` | — | — |
 | `vc_roles` | — | — |
 | `vc_security_events` | `application/use-cases/IdentityOperations.js` | `application/use-cases/IdentityOperations.js` |
-| `vc_sessions` | `application/security/SessionService.js` `application/use-cases/IdentityOperations.js` `infrastructure/security/AdminPasswordReset.js` | `application/security/SessionService.js` `infrastructure/security/AdminPasswordReset.js` |
+| `vc_sessions` | `application/flows/SessionAuthorizeFlow.js` `application/security/SessionService.js` `application/use-cases/IdentityOperations.js` `infrastructure/security/AdminPasswordReset.js` | `application/flows/SessionAuthorizeFlow.js` `application/security/SessionService.js` `infrastructure/security/AdminPasswordReset.js` |
 | `vc_settings` | `application/settings/SettingsRegistry.js` | `application/security/SessionService.js` `application/settings/SettingsRegistry.js` `application/use-cases/ReferenceOperations.js` `application/use-cases/VehicleOperations.js` |
 | `vc_user_identities` | `application/use-cases/IdentityOperations.js` | `application/use-cases/IdentityOperations.js` |
-| `vc_user_permissions` | — | `application/security/SessionService.js` |
-| `vc_user_roles` | `application/use-cases/IdentityOperations.js` | `application/security/SessionService.js` `application/use-cases/IdentityOperations.js` `infrastructure/security/AdminPasswordReset.js` |
-| `vc_users` | `application/use-cases/IdentityOperations.js` `infrastructure/security/AdminPasswordReset.js` | `application/security/SessionService.js` `application/use-cases/IdentityOperations.js` `application/use-cases/QrHistoryOperation.js` `application/use-cases/Vehicle360.js` `application/use-cases/VehicleOperations.js` `infrastructure/security/AdminPasswordReset.js` |
+| `vc_user_permissions` | — | `application/flows/SessionAuthorizeFlow.js` `application/security/SessionService.js` |
+| `vc_user_roles` | `application/use-cases/IdentityOperations.js` | `application/flows/SessionAuthorizeFlow.js` `application/security/SessionService.js` `application/use-cases/IdentityOperations.js` `infrastructure/security/AdminPasswordReset.js` |
+| `vc_users` | `application/use-cases/IdentityOperations.js` `infrastructure/security/AdminPasswordReset.js` | `application/flows/SessionAuthorizeFlow.js` `application/use-cases/IdentityOperations.js` `application/use-cases/QrHistoryOperation.js` `application/use-cases/Vehicle360.js` `application/use-cases/VehicleOperations.js` `infrastructure/security/AdminPasswordReset.js` |
 | `vc_vehicle_contacts` | `application/use-cases/ChangeReviewOperation.js` `application/use-cases/VehicleOperations.js` | `application/use-cases/ChangeReviewOperation.js` `application/use-cases/VehicleOperations.js` `application/use-cases/VehicleView.js` |
 | `vc_vehicle_photos` | `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` | `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` `application/use-cases/VehicleView.js` |
 | `vc_vehicles` | `application/use-cases/ChangeReviewOperation.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleListOperations.js` `application/use-cases/VehicleOperations.js` | `application/use-cases/ChangeReviewOperation.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/QrExportOperation.js` `application/use-cases/QrHistoryOperation.js` `application/use-cases/VehicleListOperations.js` `application/use-cases/VehicleOperations.js` |
@@ -45,7 +45,8 @@
 
 | Module | Operations | Writes | Reads |
 |---|---|---|---|
-| `application/security/SessionService.js` | — | `vc_sessions` | `vc_sessions` `vc_settings` `vc_user_permissions` `vc_user_roles` `vc_users` |
+| `application/flows/SessionAuthorizeFlow.js` | — | `vc_sessions` | `vc_sessions` `vc_user_permissions` `vc_user_roles` `vc_users` |
+| `application/security/SessionService.js` | — | `vc_sessions` | `vc_sessions` `vc_settings` `vc_user_permissions` `vc_user_roles` |
 | `application/settings/SettingsRegistry.js` | `system.config.get` `system.config.update` | `vc_change_audit` `vc_settings` | `vc_settings` |
 | `application/use-cases/AdministrationOperations.js` | `campaigns.create` `campaigns.list` `campaigns.revoke` `campaigns.validate` `organizations.create` `organizations.disable` `organizations.enable` `organizations.list` `organizations.update` | `vc_campaigns` `vc_change_audit` `vc_organizations` | `vc_campaigns` `vc_organizations` |
 | `application/use-cases/ChangeReviewOperation.js` | — | `vc_change_audit` `vc_change_requests` `vc_vehicle_contacts` `vc_vehicles` | `vc_change_requests` `vc_vehicle_contacts` `vc_vehicles` |

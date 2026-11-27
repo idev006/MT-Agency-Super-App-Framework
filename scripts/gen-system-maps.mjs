@@ -29,7 +29,8 @@ const OPS = inventory.operations.map(o => o.group + '.' + o.action).sort();
 
 // ---- data access: per backend module, the tables it reads and writes ----
 const WRITE = [/\b(insert|update|remove|patch)\(\s*'(vc_[a-z_]+)'/g, /op:\s*'(insert|update|remove)'\s*,\s*table:\s*'(vc_[a-z_]+)'/g,
-  /inserts:\s*\[\s*\[\s*'(vc_[a-z_]+)'/g /* readMany inserts: [['vc_x', row]] */];
+  /inserts:\s*\[\s*\[\s*'(vc_[a-z_]+)'/g /* readMany inserts: [['vc_x', row]] */,
+  /patch:\s*\{\s*table:\s*'(vc_[a-z_]+)'/g /* flow effect {patch: {table: 'vc_x', ...}} (VC-ADR-046) */];
 const READ = [/\b(one|list|listNewest|count)\(\s*'(vc_[a-z_]+)'/g, /name:\s*'(vc_[a-z_]+)'/g];
 const tableOf = m => m.find(x => typeof x === 'string' && x.startsWith('vc_'));
 export function scanModule(source) {
