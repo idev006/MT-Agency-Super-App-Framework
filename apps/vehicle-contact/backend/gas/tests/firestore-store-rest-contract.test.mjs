@@ -26,8 +26,8 @@ function makeStore(fake){
   return createFirestoreStore({firestore:gw});
 }
 
-test('Firestore adapter + real REST gateway satisfy the identical store port contract',()=>{
-  runStorePortContract(assert,makeStore(createFakeFirestoreRest()));
+test('Firestore adapter + real REST gateway satisfy the identical store port contract',async()=>{
+  await runStorePortContract(assert,makeStore(createFakeFirestoreRest()));
 });
 
 test('insertion order persists in Firestore _seq, not adapter memory (REST path)',()=>{

@@ -53,8 +53,8 @@ function createFakeFirestore(){
   return makeGateway(()=>db,s=>{db=s;});
 }
 
-test('Firestore adapter satisfies the identical store port contract (offline fake gateway)',()=>{
-  runStorePortContract(assert,createFirestoreStore({firestore:createFakeFirestore()}));
+test('Firestore adapter satisfies the identical store port contract (offline fake gateway)',async()=>{
+  await runStorePortContract(assert,createFirestoreStore({firestore:createFakeFirestore()}));
 });
 
 test('Firestore insertion order is persisted in the backend, not adapter memory',()=>{
