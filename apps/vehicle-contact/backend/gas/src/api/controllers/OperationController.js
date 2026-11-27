@@ -1,6 +1,7 @@
 import {validateOperationPayload,DTO_OPERATIONS} from '../dto/OperationPayloadValidator.js';
 import {validateApiRequest} from '../dto/RequestValidator.js';
 import {apiSuccess,apiFailure} from '../responses/ResponseFactory.js';
+import {requestIdOf} from '../routes/Router.js';
 import {createIdentityOperations} from '../../application/use-cases/IdentityOperations.js';
 import {createAdministrationOperations} from '../../application/use-cases/AdministrationOperations.js';
 import {createVehicleOperations} from '../../application/use-cases/VehicleOperations.js';
@@ -44,6 +45,17 @@ const safeErrors=new Set([
  'SELF_DEMOTION_DENIED','SELF_ROLE_EXPANSION_DENIED','SELF_SUSPEND_DENIED','RETENTION_POLICY_NOT_CONFIGURED','OPERATION_DISABLED','OPERATION_RECOVERY_REQUIRED',
  'REFERENCE_DATA_INVALID','REFERENCE_DATA_BOUNDS','REFERENCE_VERSION_STALE','INVALID_REFERENCE_VALUE'
 ]);
+// VC-ADR-046: shared with the Node core facade (one source) — how an operation's session is checked, and how any error
+// becomes the public code (never an internal message).
+export const AUTH_OPTIONS=Object.freeze({
+ allowPasswordChange:Object.freeze(['auth.changePassword','auth.logout','auth.session']),
+ fresh:Object.freeze(['auth.changePassword','auth.linkGoogle','system.reset.execute']) // these verify the stored password hash
+});
+export const authOptionsFor=op=>({allowPasswordChange:AUTH_OPTIONS.allowPasswordChange.includes(op),fresh:AUTH_OPTIONS.fresh.includes(op)});
+export function publicErrorCode(e){
+ const raw=String(e&&e.message||'OPERATION_FAILED');
+ return safeErrors.has(raw)?raw:raw.startsWith('INVALID_')?'INVALID_REQUEST':raw.startsWith('SCHEMA_MISMATCH:')?'SCHEMA_MISMATCH':'OPERATION_FAILED';
+}
 export function createOperationController({store:rawStore,security,sessions,drivePhotos,allowDestructiveRetention=false,allowSystemReset=false,referenceMemo=null,logPolicyMemo=null}) {
  // VC-ADR-040: every operation writes through the log-policy store (switched-off logs are not written; kept ones expire)
  const policy=createLogPolicyReader(rawStore,logPolicyMemo);
@@ -68,22 +80,17 @@ export function createOperationController({store:rawStore,security,sessions,driv
   ||entries.some(op=>!publicOps.has(op)&&!permissions[op]))
   throw new Error('INCOMPLETE_API_DISPATCH');
  function dispatch(request){
-  const requestId=typeof request?.requestId==='string'&&/^[A-Za-z0-9_-]{1,80}$/.test(request.requestId)?request.requestId:null;
+  const requestId=requestIdOf(request);
   try{
    validateApiRequest(request);
    const op=request.group+'.'+request.action;
    if(!Object.prototype.hasOwnProperty.call(handlers,op))return apiFailure('NOT_FOUND','Unavailable operation',requestId);
    validateOperationPayload(op,request.payload||{});
-   const principal=publicOps.has(op)?null:sessions.authorize(request.sessionToken,permissions[op],{
-    allowPasswordChange:['auth.changePassword','auth.logout','auth.session'].includes(op),
-    fresh:['auth.changePassword','auth.linkGoogle','system.reset.execute'].includes(op) // these verify the stored password hash
-   });
+   const principal=publicOps.has(op)?null:sessions.authorize(request.sessionToken,permissions[op],authOptionsFor(op));
    const result=handlers[op](request.payload||{},principal);
    return apiSuccess(result,requestId);
   }catch(e){
-   const raw=String(e&&e.message||'OPERATION_FAILED');
-   const code=safeErrors.has(raw)?raw:raw.startsWith('INVALID_')?'INVALID_REQUEST':raw.startsWith('SCHEMA_MISMATCH:')?'SCHEMA_MISMATCH':'OPERATION_FAILED';
-   return apiFailure(code,'Request could not be completed',requestId);
+   return apiFailure(publicErrorCode(e),'Request could not be completed',requestId);
   }
  }
  return Object.freeze({dispatch,operations:Object.freeze(entries)});

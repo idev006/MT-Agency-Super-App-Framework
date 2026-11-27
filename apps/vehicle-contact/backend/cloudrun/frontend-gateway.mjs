@@ -63,9 +63,10 @@ export function invalidEnvelope(input) {
 // (req, res, application) for requests whose path is FRONTEND_PATH
 export function handleFrontend(req, res, application, headers = {}) {
   const origin = allowedOrigin(req.headers.origin);
+  let envelope = null;
   const send = (status, body, extra = {}) => {
     res.writeHead(status, {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store',
-      'x-content-type-options': 'nosniff', ...(origin ? corsHeaders(origin) : {}), ...headers, ...extra});
+      'x-content-type-options': 'nosniff', ...(origin ? corsHeaders(origin) : {}), ...(typeof headers === 'function' ? headers(envelope) : headers), ...extra});
     res.end(body === null ? '' : JSON.stringify(body));
   };
   if (!origin) return send(403, {error: 'ORIGIN_NOT_ALLOWED'});
@@ -81,6 +82,7 @@ export function handleFrontend(req, res, application, headers = {}) {
     try { input = JSON.parse(raw); } catch { return send(400, {error: 'INVALID_JSON'}); }
     const op = input && typeof input === 'object' ? input.group + '.' + input.action : '';
     if (!MEDIA.has(op) && raw.length > MAX_BODY) return send(413, {error: 'REQUEST_TOO_LARGE'});
+    envelope = input;
     const invalid = invalidEnvelope(input);
     if (invalid) return send(403, {error: invalid});
     // dispatch: a value (legacy engine) or a promise (core)

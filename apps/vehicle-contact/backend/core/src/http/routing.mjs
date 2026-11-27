@@ -1,16 +1,13 @@
-// Which engine answers each operation (VC-ADR-046). One table, one place: an operation group moves to the core by adding
-// its handlers here in the PR that ports it; rollback = remove them (the legacy answers again).
-// Phase 1: empty — every operation is forwarded to the legacy engine.
-export const CORE_HANDLERS = Object.freeze({
-  // 'vehicles.lookup': async (payload, principal, ctx) => ...   (phase 2)
-});
-
-export function createRouter({legacy, handlers = CORE_HANDLERS}) {
+// Which engine answers each operation (VC-ADR-046). The core answers the operations its facade has a flow for
+// (facade/operations.mjs FLOWS — one list); everything else goes to the legacy engine. Rollback of a group = remove its
+// flows from that list. GET is health only and always goes to the legacy (its version is what the deploy smoke checks).
+export function createRouter({legacy, core = null}) {
+  const ported = new Set(core ? core.operations : []);
   return {
-    engineFor: op => (Object.prototype.hasOwnProperty.call(handlers, op) ? 'core' : 'legacy'),
+    engineFor: op => (ported.has(op) ? 'core' : 'legacy'),
     async dispatch(envelope, method = 'POST') {
       const op = envelope && typeof envelope === 'object' ? envelope.group + '.' + envelope.action : '';
-      if (method === 'POST' && Object.prototype.hasOwnProperty.call(handlers, op)) return handlers[op](envelope);
+      if (method === 'POST' && ported.has(op)) return core.dispatch(envelope, method);
       return legacy.dispatch(envelope, method);
     }
   };

@@ -6,12 +6,12 @@ import {FRONTEND_PATH, handleFrontend} from './frontend-gateway.mjs';
 const MAX_BODY = 8 * 1024 * 1024;
 
 // application.dispatch may return a value (legacy engine, synchronous) or a promise (core, VC-ADR-046).
-// headers: extra response headers, e.g. {'x-p6vc-engine': 'core'}.
+// headers: extra response headers — an object, or a function of the request envelope (the core says which engine answered).
 export function createApiHandler(application, {headers = {}} = {}) {
   return (req, res) => {
     if (String(req.url || '/').split('?')[0] === FRONTEND_PATH) return handleFrontend(req, res, application, headers);
-    const send = (status, body) => {
-      res.writeHead(status, {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers});
+    const send = (status, body, envelope = null) => {
+      res.writeHead(status, {'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...(typeof headers === 'function' ? headers(envelope) : headers)});
       res.end(JSON.stringify(body));
     };
     if (req.method === 'GET') return Promise.resolve().then(() => application.dispatch({apiVersion: 'v1', group: 'system', action: 'health', payload: {}}, 'GET'))
@@ -23,7 +23,7 @@ export function createApiHandler(application, {headers = {}} = {}) {
       let body;
       try { body = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { return send(400, {ok: false, error: {code: 'INVALID_JSON'}}); }
       Promise.resolve().then(() => application.dispatch(body, 'POST'))
-        .then(result => send(200, result), () => send(500, {ok: false, error: {code: 'OPERATION_FAILED'}}));
+        .then(result => send(200, result, body), () => send(500, {ok: false, error: {code: 'OPERATION_FAILED'}}, body));
     });
   };
 }
