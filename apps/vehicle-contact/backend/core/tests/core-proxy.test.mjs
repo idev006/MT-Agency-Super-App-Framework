@@ -64,7 +64,7 @@ test('CORE-03 legacy unreachable → clean envelope with the requestId; only loc
   const core = await listen(createCoreHandler({legacy: legacyAt(base(dead))}));
   try {
     const r = await fetch(base(core) + '/', {method: 'POST', headers: {'content-type': 'application/json'},
-      body: JSON.stringify({apiVersion: 'v1', group: 'auth', action: 'session', payload: {}, requestId: 'req_12345678'})});
+      body: JSON.stringify({apiVersion: 'v1', group: 'vehicles', action: 'list', payload: {}, requestId: 'req_12345678'})}); // a forwarded op
     const body = await r.json();
     assert.equal(body.ok, false);
     assert.equal(body.error.code, 'UPSTREAM_UNAVAILABLE');

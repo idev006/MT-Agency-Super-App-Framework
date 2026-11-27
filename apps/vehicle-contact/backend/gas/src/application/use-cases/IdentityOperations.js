@@ -1,9 +1,7 @@
 import {ROLE_PERMISSIONS} from '../security/SessionService.js';
+import {loginFlow,googleLoginFlow,changePasswordFlow,logoutFlow,sessionInfoFlow,linkGoogleFlow} from '../flows/AuthFlows.js';
 import {listFilter} from '../pagination/ListFilter.js';
 import {paginate} from '../pagination/Pagination.js';
-// Static dummy hash with the same PBKDF2 cost as GasSecurity.hashPassword (150000 rounds).
-// Used for unknown/inactive users so login always performs equal work (no username-enumeration timing oracle).
-const DUMMY_PASSWORD_HASH='pbkdf2-sha256$150000$'+'0'.repeat(32)+'$'+'0'.repeat(64);
 export function createIdentityOperations({store,security,sessions}) {
  const required=(value,name,max=256)=>{if(typeof value!=='string'||!value.trim()||value.length>max)throw new Error('INVALID_'+name);return value.trim();};
  const text=v=>required(v,'TEXT').replace(/[\r\n]/g,' ');
@@ -21,63 +19,14 @@ export function createIdentityOperations({store,security,sessions}) {
   if(!store.one('vc_change_audit',{audit_id:detail.auditId}))changed('ROLES_CHANGED',detail.actorId,detail.userId,
    'roles:'+detail.beforeRoles.join(',')+'->'+detail.desiredRoles.join(','),{auditId:detail.auditId,correlationId:detail.correlationId});
  }
- function issueLogin(user){if(!user||user.status!=='ACTIVE')throw new Error('INVALID_CREDENTIALS');return sessions.issue(user);}
- function attempts(username) {
-  const digest=security.sha256('username:'+username),since=Date.parse(security.now())-15*60000;
-  const recent=store.listNewest('vc_security_events',{username_digest:digest})
-   .filter(x=>Date.parse(x.created_at)>since&&x.status==='FAILED');
-  if(recent.length>=6)throw new Error('LOGIN_RATE_LIMIT');
-  return digest;
- }
- function recordAttempt(digest,status){
-  store.sequence(()=>store.insert('vc_security_events',{event_id:security.secretToken(),username_digest:digest,status,created_at:security.now()}));
- }
- function login(p) {
-  const username=required(p.username,'USERNAME',100).normalize('NFKC').toLowerCase();
-  const digest=attempts(username);
-  const user=store.one('vc_users',{username_normalized:username});
-  // Never reveal whether the username exists (message AND timing): verify unconditionally.
-  const active=!!user&&user.status==='ACTIVE';
-  const verified=security.verifyPassword(p.password,active?user.password_hash:DUMMY_PASSWORD_HASH);
-  if(!active||!verified) {
-   recordAttempt(digest,'FAILED');throw new Error('INVALID_CREDENTIALS');
-  }
-  recordAttempt(digest,'SUCCESS');
-  return issueLogin(user);
- }
- function googleLogin(p) {
-  const claim=security.verifyGoogle(p.idToken);
-  const identity=store.one('vc_user_identities',{provider:'GOOGLE',provider_sub:claim.sub});
-  return issueLogin(identity?store.one('vc_users',{user_id:identity.user_id}):null);
- }
- function changePassword(p,actor){
-  if(!security.verifyPassword(p.oldPassword,actor.user.password_hash))throw new Error('INVALID_CREDENTIALS');
-  const hash=security.hashPassword(p.newPassword);
-  store.sequence(()=>{store.update('vc_users',{user_id:actor.userId},{password_hash:hash,password_change_required:false,updated_at:security.now()});changed('PASSWORD_CHANGED',actor.userId,actor.userId)});
-  sessions.revokeUser(actor.userId);
-  return {changed:true,reauthenticate:true};
- }
- function logout(p,actor){
-  if(typeof sessions.endSession==='function')sessions.endSession(actor);
-  else store.sequence(()=>store.update('vc_sessions',{session_id:actor.sessionId},{status:'REVOKED',revoked_at:security.now()}));
-  return {revoked:true};
- }
- function session(p,actor){return {
-  userId:actor.userId,
-  displayName:actor.user.display_name||'',
-  organizationId:actor.user.org_id||null,
-  roles:actor.roles,
-  permissions:actor.permissions,
-  expiresAt:actor.session.expires_at,
-  mustChangePassword:actor.user.password_change_required===true||String(actor.user.password_change_required)==='true'
- };}
- function linkGoogle(p,actor){
-  if(!security.verifyPassword(p.password,actor.user.password_hash))throw new Error('INVALID_CREDENTIALS');
-  const claim=security.verifyGoogle(p.idToken);
-  if(store.one('vc_user_identities',{provider:'GOOGLE',provider_sub:claim.sub}))throw new Error('IDENTITY_ALREADY_LINKED');
-  store.withLock(()=>{store.insert('vc_user_identities',{identity_id:security.secretToken(),user_id:actor.userId,provider:'GOOGLE',provider_sub:claim.sub,linked_at:security.now()});changed('GOOGLE_LINKED',actor.userId,actor.userId)});
-  return {linked:true};
- }
+ // auth.* = the shared flows (application/flows/AuthFlows.js), run on this engine by the session service
+ const auth=flow=>sessions.run(flow);
+ const login=p=>auth(loginFlow(p,sessions.deps));
+ const googleLogin=p=>auth(googleLoginFlow(p,sessions.deps));
+ const changePassword=(p,actor)=>auth(changePasswordFlow(p,actor,sessions.deps));
+ const logout=(p,actor)=>auth(logoutFlow(p,actor,sessions.deps));
+ const session=(p,actor)=>auth(sessionInfoFlow(p,actor));
+ const linkGoogle=(p,actor)=>auth(linkGoogleFlow(p,actor,sessions.deps));
  function createUser(p,actor) {
   const username=required(p.username,'USERNAME',100).normalize('NFKC').toLowerCase();
   const hash=security.hashPassword(p.temporaryPassword),id=security.secretToken();

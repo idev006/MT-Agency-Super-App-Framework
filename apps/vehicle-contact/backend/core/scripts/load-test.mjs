@@ -4,8 +4,10 @@
 //   lookup   — authenticated officer path: vehicles.lookup of a real synthetic vehicle (session check + vehicle read + one
 //              access-audit row per call, kept by the log policy). Signs in once with the synthetic account from the
 //              gitignored .env, signs out at the end. Needs P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV as well.
+//   login    — auth.login with the synthetic account (password hash + session + security event); every session the probe
+//              creates is signed out after its level (not timed). Same gate as lookup.
 // Gate: P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD.
-//   P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD node scripts/load-test.mjs cloud-run-core 1,10,30,50 [validate|lookup]
+//   P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD node scripts/load-test.mjs cloud-run-core 1,10,30,50 [validate|lookup|login]
 // Each level sends 3 x concurrency requests in waves; the first level is preceded by one warm-up call (reported apart, so a
 // cold start does not hide in the numbers). Prints timings and counts only — never data, tokens or credentials.
 // Report: test-results/p6vc-load-<id>-<probe>.json (cwd).
@@ -17,7 +19,7 @@ const [id = 'cloud-run-core', levelsArg = '1,10,30,50', probe = 'validate'] = pr
 const trusted = JSON.parse(fs.readFileSync(new URL('../../../contracts/trusted-endpoints.v1.json', import.meta.url), 'utf8'));
 const endpoint = trusted.endpoints.find(e => e.id === id && e.kind === 'cloud-run');
 if (!endpoint) { console.error('UNKNOWN_CLOUD_RUN_ENDPOINT'); process.exit(2); }
-if (!['validate', 'lookup'].includes(probe)) { console.error('UNKNOWN_PROBE'); process.exit(2); }
+if (!['validate', 'lookup', 'login'].includes(probe)) { console.error('UNKNOWN_PROBE'); process.exit(2); }
 const levels = levelsArg.split(',').map(Number).filter(n => Number.isInteger(n) && n >= 1 && n <= 100);
 
 async function post(group, action, payload, token) {
@@ -26,10 +28,21 @@ async function post(group, action, payload, token) {
   return {status: r.status, body: await r.json(), answeredBy: r.headers.get('x-p6vc-answered-by')};
 }
 
-let request, signOut = async () => {};
+let request, signOut = async () => {}, afterLevel = async () => {};
 if (probe === 'validate') {
   request = async () => { const r = await post('campaigns', 'validate', {campaignToken: randomBytes(32).toString('hex')});
     return {ok: r.status === 200 && r.body?.error?.code === 'CAMPAIGN_INVALID', answeredBy: r.answeredBy}; };
+} else if (probe === 'login') {
+  await import('../../gas/scripts/load-env.mjs');
+  if (process.env.P6VC_ALLOW_OWNER_DEV_WRITES !== 'RUN_SYNTHETIC_OWNER_DEV') { console.error('OWNER_DEV_GATE_CLOSED'); process.exit(2); }
+  const user = process.env.P6VC_TEST_USERNAME, password = process.env.P6VC_TEST_PASSWORD;
+  if (!user || !password) { console.error('TEST_CREDENTIALS_MISSING'); process.exit(2); }
+  const opened = [];
+  request = async () => { const r = await post('auth', 'login', {username: user, password});
+    if (r.body?.data?.sessionToken) opened.push(r.body.data.sessionToken);
+    return {ok: r.status === 200 && r.body?.ok === true, answeredBy: r.answeredBy}; };
+  afterLevel = async () => { const all = opened.splice(0); for (let i = 0; i < all.length; i += 10) await Promise.all(all.slice(i, i + 10).map(t => post('auth', 'logout', {}, t).catch(() => {}))); };
+  signOut = afterLevel;
 } else {
   await import('../../gas/scripts/load-env.mjs');
   if (process.env.P6VC_ALLOW_OWNER_DEV_WRITES !== 'RUN_SYNTHETIC_OWNER_DEV') { console.error('OWNER_DEV_GATE_CLOSED'); process.exit(2); }
@@ -65,6 +78,7 @@ try {
     const row = {concurrency: c, requests: results.length, errors: results.filter(r => !r.ok).length, answeredBy: by,
       p50: pct(ms, 50), p95: pct(ms, 95), max: Math.round(Math.max(...ms)), seconds: Math.round((performance.now() - t0) / 100) / 10};
     report.levels.push(row);
+    await afterLevel();
     console.log(`LOAD ${probe} c=${c} n=${row.requests} errors=${row.errors} p50=${row.p50}ms p95=${row.p95}ms max=${row.max}ms total=${row.seconds}s answered-by=${by}`);
   }
 } finally { await signOut(); }

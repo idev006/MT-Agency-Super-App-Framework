@@ -6,6 +6,7 @@ import {createApiHandler} from '../../cloudrun/http-handler.mjs';
 import {createIntegrationManager} from './adapters/outbound/manager.mjs';
 import {createSdkGateway} from './adapters/firestore/sdk-gateway.mjs';
 import {createFirestoreStoreAsync} from './adapters/firestore/store.mjs';
+import {createNodePasswordHasher} from './adapters/security/password-hasher.mjs';
 import {createCoreFacade} from './facade/operations.mjs';
 import {createRouter} from './http/routing.mjs';
 
@@ -19,7 +20,8 @@ export const firestoreStoreFromEnv = (env = process.env) => () => createFirestor
 
 // integrations: the Integration Manager (VC-ADR-047); every outbound call goes through it
 export function createCoreHandler({integrations = createIntegrationManager(), legacy = integrations.gateway('legacy-engine'),
-  core = createCoreFacade({store: firestoreStoreFromEnv(), media: () => integrations.gateway('media-bridge')})} = {}) {
+  core = createCoreFacade({store: firestoreStoreFromEnv(), media: () => integrations.gateway('media-bridge'),
+    passwords: createNodePasswordHasher()})} = {}) {
   const router = createRouter({legacy, core});
   // x-p6vc-answered-by: which engine answered this operation (evidence for each ported group; no data in it)
   const headers = envelope => ({'x-p6vc-engine': 'core',

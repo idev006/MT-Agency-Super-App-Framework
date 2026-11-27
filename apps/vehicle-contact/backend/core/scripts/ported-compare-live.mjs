@@ -1,7 +1,8 @@
 // Live dual call for ported operations (VC-ADR-046 phase 2b): the same requests to the legacy service (p6vc-api) and the
 // core (p6vc-core) must return identical envelopes, and the core must say it answered them itself (x-p6vc-answered-by).
 // Synthetic DEV only: signs in with the synthetic account from the gitignored .env (one session, signed out at the end).
-// Prints operation, counts and EQUAL / NOT EQUAL only — never data, tokens or credentials.
+// Prints operation, counts and EQUAL / NOT EQUAL only — never data, tokens or credentials. auth.* (wave 1): each engine
+// signs in once itself (2 more synthetic sessions, both signed out) plus one wrong-password attempt per engine.
 //   P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV node scripts/ported-compare-live.mjs
 import fs from 'node:fs';
 import '../../gas/scripts/load-env.mjs';
@@ -53,6 +54,19 @@ try {
     const size = b => (b.ok ? (b.data === null ? 'null' : Array.isArray(b.data) ? b.data.length : Object.keys(b.data).length + ' fields') : 'error ' + b.error?.code);
     rows.push({op, equal, answeredBy: core.answeredBy, legacy: size(legacy.body), core: size(core.body)});
   }
+  // phase 3 wave 1: auth.* — each engine logs in itself; the answers must match apart from the session token and its expiry
+  const norm = b => JSON.parse(JSON.stringify(b, (k, v) => (['sessionToken', 'expiresAt'].includes(k) && typeof v === 'string' ? '<set>' : v)));
+  const authRow = (op, l, c) => { const L = norm(l.body), C = norm(c.body);
+    rows.push({op, equal: JSON.stringify(L) === JSON.stringify(C), answeredBy: c.answeredBy, legacy: L.ok ? 'ok' : 'error ' + L.error?.code, core: C.ok ? 'ok' : 'error ' + C.error?.code}); };
+  const loginL = await call(LEGACY, 'auth', 'login', {username: user, password}, null), loginC = await call(CORE, 'auth', 'login', {username: user, password}, null);
+  authRow('auth.login', loginL, loginC);
+  const tL = loginL.body.data?.sessionToken, tC = loginC.body.data?.sessionToken;
+  authRow('auth.session', await call(LEGACY, 'auth', 'session', {}, tL), await call(CORE, 'auth', 'session', {}, tC));
+  authRow('auth.login', await call(LEGACY, 'auth', 'login', {username: user, password: 'Wrong-Synthetic-1!'}, null),
+    await call(CORE, 'auth', 'login', {username: user, password: 'Wrong-Synthetic-1!'}, null));
+  authRow('auth.googleLogin', await call(LEGACY, 'auth', 'googleLogin', {idToken: 'x'.repeat(120)}, null), await call(CORE, 'auth', 'googleLogin', {idToken: 'x'.repeat(120)}, null));
+  authRow('auth.logout', await call(LEGACY, 'auth', 'logout', {}, tL), await call(CORE, 'auth', 'logout', {}, tC));
+  authRow('auth.session', await call(LEGACY, 'auth', 'session', {}, tL), await call(CORE, 'auth', 'session', {}, tC));
 } finally {
   await call(LEGACY, 'auth', 'logout', {}, token);
 }
