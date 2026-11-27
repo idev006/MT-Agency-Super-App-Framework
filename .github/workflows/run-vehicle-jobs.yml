@@ -10,9 +10,15 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: 'Type RUN_VEHICLE_JOBS to start the jobs now (in the mode they were deployed with)'
+        description: 'Type RUN_VEHICLE_JOBS to start a job now (in the mode it was deployed with)'
         required: true
         type: string
+      job:
+        description: 'Job to start (the daily schedule starts p6vc-housekeeping)'
+        required: true
+        default: p6vc-housekeeping
+        type: choice
+        options: [p6vc-housekeeping, p6vc-photo-audit]
 
 permissions:
   contents: read
@@ -25,11 +31,11 @@ concurrency:
 env:
   PROJECT_ID: mt-iam-core-2026
   REGION: asia-southeast3
-  JOB: p6vc-housekeeping
+  JOB: ${{ inputs.job || 'p6vc-housekeeping' }}
 
 jobs:
   run:
-    name: Start the housekeeping job and wait
+    name: Start the job and wait
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && (github.event_name == 'schedule' || inputs.confirmation == 'RUN_VEHICLE_JOBS')
     timeout-minutes: 20

@@ -49,8 +49,8 @@ deploy:
         confirmation: DEPLOY_VEHICLE_CLOUDRUN, verify: "steps 'Smoke the candidate' and 'Smoke the live URL' success", note: "safe deploy: no traffic → smoke → switch → smoke, auto rollback" }
     - { id: core, run: "gh workflow run deploy-vehicle-core.yml --ref main -f confirmation=DEPLOY_VEHICLE_CORE",
         confirmation: DEPLOY_VEHICLE_CORE, verify: "step 'Smoke the live URL' success (first run creates p6vc-core)", note: "VC-ADR-046 front door; after the legacy deploy when both change" }
-    - { id: core_jobs, run: "gh workflow run deploy-vehicle-jobs.yml --ref main -f confirmation=DEPLOY_VEHICLE_JOBS -f mode=DRY_RUN",
-        confirmation: DEPLOY_VEHICLE_JOBS, verify: "step 'Run once and read its report' prints JOB {...status PASS}", note: "VC-ADR-046 2c-2: Cloud Run Job p6vc-housekeeping from the live core image; mode APPLY needs -f apply_confirmation=APPLY_DRIVE_HOUSEKEEPING (Drive trash, 30-day undo); daily start = run-vehicle-jobs.yml (GitHub schedule 03:30 Bangkok; manual: -f confirmation=RUN_VEHICLE_JOBS)" }
+    - { id: core_jobs, run: "gh workflow run deploy-vehicle-jobs.yml --ref main -f confirmation=DEPLOY_VEHICLE_JOBS",
+        confirmation: DEPLOY_VEHICLE_JOBS, verify: "step 'Run once and read its report' prints JOB {...status PASS}", note: "VC-ADR-046 2c: Cloud Run Jobs p6vc-housekeeping + p6vc-photo-audit (read-only) from the live core image; -f run_job picks the one run once; mode KEEP (default) keeps the housekeeping mode, APPLY needs -f apply_confirmation=APPLY_DRIVE_HOUSEKEEPING (Drive trash, 30-day undo); daily start = run-vehicle-jobs.yml (GitHub schedule 03:30 Bangkok; manual: -f confirmation=RUN_VEHICLE_JOBS)" }
     - { id: worker, run: "npx wrangler@4 deploy (in tools/p6vc-api-test-console)", note: "separate deploy; the live API suite does NOT go through it" }
   rollback:
     - "Cloud Run: workflow rollback-vehicle-cloudrun.yml, confirmation ROLLBACK_VEHICLE_CLOUDRUN"

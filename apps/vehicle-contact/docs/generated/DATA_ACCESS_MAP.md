@@ -23,7 +23,7 @@
 | `vc_migration_journal` | — | — |
 | `vc_operation_journal` | `application/use-cases/IdentityOperations.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` | `application/use-cases/IdentityOperations.js` `application/use-cases/VehicleOperations.js` |
 | `vc_organizations` | `application/use-cases/AdministrationOperations.js` | `application/flows/VehicleReadFlows.js` `application/use-cases/AdministrationOperations.js` `application/use-cases/IdentityOperations.js` `application/use-cases/ReferenceOperations.js` `application/use-cases/VehicleListOperations.js` `application/use-cases/VehicleOperations.js` |
-| `vc_photo_staging` | `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` | `application/flows/DrivePhotoHousekeepingFlow.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` |
+| `vc_photo_staging` | `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` | `application/flows/DrivePhotoAuditFlow.js` `application/flows/DrivePhotoHousekeepingFlow.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` |
 | `vc_qr_tokens` | `application/use-cases/VehicleOperations.js` | `application/flows/VehicleReadFlows.js` `application/use-cases/QrExportOperation.js` `application/use-cases/QrHistoryOperation.js` `application/use-cases/VehicleListOperations.js` `application/use-cases/VehicleOperations.js` |
 | `vc_reference_values` | — | `application/flows/VehicleReadFlows.js` `application/use-cases/ReferenceOperations.js` `application/use-cases/VehicleListOperations.js` |
 | `vc_registration_requests` | `application/use-cases/VehicleOperations.js` | `application/flows/VehicleReadFlows.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/StickerCategoryOperations.js` `application/use-cases/VehicleOperations.js` |
@@ -38,13 +38,14 @@
 | `vc_user_roles` | `application/use-cases/IdentityOperations.js` | `application/flows/SessionAuthorizeFlow.js` `application/security/SessionService.js` `application/use-cases/IdentityOperations.js` `infrastructure/security/AdminPasswordReset.js` |
 | `vc_users` | `application/use-cases/IdentityOperations.js` `infrastructure/security/AdminPasswordReset.js` | `application/flows/SessionAuthorizeFlow.js` `application/flows/VehicleReadFlows.js` `application/use-cases/IdentityOperations.js` `application/use-cases/QrHistoryOperation.js` `application/use-cases/VehicleOperations.js` `infrastructure/security/AdminPasswordReset.js` |
 | `vc_vehicle_contacts` | `application/use-cases/ChangeReviewOperation.js` `application/use-cases/VehicleOperations.js` | `application/flows/VehicleReadFlows.js` `application/use-cases/ChangeReviewOperation.js` `application/use-cases/VehicleOperations.js` |
-| `vc_vehicle_photos` | `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` | `application/flows/DrivePhotoHousekeepingFlow.js` `application/flows/VehicleReadFlows.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` |
+| `vc_vehicle_photos` | `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` | `application/flows/DrivePhotoAuditFlow.js` `application/flows/DrivePhotoHousekeepingFlow.js` `application/flows/VehicleReadFlows.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleOperations.js` |
 | `vc_vehicles` | `application/use-cases/ChangeReviewOperation.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/VehicleListOperations.js` `application/use-cases/VehicleOperations.js` | `application/flows/VehicleReadFlows.js` `application/use-cases/ChangeReviewOperation.js` `application/use-cases/MediaRetentionOperations.js` `application/use-cases/QrExportOperation.js` `application/use-cases/QrHistoryOperation.js` `application/use-cases/VehicleListOperations.js` `application/use-cases/VehicleOperations.js` |
 
 ## Module → operations and tables
 
 | Module | Operations | Writes | Reads |
 |---|---|---|---|
+| `application/flows/DrivePhotoAuditFlow.js` | — | — | `vc_photo_staging` `vc_vehicle_photos` |
 | `application/flows/DrivePhotoHousekeepingFlow.js` | — | — | `vc_photo_staging` `vc_vehicle_photos` |
 | `application/flows/SessionAuthorizeFlow.js` | — | `vc_sessions` | `vc_sessions` `vc_user_permissions` `vc_user_roles` `vc_users` |
 | `application/flows/VehicleReadFlows.js` | — | `vc_lookup_audit` | `vc_campaigns` `vc_change_audit` `vc_change_requests` `vc_lookup_audit` `vc_organizations` `vc_qr_tokens` `vc_reference_values` `vc_registration_requests` `vc_retention_jobs` `vc_settings` `vc_users` `vc_vehicle_contacts` `vc_vehicle_photos` `vc_vehicles` |
