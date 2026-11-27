@@ -133,3 +133,23 @@ test('N1A-09 system.reset.* are answered by the core; a capped table refuses the
   await assert.rejects(resetExecute({confirmation: 'RESET P6VC', password: 'synthetic', planDigest: 'digest'}, actor, ctx), /RESET_PLAN_TOO_LARGE/);
   assert.equal(writes, 0);
 });
+
+test('N1A-10 preview reports a complete plan above the execute limit; execute refuses before any write', async () => {
+  const {resetPreview, resetExecute} = await import('../src/use-cases/system-reset.mjs');
+  let writes = 0;
+  const store = {readMany: async reqs => reqs.map(({name}) => {
+    if (name === 'vc_sessions') return Array.from({length: 2100}, (_, i) => ({session_id: `s${i}`}));
+    if (name === 'vc_change_audit') return Array.from({length: 2001}, (_, i) => ({audit_id: `a${i}`}));
+    return [];
+  }), writeMany: async () => { writes++; }, insert: async () => { writes++; }};
+  const actor = {userId: 'admin', user: {password_hash: 'fixture'}, sessionId: 's0'};
+  const ctx = {store, resetEnabled: true, sha256: () => 'digest', passwords: {verify: async () => true},
+    now: () => '', id: () => 'id', media: {trashAll: async () => { writes++; }}};
+  const preview = await resetPreview({}, actor, ctx);
+  assert.equal(preview.deleteTotal, 4100);
+  assert.equal(preview.deleteByTable.vc_sessions, 2099);
+  assert.equal(preview.deleteByTable.vc_change_audit, 2001);
+  await assert.rejects(resetExecute({confirmation: 'RESET P6VC', password: 'synthetic',
+    planDigest: preview.planDigest}, actor, ctx), /RESET_PLAN_TOO_LARGE/);
+  assert.equal(writes, 0);
+});
