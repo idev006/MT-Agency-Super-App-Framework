@@ -15,25 +15,22 @@ Status labels: `status:todo` → `status:in-progress` → closed (with the evide
 | # | Item | Issue | Depends on | Status |
 |---|---|---|---|---|
 | R01 | Prove the per-vehicle photo folders live (0.9.55) | [#294](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/294) | — | **done** (evidence VC-ADR-046 0.9.53–0.9.55) |
-| R02 | Photos by Drive link instead of base64 (PR B) | [#295](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/295) | R01 | todo |
+| R02 | Photos by Drive link instead of base64 (PR B) | [#295](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/295) | R01 | deploying (0.9.56) |
 | R03 | Web app resizes by the admin policy; replace resizes; admin fields (PR 2) | [#296](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/296) | — | todo |
 | R04 | Move existing photos into their vehicle folders (PR C, dry run first) | [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) | R01 | todo |
-| R05 | Wave 3 — registration review on the core (+ duplicate check by plate) | [#298](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/298) | — | todo |
-| R06 | Wave 4 — vehicle admin + QR on the core (10 ops) | [#299](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/299) | R05 | todo |
-| R07 | Wave 5 — owner changes + photos on the core (7 ops) | [#300](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/300) | R06 | todo |
-| R08 | Wave 6 — administration on the core (18 ops) | [#301](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/301) | — | todo |
-| R09 | Wave 7 — retention, audit, system reset on the core (9 ops) | [#302](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/302) | R08 | todo |
+| N1a | Foundation + system / list ops as native async Node (7 ops) — VC-ADR-051 | [#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311) | — | todo |
+| N1b | Vehicles, QR, change requests, registration review (16 ops) | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) | N1a | todo |
+| N2 | Photos, retention, audit (10 ops) | [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) | N1a | todo |
+| N3 | Users, organizations, campaigns (15 ops) | [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) | N1a | todo |
 | R10 | GAS 2c-3b — reference seed as a core job | [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) | — | todo |
 | R11 | GAS 2c-3c — first admin + admin reset as core jobs (security review) | [#304](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/304) | owner security OK | todo |
-| R12 | GAS 2c-4 — GAS = photo bridge only | [#305](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/305) | R10, R11, owner removes the GAS trigger | todo |
-| R13 | Shared code out of backend/gas into backend/shared (2d, as waves land) | [#270](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/270) | R05–R09 | todo |
+| N4 | Cut over: web app → core directly, Worker retired, legacy + GAS API deleted | [#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255) | N1a–N3, R10, R11 | todo |
 | R14 | Capacity for 100 simultaneous logins (sustained test, min-instances decision) | [#306](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/306) | owner cost decision | todo |
-| R15 | Cut over: web app → core, Worker retired, legacy deleted (phase 9) | [#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255) | R05–R13 | todo |
 | R16 | Production switches + owner actions (reset off, Drive storage, legal, pepper, Google login, GAS trigger) | [#307](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/307) | before real data | todo |
 | R17 | Apply the new log retention to old rows (preview + confirm) | [#308](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/308) | owner confirmation | todo |
 
 Progress of the engine move: **16 of 64 operations** answered by the core (officer path 6, auth 6, public registration 4);
-R05–R09 move the other 48.
+N1a–N3 move the other 48 as native async Node ([NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md), VC-ADR-051), N4 cuts over.
 
 ## Done (evidence in DECISION_LOG.md)
 - Node core phases 0–2: front door, Integration Manager, shared flows, store rules, async Firestore (gRPC), officer path.
