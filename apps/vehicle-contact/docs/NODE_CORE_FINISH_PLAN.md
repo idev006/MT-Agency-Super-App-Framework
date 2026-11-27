@@ -48,3 +48,105 @@ hand-kept duplicates.
 
 Order: N1a → N1b → N2 → N3 → (R10, R11) → N4. Each item: PR(s) → owner OK → deploy → proof → evidence in DECISION_LOG
 → issue closed → ROADMAP status updated.
+
+## Blueprint (diagrams)
+
+### 1. Today → target
+```mermaid
+flowchart LR
+  subgraph today["Today (0.9.56)"]
+    B1[Web app<br/>GitHub Pages] --> W[Cloudflare Worker]
+    W --> L[p6vc-api<br/>legacy engine, sync<br/>concurrency 1]
+    C1[p6vc-core<br/>async Node<br/>16 of 64 ops] -. forwards 48 ops .-> L
+    L --> F1[(Firestore)]
+    C1 --> F1
+    L --> G1[GAS web app<br/>photo bridge + old API]
+    C1 --> G1
+    G1 --> D1[(Google Drive<br/>photos)]
+  end
+  subgraph target["Target (after N4)"]
+    B2[Web app] --> C2[p6vc-core<br/>async Node<br/>64 of 64 ops]
+    C2 --> F2[(Firestore)]
+    C2 --> G2[GAS<br/>photo bridge only]
+    G2 --> D2[(Google Drive<br/>folder per vehicle)]
+    B2 -. photos by link .-> D2
+    J[Cloud Run Jobs<br/>housekeeping, audit, seed, admin tools] --> F2
+    J --> G2
+  end
+```
+
+### 2. Inside the core (dependencies point inwards; only the http-client calls out)
+```mermaid
+flowchart TB
+  H[http<br/>routing, /api/frontend] --> FA[facade<br/>route checks, DTO, session, error codes]
+  FA --> UC[use-cases<br/>async modules, N1a–N3]
+  FA --> FL[shared flows<br/>officer path, auth, registration]
+  UC --> DOM[domain<br/>policies: hash, photo policy, layout, lifecycle, log]
+  FL --> DOM
+  UC --> P[ports<br/>Store, MediaStore, PasswordHasher, LegacyEngine]
+  FL --> P
+  AD[adapters<br/>Firestore gRPC store + transactions,<br/>photo bridge, node:crypto, runtime monitor] -. implements .-> P
+  AD --> HC[http-client<br/>timeout, retry, breaker]
+  ROOT[server.mjs / main.mjs / job.mjs<br/>composition root] --> H
+  ROOT --> AD
+```
+
+### 3. An officer opens a vehicle (after N4)
+```mermaid
+sequenceDiagram
+  participant B as Browser
+  participant C as p6vc-core
+  participant F as Firestore
+  participant D as Google Drive
+  B->>C: vehicles.detail (session token)
+  C->>F: session + vehicle + sticker list (round 1)
+  C->>F: contacts, photos, policy, labels, QR + access-log row (round 2, one commit)
+  C-->>B: vehicle + photo links (thumbUrl, fullUrl)
+  par 5 thumbnails at once
+    B->>D: drive.google.com/thumbnail?id=…&sz=w320
+    D-->>B: image
+  end
+  B->>D: full size on tap (sz=w1600)
+```
+
+### 4. A photo's life
+```mermaid
+sequenceDiagram
+  participant P as Phone (public form)
+  participant C as p6vc-core
+  participant G as GAS bridge
+  participant D as Drive
+  participant F as Firestore
+  P->>P: resize to the admin photo policy
+  P->>C: photos.upload
+  C->>C: size check from the file header (PHOTO_TOO_LARGE)
+  C->>G: upload (signed)
+  G->>D: file in the photos folder, shared by link
+  C->>F: staging row (STAGED)
+  P->>C: registrations.submit (5 photo ids)
+  C->>F: one commit: request, CLAIMED photos, quota, idempotency
+  Note over C,F: registration admin approves (N1b on the core)
+  C->>F: vehicle, contact, photos, QR (one commit)
+  C->>G: organize (signed)
+  G->>D: รถ/province/plate · id/FRONT.jpg … shared by link
+  C->>F: vehicle.photo_folder_id
+  Note over D: daily job trashes unclaimed uploads > 7 days
+```
+
+### 5. Work order and gates
+```mermaid
+flowchart LR
+  R02[R02 photo links<br/>0.9.56] --> N1a[N1a foundation<br/>+ 7 ops]
+  N1a --> N1b[N1b 16 ops<br/>vehicles, QR, review]
+  N1a --> N2[N2 10 ops<br/>photos, retention, audit]
+  N1a --> N3[N3 15 ops<br/>users, orgs, campaigns]
+  N1b --> N4
+  N2 --> N4
+  N3 --> N4
+  R10[R10 seed job] --> N4
+  R11[R11 admin jobs<br/>security OK] --> N4
+  N4[N4 cut-over<br/>Worker off, legacy deleted,<br/>GAS bridge only] --> GL[Go-live checklist<br/>R14 capacity, R16, R17]
+  classDef gate fill:#fff3cd,stroke:#b08800
+  class N4,GL gate
+```
+Every box: PR → owner OK → deploy → live suite + DATA_PROOF + read-back → evidence → issue closed.
