@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend 0.9.60 / FE 0.9.22. N1a is proven (core 22/64 operations); FE direct-core PR #324 is built and CI green, awaiting merge.
+**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend 0.9.60 / FE 0.9.23. N1a is proven (core 22/64 operations); N4a direct browser route is live and publicly verified.
 **Status:** current. Read [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) (what runs, last proof) with this page (how to work, next steps).
 
 ## 1. Ready-to-paste next-AI prompt
@@ -12,12 +12,12 @@ tech lead. Answer the owner in Thai, concisely; end every answer with a section 
 
 Read first, in order: CLAUDE.md (repo root) → .mt-studio/project.yaml (commands, deploy order, proof gates, gotchas) →
 apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md → PROJECT_HANDOVER.md (this) → ROADMAP.md → NODE_CORE_FINISH_PLAN.md →
-the generated maps docs/generated/DATA_ACCESS_MAP.md + CHANGE_CHECKLIST.md → DECISION_LOG.md (VC-ADR-046..051).
+the generated maps docs/generated/DATA_ACCESS_MAP.md + CHANGE_CHECKLIST.md → DECISION_LOG.md (VC-ADR-046..052).
 Then verify the live state yourself: git fetch origin main; gh pr list; gh issue list --label status:in-progress; CI.
 
 Where things stand: backend 0.9.60 is live and proven. The Node core (p6vc-core) answers 22 of 64 operations live and forwards the rest to
 the frozen legacy engine (p6vc-api). The owner decided (VC-ADR-051) to move the whole backend to native async Node:
-N1a complete → N4a direct browser route (PR #324) → N1b → N2 → N3 → R10/R11 → N4 cut-over. Each DEV item = small PRs → green CI →
+N1a and N4a complete → N1b → N2 → N3 → R10/R11 → N4 cut-over. Each DEV item = small PRs → green CI →
 deploy → proof → evidence in DECISION_LOG → ROADMAP + issue updated.
 
 Hard rules (owner): VC-ADR-052's 2026-11-28 one-time DEV approval covers subsequent synthetic-DEV merges/deploys and clasp;
@@ -25,8 +25,7 @@ never merge with
 red CI; never claim PASS without independent evidence (live suite through the core + DATA_PROOF fresher than the suite,
 Firestore read-back); synthetic DEV data only; never read, print or commit secrets (SA key, pepper, tokens, passwords — env
 var NAMES only); never create a new version of / lose secret p6vc-auth-pepper; permanent deletes need a dry run + the
-owner's confirmation; deploy order: Firestore indexes before the backend, the Cloudflare Worker is a separate deploy and the
-live suite does not go through it; do not type passwords into the hosted web app (the owner checks screens); PDPA must not
+owner's confirmation; deploy order: Firestore indexes before the backend; the unused Worker service is retired in N4; do not type passwords into the hosted web app (the owner checks screens); PDPA must not
 block development (legal at go-live).
 ```
 
@@ -67,7 +66,7 @@ flowchart LR
 | `scripts/gen-system-maps.mjs` | the generated maps + ratchet (`--check` in CI) |
 | `scripts/p6vc-deploy-backend.sh` | the deploy chain (refuses without `P6VC_OWNER_OK=MERGE_AND_DEPLOY`) |
 
-Owner clarification 2026-11-28: use LSP to map code; the target backend is native async Node in `p6vc-core`, with Firestore for data and the GAS API for Google Drive photos, **without Cloudflare Worker**. The deployed FE 0.9.22 build still selects the Worker (`deploy-pages-ssot.yml`); changing that route needs its own reviewed cut-over and live UI proof.
+Owner clarification 2026-11-28: use LSP to map code; the target backend is native async Node in `p6vc-core`, with Firestore for data and the GAS API for Google Drive photos, **without Cloudflare Worker**. FE 0.9.23 now calls the core directly; the Worker service is still deployed but unused by the browser and is retired in N4.
 
 ## 4. How to move an operation to the core (the N1a pattern)
 
@@ -100,8 +99,8 @@ Rollback: remove the op from `USE_CASES` / `FLOWS` and redeploy the core (the le
 
 ## 6. Next actions
 
-1. **N4a PR #324** — FE 0.9.23 calls p6vc-core directly. CI is green; merge, prove the Pages bundle uses the trusted core endpoint and inspect the public sign-in screen without entering hosted credentials. No Worker route in the browser build.
-2. **N1b** (#312, 16 ops: vehicles, QR, change requests, registration review) — includes fixing approval reading the whole `vc_vehicles` table (query by plate + province).
+1. **N1b #312** — move vehicles, QR, change requests and registration review to native async Node in small PRs. Keep local acceptance, CI and independent live proof per deploy.
+2. N1b includes fixing approval reading the whole `vc_vehicles` table (query by plate + province).
 3. N2 (#313), N3 (#314), R10 (#303), R11 (#304, owner security review), N4 (#255).
 4. Photos R03 (#296), R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
 
