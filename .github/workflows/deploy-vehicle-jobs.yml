@@ -4,7 +4,7 @@ name: Deploy P6 Vehicle Contact core jobs (Cloud Run Jobs, manual only)
 # service runs (one image; deploy the core first when its code changed). Today: drive-photo-housekeeping (shared flow, photo bridge ops list +
 # trash; Drive trash only, 30-day undo). Safe by default:
 #   mode DRY_RUN (default) = report only; APPLY needs the extra phrase APPLY_DRIVE_HOUSEKEEPING.
-#   schedule=false (default) = no Cloud Scheduler trigger; true = daily 03:30 Asia/Bangkok.
+#   The daily trigger is run-vehicle-jobs.yml (GitHub schedule, 03:30 Asia/Bangkok) — ONE trigger, so no Cloud Scheduler.
 # Every run executes the job once and prints its JOB line (counters + short id prefixes only).
 on:
   workflow_dispatch:
@@ -23,11 +23,6 @@ on:
         description: 'With mode APPLY only: type APPLY_DRIVE_HOUSEKEEPING'
         required: false
         type: string
-      schedule:
-        description: 'Create / update the daily Cloud Scheduler trigger (03:30 Asia/Bangkok)'
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: read
@@ -42,12 +37,11 @@ env:
   REGION: asia-southeast3
   CORE_SERVICE: p6vc-core
   JOB: p6vc-housekeeping
-  SCHEDULE_NAME: p6vc-housekeeping-daily
   RUNTIME_SA: p6vc-api-runtime@mt-iam-core-2026.iam.gserviceaccount.com
 
 jobs:
   deploy:
-    name: Deploy job, run once, optional schedule
+    name: Deploy job and run it once
     runs-on: ubuntu-latest
     if: >-
       github.ref == 'refs/heads/main' && inputs.confirmation == 'DEPLOY_VEHICLE_JOBS' &&
@@ -93,18 +87,3 @@ jobs:
             "resource.type=cloud_run_job AND resource.labels.job_name=${JOB} AND labels.\"run.googleapis.com/execution_name\"=${EXEC} AND textPayload:\"JOB \"" \
             --project "$PROJECT_ID" --limit 5 --format='value(textPayload)' || echo "::warning::could not read the job log"
           exit $RC
-
-      - name: Daily trigger (Cloud Scheduler)
-        if: inputs.schedule
-        run: |
-          # the trigger calls the job as the runtime account, which may only run this job
-          gcloud run jobs add-iam-policy-binding "$JOB" --project "$PROJECT_ID" --region "$REGION"             --member "serviceAccount:${RUNTIME_SA}" --role roles/run.invoker --quiet >/dev/null
-          URI="https://run.googleapis.com/v2/projects/${PROJECT_ID}/locations/${REGION}/jobs/${JOB}:run"
-          ARGS=(--project "$PROJECT_ID" --location "$REGION" --schedule "30 3 * * *" --time-zone "Asia/Bangkok"
-            --uri "$URI" --http-method POST --oauth-service-account-email "$RUNTIME_SA")
-          if gcloud scheduler jobs describe "$SCHEDULE_NAME" --project "$PROJECT_ID" --location "$REGION" >/dev/null 2>&1; then
-            gcloud scheduler jobs update http "$SCHEDULE_NAME" "${ARGS[@]}" --quiet
-          else
-            gcloud scheduler jobs create http "$SCHEDULE_NAME" "${ARGS[@]}" --quiet
-          fi
-          gcloud scheduler jobs describe "$SCHEDULE_NAME" --project "$PROJECT_ID" --location "$REGION" --format='value(schedule,timeZone,state)'
