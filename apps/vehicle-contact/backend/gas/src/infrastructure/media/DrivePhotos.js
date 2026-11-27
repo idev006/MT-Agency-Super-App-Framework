@@ -37,5 +37,18 @@ export function createDrivePhotos({driveApp,utilities,folderId}) {
   while(files.hasNext()){if(Date.now()-start>budgetMs)return {trashed,more:true};files.next().setTrashed(true);trashed++;}
   return {trashed,more:false};
  }
- return Object.freeze({upload,read,trash,trashAll});
+ // VC-ADR-046 phase 2c: one page of the photo folder for housekeeping (the core asks through the bridge). Paged with Drive's
+ // continuation token so no single call runs long. Ids, creation time and trash state only — never file content.
+ function list(pageToken=null,pageSize=500){
+  if(pageToken!==null&&(typeof pageToken!=='string'||!pageToken||pageToken.length>4000))throw new Error('INVALID_PAGE_TOKEN');
+  const size=Math.min(Math.max(1,Math.floor(Number(pageSize))||500),1000);
+  const it=pageToken?driveApp.continueFileIterator(pageToken):driveApp.getFolderById(folderId).getFiles();
+  const files=[];
+  while(files.length<size&&it.hasNext()){
+   const f=it.next();
+   files.push({id:f.getId(),createdMs:f.getDateCreated?new Date(f.getDateCreated()).getTime()||0:0,trashed:f.isTrashed()});
+  }
+  return {files,nextPageToken:it.hasNext()?it.getContinuationToken():null};
+ }
+ return Object.freeze({upload,read,trash,trashAll,list});
 }

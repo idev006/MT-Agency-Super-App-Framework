@@ -4,7 +4,7 @@ import {MEDIA_BRIDGE_OPS,MEDIA_BRIDGE_WINDOW_MS,mediaBridgeSignature,sameSignatu
 // non-API request doPost accepts. Not in the public API inventory; no session; authorised solely by
 // the HMAC of the shared secret VEHICLE_MEDIA_BRIDGE_SECRET. Disabled when the secret is absent.
 // Errors are fixed codes (never the internal message). Drive validation is DrivePhotos (unchanged).
-const SAFE=new Set(['INVALID_MEDIA','INVALID_MIME','INVALID_IMAGE_SIZE','IMAGE_SIGNATURE_MISMATCH','INVALID_STORAGE_REF','DRIVE_NOT_CONFIGURED']);
+const SAFE=new Set(['INVALID_MEDIA','INVALID_MIME','INVALID_IMAGE_SIZE','IMAGE_SIGNATURE_MISMATCH','INVALID_STORAGE_REF','INVALID_PAGE_TOKEN','DRIVE_NOT_CONFIGURED']);
 export function isMediaBridgeRequest(request){return Boolean(request)&&request.bridge==='media';}
 export function createMediaBridgeServer({propertiesService,utilities,driveApp,now=()=>Date.now()}){
  function fail(code){return {ok:false,data:null,error:{code}};}
@@ -21,6 +21,7 @@ export function createMediaBridgeServer({propertiesService,utilities,driveApp,no
    const photos=createDrivePhotos({driveApp,utilities,folderId:props.getProperty('VEHICLE_PHOTOS_FOLDER_ID')});
    if(op==='upload')return {ok:true,data:photos.upload(args.base64,args.mime),error:null};
    if(op==='read')return {ok:true,data:photos.read(args.storageRef),error:null};
+   if(op==='list')return {ok:true,data:photos.list(args.pageToken===undefined?null:args.pageToken),error:null}; // phase 2c housekeeping
    if(op==='trashAll')return {ok:true,data:photos.trashAll(25000),error:null}; // VC-ADR-039 system reset
    return {ok:true,data:{trashed:photos.trash(args.storageRef)},error:null};
   }catch(e){const code=String(e&&e.message||'');return fail(SAFE.has(code)?code:'BRIDGE_DRIVE_FAILED');}

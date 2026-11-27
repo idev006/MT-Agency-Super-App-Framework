@@ -4,7 +4,9 @@ import {bootstrapStagingAdmin} from '../infrastructure/bootstrap/BootstrapAdmin.
 import {createReferenceSeedInstaller} from '../infrastructure/reference/ReferenceSeedInstaller.js';
 import {createRuntimeStore,runtimeProjectId} from '../composition/StoreSelector.js';
 import {auditDrivePhotos} from '../infrastructure/media/DrivePhotoAudit.js';
-import {housekeepDrivePhotos} from '../infrastructure/media/DrivePhotoHousekeeping.js';
+import {drivePhotoHousekeepingFlow} from '../application/flows/DrivePhotoHousekeepingFlow.js';
+import {runFlowSync} from '../application/flows/FlowRunner.js';
+import {createDrivePhotos} from '../infrastructure/media/DrivePhotos.js';
 import { createApplication } from "../composition/Container.js";
 import { apiFailure } from "../api/responses/ResponseFactory.js";
 import {createMediaBridgeServer,isMediaBridgeRequest} from "../infrastructure/media/MediaBridgeServer.js";
@@ -109,7 +111,9 @@ export function verifyDrivePhotosFromEditor() {
 // Files go to the Drive trash (recoverable 30 days). Logs counters + short id prefixes only.
 function runPhotoHousekeeping(apply) {
  const folderId=PropertiesService.getScriptProperties().getProperty('VEHICLE_PHOTOS_FOLDER_ID');
- const result=housekeepDrivePhotos({store:editorStore(),driveApp:DriveApp,folderId,apply});
+ // the same flow the core's scheduled job runs (VC-ADR-046 phase 2c), here on Drive directly
+ const media=createDrivePhotos({driveApp:DriveApp,utilities:Utilities,folderId});
+ const result=runFlowSync(drivePhotoHousekeepingFlow({apply,nowMs:Date.now()}),{store:editorStore(),media});
  Logger.log(JSON.stringify(result));
  return result;
 }

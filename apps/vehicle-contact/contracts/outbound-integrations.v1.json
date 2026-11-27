@@ -20,7 +20,7 @@
       "timeoutMs": 30000,
       "retry": { "max": 2, "backoffMs": 300 },
       "breaker": { "failures": 5, "openMs": 30000 },
-      "idempotent": ["read", "trash"],
+      "idempotent": ["read", "trash", "list"],
       "secrets": ["P6VC_MEDIA_BRIDGE_SECRET"],
       "note": "VC-ADR-034 / VC-ADR-047 option D: photo files in the owner's Google Drive through the signed GAS bridge"
     }
