@@ -1,5 +1,7 @@
 # P6 Vehicle Contact — Agile Kanban Operations & Live Issue Board
 
+**Status:** SUPERSEDED 2026-11-27 — board of 2026-11-22; work order and status now: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) · [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) · [ROADMAP.md](ROADMAP.md).
+
 > **CURRENT HANDOFF (2026-11-22) — LIVE ISSUES REMAIN LANE AUTHORITY.** Counts, crosswalks and delivery narratives below are dated snapshots, not a current census. Use actual GitHub issue state and exactly one `status:*` label per issue; never infer or invent lane counts. For implementation/runtime context read [Current Delivery Status](CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](PROJECT_MANAGEMENT_PLAN_20261121.md), [Live API Automation](LIVE_API_AUTOMATION.md), and [Code Map](CODE_MAP_20261121.md).
 
 **Document ID:** P6VC-KANBAN-001  
