@@ -7,6 +7,8 @@
 //   {insert: {table, row}}               → the row (append-only, e.g. an access-audit row; the store's log policy applies)
 //   {patch: {table, filter, fields}}     → true (field-masked write by primary key; update() where patch is missing)
 //   {remove: {table, filter}}            → true (one row; a job's cleanup, e.g. an expired photo staging row)
+//   {writeMany: [op, ...]}               → true (several writes in ONE all-or-nothing commit: store.writeMany; insert / update /
+//        remove one by one where the store has none). ops: {op:'insert',table,data} | {op:'update',table,key,fields,ifVersion?} | {op:'remove',table,key}
 //   {mediaRead: {ref}}                   → {base64Image, mime_type, ...} (photo file through the media port)
 //   {mediaList: {pageToken}}             → {files: [{id, createdMs, trashed}], nextPageToken} (one page of the photo folder)
 //   {mediaTrash: {ref}}                  → true (photo file to the Drive trash)
@@ -29,7 +31,7 @@ function readsFallback(store, reads) {
     : r.kind === 'count' ? (typeof store.count === 'function' ? store.count(r.name, r.filter) : store.list(r.name, r.filter).length)
     : r.kind === 'newest' ? store.listNewest(r.name, r.filter, r.limit || 1)
     : r.kind === 'versioned' ? {row: store.one(r.name, r.filter), version: null}
-    : store.list(r.name, r.filter));
+    : store.list(r.name, r.filter, ...(r.limit ? [r.limit] : [])));
 }
 
 // Returns the effect's result, or a promise of it when the store is asynchronous.
@@ -55,6 +57,11 @@ function perform(effect, {store, cache, media, passwords, google, memo, run}) {
   }
   if (effect.insert) return store.insert(effect.insert.table, effect.insert.row);
   if (effect.remove) return store.remove(effect.remove.table, effect.remove.filter);
+  if (Array.isArray(effect.writeMany)) {
+    if (typeof store.writeMany === 'function') return store.writeMany(effect.writeMany);
+    for (const o of effect.writeMany) { if (o.op === 'insert') store.insert(o.table, o.data); else if (o.op === 'update') store.update(o.table, o.key, o.fields); else store.remove(o.table, o.key); }
+    return true; // synchronous stores only (the async core store has writeMany)
+  }
   if (effect.memoGet !== undefined) return memo ? memo.get(effect.memoGet) : undefined;
   if (effect.memoPut) { if (memo) memo.put(effect.memoPut.key, effect.memoPut.value); return null; }
   if (effect.mediaRead || effect.mediaList || effect.mediaTrash || effect.mediaUpload) {

@@ -11,7 +11,8 @@ const asyncOf = store => ({
   supportsTtl: false,
   one: async (t, f) => store.one(t, f),
   readMany: async (reqs, opts = {}) => { for (const [t, row] of opts.inserts || []) store.insert(t, row);
-    return reqs.map(r => r.kind === 'one' ? store.one(r.name, r.filter) : r.kind === 'count' ? store.list(r.name, r.filter).length
+    return reqs.map(r => r.kind === 'one' ? store.one(r.name, r.filter) : r.kind === 'versioned' ? {row: store.one(r.name, r.filter), version: null}
+      : r.kind === 'count' ? store.list(r.name, r.filter).length
       : r.kind === 'newest' ? store.listNewest(r.name, r.filter, r.limit || 1) : store.list(r.name, r.filter)); },
   patch: async (t, f, fields) => (store.update(t, f, fields), true),
   insert: async (t, row) => store.insert(t, row)
@@ -72,7 +73,7 @@ test('BOTH-01 the six officer-path operations: the core answers exactly like the
 test('BOTH-02 the core answers only operations it has a flow for', async () => {
   const {h} = world();
   assert.deepEqual([...Object.keys(FLOWS)].sort(), ['auth.changePassword', 'auth.googleLogin', 'auth.linkGoogle', 'auth.login', 'auth.logout', 'auth.session',
-    'campaigns.validate', 'contacts.read', 'photos.upload', 'qr.resolve', 'references.registration', 'vehicles.detail', 'vehicles.history',
+    'campaigns.validate', 'contacts.read', 'photos.upload', 'qr.resolve', 'references.registration', 'registrations.submit', 'vehicles.detail', 'vehicles.history',
     'vehicles.lookup', 'vehicles.photo']);
   const core = createCoreFacade({store: asyncOf(h.store), now: () => h.security.now(), sha256: x => h.security.sha256(x)});
   const r = await core.dispatch(env(h, 'vehicles.update', {vehicleId: 'x', expectedVersion: 1}, 'reg'), 'POST');
@@ -180,4 +181,46 @@ test('BOTH-04 campaigns.validate, references.registration, photos.upload: same a
   }
   assert.deepEqual(outcomes, ['OK', 'CAMPAIGN_INVALID', 'CAMPAIGN_INVALID', 'OK', 'FORBIDDEN', 'OK', 'INVALID_SLOT', 'CAMPAIGN_INVALID'],
     'real successes and the expected failures');
+});
+
+// ---- phase 3 wave 2b: registrations.submit — step by step on both engines; answers AND every submit table identical ----
+const SUBMIT_TABLES = ['vc_registration_requests', 'vc_photo_staging', 'vc_campaigns', 'vc_idempotency', 'vc_operation_journal'];
+function submitWorld() {
+  const h = createAcceptanceHarness();
+  const org = h.createOrganization(), camp = h.createCampaign(), camp2 = h.createCampaign();
+  const photos = h.stagePhotos(camp.campaignToken), otherPhotos = h.stagePhotos(camp2.campaignToken);
+  const base = (extra = {}) => h.registrationPayload(camp.campaignToken, org, photos, extra);
+  return {h, org, camp, camp2, photos, otherPhotos, base};
+}
+const SUBMIT_SCENARIOS = [
+  ['submit → same request again (replay) → same plate with another key', [
+    w => w.base({idempotencyKey: 'k-one'}), w => w.base({idempotencyKey: 'k-one'}), w => w.base({idempotencyKey: 'k-two'})]],
+  ['same key, different body', [w => w.base({idempotencyKey: 'k-a'}), w => w.base({idempotencyKey: 'k-a', color: 'Red'})]],
+  ['no photos / photos of another campaign', [
+    w => w.base({idempotencyKey: 'k-p', photos: []}), w => w.base({idempotencyKey: 'k-q', photos: w.otherPhotos})]],
+  ['bad phone / unknown person type / revoked campaign', [
+    w => w.base({idempotencyKey: 'k-r', contactPhone: '0812345678'}), w => w.base({idempotencyKey: 'k-s', stickerCategory: 'NOT_A_TYPE'}),
+    w => (w.h.as('sys', 'campaigns.revoke', {campaignId: w.camp.campaignId}), w.base({idempotencyKey: 'k-t'}))]]
+];
+test('BOTH-05 registrations.submit: every step answered exactly like the legacy engine, identical submit tables', async () => {
+  const outcomes = {};
+  for (const [name, steps] of SUBMIT_SCENARIOS) {
+    const A = submitWorld(), B = submitWorld();
+    const store = {...asyncOf(B.h.store), count: async (t, f) => B.h.store.list(t, f).length, remove: async (t, f) => B.h.store.remove(t, f),
+      writeMany: async ops => { for (const o of ops) { if (o.op === 'insert') B.h.store.insert(o.table, o.data); else if (o.op === 'update') B.h.store.update(o.table, o.key, o.fields); else B.h.store.remove(o.table, o.key); } return true; }};
+    const core = createCoreFacade({store, now: () => B.h.security.now(), sha256: x => B.h.security.sha256(x), id: () => B.h.security.secretToken()});
+    outcomes[name] = [];
+    for (const [i, make] of steps.entries()) {
+      const want = A.h.call('registrations.submit', make(A));
+      const got = await core.dispatch({apiVersion: 'v1', group: 'registrations', action: 'submit', payload: make(B), requestId: 'syntheticAcceptance'}, 'POST');
+      assert.deepEqual(got, want, `${name} — step ${i + 1}`);
+      outcomes[name].push(want.ok ? 'OK' : want.error.code);
+    }
+    for (const t of SUBMIT_TABLES) assert.deepEqual(B.h.store.list(t), A.h.store.list(t), `${name} — table ${t}`);
+  }
+  assert.deepEqual(outcomes['submit → same request again (replay) → same plate with another key'], ['OK', 'OK', 'DUPLICATE_VEHICLE']);
+  assert.deepEqual(outcomes['same key, different body'], ['OK', 'IDEMPOTENCY_CONFLICT']);
+  assert.deepEqual(outcomes['no photos / photos of another campaign'], ['INVALID_REQUEST', 'PHOTO_NOT_STAGED'], 'an empty photo list fails the DTO check on both');
+  const last = outcomes['bad phone / unknown person type / revoked campaign'];
+  assert.equal(last[0], 'INVALID_REQUEST', 'a bad phone (public code)'); assert.notEqual(last[1], 'OK'); assert.equal(last[2], 'CAMPAIGN_INVALID');
 });

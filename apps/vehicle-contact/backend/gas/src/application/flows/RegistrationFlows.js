@@ -82,20 +82,19 @@ export function normalizeReferences(raw, orgRows, setting, sha256) {
   return {mode, version: sha256(JSON.stringify({lists, organizations, policies})), lists, organizations, policies};
 }
 const REFERENCE_MEMO = 'reference_values';
-// the normalized lists (+ the sticker row read in the same round when asked)
-export function* referencesFlow(deps, {withSticker = false} = {}) {
+// the normalized lists; `extra` reads ride in the SAME round (their results come back in `extra`)
+export function* referencesFlow(deps, extra = []) {
   const cached = yield {memoGet: REFERENCE_MEMO};
-  const reqs = [{kind: 'list', name: 'vc_organizations', filter: {status: 'ACTIVE'}}, {kind: 'one', name: 'vc_settings', filter: {key: 'registration_reference_enforcement'}}];
-  if (withSticker) reqs.push(stickerRead);
+  const reqs = [{kind: 'list', name: 'vc_organizations', filter: {status: 'ACTIVE'}}, {kind: 'one', name: 'vc_settings', filter: {key: 'registration_reference_enforcement'}}, ...extra];
   if (cached === undefined) reqs.push({kind: 'list', name: 'vc_reference_values'});
   const out = yield {reads: reqs};
-  const [orgRows, setting] = out, stickerRow = withSticker ? out[2] : null, fresh = out[withSticker ? 3 : 2];
+  const [orgRows, setting] = out, fresh = out[2 + extra.length];
   if (cached === undefined) yield {memoPut: {key: REFERENCE_MEMO, value: fresh}};
-  return {refs: normalizeReferences(cached === undefined ? fresh : cached, orgRows, setting, deps.sha256), stickerRow};
+  return {refs: normalizeReferences(cached === undefined ? fresh : cached, orgRows, setting, deps.sha256), extra: out.slice(2, 2 + extra.length)};
 }
 // references.registration: the lists + every person type (with ink) for the form
 export function* referencesRegistrationFlow(p, deps) {
-  const {refs, stickerRow} = yield* referencesFlow(deps, {withSticker: true});
+  const {refs, extra: [stickerRow]} = yield* referencesFlow(deps, [stickerRead]);
   return {...refs, stickerCategories: withInk(stickerList(stickerRow))};
 }
 // registration submit: the payload must match the current lists (ENFORCED) or a supplied version (ADVISORY)

@@ -50,10 +50,13 @@ test('enforced catalog validates version, strict active codes and authoritative 
  assert.throws(()=>refs.assertRegistration({...payload,organizationId:'ORG-X'}),/ORGANIZATION_INACTIVE/);
 });
 test('registration rejects reference failure before campaigns or persistence writes',()=>{
- let writes=0,campaignCalls=0;
- const fakeStore={withLock(fn){return fn();},insert(){writes++;},update(){writes++;},remove(){writes++;},one(){return null;},list(){return[];}};
- const operations=createVehicleOperations({store:fakeStore,security,campaigns:{getCampaign(){campaignCalls++;}},references:{assertRegistration(){throw new Error('INVALID_REFERENCE_VALUE');}}});
- const payload={campaignToken:'c',plate:'กก 1',province:'BKK',plateType:'PRIVATE',vehicleType:'CAR',brand:'X',model:'Y',color:'Z',organizationId:'ORG-1',relationship:'OWNER',contactName:'Name',contactPhone:'+661234567',photos:[],idempotencyKey:'key'};
- assert.throws(()=>operations['registrations.submit'](payload),/INVALID_REFERENCE_VALUE/);
- assert.equal(campaignCalls,0);assert.equal(writes,0);
+ // submit runs as a shared flow over the store (wave 2b): with ENFORCED lists a stale reference version fails BEFORE the
+ // campaign check (the malformed code 'c' would otherwise answer CAMPAIGN_INVALID) and nothing is written
+ let writes=0;
+ const base=store(complete(),'ENFORCED');
+ const fakeStore={...base,withLock(fn){return fn();},insert(){writes++;},update(){writes++;},remove(){writes++;},writeMany(){writes++;}};
+ const operations=createVehicleOperations({store:fakeStore,security,campaigns:{},references:{memo:null}});
+ const payload={campaignToken:'c',plate:'กก 1',province:'BKK',plateType:'PRIVATE',vehicleType:'CAR',brand:'X',model:'Y',color:'Z',organizationId:'ORG-1',relationship:'OWNER',contactName:'Name',contactPhone:'+661234567',photos:[],idempotencyKey:'key',referenceVersion:'stale'};
+ assert.throws(()=>operations['registrations.submit'](payload),/REFERENCE_VERSION_STALE/);
+ assert.equal(writes,0);
 });
