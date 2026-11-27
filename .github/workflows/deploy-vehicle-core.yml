@@ -25,6 +25,8 @@ env:
   SERVICE: p6vc-core
   REPOSITORY: p6vc
   RUNTIME_SA: p6vc-api-runtime@mt-iam-core-2026.iam.gserviceaccount.com
+  # ONE number for the core's CPU: --cpu and the libuv thread pool (UV_THREADPOOL_SIZE = 2 x vCPU) follow it together.
+  CORE_CPU: 2
 
 jobs:
   deploy:
@@ -82,6 +84,10 @@ jobs:
       - name: Deploy revision (no traffic when the service already exists)
         run: |
           # Async core: high concurrency is safe. Outbound URLs come from contracts/ (Integration Manager), not env.
+          # 2 vCPU (VC-ADR-046 wave 1 load test): login hashing (node:crypto PBKDF2) runs in libuv's thread pool, so a second
+          # core runs hashes in parallel with the event loop; on 1 vCPU the login p50 grew with every concurrent login.
+          # The pool needs >= one thread per vCPU (measured: 100 hashes 2,315 ms with 2 threads vs 1,346 ms with 4).
+          # 512Mi: gRPC + concurrent hashing headroom (RSS peak measured 131 MB at 80 lookups in flight).
           NO_TRAFFIC=""
           if [ "${{ steps.prev.outputs.exists }}" = "true" ]; then NO_TRAFFIC="--no-traffic --tag candidate"; fi
           gcloud run deploy "$SERVICE" \
@@ -89,9 +95,9 @@ jobs:
             --image "${{ steps.image.outputs.image }}" \
             --service-account "$RUNTIME_SA" \
             --concurrency 80 --min-instances 0 --max-instances 5 \
-            --cpu 1 --memory 256Mi --timeout 60 --cpu-boost \
+            --cpu "$CORE_CPU" --memory 512Mi --timeout 60 --cpu-boost \
             --allow-unauthenticated \
-            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default)" \
+            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),UV_THREADPOOL_SIZE=$((CORE_CPU * 2))" \
             --set-secrets "P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest,P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest" \
             --labels "app=p6vc,component=core,commit=${GITHUB_SHA::12}" \
             $NO_TRAFFIC --quiet
