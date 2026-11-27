@@ -20,7 +20,7 @@ Status labels: `status:todo` → `status:in-progress` → closed (with the evide
 | R03 | Web app resizes by the admin policy; replace resizes; admin fields (PR 2) | [#296](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/296) | — | todo |
 | R04 | Move existing photos into their vehicle folders (PR C, dry run first) | [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) | R01 | todo |
 | N1a | Foundation + system / list ops as native async Node (7 ops; system.health stays legacy until N4) — VC-ADR-051 | [#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311) | — | **done — 0.9.60 proven** (PRs 1–3 + fix #323; core 22/64; 126/126 live suite, DATA_PROOF 7/7; system.health deferred to N4) |
-|
+| N4a | Browser calls the core directly; no Worker route in the web build (VC-ADR-052) | [#322](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/322) | N1a core front door | **done — FE 0.9.23 live** (PR #324, Pages run 46050309613; public browser and core gateway proof) |
 | N1b | Vehicles, QR, change requests, registration review (16 ops) | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) | N1a | todo |
 | N2 | Photos, retention, audit (10 ops) | [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) | N1a | todo |
 | N3 | Users, organizations, campaigns (15 ops) | [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) | N1a | todo |

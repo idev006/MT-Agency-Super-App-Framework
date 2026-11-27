@@ -2,7 +2,7 @@
 
 **Last verified:** 2026-11-28 (Asia/Bangkok) — backend **0.9.60** live, proven through the Node core (live suite 126/126 + DATA_PROOF 7/7 fresher than the suite).
 **Status:** DEV / synthetic data only. Engine move to native async Node in progress (22 of 64 operations on the core). Not production-ready; go-live items in [ROADMAP.md](ROADMAP.md) R14 / R16 / R17.
-**Main:** `0ca415e` (#323). Before any work: `git fetch origin main`, compare, read open PRs / issues / CI.
+**Main:** `ada757b` (#324). Before any work: `git fetch origin main`, compare, read open PRs / issues / CI.
 
 This page is the **current truth only** (short on purpose). History up to 2026-11-26 lives in this file's git history, the
 [DECISION_LOG.md](DECISION_LOG.md) evidence column and the dated `*_EVIDENCE_*` documents (they prove only their own date).
@@ -12,8 +12,8 @@ Next steps, rules and the ready-to-paste prompt: [PROJECT_HANDOVER.md](PROJECT_H
 
 | Component | Now | Notes |
 |---|---|---|
-| Web app | **FE 0.9.22** live on GitHub Pages; FE 0.9.23 direct-core PR #324 has green CI, pending merge | photos shown by Drive link (thumbnail at once, full size on tap, API fallback) |
-| Cloudflare Worker `tools/p6vc-api-test-console` | current FE 0.9.22 browser route; FE 0.9.23 removes the Worker route (PR #324) | separate deploy `npx wrangler@4 deploy`; the live suite does NOT go through it |
+| Web app | **FE 0.9.23** live on GitHub Pages; browser calls p6vc-core directly | photos shown by Drive link (thumbnail at once, full size on tap, API fallback) |
+| Cloudflare Worker `tools/p6vc-api-test-console` | still deployed but no longer used by the web app; retirement tracked in N4 | no Worker deploy in N4a; removal requires the N4 plan |
 | **p6vc-core** (Cloud Run, Node 22 ESM, async, gRPC Firestore) | front door; answers **22 / 64** ops, forwards the rest to p6vc-api | 2 vCPU, 512 Mi, cpu-boost, `UV_THREADPOOL_SIZE=2×vCPU`, secrets: media bridge + `p6vc-auth-pepper` |
 | p6vc-api (Cloud Run, legacy engine) | the sync GAS-style backend (`backend/gas/src`), concurrency 1 | frozen (VC-ADR-051): no new features, deleted at N4 |
 | GAS web app | **@110**, photo bridge (upload / read / trash / list / organize / stat, HMAC signed) + old API | pinned deployment id = `MEDIA_BRIDGE_URL` in `.github/workflows/deploy-vehicle-cloudrun.yml` |
@@ -36,10 +36,11 @@ Operations on the core (`backend/core/src/facade/operations.mjs`):
 | Offline | backend check 902/902 · core tests 70/70 · FE 0.9.23 candidate unit 294/294, E2E 29 passed / 1 skipped · maps + SSOT validators PASS |
 | Load (0.9.51, login) | p50 271 ms at 1 / 940 ms at 50 / 2,371 ms at 100 in flight, 0/300 errors; p95 ≈ 5 s at 100 (a 2nd instance cold-starts) → owner cost decision R14 |
 
-## 3. Work in flight
+## 3. Completed slices and next work
 
 - **N1a** ([#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311)): PR 1 (0.9.57) and PR 2 (0.9.58) deployed and proven; **PR 3 proven on 0.9.60**: `system.reset.preview/execute` on the core, off unless `P6VC_SYSTEM_RESET=ENABLED`. Its legacy acceptance test passes through the core; 0.9.59 live suite failed at SYSTEM.RESET.PREVIEW because the DEV plan exceeds 4,000 deletes. In 0.9.60 preview reports the full plan while execute refuses oversized plans before writes; live suite through core 126/126 and independent DATA_PROOF 7/7 passed (inventory ended 18:25:38.418Z; read-back began 18:25:38.565Z). Live proof used preview only; execute remains outside the DEV approval. `system.health` stays on the legacy engine until N4 (the deploy smoke checks its version).
-- N4a direct browser route (#322, PR #324) → N1b → N2 → N3 → (R10, R11) → N4, photos R03 / R04, go-live R14 / R16 / R17 — order and done-criteria in [ROADMAP.md](ROADMAP.md), plan + diagrams in [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md).
+- N4a direct browser route (#322, PR #324) proven: Pages build/deploy run 46050309613, public sign-in HTTP 200, bundle contains the core endpoint and no Worker endpoint; core CORS preflight 204, public health POST 200 at backend 0.9.60. No hosted credentials entered.
+- Next: N1b → N2 → N3 → (R10, R11) → N4, photos R03 / R04, go-live R14 / R16 / R17 — order and done-criteria in [ROADMAP.md](ROADMAP.md), plan + diagrams in [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md).
 
 ## 4. Open owner decisions / actions (not engineering)
 
