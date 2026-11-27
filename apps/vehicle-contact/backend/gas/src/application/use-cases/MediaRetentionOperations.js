@@ -4,6 +4,7 @@ import {vehiclePhotoFlow} from '../flows/VehicleReadFlows.js';
 import {photoUploadFlow} from '../flows/RegistrationFlows.js';
 import {PHOTO_POLICY_KEY,readPhotoPolicy,checkPhotoSize} from '../../domain/policies/PhotoPolicy.js';
 import {organizeVehiclePhotosFlow} from '../flows/PhotoLayoutFlow.js';
+import {photoLinks} from '../../domain/policies/PhotoLayout.js';
 export function createMediaRetentionOperations({store,security,drivePhotos,campaigns,allowDestructiveRetention=false}) {
  const need=(v,name)=>{if(typeof v!=='string'||!v.trim()||v.length>256)throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -17,8 +18,9 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   const vehicleId=need(p.vehicleId,'VEHICLE_ID');
   const vehicle=store.one('vc_vehicles',{vehicle_id:vehicleId});
   if(!vehicle||vehicle.status!=='ACTIVE')throw new Error('VEHICLE_NOT_ACTIVE');
+  const policy=readPhotoPolicy(store.one('vc_settings',{key:PHOTO_POLICY_KEY}));
   return store.list('vc_vehicle_photos',{vehicle_id:vehicleId}).filter(x=>x.status==='ACTIVE')
-   .map(x=>({photoId:x.photo_id,slot:x.slot,storageRef:x.storage_ref,mimeType:x.mime_type}));
+   .map(x=>({photoId:x.photo_id,slot:x.slot,storageRef:x.storage_ref,mimeType:x.mime_type,...photoLinks(x.storage_ref,policy)})); // VC-ADR-050 PR B
  }
  function replacePhoto(p,actor){
   const vehicleId=need(p.vehicleId,'VEHICLE_ID'),slot=need(p.slot,'SLOT');

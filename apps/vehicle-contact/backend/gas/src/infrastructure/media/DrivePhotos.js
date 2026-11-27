@@ -15,6 +15,8 @@ export function createDrivePhotos({driveApp,utilities,folderId}) {
   const name=utilities.getUuid()+'.'+suffix;
   const blob=utilities.newBlob(bytes,mime,name);
   const file=driveApp.getFolderById(folderId).createFile(blob);
+  // VC-ADR-050: viewable by link from the start (the reviewer sees it before approval; "รูปรถไม่ใช่ความลับ")
+  if(typeof file.setSharing==='function'&&driveApp.Access&&driveApp.Permission)file.setSharing(driveApp.Access.ANYONE_WITH_LINK,driveApp.Permission.VIEW);
   return {storage_ref:file.getId(),mime_type:mime,size_bytes:bytes.length};
  }
  function read(storageRef){

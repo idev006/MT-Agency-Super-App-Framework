@@ -103,7 +103,7 @@ test('vehicles.detail round-trips minimized: lookup audit is a plain append-only
   // in the SAME parallel round — more calls, no extra round.
   // VC-ADR-046 2b-2b: the person-type list (vc_settings) is read in the SAME first round as the vehicle (it was a third round
   // in the old outer sticker decorator, which this bare use case did not include) → one call more, no round more.
-  assert.equal(calls,5+refReads,'detail = (vehicle + sticker list) + (1 audit commit + contacts + photos + label/agency/QR reads in one round)');
+  assert.equal(calls,6+refReads,'detail = (vehicle + sticker list) + (1 audit commit + contacts + photos + photo policy (links, VC-ADR-050) + label/agency/QR reads in one round)');
   assert.equal(rounds,2,'speed: vehicle read → ONE parallel round with the view reads AND the audit commit (was 3)');
   // The append-only audit is still persisted AND ordered (MediaRetention reads vc_lookup_audit via store.list).
   const audits=store.list('vc_lookup_audit',{vehicle_id:'v1'});

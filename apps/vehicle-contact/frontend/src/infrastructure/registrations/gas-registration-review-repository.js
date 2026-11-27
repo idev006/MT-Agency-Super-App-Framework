@@ -1,3 +1,4 @@
+import { safeDriveImageUrl } from '../media/drive-image-url.js'
 import { toSticker, toStickerList } from '../../domain/reference/sticker-categories.js'
 import { callPaginatedOperation, mapPaginatedData } from '../api/pagination-contract.js'
 
@@ -35,6 +36,8 @@ function mapDetail(value) {
       photoId: requiredString(photo?.photoId),
       slot: requiredString(photo?.slot),
       mimeType: typeof photo?.mimeType === 'string' ? photo.mimeType : '',
+      thumbUrl: safeDriveImageUrl(photo?.thumbUrl), // VC-ADR-050 PR B
+      fullUrl: safeDriveImageUrl(photo?.fullUrl),
     }))
     : []
   return Object.freeze({

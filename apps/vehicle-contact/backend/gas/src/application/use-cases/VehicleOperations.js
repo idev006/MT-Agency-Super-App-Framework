@@ -10,6 +10,8 @@ import {runFlowSync} from '../flows/FlowRunner.js';
 import {vehicleHistoryFlow,vehicleLookupFlow,vehicleDetailFlow,contactReadFlow,qrResolveFlow} from '../flows/VehicleReadFlows.js';
 import {registrationSubmitFlow} from '../flows/RegistrationSubmitFlow.js';
 import {organizeVehiclePhotosFlow} from '../flows/PhotoLayoutFlow.js';
+import {photoLinks} from '../../domain/policies/PhotoLayout.js';
+import {PHOTO_POLICY_KEY,readPhotoPolicy} from '../../domain/policies/PhotoPolicy.js';
 export function createVehicleOperations({store,security,campaigns,references,drivePhotos=null}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -121,7 +123,10 @@ export function createVehicleOperations({store,security,campaigns,references,dri
  function registrationDetail(p){
   const r=store.one('vc_registration_requests',{request_id:need(p.requestId,'REQUEST_ID')});
   if(!r)throw new Error('NOT_FOUND');
-  return {requestId:r.request_id,status:r.status,application:JSON.parse(r.application_json),submittedAt:r.submitted_at};
+  const application=JSON.parse(r.application_json),policy=readPhotoPolicy(store.one('vc_settings',{key:PHOTO_POLICY_KEY}));
+  // VC-ADR-050 PR B: each evidence photo carries its Drive links (the reviewer's browser loads it directly)
+  if(Array.isArray(application.photos))application.photos=application.photos.map(f=>({...f,...photoLinks(f.storageRef,policy)}));
+  return {requestId:r.request_id,status:r.status,application,submittedAt:r.submitted_at};
  }
  function registrationReview(p,a){
   const requestId=need(p.requestId,'REQUEST_ID');
