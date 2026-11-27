@@ -67,6 +67,22 @@ try {
   authRow('auth.googleLogin', await call(LEGACY, 'auth', 'googleLogin', {idToken: 'x'.repeat(120)}, null), await call(CORE, 'auth', 'googleLogin', {idToken: 'x'.repeat(120)}, null));
   authRow('auth.logout', await call(LEGACY, 'auth', 'logout', {}, tL), await call(CORE, 'auth', 'logout', {}, tC));
   authRow('auth.session', await call(LEGACY, 'auth', 'session', {}, tL), await call(CORE, 'auth', 'session', {}, tC));
+  // phase 3 wave 2a: the public registration path. A tiny synthetic PNG is uploaded once per engine (2 staged files per run;
+  // the daily housekeeping trashes unclaimed uploads after 7 days); photoId is random per call → masked.
+  const campaigns = (await call(LEGACY, 'campaigns', 'list', {page: 1, pageSize: 50}, token)).body.data?.items || [];
+  const open = campaigns.find(c => c.state === 'OPEN' && c.campaignToken);
+  const maskId = b => JSON.parse(JSON.stringify(b, (k, v) => (k === 'photoId' && typeof v === 'string' ? '<id>' : v)));
+  const pair = async (op, payload, t, mask = x => x) => { const [g, a] = op.split('.');
+    const l = await call(LEGACY, g, a, payload, t), c = await call(CORE, g, a, payload, t); const L = mask(l.body), C = mask(c.body);
+    rows.push({op, equal: JSON.stringify(L) === JSON.stringify(C), answeredBy: c.answeredBy, legacy: L.ok ? 'ok' : 'error ' + L.error?.code, core: C.ok ? 'ok' : 'error ' + C.error?.code}); };
+  if (open) {
+    await pair('campaigns.validate', {campaignToken: open.campaignToken}, null);
+    const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==';
+    await pair('photos.upload', {campaignToken: open.campaignToken, slot: 'FRONT', base64Image: png, mimeType: 'image/png'}, null, maskId);
+  }
+  await pair('campaigns.validate', {campaignToken: 'a'.repeat(64)}, null);
+  await pair('references.registration', {}, token);
+  await pair('photos.upload', {campaignToken: 'b'.repeat(64), slot: 'FRONT', base64Image: 'AAAA', mimeType: 'image/png'}, null);
 } finally {
   await call(LEGACY, 'auth', 'logout', {}, token);
 }

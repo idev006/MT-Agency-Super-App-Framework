@@ -10,6 +10,9 @@
 //   {mediaRead: {ref}}                   → {base64Image, mime_type, ...} (photo file through the media port)
 //   {mediaList: {pageToken}}             → {files: [{id, createdMs, trashed}], nextPageToken} (one page of the photo folder)
 //   {mediaTrash: {ref}}                  → true (photo file to the Drive trash)
+//   {mediaUpload: {base64, mime}}        → {storage_ref, mime_type, size_bytes} (a new photo file through the media port)
+//   {memoGet: key}                       → value | undefined (a process memo for slow-changing rows; no memo → undefined)
+//   {memoPut: {key, value}}              → null
 //   {transaction: () => subFlow}         → the sub-flow's result, its effects performed on ONE read-write transaction
 //        (store.sequence). A FACTORY, not a generator: Firestore re-runs a contended transaction, so each run needs a fresh
 //        sub-flow. A sub-flow must keep its effects to the store (no media / cache) — only the store is rolled back.
@@ -30,7 +33,7 @@ function readsFallback(store, reads) {
 }
 
 // Returns the effect's result, or a promise of it when the store is asynchronous.
-function perform(effect, {store, cache, media, passwords, google, run}) {
+function perform(effect, {store, cache, media, passwords, google, memo, run}) {
   if (!effect || typeof effect !== 'object') throw new Error('INVALID_EFFECT');
   // a store whose sequence() passes no transaction store (in-memory / legacy stores run the callback on themselves) → itself
   if (typeof effect.transaction === 'function') return store.sequence(s => run(effect.transaction(), {store: s || store, passwords}));
@@ -52,9 +55,12 @@ function perform(effect, {store, cache, media, passwords, google, run}) {
   }
   if (effect.insert) return store.insert(effect.insert.table, effect.insert.row);
   if (effect.remove) return store.remove(effect.remove.table, effect.remove.filter);
-  if (effect.mediaRead || effect.mediaList || effect.mediaTrash) {
+  if (effect.memoGet !== undefined) return memo ? memo.get(effect.memoGet) : undefined;
+  if (effect.memoPut) { if (memo) memo.put(effect.memoPut.key, effect.memoPut.value); return null; }
+  if (effect.mediaRead || effect.mediaList || effect.mediaTrash || effect.mediaUpload) {
     if (!media) throw new Error('MEDIA_NOT_CONFIGURED');
     if (effect.mediaRead) return media.read(effect.mediaRead.ref);
+    if (effect.mediaUpload) return media.upload(effect.mediaUpload.base64, effect.mediaUpload.mime);
     if (effect.mediaList) return media.list(effect.mediaList.pageToken ?? null);
     return media.trash(effect.mediaTrash.ref);
   }
@@ -73,23 +79,23 @@ function perform(effect, {store, cache, media, passwords, google, run}) {
   throw new Error('INVALID_EFFECT');
 }
 
-export function runFlowSync(flow, {store, cache = null, media = null, passwords = null, google = null}) {
+export function runFlowSync(flow, {store, cache = null, media = null, passwords = null, google = null, memo = null}) {
   let step = flow.next();
   while (!step.done) {
     let result;
-    try { result = perform(step.value, {store, cache, media, passwords, google, run: runFlowSync}); }
+    try { result = perform(step.value, {store, cache, media, passwords, google, memo, run: runFlowSync}); }
     catch (e) { step = flow.throw(e); continue; } // same as runFlowAsync: the flow sees store errors
     step = flow.next(result);
   }
   return step.value;
 }
 
-export async function runFlowAsync(flow, {store, cache = null, media = null, passwords = null, google = null}) {
+export async function runFlowAsync(flow, {store, cache = null, media = null, passwords = null, google = null, memo = null}) {
   if (typeof store.readMany !== 'function') throw new Error('ASYNC_STORE_NEEDS_READMANY');
   let step = flow.next();
   while (!step.done) {
     let result;
-    try { result = await perform(step.value, {store, cache, media, passwords, google, run: runFlowAsync}); }
+    try { result = await perform(step.value, {store, cache, media, passwords, google, memo, run: runFlowAsync}); }
     catch (e) { step = flow.throw(e); continue; } // the flow sees the store error exactly as the sync engine does
     step = flow.next(result);
   }

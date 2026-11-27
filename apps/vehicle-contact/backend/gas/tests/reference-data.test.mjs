@@ -11,7 +11,7 @@ const complete=()=>[
 ];
 function store(rows=complete(),enforcement='ADVISORY'){
  return {list(table){if(table==='vc_reference_values')return rows;if(table==='vc_organizations')return [{organization_id:'ORG-1',name:'องค์กร 1',status:'ACTIVE'},{organization_id:'ORG-X',name:'ปิด',status:'INACTIVE'}];return[];},
-  one(table){if(table==='vc_settings')return {value:enforcement};return null;}};
+  one(table,filter){if(table==='vc_settings'&&filter?.key==='registration_reference_enforcement')return {value:enforcement};return null;}};
 }
 test('registration reference response is active, normalized, deterministic and versioned',()=>{
  const rows=[...complete(),row('PROVINCE','OLD',{status:'INACTIVE'}),row('COLOR','BLACK',{sort_order:1})];
