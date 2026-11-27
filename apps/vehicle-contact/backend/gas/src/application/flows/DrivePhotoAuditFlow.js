@@ -1,13 +1,13 @@
 // L4 SSOT file proof (TEST_SUITE_SSOT_DESIGN_20261124, D1/D2) as ONE shared flow (VC-ADR-046 phase 2c-3): read-only. Cross-checks
-// the DATA SSOT (Firestore photo rows) against the FILE SSOT (the Drive photo folder) — not through the API/use-case path.
-// The Node core runs it as the job drive-photo-audit through the photo bridge (op list: id, created, trashed, mime, size);
-// until GAS is bridge-only the GAS editor runs the same flow on Drive directly. Rules moved from
-// infrastructure/media/DrivePhotoAudit.js with one change: the folder listing is the source, so a file that is not in the
-// photo folder (gone, or moved elsewhere) counts as `missing` (was `missing` / `wrongFolder` from per-file Drive calls).
-// Reports counters + short id prefixes only. Effects (FlowRunner): reads, mediaList.
+// the DATA SSOT (Firestore photo rows) against the FILE SSOT (Drive) — not through the API/use-case path. The Node core runs it
+// as the job drive-photo-audit through the photo bridge; the GAS editor runs the same flow on Drive directly.
+// VC-ADR-050: approved photos live in per-vehicle folders, so every referenced file is checked BY ITS ID (bridge op stat:
+// exists, trashed, mime, size); the photos folder listing is used only for the unreferenced-file inventory (uploads left in
+// the root). Reports counters + short id prefixes only. Effects (FlowRunner): reads, mediaStat, mediaList.
 const LIVE_PHOTO = new Set(['ACTIVE']);
 const LIVE_STAGING = new Set(['STAGED', 'CLAIMED']);
 export const AUDIT_MAX_FOLDER_SCAN = 5000;
+const STAT_BATCH = 100;
 const SAMPLE = 10;
 const short = id => String(id).slice(0, 8);
 
@@ -27,10 +27,19 @@ export function* drivePhotoAuditFlow() {
   } while (pageToken);
 
   const issues = {missing: [], trashed: [], mimeMismatch: [], sizeMismatch: [], stagingRefMismatch: []};
+  const livePhotosAll = photos.filter(p => LIVE_PHOTO.has(p.status));
+  const replacedAll = new Set(livePhotosAll.filter(p => Number(p.version) > 1).map(p => p.photo_id));
+  const checkedRefs = [...new Set([...livePhotosAll, ...staging.filter(s => LIVE_STAGING.has(s.status) && !(s.status === 'CLAIMED' && replacedAll.has(s.photo_id)))]
+    .map(r => String(r.storage_ref || '')).filter(Boolean))];
+  const stats = new Map();
+  for (let i = 0; i < checkedRefs.length; i += STAT_BATCH) {
+    const page = yield {mediaStat: checkedRefs.slice(i, i + STAT_BATCH)};
+    for (const f of page.files) stats.set(String(f.id), f);
+  }
   function check(row, kind) {
     const ref = String(row.storage_ref || '');
-    const f = files.get(ref);
-    if (!f) { issues.missing.push(kind + ':' + short(ref)); return; }
+    const f = stats.get(ref);
+    if (!f || !f.exists) { issues.missing.push(kind + ':' + short(ref)); return; }
     if (f.trashed) { issues.trashed.push(kind + ':' + short(ref)); return; }
     if (row.mime_type && f.mime !== row.mime_type) issues.mimeMismatch.push(kind + ':' + short(ref));
     if (row.size_bytes !== '' && row.size_bytes !== undefined && Number(f.size) !== Number(row.size_bytes)) issues.sizeMismatch.push(kind + ':' + short(ref));
@@ -57,9 +66,9 @@ export function* drivePhotoAuditFlow() {
     orphans++; if (orphanSample.length < SAMPLE) orphanSample.push(short(f.id));
   }
   const counts = Object.fromEntries(Object.entries(issues).map(([k, v]) => [k, v.length]));
-  const ok = Object.values(counts).every(n => n === 0) && !truncated;
+  const ok = Object.values(counts).every(n => n === 0); // a truncated folder scan only shortens the inventory now
   return Object.freeze({status: ok ? 'PASS' : 'FAIL', checked: {livePhotos: livePhotos.length, liveStaging: liveStaging.length, replacedPhotos: replaced.size},
     issues: counts, samples: Object.fromEntries(Object.entries(issues).filter(([, v]) => v.length).map(([k, v]) => [k, v.slice(0, SAMPLE)])),
     folder: {scanned, truncated, unreferencedFiles: orphans, unreferencedSample: orphanSample},
-    note: 'missing = not in the photo folder; unreferencedFiles is a storage-leak inventory and does not fail the audit; a truncated scan fails it (not every row could be checked)'});
+    note: 'missing = the Drive file does not exist (checked by id); unreferencedFiles = files left in the photos folder root that no row references (storage-leak inventory, never fails the audit)'});
 }

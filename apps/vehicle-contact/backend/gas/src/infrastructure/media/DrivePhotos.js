@@ -52,5 +52,36 @@ export function createDrivePhotos({driveApp,utilities,folderId}) {
   }
   return {files,nextPageToken:it.hasNext()?it.getContinuationToken():null};
  }
- return Object.freeze({upload,read,trash,trashAll,list});
+ // VC-ADR-050: put a vehicle's photos in its own folder, named by side, shared "anyone with the link can view".
+ // req: {folderId?, path:[top, province, vehicle], files:[{ref, name}]} (names computed by the caller: domain/policies/PhotoLayout.js).
+ // Idempotent: an existing folder is reused (by id, else by name under its parent); a file already in place is only renamed.
+ // Moving keeps each file's Drive id. → {folderId}
+ const okName=s=>typeof s==='string'&&s.length>0&&s.length<=120&&!/[\\/]/.test(s);
+ function childFolder(parent,name){const it=parent.getFoldersByName(name);return it.hasNext()?it.next():parent.createFolder(name);}
+ function organize(req){
+  const r=req||{};
+  if(!Array.isArray(r.path)||r.path.length!==3||!r.path.every(okName)||!Array.isArray(r.files)||!r.files.length||r.files.length>10
+   ||r.files.some(f=>!f||typeof f.ref!=='string'||!f.ref||f.ref.length>150||!okName(f.name)))throw new Error('INVALID_PHOTO_LAYOUT');
+  let folder=null;
+  if(typeof r.folderId==='string'&&r.folderId){try{folder=driveApp.getFolderById(r.folderId);if(folder.isTrashed())folder=null;}catch(_){folder=null;}}
+  if(!folder)folder=childFolder(childFolder(childFolder(driveApp.getFolderById(folderId),r.path[0]),r.path[1]),r.path[2]);
+  else if(folder.getName()!==r.path[2])folder.setName(r.path[2]); // e.g. the plate was corrected
+  folder.setSharing(driveApp.Access.ANYONE_WITH_LINK,driveApp.Permission.VIEW);
+  for(const f of r.files){
+   const file=driveApp.getFileById(f.ref);
+   file.moveTo(folder);
+   if(file.getName()!==f.name)file.setName(f.name);
+   file.setSharing(driveApp.Access.ANYONE_WITH_LINK,driveApp.Permission.VIEW);
+  }
+  return {folderId:folder.getId()};
+ }
+ // VC-ADR-050: metadata of files by id (the photo audit; files no longer all sit in the photos folder). Never content.
+ function stat(refs){
+  if(!Array.isArray(refs)||refs.length>100||refs.some(x=>typeof x!=='string'||!x||x.length>150))throw new Error('INVALID_STORAGE_REF');
+  return {files:refs.map(ref=>{
+   try{const f=driveApp.getFileById(ref);return {id:ref,exists:true,trashed:f.isTrashed(),mime:f.getMimeType?f.getMimeType():'',size:f.getSize?Number(f.getSize()):0};}
+   catch(_){return {id:ref,exists:false,trashed:false,mime:'',size:0};}
+  })};
+ }
+ return Object.freeze({upload,read,trash,trashAll,list,organize,stat});
 }

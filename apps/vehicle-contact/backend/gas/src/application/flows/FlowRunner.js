@@ -13,6 +13,8 @@
 //   {mediaList: {pageToken}}             → {files: [{id, createdMs, trashed}], nextPageToken} (one page of the photo folder)
 //   {mediaTrash: {ref}}                  → true (photo file to the Drive trash)
 //   {mediaUpload: {base64, mime}}        → {storage_ref, mime_type, size_bytes} (a new photo file through the media port)
+//   {mediaOrganize: {folderId, path, files}} → {folderId} (VC-ADR-050: a vehicle's photos into its own folder)
+//   {mediaStat: [ref, ...]}              → {files: [{id, exists, trashed, mime, size}]}
 //   {memoGet: key}                       → value | undefined (a process memo for slow-changing rows; no memo → undefined)
 //   {memoPut: {key, value}}              → null
 //   {transaction: () => subFlow}         → the sub-flow's result, its effects performed on ONE read-write transaction
@@ -64,10 +66,12 @@ function perform(effect, {store, cache, media, passwords, google, memo, run}) {
   }
   if (effect.memoGet !== undefined) return memo ? memo.get(effect.memoGet) : undefined;
   if (effect.memoPut) { if (memo) memo.put(effect.memoPut.key, effect.memoPut.value); return null; }
-  if (effect.mediaRead || effect.mediaList || effect.mediaTrash || effect.mediaUpload) {
+  if (effect.mediaRead || effect.mediaList || effect.mediaTrash || effect.mediaUpload || effect.mediaOrganize || effect.mediaStat) {
     if (!media) throw new Error('MEDIA_NOT_CONFIGURED');
     if (effect.mediaRead) return media.read(effect.mediaRead.ref);
     if (effect.mediaUpload) return media.upload(effect.mediaUpload.base64, effect.mediaUpload.mime);
+    if (effect.mediaOrganize) return media.organize(effect.mediaOrganize);
+    if (effect.mediaStat) return media.stat(effect.mediaStat);
     if (effect.mediaList) return media.list(effect.mediaList.pageToken ?? null);
     return media.trash(effect.mediaTrash.ref);
   }

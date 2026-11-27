@@ -20,5 +20,7 @@ export function createMediaBridgePhotos({fetchSync, url, secret, utilities, now 
     read: storageRef => call('read', {storageRef}),
     trash: storageRef => call('trash', {storageRef}).trashed === true,
     trashAll: () => call('trashAll', {}), // VC-ADR-039 system reset: {trashed, more}
+    organize: req => call('organize', req), // VC-ADR-050: {folderId}
+    stat: refs => call('stat', {refs}),
   });
 }

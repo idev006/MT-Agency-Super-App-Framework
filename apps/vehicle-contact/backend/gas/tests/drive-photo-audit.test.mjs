@@ -15,7 +15,9 @@ function fakeDrive(files) {
   const inFolder = files.filter(f => (f.folder || FOLDER) === FOLDER);
   const mk = f => ({getId: () => f.id, isTrashed: () => !!f.trashed, getMimeType: () => f.mime, getSize: () => f.size, getDateCreated: () => new Date(0)});
   const iterator = (start = 0) => { let i = start; return {hasNext: () => i < inFolder.length, next: () => mk(inFolder[i++]), getContinuationToken: () => 'pos-' + i}; };
-  return {getFolderById: id => { assert.equal(id, FOLDER); return {getFiles: () => iterator()}; }, continueFileIterator: t => iterator(Number(String(t).slice(4)))};
+  // getFileById finds a file in ANY folder (VC-ADR-050: approved photos live in per-vehicle folders)
+  return {getFolderById: id => { assert.equal(id, FOLDER); return {getFiles: () => iterator()}; }, continueFileIterator: t => iterator(Number(String(t).slice(4))),
+    getFileById: id => { const f = files.find(x => x.id === id); if (!f) throw new Error('not found'); return mk(f); }};
 }
 const store = (photos, staging) => ({list: t => t === 'vc_vehicle_photos' ? photos : staging});
 const audit = (photos, staging, files, pageSize = 500) => {
@@ -30,12 +32,12 @@ test('AUDIT-01 PASS when every live row has its file (in the folder, mime, size)
   assert.equal(r.status, 'PASS'); assert.equal(r.folder.unreferencedFiles, 1); assert.equal(r.folder.scanned, 3);
 });
 
-test('AUDIT-02 FAIL on missing / not in the folder, trashed, mime/size mismatch and staging→photo ref drift', () => {
+test('AUDIT-02 FAIL on a missing file, trashed, mime/size mismatch and staging→photo ref drift; a file in a vehicle folder is NOT missing', () => {
   const files = [{id: 't', mime: 'image/png', size: 1, trashed: true}, {id: 'w', mime: 'image/png', size: 1, folder: 'OTHER'}, {id: 'm', mime: 'image/jpeg', size: 1}, {id: 's', mime: 'image/png', size: 2}, {id: 'x', mime: 'image/png', size: 1}];
   const row = (id, ref) => ({photo_id: id, storage_ref: ref, status: 'ACTIVE', mime_type: 'image/png', size_bytes: 1});
   const r = audit([row('a', 'gone'), row('b', 't'), row('c', 'w'), row('d', 'm'), row('e', 's'), row('f', 'x')], [{photo_id: 'f', storage_ref: 'other', status: 'REVOKED'}], files);
   assert.equal(r.status, 'FAIL');
-  assert.deepEqual(r.issues, {missing: 2, trashed: 1, mimeMismatch: 1, sizeMismatch: 1, stagingRefMismatch: 1}, 'gone + moved to another folder = missing');
+  assert.deepEqual(r.issues, {missing: 1, trashed: 1, mimeMismatch: 1, sizeMismatch: 1, stagingRefMismatch: 1}, 'only the gone file is missing (w sits in another folder)');
 });
 
 test('AUDIT-03 photos.replace history (version 2, old file trashed, CLAIMED staging on the old file) is NOT a defect', () => {
@@ -56,5 +58,5 @@ test('AUDIT-04 paging gives the same report; the core job through the SIGNED bri
   const media = createMediaBridgeGateway({secret: SECRET, http: {request: async ({body}) => { const q = JSON.parse(body); ops.push(q.op); return {json: server.handle(q)}; }}});
   const asyncStore = {readMany: async reqs => reqs.map(r => store(photos, []).list(r.name))};
   assert.deepEqual(await JOBS['drive-photo-audit']({store: asyncStore, media}), want);
-  assert.deepEqual([...new Set(ops)], ['list'], 'read-only: the audit uses only the bridge op list');
+  assert.deepEqual([...new Set(ops)].sort(), ['list', 'stat'], 'read-only: the audit uses only the bridge ops stat + list');
 });
