@@ -41,8 +41,9 @@ test('LOGIN-CONST-04: valid credentials perform one verification and succeed',()
 test('LOGIN-CONST-05: dummy hash cost matches GasSecurity.hashPassword (drift guard)',async()=>{
  // the round count of new hashes comes from the ONE hash rule (application/security/PasswordHash.js)
  const {PBKDF2_ROUNDS:realRounds,MIN_ROUNDS,MAX_ROUNDS}=await import('../src/application/security/PasswordHash.js');
- const id=readFileSync(resolve(import.meta.dirname,'../src/application/use-cases/IdentityOperations.js'),'utf8');
- const dummyRounds=Number((id.match(/pbkdf2-sha256\$(\d+)\$/)||[])[1]);
+ // the dummy hash lives with the login flow (application/flows/AuthFlows.js)
+ const {DUMMY_PASSWORD_HASH}=await import('../src/application/flows/AuthFlows.js');
+ const dummyRounds=Number(DUMMY_PASSWORD_HASH.split('$')[1]);
  assert.ok(Number.isSafeInteger(realRounds)&&realRounds>=MIN_ROUNDS&&realRounds<=MAX_ROUNDS,'real rounds within verifyPassword acceptance range');
  assert.equal(dummyRounds,realRounds,'dummy hash must use the same PBKDF2 cost as real hashes');
 });

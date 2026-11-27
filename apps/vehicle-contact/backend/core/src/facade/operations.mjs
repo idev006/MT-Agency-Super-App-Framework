@@ -11,6 +11,8 @@ import {runFlowAsync} from '../../../gas/src/application/flows/FlowRunner.js';
 import {sessionAuthorizeFlow} from '../../../gas/src/application/flows/SessionAuthorizeFlow.js';
 import {vehicleHistoryFlow, vehicleLookupFlow, vehicleDetailFlow, contactReadFlow, qrResolveFlow, vehiclePhotoFlow}
   from '../../../gas/src/application/flows/VehicleReadFlows.js';
+import {loginFlow, googleLoginFlow, changePasswordFlow, logoutFlow, sessionInfoFlow, linkGoogleFlow}
+  from '../../../gas/src/application/flows/AuthFlows.js';
 import {createLogManager} from '../../../gas/src/application/logging/LogManager.js';
 import {LOG_SETTING_KEY, defaultLogPolicy, readLogPolicy} from '../../../gas/src/domain/policies/LogPolicy.js';
 
@@ -22,7 +24,14 @@ export const FLOWS = Object.freeze({
   'vehicles.detail': (p, a, d) => vehicleDetailFlow(p, a, d),
   'vehicles.history': p => vehicleHistoryFlow(p),
   'contacts.read': (p, a, d) => contactReadFlow(p, a, d),
-  'vehicles.photo': (p, a, d) => vehiclePhotoFlow(p, a, d)
+  'vehicles.photo': (p, a, d) => vehiclePhotoFlow(p, a, d),
+  // phase 3 wave 1: auth (node:crypto PBKDF2 through the passwords port; Google OIDC port not configured = as the legacy)
+  'auth.login': (p, a, d) => loginFlow(p, d),
+  'auth.googleLogin': (p, a, d) => googleLoginFlow(p, d),
+  'auth.changePassword': (p, a, d) => changePasswordFlow(p, a, d),
+  'auth.logout': (p, a, d) => logoutFlow(p, a, d),
+  'auth.session': (p, a) => sessionInfoFlow(p, a),
+  'auth.linkGoogle': (p, a, d) => linkGoogleFlow(p, a, d)
 });
 const POLICY_MEMO_MS = 60000; // the log policy is re-read at most once a minute per instance (as the legacy engine)
 
@@ -32,7 +41,8 @@ const randomId = () => randomBytes(32).toString('hex'); // 64 hex, the format of
 // store: the async Store port (or a function returning it, built on first use); cache: none — the legacy engine revokes
 // sessions, so the core must read them live (a cached session could outlive a revocation)
 // media: the MediaStore port (photo bridge) or a function returning it — built on the first photo request
-export function createCoreFacade({store, media = null, now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS}) {
+// passwords: the PasswordHasher port (server.mjs injects node:crypto PBKDF2); google: the Google OIDC port (none yet)
+export function createCoreFacade({store, media = null, passwords = null, google = null, now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS}) {
   let raw = null, logged = null, mediaPort = null;
   // the log policy (VC-ADR-040) for the core's store: loaded asynchronously, memoised, defaults when unreadable
   const policy = {value: defaultLogPolicy(), at: -Infinity};
@@ -63,7 +73,8 @@ export function createCoreFacade({store, media = null, now = () => new Date().to
         await refreshPolicy(raw);
         const principal = PUBLIC_OPERATIONS.includes(op) ? null
           : await runFlowAsync(sessionAuthorizeFlow({token: request.sessionToken, permission: OPERATION_PERMISSIONS[op], ...authOptionsFor(op)}, {sha256, now}), {store: s});
-        const result = await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, media: op === 'vehicles.photo' ? mediaOf() : null});
+        const result = await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, passwords, google,
+          media: op === 'vehicles.photo' ? mediaOf() : null});
         return apiSuccess(result, requestId);
       } catch (e) {
         return apiFailure(publicErrorCode(e), 'Request could not be completed', requestId);

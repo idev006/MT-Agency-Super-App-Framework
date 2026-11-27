@@ -15,6 +15,8 @@
 //        sub-flow. A sub-flow must keep its effects to the store (no media / cache) — only the store is rolled back.
 //   {hashPassword: password}             → 'pbkdf2-sha256$…' (the password port; one hash rule, engine-specific PBKDF2)
 //   {verifyPassword: {password, stored}} → boolean
+//   {verifyGoogle: idToken}              → {sub} (the Google OIDC port; none configured → GOOGLE_OIDC_NOT_CONFIGURED)
+//   {cacheRemove: [key, ...]}            → null (no cache → nothing; cache errors are ignored)
 //   {cacheGet: key}                      → string | null   (no cache → null; cache errors are ignored)
 //   {cachePut: {key, value, seconds}}    → null
 function readsFallback(store, reads) {
@@ -27,9 +29,15 @@ function readsFallback(store, reads) {
 }
 
 // Returns the effect's result, or a promise of it when the store is asynchronous.
-function perform(effect, {store, cache, media, passwords, run}) {
+function perform(effect, {store, cache, media, passwords, google, run}) {
   if (!effect || typeof effect !== 'object') throw new Error('INVALID_EFFECT');
-  if (typeof effect.transaction === 'function') return store.sequence(s => run(effect.transaction(), {store: s, passwords}));
+  // a store whose sequence() passes no transaction store (in-memory / legacy stores run the callback on themselves) → itself
+  if (typeof effect.transaction === 'function') return store.sequence(s => run(effect.transaction(), {store: s || store, passwords}));
+  if (effect.verifyGoogle !== undefined) { if (!google) throw new Error('GOOGLE_OIDC_NOT_CONFIGURED'); return google.verify(effect.verifyGoogle); }
+  if (Array.isArray(effect.cacheRemove)) {
+    if (cache) for (const k of effect.cacheRemove) try { cache.remove(k); } catch { /* optional */ }
+    return null;
+  }
   if (effect.hashPassword !== undefined || effect.verifyPassword) {
     if (!passwords) throw new Error('PASSWORDS_NOT_CONFIGURED');
     return effect.verifyPassword ? passwords.verify(effect.verifyPassword.password, effect.verifyPassword.stored) : passwords.hash(effect.hashPassword);
@@ -63,23 +71,23 @@ function perform(effect, {store, cache, media, passwords, run}) {
   throw new Error('INVALID_EFFECT');
 }
 
-export function runFlowSync(flow, {store, cache = null, media = null, passwords = null}) {
+export function runFlowSync(flow, {store, cache = null, media = null, passwords = null, google = null}) {
   let step = flow.next();
   while (!step.done) {
     let result;
-    try { result = perform(step.value, {store, cache, media, passwords, run: runFlowSync}); }
+    try { result = perform(step.value, {store, cache, media, passwords, google, run: runFlowSync}); }
     catch (e) { step = flow.throw(e); continue; } // same as runFlowAsync: the flow sees store errors
     step = flow.next(result);
   }
   return step.value;
 }
 
-export async function runFlowAsync(flow, {store, cache = null, media = null, passwords = null}) {
+export async function runFlowAsync(flow, {store, cache = null, media = null, passwords = null, google = null}) {
   if (typeof store.readMany !== 'function') throw new Error('ASYNC_STORE_NEEDS_READMANY');
   let step = flow.next();
   while (!step.done) {
     let result;
-    try { result = await perform(step.value, {store, cache, media, passwords, run: runFlowAsync}); }
+    try { result = await perform(step.value, {store, cache, media, passwords, google, run: runFlowAsync}); }
     catch (e) { step = flow.throw(e); continue; } // the flow sees the store error exactly as the sync engine does
     step = flow.next(result);
   }
