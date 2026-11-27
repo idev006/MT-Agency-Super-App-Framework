@@ -18,7 +18,7 @@ Status labels: `status:todo` → `status:in-progress` → closed (with the evide
 | R02 | Photos by Drive link instead of base64 (PR B) | [#295](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/295) | R01 | **done** (0.9.56: 5 photos 3.5–5.6 s → 0.7–1.5 s) |
 | R03 | Web app resizes by the admin policy; replace resizes; admin fields (PR 2) | [#296](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/296) | — | todo |
 | R04 | Move existing photos into their vehicle folders (PR C, dry run first) | [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) | R01 | todo |
-| N1a | Foundation + system / list ops as native async Node (7 ops) — VC-ADR-051 | [#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311) | — | in progress (PR 1: harness + generated tests + vehicles.list, qr.markPrinted) |
+| N1a | Foundation + system / list ops as native async Node (7 ops) — VC-ADR-051 | [#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311) | — | in progress — PR 1 deployed 0.9.57 (vehicles.list, qr.markPrinted on the core); next PR 2: system.config.* (+ log-policy copy), PR 3: system.reset.* |
 | N1b | Vehicles, QR, change requests, registration review (16 ops) | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) | N1a | todo |
 | N2 | Photos, retention, audit (10 ops) | [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) | N1a | todo |
 | N3 | Users, organizations, campaigns (15 ops) | [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) | N1a | todo |
