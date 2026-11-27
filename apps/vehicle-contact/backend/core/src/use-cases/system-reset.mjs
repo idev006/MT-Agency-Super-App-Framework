@@ -15,8 +15,6 @@ async function current(p, actor, {store, sha256, resetEnabled}) {
     throw new Error('RESET_PLAN_TOO_LARGE');
   const rows = Object.fromEntries(RESET_TABLES.map((name, i) => [name, got[i]]));
   const opts = resetOptions(p), plan = planReset(rows, {actor, ...opts});
-  if (Object.values(plan.ids).reduce((n, ids) => n + ids.length, 0) > MAX_RESET_DELETES)
-    throw new Error('RESET_PLAN_TOO_LARGE');
   return {plan, opts, digest: resetDigest(plan, opts, sha256)};
 }
 
@@ -40,6 +38,8 @@ export async function resetExecute(p, actor, ctx) {
     throw new Error('INVALID_CREDENTIALS');
   const {plan, digest} = await current(p, actor, ctx);
   if (p.planDigest !== digest) throw new Error('RESET_PLAN_STALE');
+  if (Object.values(plan.ids).reduce((n, ids) => n + ids.length, 0) > MAX_RESET_DELETES)
+    throw new Error('RESET_PLAN_TOO_LARGE');
   const ops = resetDeleteOps(plan);
   for (let i = 0; i < ops.length; i += CHUNK) await ctx.store.writeMany(ops.slice(i, i + CHUNK));
   const drive = await trashDrive(ctx.media);
