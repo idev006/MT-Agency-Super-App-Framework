@@ -6,7 +6,7 @@
 //   P6VC_ALLOW_OWNER_DEV_WRITES=RUN_SYNTHETIC_OWNER_DEV node scripts/ported-compare-live.mjs
 import fs from 'node:fs';
 import '../../gas/scripts/load-env.mjs';
-import {FLOWS} from '../src/facade/operations.mjs';
+import {FLOWS, USE_CASES} from '../src/facade/operations.mjs';
 
 if (process.env.P6VC_ALLOW_OWNER_DEV_WRITES !== 'RUN_SYNTHETIC_OWNER_DEV') { console.error('GATE_CLOSED'); process.exit(2); }
 const user = process.env.P6VC_TEST_USERNAME, password = process.env.P6VC_TEST_PASSWORD;
@@ -38,15 +38,17 @@ try {
   const qrToken = exported?.body.data?.items?.[0]?.token; // export row field `token` (READY rows only)
   const cases = [];
   for (const v of items) cases.push(['vehicles.lookup', {plate: v.plate, province: v.province}, token], ['vehicles.detail', {vehicleId: v.vehicleId}, token],
-    ['vehicles.history', {vehicleId: v.vehicleId}, token], ['contacts.read', {vehicleId: v.vehicleId}, token]);
+    ['vehicles.history', {vehicleId: v.vehicleId}, token], ['contacts.read', {vehicleId: v.vehicleId}, token],
+    ['qr.history', {vehicleId: v.vehicleId}, token]);
   if (qrToken) cases.push(['qr.resolve', {token: qrToken}, token]);
   if (photoId) cases.push(['vehicles.photo', {vehicleId: items[0].vehicleId, photoId}, token]);
   cases.push(['vehicles.lookup', {plate: 'ZZ 9999', province: items[0]?.province || 'TH-10'}, token], ['qr.resolve', {token: 'f'.repeat(64)}, token],
-    ['vehicles.detail', {vehicleId: 'no-such-vehicle'}, token], ['vehicles.history', {vehicleId: 'x'}, null], ['contacts.read', {}, token]);
+    ['vehicles.detail', {vehicleId: 'no-such-vehicle'}, token], ['vehicles.history', {vehicleId: 'x'}, null],
+    ['qr.history', {vehicleId: 'no-such-vehicle'}, token], ['contacts.read', {}, token]);
   // the admin detail shows the newest access-log rows, which include the row the PREVIOUS call just wrote: compared apart
   const strip = (op, b) => (op === 'vehicles.detail' && b.ok && b.data ? (({accessLog, ...rest}) => ({body: {...b, data: rest}, accessLog}))(b.data) : {body: b});
   for (const [op, payload, t] of cases) {
-    if (!FLOWS[op]) continue;
+    if (!FLOWS[op] && !USE_CASES[op]) continue;
     const [g, a] = op.split('.');
     const legacy = await call(LEGACY, g, a, payload, t), core = await call(CORE, g, a, payload, t);
     const L = strip(op, legacy.body), C = strip(op, core.body);
