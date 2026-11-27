@@ -1,11 +1,11 @@
 name: Deploy P6 Vehicle Contact core jobs (Cloud Run Jobs, manual only)
 
-# VC-ADR-046 phase 2c-2: scheduled work of the Node core runs as Cloud Run Jobs from the SAME image the live p6vc-core
-# service runs (one image; deploy the core first when its code changed). Today: drive-photo-housekeeping (shared flow, photo bridge ops list +
-# trash; Drive trash only, 30-day undo). Safe by default:
-#   mode DRY_RUN (default) = report only; APPLY needs the extra phrase APPLY_DRIVE_HOUSEKEEPING.
-#   The daily trigger is run-vehicle-jobs.yml (GitHub schedule, 03:30 Asia/Bangkok) — ONE trigger, so no Cloud Scheduler.
-# Every run executes the job once and prints its JOB line (counters + short id prefixes only).
+# VC-ADR-046 phase 2c: work of the Node core outside the API runs as Cloud Run Jobs from the SAME image the live p6vc-core
+# service runs (one image; deploy the core first when its code changed). Job names = core/src/facade/jobs.mjs JOBS keys.
+#   p6vc-housekeeping  drive-photo-housekeeping (Drive trash only, 30-day undo). mode KEEP (default) = the mode it has now
+#                      (DRY_RUN for a new job); DRY_RUN = report only; APPLY needs the extra phrase APPLY_DRIVE_HOUSEKEEPING. Daily start: run-vehicle-jobs.yml (03:30 Bangkok).
+#   p6vc-photo-audit   drive-photo-audit (read-only: Firestore photo rows <-> files in the Drive photo folder). On demand.
+# Every run deploys both jobs, then executes the chosen one once (its JOB line: counters + short id prefixes only).
 on:
   workflow_dispatch:
     inputs:
@@ -14,15 +14,21 @@ on:
         required: true
         type: string
       mode:
-        description: 'DRY_RUN (report only) or APPLY (trash files / remove expired staging rows)'
+        description: 'Housekeeping mode: KEEP (as now), DRY_RUN (report only) or APPLY (trash files / remove expired staging rows)'
         required: true
-        default: DRY_RUN
+        default: KEEP
         type: choice
-        options: [DRY_RUN, APPLY]
+        options: [KEEP, DRY_RUN, APPLY]
       apply_confirmation:
         description: 'With mode APPLY only: type APPLY_DRIVE_HOUSEKEEPING'
         required: false
         type: string
+      run_job:
+        description: 'Job to execute once after the deploy'
+        required: true
+        default: p6vc-housekeeping
+        type: choice
+        options: [p6vc-housekeeping, p6vc-photo-audit]
 
 permissions:
   contents: read
@@ -36,16 +42,15 @@ env:
   PROJECT_ID: mt-iam-core-2026
   REGION: asia-southeast3
   CORE_SERVICE: p6vc-core
-  JOB: p6vc-housekeeping
   RUNTIME_SA: p6vc-api-runtime@mt-iam-core-2026.iam.gserviceaccount.com
 
 jobs:
   deploy:
-    name: Deploy job and run it once
+    name: Deploy the jobs and run one once
     runs-on: ubuntu-latest
     if: >-
       github.ref == 'refs/heads/main' && inputs.confirmation == 'DEPLOY_VEHICLE_JOBS' &&
-      (inputs.mode == 'DRY_RUN' || inputs.apply_confirmation == 'APPLY_DRIVE_HOUSEKEEPING')
+      (inputs.mode != 'APPLY' || inputs.apply_confirmation == 'APPLY_DRIVE_HOUSEKEEPING')
     timeout-minutes: 30
     steps:
       - name: Authenticate to Google Cloud (keyless)
@@ -60,30 +65,39 @@ jobs:
       - name: The image the live core service runs (built and smoked by deploy-vehicle-core)
         id: image
         run: |
-          IMAGE=$(gcloud run services describe "$CORE_SERVICE" --project "$PROJECT_ID" --region "$REGION"             --format='value(spec.template.spec.containers[0].image)')
+          IMAGE=$(gcloud run services describe "$CORE_SERVICE" --project "$PROJECT_ID" --region "$REGION" --format='value(spec.template.spec.containers[0].image)')
           if [ -z "$IMAGE" ]; then echo "::error::p6vc-core is not deployed — run deploy-vehicle-core first"; exit 1; fi
           echo "Image: $IMAGE"
           echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
 
-      - name: Deploy the job (${{ inputs.mode }})
+      - name: Deploy the jobs (housekeeping mode ${{ inputs.mode }})
         run: |
-          gcloud run jobs deploy "$JOB" \
-            --project "$PROJECT_ID" --region "$REGION" \
-            --image "${{ steps.image.outputs.image }}" \
-            --service-account "$RUNTIME_SA" \
-            --command node --args "backend/core/src/job.mjs,drive-photo-housekeeping" \
-            --tasks 1 --max-retries 0 --task-timeout 900 --cpu 1 --memory 512Mi \
-            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),P6VC_JOB_MODE=${{ inputs.mode }}" \
-            --set-secrets "P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest" \
-            --labels "app=p6vc,component=core-job,commit=${GITHUB_SHA::12}" \
-            --quiet
+          MODE="${{ inputs.mode }}"
+          if [ "$MODE" = "KEEP" ]; then
+            MODE=$(gcloud run jobs describe p6vc-housekeeping --project "$PROJECT_ID" --region "$REGION" --format=json 2>/dev/null               | jq -r '[.spec.template.spec.template.spec.containers[0].env[]? | select(.name=="P6VC_JOB_MODE") | .value][0] // "DRY_RUN"' || echo DRY_RUN)
+            [ "$MODE" = "APPLY" ] || MODE=DRY_RUN
+          fi
+          echo "Housekeeping mode: $MODE"
+          deploy() { # name, job key, extra env
+            gcloud run jobs deploy "$1" --project "$PROJECT_ID" --region "$REGION" \
+              --image "${{ steps.image.outputs.image }}" --service-account "$RUNTIME_SA" \
+              --command node --args "backend/core/src/job.mjs,$2" \
+              --tasks 1 --max-retries 0 --task-timeout 900 --cpu 1 --memory 512Mi \
+              --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default)$3" \
+              --set-secrets "P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest" \
+              --labels "app=p6vc,component=core-job,commit=${GITHUB_SHA::12}" --quiet
+          }
+          deploy p6vc-housekeeping drive-photo-housekeeping ",P6VC_JOB_MODE=${MODE}"
+          deploy p6vc-photo-audit drive-photo-audit ""
 
-      - name: Run once and read its report
+      - name: Run ${{ inputs.run_job }} once and read its report
+        env:
+          JOB: ${{ inputs.run_job }}
         run: |
           EXEC=$(gcloud run jobs execute "$JOB" --project "$PROJECT_ID" --region "$REGION" --wait --format='value(metadata.name)') && RC=0 || RC=$?
           echo "Execution: ${EXEC:-unknown} (exit $RC)"
           sleep 20 # log ingestion
           gcloud logging read \
             "resource.type=cloud_run_job AND resource.labels.job_name=${JOB} AND labels.\"run.googleapis.com/execution_name\"=${EXEC} AND textPayload:\"JOB \"" \
-            --project "$PROJECT_ID" --limit 5 --format='value(textPayload)' || echo "::warning::could not read the job log"
+            --project "$PROJECT_ID" --limit 5 --format='value(textPayload)' || echo "::warning::could not read the job log (the deployer needs Logs Viewer); the report is in Cloud Logging"
           exit $RC

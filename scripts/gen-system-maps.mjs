@@ -95,7 +95,7 @@ const DEPLOY = [
   ['apps/vehicle-contact/frontend/src', 'web app', 'GitHub Pages deploys on merge; check the bundle version on the live site'],
   ['.github/workflows/deploy-vehicle-cloudrun.yml', 'deploy pipeline', 'proven only by a real deploy run'],
   ['.github/workflows/deploy-vehicle-core.yml', 'core deploy pipeline', 'proven only by a real deploy run (the first run creates p6vc-core)'],
-  ['.github/workflows/deploy-vehicle-jobs.yml', 'core jobs pipeline (Cloud Run Job p6vc-housekeeping)', 'proven only by a real run: its JOB report (DRY_RUN by default; APPLY needs `APPLY_DRIVE_HOUSEKEEPING`)'],
+  ['.github/workflows/deploy-vehicle-jobs.yml', 'core jobs pipeline (Cloud Run Jobs p6vc-housekeeping + p6vc-photo-audit)', 'proven only by a real run: its JOB report (mode KEEP by default; APPLY needs `APPLY_DRIVE_HOUSEKEEPING`)'],
   ['.github/workflows/run-vehicle-jobs.yml', 'daily start of the core jobs (GitHub schedule 03:30 Bangkok)', 'starts the job as deployed (image + mode come from deploy-vehicle-jobs); proven by a run that ends in success'],
 ];
 for (const [p] of DEPLOY) if (!fs.existsSync(path.join(root, p))) throw new Error('checklist path missing: ' + p);
