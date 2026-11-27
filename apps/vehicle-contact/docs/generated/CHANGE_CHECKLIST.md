@@ -7,6 +7,9 @@
 Every file that wires the reference operation `qr.markPrinted` — a new operation needs the same places:
 
 - [ ] `apps/vehicle-contact/backend/cloudrun/frontend-gateway.mjs`
+- [ ] `apps/vehicle-contact/backend/core/src/facade/operations.mjs`
+- [ ] `apps/vehicle-contact/backend/core/src/use-cases/vehicle-list.mjs`
+- [ ] `apps/vehicle-contact/backend/core/tests/use-cases-n1a.test.mjs`
 - [ ] `apps/vehicle-contact/backend/gas/scripts/run-live-owner-dev-regression.mjs`
 - [ ] `apps/vehicle-contact/backend/gas/src/api/controllers/OperationController.js`
 - [ ] `apps/vehicle-contact/backend/gas/src/api/dto/OperationPayloadValidator.js`
@@ -16,6 +19,7 @@ Every file that wires the reference operation `qr.markPrinted` — a new operati
 - [ ] `apps/vehicle-contact/contracts/api-inventory.v1.json`
 - [ ] `apps/vehicle-contact/contracts/api-permissions.v1.json`
 - [ ] `apps/vehicle-contact/docs/NODE_CORE_FINISH_PLAN.md`
+- [ ] `apps/vehicle-contact/docs/ROADMAP.md`
 - [ ] `apps/vehicle-contact/docs/traceability-matrix.md`
 - [ ] `apps/vehicle-contact/docs/use-cases/UC-QR-02/sequence.mmd`
 - [ ] `apps/vehicle-contact/docs/use-cases/UC-QR-02/specification.md`

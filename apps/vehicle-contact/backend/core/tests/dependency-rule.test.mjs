@@ -24,7 +24,9 @@ const ALLOWED = {
   domain: ['domain'],
   ports: [],
   application: ['domain', 'ports', 'application'],
-  facade: ['application', 'domain', 'ports', 'facade', 'node', 'outside-core'], // outside-core: legacy api rules + shared flows until phase 9
+  // VC-ADR-051 native async use cases; outside-core: the legacy engine's pure rules (gas/src/application) until N4
+  'use-cases': ['use-cases', 'domain', 'ports', 'outside-core'],
+  facade: ['application', 'use-cases', 'domain', 'ports', 'facade', 'node', 'outside-core'], // outside-core: legacy api rules + shared flows until phase 9
   http: ['http', 'ports', 'application', 'facade', 'domain', 'outside-core'], // outside-core: the shared cloudrun handler
   adapters: ['adapters', 'ports', 'domain', 'node', 'outside-core', 'package:@google-cloud/firestore']
 };

@@ -7,9 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs tests/generated/*.test.mjs",
+    "gen:acceptance": "node scripts/gen-core-acceptance.mjs"
   },
   "dependencies": {
     "@google-cloud/firestore": "^9.4.1"
+  },
+  "devDependencies": {
+    "acorn": "^8.19.0"
   }
 }

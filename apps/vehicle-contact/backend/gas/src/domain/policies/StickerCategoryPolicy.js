@@ -54,9 +54,10 @@ export function parseStickerCategories(raw) {
 }
 // The stored list, or the defaults when none has been saved yet.
 export function loadStickerCategories(store) {
-  const row = store.one('vc_settings', {key: STICKER_SETTING_KEY});
-  return row && row.value ? parseStickerCategories(row.value) : DEFAULT_STICKER_CATEGORIES;
+  return stickerCategoriesFrom(store.one('vc_settings', {key: STICKER_SETTING_KEY}));
 }
+// the list from its vc_settings row (no row → the defaults) — for a caller that read the row itself
+export const stickerCategoriesFrom = row => (row && row.value ? parseStickerCategories(row.value) : DEFAULT_STICKER_CATEGORIES);
 // A code accepted for a vehicle / registration: well-formed (membership is checked against the live list).
 export function stickerCategory(value, list = DEFAULT_STICKER_CATEGORIES) {
   const code = typeof value === 'string' ? value.trim().toUpperCase() : '';
