@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified:** 2026-11-27 (Asia/Bangkok) — backend 0.9.58 / FE 0.9.22 live and proven; N1a PR 3 is next.
+**Last verified live:** 2026-11-27 (Asia/Bangkok) — backend 0.9.58 / FE 0.9.22. N1a PR 3 (0.9.59) is built, not merged or deployed.
 **Status:** current. Read [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) (what runs, last proof) with this page (how to work, next steps).
 
 ## 1. Ready-to-paste next-AI prompt
@@ -15,9 +15,9 @@ apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md → PROJECT_HANDOVER.md (th
 the generated maps docs/generated/DATA_ACCESS_MAP.md + CHANGE_CHECKLIST.md → DECISION_LOG.md (VC-ADR-046..051).
 Then verify the live state yourself: git fetch origin main; gh pr list; gh issue list --label status:in-progress; CI.
 
-Where things stand: backend 0.9.58 is live; the Node core (p6vc-core) answers 20 of 64 operations and forwards the rest to
+Where things stand: backend 0.9.58 is live; 0.9.59 is built but not deployed. The Node core (p6vc-core) answers 20 of 64 operations live and forwards the rest to
 the frozen legacy engine (p6vc-api). The owner decided (VC-ADR-051) to move the whole backend to native async Node:
-N1a (in progress, PR 3 = system.reset.* next) → N1b → N2 → N3 → R10/R11 → N4 cut-over. Each item = small PRs → owner OK →
+N1a (in progress, PR 3 = system.reset.* built, awaiting review) → N1b → N2 → N3 → R10/R11 → N4 cut-over. Each item = small PRs → owner OK →
 deploy → proof → evidence in DECISION_LOG → ROADMAP + issue updated.
 
 Hard rules (owner): every merge and every deploy needs the owner's OK for that round ("Merge + deploy"); never merge with
@@ -66,6 +66,8 @@ flowchart LR
 | `scripts/gen-system-maps.mjs` | the generated maps + ratchet (`--check` in CI) |
 | `scripts/p6vc-deploy-backend.sh` | the deploy chain (refuses without `P6VC_OWNER_OK=MERGE_AND_DEPLOY`) |
 
+Owner clarification 2026-11-28: use LSP to map code; the target backend is native async Node in `p6vc-core`, with Firestore for data and the GAS API for Google Drive photos, **without Cloudflare Worker**. The deployed FE 0.9.22 build still selects the Worker (`deploy-pages-ssot.yml`); changing that route needs its own reviewed cut-over and live UI proof.
+
 ## 4. How to move an operation to the core (the N1a pattern)
 
 1. Read the legacy use case and its tests; split its rules into **pure exported functions** in the legacy module (legacy tests must pass unchanged) — no copied rules.
@@ -97,7 +99,7 @@ Rollback: remove the op from `USE_CASES` / `FLOWS` and redeploy the core (the le
 
 ## 6. Next actions
 
-1. **N1a PR 3** — `system.reset.preview` / `system.reset.execute` on the core (legacy `application/use-cases/SystemResetOperations.js`: plan digest, phrase `RESET P6VC`, password re-check, Drive `trashAll` through the bridge, off unless `P6VC_SYSTEM_RESET=ENABLED`). Synthetic DEV only; live proof = preview only unless the owner explicitly asks for an execute. Then close #311.
+1. **N1a PR 3 (built, not merged/deployed)** — review `system.reset.preview` / `system.reset.execute` on the core. It retains the legacy plan digest, phrase `RESET P6VC`, password re-check and Drive `trashAll` through the bridge, and stays off unless `P6VC_SYSTEM_RESET=ENABLED`; a capped Firestore read refuses the plan and Drive trash walks vehicle subfolders. After owner approval, deploy and prove on synthetic DEV: live preview only unless the owner explicitly asks for an execute. Then close #311.
 2. **N1b** (#312, 16 ops: vehicles, QR, change requests, registration review) — includes fixing approval reading the whole `vc_vehicles` table (query by plate + province).
 3. N2 (#313), N3 (#314), R10 (#303), R11 (#304, owner security review), N4 (#255).
 4. Photos R03 (#296), R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.

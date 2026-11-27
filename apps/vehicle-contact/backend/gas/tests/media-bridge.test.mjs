@@ -7,6 +7,7 @@ import {createMediaBridgeServer,isMediaBridgeRequest} from '../src/infrastructur
 import {mediaBridgeSignature} from '../src/infrastructure/media/MediaBridgeSignature.js';
 import {createMediaBridgePhotos} from '../../cloudrun/media-bridge-client.mjs';
 import {nodeUtilities} from '../../cloudrun/runtime.mjs';
+import {createDrivePhotos} from '../src/infrastructure/media/DrivePhotos.js';
 
 const SECRET='s'.repeat(40),FOLDER='owner-drive-folder';
 const utilities=nodeUtilities();
@@ -74,4 +75,18 @@ test('BRIDGE-04 the Cloud Run application uses the bridge only when both bridge 
  const reply=b=>({getResponseCode:()=>200,getContentText:()=>JSON.stringify(b)});
  assert.ok(createCloudRunApplication({env,fetchSync:()=>reply({})}),'without the bridge: photo ops fail closed (DRIVE_NOT_CONFIGURED)');
  assert.throws(()=>createCloudRunApplication({env:{...env,MEDIA_BRIDGE_URL:'https://x',P6VC_MEDIA_BRIDGE_SECRET:'short'},fetchSync:()=>reply({})}),/MEDIA_BRIDGE_NOT_CONFIGURED/);
+});
+
+test('BRIDGE-05 reset trashes files in the root and vehicle subfolders, then a retry sees no files', ()=>{
+ const iterator=items=>{let i=0;return {hasNext:()=>i<items.length,next:()=>items[i++]};};
+ const file=()=>({trashed:false,setTrashed(v){this.trashed=v;}});
+ const rootFile=file(),vehicleFile=file(),provinceFile=file();
+ const vehicle={getFiles:()=>iterator(vehicleFile.trashed?[]:[vehicleFile]),getFolders:()=>iterator([])};
+ const province={getFiles:()=>iterator(provinceFile.trashed?[]:[provinceFile]),getFolders:()=>iterator([vehicle])};
+ const root={getFiles:()=>iterator(rootFile.trashed?[]:[rootFile]),getFolders:()=>iterator([province])};
+ const photos=createDrivePhotos({driveApp:{getFolderById:()=>root},utilities:{},folderId:FOLDER});
+ assert.deepEqual(photos.trashAll(-1),{trashed:0,more:true},'a timed-out call can be retried from the root');
+ assert.deepEqual(photos.trashAll(),{trashed:3,more:false});
+ assert.ok(rootFile.trashed&&provinceFile.trashed&&vehicleFile.trashed);
+ assert.deepEqual(photos.trashAll(),{trashed:0,more:false});
 });

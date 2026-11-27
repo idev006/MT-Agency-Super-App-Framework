@@ -38,7 +38,7 @@ Operations on the core (`backend/core/src/facade/operations.mjs`):
 
 ## 3. Work in flight
 
-- **N1a** ([#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311)): PR 1 (0.9.57) and PR 2 (0.9.58) deployed and proven; **next: PR 3 `system.reset.preview/execute`** (destructive → synthetic DEV only, execute stays off unless `P6VC_SYSTEM_RESET=ENABLED`). `system.health` stays on the legacy engine until N4 (the deploy smoke checks its version).
+- **N1a** ([#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311)): PR 1 (0.9.57) and PR 2 (0.9.58) deployed and proven; **PR 3 (0.9.59) built, not merged or deployed**: `system.reset.preview/execute` on the core, off unless `P6VC_SYSTEM_RESET=ENABLED`. Its legacy acceptance test passes through the core; live proof remains pending and must use preview only unless the owner separately authorizes an execute. `system.health` stays on the legacy engine until N4 (the deploy smoke checks its version).
 - Then N1b → N2 → N3 → (R10, R11) → N4, photos R03 / R04, go-live R14 / R16 / R17 — order and done-criteria in [ROADMAP.md](ROADMAP.md), plan + diagrams in [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md).
 
 ## 4. Open owner decisions / actions (not engineering)

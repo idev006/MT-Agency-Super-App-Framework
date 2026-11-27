@@ -40,10 +40,11 @@ export function createAcceptanceHarness(options = {}) {
     media: {read: async r => h.drivePhotos.read(r), upload: async (b, m) => h.drivePhotos.upload(b, m), trash: async r => h.drivePhotos.trash(r),
       list: async t => (h.drivePhotos.list ? h.drivePhotos.list(t) : {files: [], nextPageToken: null}),
       organize: async req => (h.drivePhotos.organize ? h.drivePhotos.organize(req) : {folderId: ''}),
-      stat: async refs => (h.drivePhotos.stat ? h.drivePhotos.stat(refs) : {files: []})},
+      stat: async refs => (h.drivePhotos.stat ? h.drivePhotos.stat(refs) : {files: []}),
+      trashAll: async () => h.drivePhotos.trashAll()},
     passwords: {hash: async p => s.hashPassword(p), verify: async (p, stored) => (stored == null ? false : s.verifyPassword(p, stored))},
     google: {verify: async token => s.verifyGoogle(token)},
-    now: () => s.now(), sha256: x => s.sha256(x), id: () => s.secretToken()});
+    now: () => s.now(), sha256: x => s.sha256(x), id: () => s.secretToken(), resetEnabled: options.allowSystemReset === true});
   const router = createRouter({legacy: {dispatch: async (e, m) => h.dispatch(e, m)}, core});
   const call = (operation, payload = {}, actor = null, opts = {}) => {
     const [group, ...actions] = operation.split('.');
