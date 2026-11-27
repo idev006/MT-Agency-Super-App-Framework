@@ -51,5 +51,70 @@ export function createSdkGateway({db}) {
     const [results] = await Promise.all([queryMany(specs), commit(writes)]);
     return results;
   }
-  return Object.freeze({query, count, commit, queryMany, queryManyAndCommit});
+  // A read-write transaction with the SAME semantics as the legacy REST gateway's runTransaction (VC-ADR-046 phase 3 wave 0):
+  // reads go through the SDK transaction; writes are BUFFERED (read-your-writes overlay for get and query) and applied when
+  // fn returns — so every SDK read happens before any SDK write, as the SDK requires. create = must not exist, update = must
+  // exist (the merged document), delete = must exist. fn may run more than once (the SDK retries on contention): it gets a
+  // fresh buffer each time. An error thrown by fn rolls back (nothing is written) and reaches the caller unchanged.
+  async function runTransaction(fn) {
+    try {
+      return await db.runTransaction(async t => {
+        const pending = new Map();
+        const key = (c, id) => c + '/' + id;
+        const fail = code => { throw Object.assign(new Error(code), {code}); };
+        const serverGet = async (c, id) => { const s = await t.get(db.collection(c).doc(id)); return s.exists ? fromFirestore(s.data()) : null; };
+        const tx = {
+          async get(c, id) {
+            const p = pending.get(key(c, id));
+            if (p) return p.type === 'delete' ? null : {...p.fields};
+            const f = await serverGet(c, id); return f ? {...f} : null;
+          },
+          async create(c, id, fields) {
+            const p = pending.get(key(c, id));
+            if (p && p.type !== 'delete') fail('ALREADY_EXISTS');
+            if (!p && await serverGet(c, id)) fail('ALREADY_EXISTS');
+            pending.set(key(c, id), {type: 'create', coll: c, id, fields: {...fields}});
+            return id;
+          },
+          async update(c, id, fields) {
+            const current = await tx.get(c, id);
+            if (!current) fail('NOT_FOUND');
+            const p = pending.get(key(c, id));
+            pending.set(key(c, id), {type: p && p.type === 'create' ? 'create' : 'update', coll: c, id, fields: {...current, ...fields}});
+          },
+          async delete(c, id) {
+            if (!await tx.get(c, id)) fail('NOT_FOUND');
+            const p = pending.get(key(c, id));
+            if (p && p.type === 'create') pending.delete(key(c, id)); // created and deleted here: net no-op
+            else pending.set(key(c, id), {type: 'delete', coll: c, id});
+          },
+          async query(c, opts = {}) {
+            const snap = await t.get(build(c, {...opts, limit: undefined}));
+            const byId = new Map(snap.docs.map(d => [d.id, {id: d.id, fields: fromFirestore(d.data())}]));
+            for (const p of pending.values()) {
+              if (p.coll !== c) continue;
+              if (p.type === 'delete') byId.delete(p.id); else byId.set(p.id, {id: p.id, fields: {...p.fields}});
+            }
+            let docs = [...byId.values()];
+            for (const w of opts.where || []) docs = docs.filter(d => d.fields[w.field] === w.value);
+            if (opts.orderBy) {
+              const f = opts.orderBy.field, dir = opts.orderBy.direction === 'desc' ? -1 : 1;
+              docs.sort((a, b) => { const av = a.fields[f], bv = b.fields[f]; return (av < bv ? -1 : av > bv ? 1 : 0) * dir; });
+            }
+            if (opts.limit !== undefined) docs = docs.slice(0, opts.limit);
+            return docs.map(d => ({id: d.id, fields: {...d.fields}}));
+          }
+        };
+        const result = await fn(tx);
+        for (const p of pending.values()) {
+          const ref = db.collection(p.coll).doc(p.id);
+          if (p.type === 'delete') t.delete(ref, {exists: true});
+          else if (p.type === 'create') t.create(ref, toFirestore(p.fields));
+          else t.update(ref, toFirestore(p.fields));
+        }
+        return result;
+      });
+    } catch (e) { throw (typeof e?.code === 'number' && GRPC[e.code]) ? mapError(e) : e; }
+  }
+  return Object.freeze({query, count, commit, queryMany, queryManyAndCommit, runTransaction});
 }

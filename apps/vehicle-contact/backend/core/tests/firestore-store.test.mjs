@@ -65,7 +65,7 @@ test('STORE-02 both engines write identical documents and read each other\'s row
   assert.equal(legacy.one('vc_sessions', {session_id: 's1'}).last_seen_at, '2026-11-27T00:05:00.000Z', 'legacy sees the core patch');
   await assert.rejects(core.patch('vc_sessions', {token_digest: 'ds1'}, {last_seen_at: 'x'}), /PATCH_REQUIRES_PRIMARY_KEY/);
   await assert.rejects(core.insert('vc_users', user('a')), /DUPLICATE_KEY/);
-  assert.throws(() => core.sequence(() => 1), /SEQUENCE_NOT_SUPPORTED/);
+  await assert.rejects(core.sequence(() => 1), /SEQUENCE_NOT_SUPPORTED/, 'a gateway without runTransaction offers no transactions');
 });
 
 test('STORE-03 SDK value rules match the REST gateway: undefined→null, Date⇄Timestamp, nested values', () => {
