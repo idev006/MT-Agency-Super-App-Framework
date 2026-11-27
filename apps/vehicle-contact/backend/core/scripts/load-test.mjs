@@ -7,15 +7,17 @@
 //   login    — auth.login with the synthetic account (password hash + session + security event); every session the probe
 //              creates is signed out after its level (not timed). Same gate as lookup.
 // Gate: P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD.
-//   P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD node scripts/load-test.mjs cloud-run-core 1,10,30,50 [validate|lookup|login]
-// Each level sends 3 x concurrency requests in waves; the first level is preceded by one warm-up call (reported apart, so a
+//   P6VC_ALLOW_LOAD_TEST=RUN_SYNTHETIC_LOAD node scripts/load-test.mjs cloud-run-core 1,10,30,50 [validate|lookup|login] [waves]
+// Each level sends <waves> (default 3, max 60; more = a sustained run that gives Cloud Run time to add instances) x concurrency
+// requests in waves; the first level is preceded by one warm-up call (reported apart, so a
 // cold start does not hide in the numbers). Prints timings and counts only — never data, tokens or credentials.
 // Report: test-results/p6vc-load-<id>-<probe>.json (cwd).
 import fs from 'node:fs';
 import {randomBytes} from 'node:crypto';
 
 if (process.env.P6VC_ALLOW_LOAD_TEST !== 'RUN_SYNTHETIC_LOAD') { console.error('LOAD_TEST_GATE_CLOSED'); process.exit(2); }
-const [id = 'cloud-run-core', levelsArg = '1,10,30,50', probe = 'validate'] = process.argv.slice(2);
+const [id = 'cloud-run-core', levelsArg = '1,10,30,50', probe = 'validate', wavesArg = '3'] = process.argv.slice(2);
+const WAVES = Math.min(60, Math.max(1, Math.floor(Number(wavesArg)) || 3));
 const trusted = JSON.parse(fs.readFileSync(new URL('../../../contracts/trusted-endpoints.v1.json', import.meta.url), 'utf8'));
 const endpoint = trusted.endpoints.find(e => e.id === id && e.kind === 'cloud-run');
 if (!endpoint) { console.error('UNKNOWN_CLOUD_RUN_ENDPOINT'); process.exit(2); }
@@ -72,14 +74,18 @@ try {
   for (const c of levels) {
     const results = [];
     const t0 = performance.now();
-    for (let wave = 0; wave < 3; wave++) results.push(...await Promise.all(Array.from({length: c}, one)));
+    const perWave = [];
+    for (let wave = 0; wave < WAVES; wave++) { const w = await Promise.all(Array.from({length: c}, one)); results.push(...w); perWave.push(w.map(r => r.ms)); }
     const ms = results.map(r => r.ms);
     const by = [...new Set(results.map(r => r.answeredBy || 'none'))].join('+');
-    const row = {concurrency: c, requests: results.length, errors: results.filter(r => !r.ok).length, answeredBy: by,
+    // sustained runs: the last third of the waves shows the steady state (after any scale-out)
+    const tail = perWave.slice(Math.floor(perWave.length * 2 / 3)).flat();
+    const row = {concurrency: c, waves: WAVES, requests: results.length, errors: results.filter(r => !r.ok).length, answeredBy: by,
+      tailP50: pct(tail, 50),
       p50: pct(ms, 50), p95: pct(ms, 95), max: Math.round(Math.max(...ms)), seconds: Math.round((performance.now() - t0) / 100) / 10};
     report.levels.push(row);
     await afterLevel();
-    console.log(`LOAD ${probe} c=${c} n=${row.requests} errors=${row.errors} p50=${row.p50}ms p95=${row.p95}ms max=${row.max}ms total=${row.seconds}s answered-by=${by}`);
+    console.log(`LOAD ${probe} c=${c} n=${row.requests} errors=${row.errors} p50=${row.p50}ms p95=${row.p95}ms max=${row.max}ms total=${row.seconds}s answered-by=${by}${WAVES > 3 ? ' last-third-p50=' + row.tailP50 + 'ms' : ''}`);
   }
 } finally { await signOut(); }
 report.finishedAt = new Date().toISOString();
