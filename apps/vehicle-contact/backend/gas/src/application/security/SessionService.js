@@ -1,97 +1,17 @@
 // Server-authoritative sessions and immutable role-to-permission policy.
-export const ROLE_PERMISSIONS=Object.freeze({
- SYSTEM_ADMIN:['session.authenticated','system.settings.read','system.settings.manage','system.reset','users.manage','organizations.read','organizations.manage','campaigns.manage','qr.manage','retention.read','retention.delete.approve','audit.read','vehicle.list',
-  // VC-ADR-036 (owner 2026-11-25): full vehicle view incl. contacts; NOT registration approval.
-  'vehicle.lookup','vehicle.contact.read','vehicle.photos.read','vehicle.history.read'],
- REGISTRATION_ADMIN:['session.authenticated','organizations.read','vehicle.registration.approve','vehicle.lookup','vehicle.list','vehicle.contact.read','vehicle.photos.read','vehicle.update','vehicle.history.read','vehicle.change.approve','qr.manage','retention.read'],
- STAFF:['session.authenticated','organizations.read','vehicle.lookup','vehicle.contact.read','vehicle.photos.read','vehicle.history.read'],
- OWNER:['session.authenticated','vehicle.change.submit','vehicle.own.read'],
- RETENTION_WORKER:['session.authenticated','retention.worker']
-});
-function accessFrom(roleRows,overrideRows){
- const assignments=roleRows.filter(x=>x.status==='ACTIVE').map(x=>String(x.role_id));
- const overrides=overrideRows.filter(x=>x.status==='ACTIVE').map(x=>String(x.permission));
- return {roles:assignments,permissions:[...new Set([...assignments.flatMap(r=>ROLE_PERMISSIONS[r]||[]),...overrides])]};
-}
-// Speed, owner-approved 2026-11-24 ("อนุญาต" session cache): a 60 s snapshot of the verified
-// session + user (WITHOUT password_hash) + roles/permissions in the script cache, keyed by the
-// token digest. Every expiry/idle/password-change/permission check still runs on each call against
-// the snapshot; every revocation path (logout, password change, suspend, reset, role change)
-// removes the user's snapshots at once, so revocation stays immediate. last_seen is written at
-// most once per minute (idle timeout is minutes, so the error is < 60 s).
-const SESSION_CACHE_SECONDS=60,TOUCH_INTERVAL_MS=60000;
-const cacheKey=digest=>'p6vc:sess:'+digest;
-function stripSecrets(user){const out={...user};delete out.password_hash;delete out.password_salt;return out;}
+// The session CHECK (authorize) lives in ONE place — application/flows/SessionAuthorizeFlow.js — and runs here through the
+// synchronous flow runner; the Node core runs the same flow asynchronously (VC-ADR-046 phase 2b). Issue / revoke / logout
+// stay here until auth moves to the core (phase 3).
+import {ROLE_PERMISSIONS, accessFrom, sessionCacheKey as cacheKey, sessionAuthorizeFlow} from '../flows/SessionAuthorizeFlow.js';
+import {runFlowSync} from '../flows/FlowRunner.js';
+export {ROLE_PERMISSIONS};
 export function createSessionService({store,security,cache=null}) {
- // TUNEUP L2: user + role + override reads are independent once the session is known, so
- // they run in one parallel round when the store supports it.
- const readMany=typeof store.readMany==='function'?store.readMany
-  :reqs=>reqs.map(r=>r.kind==='one'?store.one(r.name,r.filter):store.list(r.name,r.filter));
- // TUNEUP L1: last_seen is a field-masked blind write (never a read-modify-write of the
- // whole session), so it cannot overwrite a concurrent REVOKED status.
- const touch=typeof store.patch==='function'
-  ?(id,fields)=>store.patch('vc_sessions',{session_id:id},fields)
-  :(id,fields)=>store.update('vc_sessions',{session_id:id},fields);
  function permissionsFor(userId) {
   return accessFrom(store.list('vc_user_roles',{user_id:userId}),store.list('vc_user_permissions',{user_id:userId}));
  }
- // T2-1 (owner "Start T2"): the session carries its access snapshot (access_json, written at login).
- // Every path that changes roles/status/password revokes the user's sessions (assignRoles, suspend,
- // resetPassword, changePassword), so the snapshot can never outlive a change: the check is now
- // session + user = 2 reads (was 4). Sessions issued before this change fall back to the live read.
- const accessOf=session=>{
-  try{const a=JSON.parse(session.access_json||'null');
-   if(a&&Array.isArray(a.roles)&&Array.isArray(a.permissions)&&a.roles.every(r=>typeof r==='string')&&a.permissions.every(p=>typeof p==='string'))
-    return {roles:a.roles,permissions:a.permissions};}catch(_){}
-  return null;
- };
- function load(digest){
-  const session=store.one('vc_sessions',{token_digest:digest});
-  if(!session||session.status!=='ACTIVE'||session.revoked_at)throw new Error('UNAUTHENTICATED');
-  const snapshot=accessOf(session);
-  if(snapshot){
-   const [user]=readMany([{kind:'one',name:'vc_users',filter:{user_id:session.user_id}}]);
-   if(!user||user.status!=='ACTIVE')throw new Error('UNAUTHENTICATED');
-   return {session,user,access:snapshot};
-  }
-  const [user,roleRows,overrideRows]=readMany([
-   {kind:'one',name:'vc_users',filter:{user_id:session.user_id}},
-   {kind:'list',name:'vc_user_roles',filter:{user_id:session.user_id}},
-   {kind:'list',name:'vc_user_permissions',filter:{user_id:session.user_id}}
-  ]);
-  if(!user||user.status!=='ACTIVE')throw new Error('UNAUTHENTICATED');
-  return {session,user,access:accessFrom(roleRows,overrideRows)};
- }
- const readCache=key=>{if(!cache)return null;try{return JSON.parse(cache.get(key)||'null');}catch(_){return null;}};
- const writeCache=(key,snap)=>{if(!cache)return;try{cache.put(key,JSON.stringify(snap),SESSION_CACHE_SECONDS);}catch(_){/* optional */}};
- // fresh: ops that need the stored password hash (change password / link Google) always read
- // the live rows and never receive a cached user.
+ // authorize: the shared flow (token, revocation, expiry, idle, password-change gate, permission, last_seen touch)
  function authorize(token,permission,{allowPasswordChange=false,fresh=false}={}) {
-  if(typeof token!=='string'||!/^[a-f0-9]{64}$/i.test(token))throw new Error('UNAUTHENTICATED');
-  const digest=security.sha256(token.toLowerCase()),key=cacheKey(digest);
-  let snap=fresh?null:readCache(key),liveUser=null;
-  if(!snap){
-   const loaded=load(digest);liveUser=loaded.user;
-   snap={session:loaded.session,user:stripSecrets(loaded.user),access:loaded.access};
-   writeCache(key,snap);
-  }
-  const {session,user,access}=snap;
-  const now=Date.parse(security.now()),issued=Date.parse(session.issued_at);
-  if(!Number.isFinite(issued)||issued>now||now>=Date.parse(session.expires_at))
-   throw new Error('SESSION_EXPIRED');
-  const idle=Number(session.idle_timeout_minutes);
-  if(!Number.isSafeInteger(idle)||idle<1||idle>480)throw new Error('INVALID_SESSION_POLICY');
-  if(now-Date.parse(session.last_seen_at)>=idle*60000)throw new Error('SESSION_IDLE_EXPIRED');
-  if((user.password_change_required===true||String(user.password_change_required)==='true')&&!allowPasswordChange)
-   throw new Error('PASSWORD_CHANGE_REQUIRED');
-  if(!access.permissions.includes(permission))throw new Error('FORBIDDEN');
-  if(now-Date.parse(session.last_seen_at)>=TOUCH_INTERVAL_MS){
-   const at=security.now();
-   touch(session.session_id,{last_seen_at:at});
-   session.last_seen_at=at;writeCache(key,snap);
-  }
-  return {userId:user.user_id,user:liveUser||user,roles:access.roles,permissions:access.permissions,
-   sessionId:session.session_id,session,sessionDigest:digest};
+  return runFlowSync(sessionAuthorizeFlow({token,permission,allowPasswordChange,fresh},{sha256:x=>security.sha256(x),now:()=>security.now()}),{store,cache});
  }
  function forget(digests){if(!cache)return;for(const d of digests){try{cache.remove(cacheKey(d));}catch(_){}}}
  // logout: revoke this session and drop its snapshot.
