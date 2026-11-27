@@ -14,6 +14,7 @@ import {vehicleHistoryFlow, vehicleLookupFlow, vehicleDetailFlow, contactReadFlo
 import {loginFlow, googleLoginFlow, changePasswordFlow, logoutFlow, sessionInfoFlow, linkGoogleFlow}
   from '../../../gas/src/application/flows/AuthFlows.js';
 import {campaignValidateFlow, referencesRegistrationFlow, photoUploadFlow} from '../../../gas/src/application/flows/RegistrationFlows.js';
+import {registrationSubmitFlow} from '../../../gas/src/application/flows/RegistrationSubmitFlow.js';
 import {REFERENCE_CACHE_MS} from '../../../cloudrun/runtime.mjs';
 import {createLogManager} from '../../../gas/src/application/logging/LogManager.js';
 import {LOG_SETTING_KEY, defaultLogPolicy, readLogPolicy} from '../../../gas/src/domain/policies/LogPolicy.js';
@@ -37,7 +38,9 @@ export const FLOWS = Object.freeze({
   // phase 3 wave 2a: the public registration path (photos through the bridge; reference rows in a process memo)
   'campaigns.validate': (p, a, d) => campaignValidateFlow(p, d),
   'references.registration': (p, a, d) => referencesRegistrationFlow(p, d),
-  'photos.upload': (p, a, d) => photoUploadFlow(p, d)
+  'photos.upload': (p, a, d) => photoUploadFlow(p, d),
+  // wave 2b: the submit (idempotent, quota with optimistic concurrency, one atomic commit)
+  'registrations.submit': (p, a, d) => registrationSubmitFlow(p, d)
 });
 const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)

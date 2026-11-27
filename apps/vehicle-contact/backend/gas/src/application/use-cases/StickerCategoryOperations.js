@@ -20,12 +20,7 @@ export function withStickerCategories(handlers, {store, security}) {
   const withSticker = (l, row) => ({...row, sticker: resolveSticker(row.stickerCategory, l)});
 
   // campaigns.validate / references.registration: decorated inside their shared flows (application/flows/RegistrationFlows.js)
-  wrap('registrations.submit', (inner, p, a) => {
-    const q = {...p};
-    if (q.stickerCategory === '' || q.stickerCategory === undefined) delete q.stickerCategory;
-    else q.stickerCategory = stickerCategory(q.stickerCategory, list());
-    return inner(q, a);
-  });
+  // registrations.submit: the person type is checked inside its shared flow (application/flows/RegistrationSubmitFlow.js)
   wrap('registrations.detail', (inner, p, a) => {
     const out = inner(p, a), l = list();
     return {...out, sticker: resolveSticker(out.application?.sticker_category || '', l), stickerCategories: choices(l)};

@@ -9,5 +9,5 @@ export function createReferenceOperations({store,security,memo=null}){
  const run=flow=>runFlowSync(flow,{store,memo:memoPort});
  const get=p=>run(referencesRegistrationFlow(p||{},deps));
  const assertRegistration=payload=>assertRegistrationAgainst(run(referencesFlow(deps)).refs,payload);
- return Object.freeze({'references.registration':get,assertRegistration});
+ return Object.freeze({'references.registration':get,assertRegistration,memo:memoPort});
 }

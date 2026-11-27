@@ -1,4 +1,4 @@
-import {vehicleBusinessKey,validateFivePhotos,assertVehicleTransition,stickerCategory} from '../../domain/policies/VehicleLifecycle.js';
+import {assertVehicleTransition,stickerCategory} from '../../domain/policies/VehicleLifecycle.js';
 import {qrReason,QR_SYSTEM_REASONS} from '../../domain/policies/QrReasonPolicy.js';
 import {paginate} from '../pagination/Pagination.js';
 // TUNEUP R1: ACTIVE vehicles with this business key — an equality query (index plate_normalized+province_code+status).
@@ -8,6 +8,7 @@ import {createQrHistory} from './QrHistoryOperation.js';
 import {createQrExport} from './QrExportOperation.js';
 import {runFlowSync} from '../flows/FlowRunner.js';
 import {vehicleHistoryFlow,vehicleLookupFlow,vehicleDetailFlow,contactReadFlow,qrResolveFlow} from '../flows/VehicleReadFlows.js';
+import {registrationSubmitFlow} from '../flows/RegistrationSubmitFlow.js';
 export function createVehicleOperations({store,security,campaigns,references}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -96,43 +97,6 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   if(!row||row.status!=='ACTIVE')throw new Error('VEHICLE_NOT_ACTIVE');
   return row;
  }
- const body=p=>({
-  plate_normalized:vehicleBusinessKey(p.plate,p.province).split('|')[0],
-  province_code:vehicleBusinessKey(p.plate,p.province).split('|')[1],
-  plate_type:need(p.plateType,'PLATE_TYPE'),vehicle_type:need(p.vehicleType,'VEHICLE_TYPE'),
-  make:need(p.brand,'BRAND'),model:need(p.model,'MODEL'),color:need(p.color,'COLOR'),
-  organization_id:need(p.organizationId,'ORGANIZATION_ID'),relationship:need(p.relationship,'RELATIONSHIP'),
-  contactName:need(p.contactName,'CONTACT_NAME'),contactPhone:phone(p.contactPhone),sticker_category:p.stickerCategory||''
- });
- function reconcileSubmitTimeout(idemKey){
-  // A previous attempt may have died (GAS timeout/restart) after PREPARED but before the
-  // idempotency commit, leaving an orphan application + CLAIMED photos. Reverse those partial
-  // writes (single-table lookups, no cross-sheet join) so a retry can proceed. Campaign quota
-  // cannot be proven incremented from state alone, so it is flagged for the manual runbook.
-  // G7 fix (2026-11-24): since W1 a submit writes its request AND an APPLIED journal in ONE
-  // atomic commit, so a request whose journal is APPLIED is a COMMITTED submit (e.g. a racing
-  // winner with the same key) — never an orphan. Only legacy PREPARED/missing-journal partials
-  // are reconciled. Returns {committed, removedIds} so the caller can replay the winner.
-  const orphans=store.list('vc_registration_requests',{idempotency_key:idemKey},5);
-  const outcome={committed:false,removedIds:[]};
-  if(!orphans.length)return outcome;
-  let blocked=false;
-  for(const orphan of orphans){
-   const journal=store.one('vc_operation_journal',{entity_id:orphan.request_id,operation:'registrations.submit'});
-   if(journal&&journal.status==='APPLIED'){outcome.committed=true;continue;}
-   let photoIds=[];try{photoIds=(JSON.parse(orphan.application_json).photos||[]).map(f=>f.photoId);}catch{}
-   const errors=[];const attempt=fn=>{try{fn();}catch(e){errors.push(String(e?.message||'RECOVERY_FAILED').slice(0,64));}};
-   for(const pid of photoIds){const st=store.one('vc_photo_staging',{photo_id:pid});if(st&&st.status==='CLAIMED')attempt(()=>store.update('vc_photo_staging',{photo_id:pid},{status:'STAGED',used_at:''}));}
-   let removed=false;attempt(()=>{store.remove('vc_registration_requests',{request_id:orphan.request_id});removed=true;});
-   if(removed)outcome.removedIds.push(orphan.request_id);
-   if(journal){let detail={};try{detail=JSON.parse(journal.detail_json);}catch{}
-    attempt(()=>store.update('vc_operation_journal',{event_id:journal.event_id},{status:'RECOVERY_REQUIRED',
-     detail_json:JSON.stringify({...detail,recovery:{requestRemoved:removed,photosRestored:photoIds,quotaCheck:'MANUAL',errors}})}));}
-   if(errors.length)blocked=true;
-  }
-  if(blocked)throw new Error('OPERATION_RECOVERY_REQUIRED');
-  return outcome;
- }
  // W1 (VC-ADR-028): read independent rows in ONE parallel round and apply every business
  // write in ONE commit. Firestore applies a commit all-or-nothing with per-write
  // preconditions, so there is never a partial submit to compensate (no saga, no locks).
@@ -145,108 +109,9 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   return true;
  };
  const changeReview=createChangeReview({store,need,now,id,readAll,writeAll});
- function registrationSubmit(p){
-  const payload=body(p),key=payload.plate_normalized+'|'+payload.province_code;
-  const idem=need(p.idempotencyKey,'IDEMPOTENCY_KEY',100);
-  const digest=security.sha256(JSON.stringify({...p,campaignToken:undefined}));
-  return store.withLock(()=>{
-   references.assertRegistration(p);
-   const tokenCampaign=campaigns.getCampaign(p.campaignToken,{requireCapacity:false});
-   const idemKey=security.sha256('registration:'+tokenCampaign.campaign_id+':'+idem);
-   // C5 (2026-11-24): the quota is a read-modify-write on the campaign doc. Concurrent submits
-   // used to overwrite each other's count and overshoot max_submissions. The campaign is now
-   // read WITH its server version and the count is written only if that version is unchanged
-   // (optimistic concurrency); a conflicting submit re-reads and retries.
-   for(let attempt=1;;attempt++){
-    try{return submitOnce(idemKey);}
-    catch(error){if(error&&error.message==='WRITE_CONFLICT'&&attempt<4)continue;
-     if(error&&error.message==='WRITE_CONFLICT')throw new Error('CAMPAIGN_BUSY');throw error;}
-   }
-  });
-  function submitOnce(idemKey){
-   const fivePhotos=validateFivePhotos(p.photos);
-   const photoReads=fivePhotos?p.photos.map(x=>({kind:'one',name:'vc_photo_staging',filter:{photo_id:need(x.photoId,'PHOTO_ID')}})):[];
-   let [versioned,old,orphans,org,vehicles,pending,...staged]=readAll([
-    {kind:'versioned',name:'vc_campaigns',filter:{token_digest:security.sha256(p.campaignToken.toLowerCase())}},
-    {kind:'one',name:'vc_idempotency',filter:{key:idemKey}},
-    {kind:'list',name:'vc_registration_requests',filter:{idempotency_key:idemKey}},
-    {kind:'one',name:'vc_organizations',filter:{organization_id:payload.organization_id}},
-    {kind:'list',name:'vc_vehicles'},
-    {kind:'list',name:'vc_registration_requests',filter:{status:'PENDING_APPROVAL'}},
-    ...photoReads]);
-   if(old){
-    if(old.request_digest!==digest||old.status!=='COMPLETED')throw new Error('IDEMPOTENCY_CONFLICT');
-    const result=JSON.parse(old.result_json);
-    const j=store.one('vc_operation_journal',{entity_id:result.requestId,operation:'registrations.submit'});
-    if(j&&j.status==='PREPARED'){try{store.update('vc_operation_journal',{event_id:j.event_id},{status:'APPLIED'});}catch{}}
-    return result;
-   }
-   // Legacy (pre-W1) timed-out partial attempts may have left an orphan request: reconcile it.
-   // Reconciliation restores a LEGACY orphan's photos to STAGED, so re-read them afterwards.
-   let removedIds=[];
-   if(orphans.length){
-    const outcome=reconcileSubmitTimeout(idemKey);removedIds=outcome.removedIds;
-    if(outcome.committed){
-     // A concurrent submit with the same key already committed: replay it (never re-create).
-     const winner=store.one('vc_idempotency',{key:idemKey});
-     if(!winner)throw new Error('OPERATION_RECOVERY_REQUIRED');
-     if(winner.request_digest!==digest||winner.status!=='COMPLETED')throw new Error('IDEMPOTENCY_CONFLICT');
-     return JSON.parse(winner.result_json);
-    }
-    staged=readAll(photoReads);
-   }
-   const campaign=versioned.row;
-   if(!campaign||campaign.status!=='ACTIVE'||campaign.revoked_at)throw new Error('CAMPAIGN_INVALID');
-   if(Number(campaign.submitted_count)>=Number(campaign.max_submissions))throw new Error('CAMPAIGN_INVALID');
-   if(!org||org.status!=='ACTIVE')throw new Error('ORGANIZATION_INACTIVE');
-   const duplicate=vehicles.some(v=>v.plate_normalized===payload.plate_normalized&&v.province_code===payload.province_code&&v.status!=='INACTIVE');
-   // A same-key retry racing the winner can read a stale "no idempotency row" yet see the
-   // winner's committed effects (its pending request / CLAIMED photos). Before rejecting on
-   // such state, re-read the idempotency row and replay the winner (G7 C1, 2026-11-24).
-   const replayOrThrow=code=>{
-    const winner=store.one('vc_idempotency',{key:idemKey});
-    if(winner&&winner.request_digest===digest&&winner.status==='COMPLETED')return JSON.parse(winner.result_json);
-    throw new Error(code);
-   };
-   // Orphans were just reconciled away, so they no longer count as pending duplicates.
-   const live=pending.filter(r=>!removedIds.includes(r.request_id));
-   if(duplicate||live.some(r=>{const x=JSON.parse(r.application_json);return x.plate_normalized+'|'+x.province_code===key;}))
-    return replayOrThrow('DUPLICATE_VEHICLE');
-   if(!fivePhotos)throw new Error('FIVE_PHOTOS_REQUIRED');
-   if(p.photos.some((x,i)=>{const f=staged[i];return !f||f.campaign_id!==campaign.campaign_id||f.status!=='STAGED'||f.slot!==x.slot;}))
-    return replayOrThrow('PHOTO_NOT_STAGED');
-   const media=p.photos.map((x,i)=>staged[i]);
-   const requestId=id(),vehicleId=id(),eventId=id(),at=now();
-   const snapshot={...payload,photos:media.map(f=>({photoId:f.photo_id,slot:f.slot,storageRef:f.storage_ref,mimeType:f.mime_type,sizeBytes:f.size_bytes}))};
-   const journal={operation:'registrations.submit',requestId,vehicleId,campaignId:campaign.campaign_id,idempotencyKey:idemKey,requestDigest:digest};
-   const result={requestId,vehicleId,status:'PENDING_APPROVAL'};
-   try{
-    writeAll([
-     {op:'insert',table:'vc_operation_journal',data:{event_id:eventId,operation:'registrations.submit',entity_id:requestId,actor_id:'PUBLIC_CAMPAIGN',
-      status:'APPLIED',detail_json:JSON.stringify(journal),created_at:at}},
-     {op:'insert',table:'vc_registration_requests',data:{request_id:requestId,vehicle_id:vehicleId,campaign_id:campaign.campaign_id,
-      status:'PENDING_APPROVAL',submitted_at:at,reviewed_by:'',reviewed_at:'',application_json:JSON.stringify(snapshot),idempotency_key:idemKey}},
-     ...media.map(file=>({op:'update',table:'vc_photo_staging',key:{photo_id:file.photo_id},fields:{status:'CLAIMED',used_at:at}})),
-     {op:'update',table:'vc_campaigns',key:{campaign_id:campaign.campaign_id},fields:{submitted_count:Number(campaign.submitted_count)+1},
-      ...(versioned.version?{ifVersion:versioned.version}:{})},
-     {op:'insert',table:'vc_idempotency',data:{key:idemKey,operation:'registrations.submit',actor_id:'PUBLIC_CAMPAIGN',request_digest:digest,
-      result_json:JSON.stringify(result),status:'COMPLETED',created_at:at}}
-    ]);
-   }catch(error){
-    // A concurrent submit with the same idempotency key won the race: nothing of ours was
-    // written (all-or-nothing). Replay its stored result when the body matches.
-    if(error&&error.message==='DUPLICATE_KEY'){
-     const winner=store.one('vc_idempotency',{key:idemKey});
-     if(winner){
-      if(winner.request_digest===digest&&winner.status==='COMPLETED')return JSON.parse(winner.result_json);
-      throw new Error('IDEMPOTENCY_CONFLICT');
-     }
-    }
-    throw error;
-   }
-   return result;
-  }
- }
+ // registrations.submit = the shared flow (application/flows/RegistrationSubmitFlow.js, phase 3 wave 2b); the reference rows
+ // come from the same process memo as references.registration
+ const registrationSubmit=p=>runFlowSync(registrationSubmitFlow(p,deps),{store,memo:references&&references.memo||null});
  function registrationPending(p){
   const items=store.list('vc_registration_requests',{status:'PENDING_APPROVAL'})
    .map(r=>({requestId:r.request_id,vehicleId:r.vehicle_id,submittedAt:r.submitted_at,status:r.status}));
