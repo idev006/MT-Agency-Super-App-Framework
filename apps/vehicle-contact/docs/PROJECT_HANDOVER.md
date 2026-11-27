@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified live:** 2026-11-27 (Asia/Bangkok) — backend 0.9.58 / FE 0.9.22. N1a PR 3 (0.9.59) is built, not merged or deployed.
+**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend 0.9.60 / FE 0.9.22. N1a is proven (core 22/64 operations); FE direct-core PR #324 is built and CI green, awaiting merge.
 **Status:** current. Read [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) (what runs, last proof) with this page (how to work, next steps).
 
 ## 1. Ready-to-paste next-AI prompt
@@ -15,12 +15,13 @@ apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md → PROJECT_HANDOVER.md (th
 the generated maps docs/generated/DATA_ACCESS_MAP.md + CHANGE_CHECKLIST.md → DECISION_LOG.md (VC-ADR-046..051).
 Then verify the live state yourself: git fetch origin main; gh pr list; gh issue list --label status:in-progress; CI.
 
-Where things stand: backend 0.9.58 is live; 0.9.59 is built but not deployed. The Node core (p6vc-core) answers 20 of 64 operations live and forwards the rest to
+Where things stand: backend 0.9.60 is live and proven. The Node core (p6vc-core) answers 22 of 64 operations live and forwards the rest to
 the frozen legacy engine (p6vc-api). The owner decided (VC-ADR-051) to move the whole backend to native async Node:
-N1a (in progress, PR 3 = system.reset.* built, awaiting review) → N1b → N2 → N3 → R10/R11 → N4 cut-over. Each item = small PRs → owner OK →
+N1a complete → N4a direct browser route (PR #324) → N1b → N2 → N3 → R10/R11 → N4 cut-over. Each DEV item = small PRs → green CI →
 deploy → proof → evidence in DECISION_LOG → ROADMAP + issue updated.
 
-Hard rules (owner): every merge and every deploy needs the owner's OK for that round ("Merge + deploy"); never merge with
+Hard rules (owner): VC-ADR-052's 2026-11-28 one-time DEV approval covers subsequent synthetic-DEV merges/deploys and clasp;
+never merge with
 red CI; never claim PASS without independent evidence (live suite through the core + DATA_PROOF fresher than the suite,
 Firestore read-back); synthetic DEV data only; never read, print or commit secrets (SA key, pepper, tokens, passwords — env
 var NAMES only); never create a new version of / lose secret p6vc-auth-pepper; permanent deletes need a dry run + the
@@ -76,9 +77,9 @@ Owner clarification 2026-11-28: use LSP to map code; the target backend is nativ
 4. Focused core tests (round counts, all-or-nothing, engine = core) in `tests/use-cases-*.test.mjs`. Tests that used a ported op as a "forwarded" example must switch to an op still on the legacy engine.
 5. Bump the version in the 3 backend files (`.mt-studio/project.yaml` versioning), note in `expected-live-version.json`, DECISION_LOG entry "BUILT, not deployed", ROADMAP status; `node scripts/gen-system-maps.mjs`.
 6. Checks: core `npm test`, legacy `npm run check`, frontend `npx vitest run`, `node scripts/gen-system-maps.mjs --check`, `node scripts/validate-ssot.mjs`, `node scripts/validate-usecase-ssot.mjs`.
-7. PR → CI green → owner "Merge + deploy" → section 5.
+7. PR → CI green → DEV merge/deploy under VC-ADR-052's existing owner approval → section 5.
 
-## 5. Deploy and prove (after the owner's OK)
+## 5. Deploy and prove (DEV approval recorded in VC-ADR-052)
 
 ```bash
 git checkout main && git fetch origin main && git merge --ff-only FETCH_HEAD
@@ -99,7 +100,7 @@ Rollback: remove the op from `USE_CASES` / `FLOWS` and redeploy the core (the le
 
 ## 6. Next actions
 
-1. **N1a PR 3 (built, not merged/deployed)** — review `system.reset.preview` / `system.reset.execute` on the core. It retains the legacy plan digest, phrase `RESET P6VC`, password re-check and Drive `trashAll` through the bridge, and stays off unless `P6VC_SYSTEM_RESET=ENABLED`; a capped Firestore read refuses the plan and Drive trash walks vehicle subfolders. After owner approval, deploy and prove on synthetic DEV: live preview only unless the owner explicitly asks for an execute. Then close #311.
+1. **N4a PR #324** — FE 0.9.23 calls p6vc-core directly. CI is green; merge, prove the Pages bundle uses the trusted core endpoint and inspect the public sign-in screen without entering hosted credentials. No Worker route in the browser build.
 2. **N1b** (#312, 16 ops: vehicles, QR, change requests, registration review) — includes fixing approval reading the whole `vc_vehicles` table (query by plate + province).
 3. N2 (#313), N3 (#314), R10 (#303), R11 (#304, owner security review), N4 (#255).
 4. Photos R03 (#296), R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
@@ -115,6 +116,6 @@ Rollback: remove the op from `USE_CASES` / `FLOWS` and redeploy the core (the le
 
 ## 8. Safety rules (summary — the owner's rules in section 1 win)
 
-Synthetic DEV data only · secrets never read, printed or committed (names only) · every merge / deploy / permanent delete /
-outward message needs the owner's OK for that round · no PASS without independent evidence · the system reset stays off
+Synthetic DEV data only · secrets never read, printed or committed (names only) · VC-ADR-052 covers DEV merges/deploys/clasp
+without repeated requests, but permanent deletes and `system.reset.execute` are outside its scope · no PASS without independent evidence · the system reset stays off
 outside its test · real-data go-live is blocked until R16 and legal sign-off.

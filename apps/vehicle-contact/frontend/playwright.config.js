@@ -3,9 +3,11 @@
 // credentials. Every request to any other host is blocked, so a test can never reach the live system.
 // Two viewports: desktop 1280×800 and phone 375×812. Run: npm run test:e2e
 import { defineConfig, devices } from '@playwright/test'
+import { readFileSync } from 'node:fs'
 
 const PORT = 4317
-export const WORKER_URL = 'https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/frontend'
+const trusted = JSON.parse(readFileSync(new URL('../contracts/trusted-endpoints.v1.json', import.meta.url), 'utf8'))
+export const CORE_URL = `${trusted.endpoints.find((item) => item.id === 'cloud-run-core').url}/api/frontend`
 
 export default defineConfig({
   testDir: 'e2e',
@@ -26,6 +28,6 @@ export default defineConfig({
     url: `http://localhost:${PORT}/`,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { VITE_WORKER_API_URL: WORKER_URL, VITE_BASE_PATH: '/', VITE_UI_PREVIEW: 'false' },
+    env: { VITE_CORE_API_URL: CORE_URL, VITE_BASE_PATH: '/', VITE_UI_PREVIEW: 'false' },
   },
 })

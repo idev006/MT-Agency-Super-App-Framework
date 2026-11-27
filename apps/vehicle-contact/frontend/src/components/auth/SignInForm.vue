@@ -9,7 +9,7 @@ import { safeRedirect } from '../../application/auth/safe-redirect.js'
 const router = useRouter()
 const route = useRoute()
 const auth = useSessionStore()
-const { busy, phase, endpointValid, error, transport } = storeToRefs(auth)
+const { busy, phase, endpointValid, error } = storeToRefs(auth)
 const form = reactive({ ...loadRememberedCredentials() })
 const showPassword = ref(false)
 function toggleRememberPassword(value) {

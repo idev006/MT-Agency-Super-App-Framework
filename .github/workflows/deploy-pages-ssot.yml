@@ -28,11 +28,12 @@ jobs:
         run: |
           npm ci
           npm test
+      - name: Resolve the core endpoint from the trusted-endpoints contract
+        run: echo "VITE_CORE_API_URL=$(node scripts/print-core-frontend-url.mjs)" >> "$GITHUB_ENV"
       - name: Build Vehicle Contact frontend for repository Pages path
         working-directory: apps/vehicle-contact/frontend
         env:
           VITE_BASE_PATH: /MT-Agency-Super-App-Framework/apps/vehicle-contact/frontend/
-          VITE_WORKER_API_URL: https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/frontend
         run: npm run build
       - name: Build disposable Pages artifact
         run: node scripts/build-pages.mjs _site
