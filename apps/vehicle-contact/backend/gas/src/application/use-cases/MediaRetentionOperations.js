@@ -2,6 +2,7 @@ import {paginate,pageWindow,pageOf} from '../pagination/Pagination.js';
 import {runFlowSync} from '../flows/FlowRunner.js';
 import {vehiclePhotoFlow} from '../flows/VehicleReadFlows.js';
 import {photoUploadFlow} from '../flows/RegistrationFlows.js';
+import {PHOTO_POLICY_KEY,readPhotoPolicy,checkPhotoSize} from '../../domain/policies/PhotoPolicy.js';
 import {organizeVehiclePhotosFlow} from '../flows/PhotoLayoutFlow.js';
 export function createMediaRetentionOperations({store,security,drivePhotos,campaigns,allowDestructiveRetention=false}) {
  const need=(v,name)=>{if(typeof v!=='string'||!v.trim()||v.length>256)throw new Error('INVALID_'+name);return v.trim();};
@@ -24,6 +25,7 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
   if(!['FRONT','REAR','LEFT','RIGHT','FRONT_ANGLE'].includes(slot))throw new Error('INVALID_SLOT');
   const vehicle=store.one('vc_vehicles',{vehicle_id:vehicleId});
   if(!vehicle||vehicle.status!=='ACTIVE')throw new Error('VEHICLE_NOT_ACTIVE');
+  checkPhotoSize(p.base64Image,readPhotoPolicy(store.one('vc_settings',{key:PHOTO_POLICY_KEY}))); // VC-ADR-049, before any Drive write
   const media=drivePhotos.upload(p.base64Image,p.mimeType);
   let oldStorage=null;
   try {

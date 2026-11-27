@@ -8,7 +8,7 @@ import {createVehicleOperations} from '../../application/use-cases/VehicleOperat
 import {createMediaRetentionOperations} from '../../application/use-cases/MediaRetentionOperations.js';
 import {createReferenceOperations} from '../../application/use-cases/ReferenceOperations.js';
 import {stickerSettings,withStickerCategories} from '../../application/use-cases/StickerCategoryOperations.js';
-import {createSettingsOperations,numericSettings} from '../../application/settings/SettingsRegistry.js';
+import {createSettingsOperations,numericSettings,photoPolicySettings} from '../../application/settings/SettingsRegistry.js';
 import {createLogManager} from '../../application/logging/LogManager.js';
 import {createSystemResetOperations} from '../../application/use-cases/SystemResetOperations.js';
 import {createLogPolicyReader,logPolicySettings,withLogPolicyStore} from '../../application/use-cases/LogPolicyOperations.js';
@@ -39,7 +39,7 @@ const safeErrors=new Set([
  'INVALID_CAMPAIGN','CAMPAIGN_INVALID','FIVE_PHOTOS_REQUIRED','PLATE_PHOTO_NOT_VERIFIED','PHOTO_SLOT_INVARIANT','IDEMPOTENCY_CONFLICT','OWNER_NOT_FOUND','PHOTO_NOT_STAGED','INVALID_SLOT','INVALID_MEDIA',
  'INVALID_MIME','PHOTO_UPLOAD_LIMIT','INVALID_IMAGE_SIZE','IMAGE_SIGNATURE_MISMATCH','PHOTO_NOT_FOUND','VEHICLE_NOT_ACTIVE','VERSION_CONFLICT',
  'CONTACT_NOT_FOUND','PRIMARY_CONTACT_INVARIANT','INVALID_REQUEST_STATE','INVALID_DECISION','OWNERSHIP_NOT_VERIFIED',
- 'INVALID_QR','QR_REVOKED','INVALID_STICKER_CATEGORY','RESET_CONFIRMATION_INVALID','RESET_PLAN_STALE','INVALID_STICKER_CATEGORIES','INVALID_LOG_POLICY','LOG_REQUIRED','STICKER_CATEGORY_REQUIRED','STICKER_CATEGORY_IN_USE','INVALID_QR_REASON','INVALID_VEHICLE_IDS','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
+ 'INVALID_QR','QR_REVOKED','INVALID_STICKER_CATEGORY','RESET_CONFIRMATION_INVALID','RESET_PLAN_STALE','INVALID_STICKER_CATEGORIES','INVALID_LOG_POLICY','LOG_REQUIRED','PHOTO_TOO_LARGE','INVALID_PHOTO_POLICY','STICKER_CATEGORY_REQUIRED','STICKER_CATEGORY_IN_USE','INVALID_QR_REASON','INVALID_VEHICLE_IDS','QR_ALREADY_ACTIVE','MULTIPLE_ACTIVE_QR','RETENTION_NOT_APPROVABLE','RETENTION_EXECUTION_DISABLED',
  'DELETION_NOT_AUTHORIZED','DELETION_RETRY_REQUIRED','BUSY','CAMPAIGN_BUSY','SCHEMA_MISMATCH','MISSING_TABLE','IDLE_POLICY_NOT_CONFIGURED',
  'INVALID_LIMIT','INVALID_PAGINATION','NO_CHANGES','ORGANIZATION_INACTIVE','PARENT_NOT_FOUND','INVALID_ORG_TYPE','INVALID_ORG_PARENT',
  'SELF_DEMOTION_DENIED','SELF_ROLE_EXPANSION_DENIED','SELF_SUSPEND_DENIED','RETENTION_POLICY_NOT_CONFIGURED','OPERATION_DISABLED','OPERATION_RECOVERY_REQUIRED',
@@ -65,7 +65,7 @@ export function createOperationController({store:rawStore,security,sessions,driv
  const admin=createAdministrationOperations({store,security});
  const references=createReferenceOperations({store,security,memo:referenceMemo});
  // system.config.get/update: one settings registry (numeric settings, person type / sticker colour, log policy)
- const settings=createSettingsOperations({store,security,entries:[numericSettings(),stickerSettings(),logPolicySettings({policy,memo:logPolicyMemo,manager:logs})]});
+ const settings=createSettingsOperations({store,security,entries:[numericSettings(),stickerSettings(),logPolicySettings({policy,memo:logPolicyMemo,manager:logs}),photoPolicySettings()]});
  const handlers=withStickerCategories({
   ...createIdentityOperations({store,security,sessions}),...admin,...settings,'references.registration':references['references.registration'],
   ...createVehicleOperations({store,security,campaigns:admin,references,drivePhotos}),

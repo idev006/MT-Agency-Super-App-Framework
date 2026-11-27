@@ -5,6 +5,7 @@
 // deps: {now() → ISO, id() → 64 hex, sha256(text) → hex}. Effects: reads, insert, mediaUpload, mediaTrash, memoGet, memoPut.
 import {STICKER_SETTING_KEY, DEFAULT_STICKER_CATEGORIES, parseStickerCategories, stickerInk} from '../../domain/policies/StickerCategoryPolicy.js';
 import {PHOTO_SLOTS} from '../../domain/policies/VehicleLifecycle.js'; // the ONE list of photo slots
+import {photoPolicyRead, readPhotoPolicy, checkPhotoSize} from '../../domain/policies/PhotoPolicy.js';
 
 const stickerRead = {kind: 'one', name: 'vc_settings', filter: {key: STICKER_SETTING_KEY}};
 const stickerList = row => (row && row.value ? parseStickerCategories(row.value) : DEFAULT_STICKER_CATEGORIES);
@@ -27,10 +28,11 @@ export function* getCampaignFlow(token, options, deps) {
 }
 // campaigns.validate: valid + the ACTIVE person types the public form offers
 export function* campaignValidateFlow(p, deps) {
-  const [row, stickerRow] = yield {reads: [campaignRead(p.campaignToken, deps), stickerRead]};
+  const [row, stickerRow, policyRow] = yield {reads: [campaignRead(p.campaignToken, deps), stickerRead, photoPolicyRead]};
   const campaign = checkCampaign(row, deps);
   return {valid: true, campaignId: campaign.campaign_id,
-    stickerCategories: withInk(stickerList(stickerRow)).filter(c => c.active).map(({code, label}) => ({code, label}))};
+    stickerCategories: withInk(stickerList(stickerRow)).filter(c => c.active).map(({code, label}) => ({code, label})),
+    photoPolicy: readPhotoPolicy(policyRow)}; // VC-ADR-049: the device resizes every photo to this before uploading
 }
 
 // ---- reference lists (TUNEUP R2: the 645 reference rows change only through the seed installer → a process memo; the
@@ -80,20 +82,19 @@ export function normalizeReferences(raw, orgRows, setting, sha256) {
   return {mode, version: sha256(JSON.stringify({lists, organizations, policies})), lists, organizations, policies};
 }
 const REFERENCE_MEMO = 'reference_values';
-// the normalized lists (+ the sticker row read in the same round when asked)
-export function* referencesFlow(deps, {withSticker = false} = {}) {
+// the normalized lists; `extra` reads ride in the SAME round (their results come back in `extra`)
+export function* referencesFlow(deps, extra = []) {
   const cached = yield {memoGet: REFERENCE_MEMO};
-  const reqs = [{kind: 'list', name: 'vc_organizations', filter: {status: 'ACTIVE'}}, {kind: 'one', name: 'vc_settings', filter: {key: 'registration_reference_enforcement'}}];
-  if (withSticker) reqs.push(stickerRead);
+  const reqs = [{kind: 'list', name: 'vc_organizations', filter: {status: 'ACTIVE'}}, {kind: 'one', name: 'vc_settings', filter: {key: 'registration_reference_enforcement'}}, ...extra];
   if (cached === undefined) reqs.push({kind: 'list', name: 'vc_reference_values'});
   const out = yield {reads: reqs};
-  const [orgRows, setting] = out, stickerRow = withSticker ? out[2] : null, fresh = out[withSticker ? 3 : 2];
+  const [orgRows, setting] = out, fresh = out[2 + extra.length];
   if (cached === undefined) yield {memoPut: {key: REFERENCE_MEMO, value: fresh}};
-  return {refs: normalizeReferences(cached === undefined ? fresh : cached, orgRows, setting, deps.sha256), stickerRow};
+  return {refs: normalizeReferences(cached === undefined ? fresh : cached, orgRows, setting, deps.sha256), extra: out.slice(2, 2 + extra.length)};
 }
 // references.registration: the lists + every person type (with ink) for the form
 export function* referencesRegistrationFlow(p, deps) {
-  const {refs, stickerRow} = yield* referencesFlow(deps, {withSticker: true});
+  const {refs, extra: [stickerRow]} = yield* referencesFlow(deps, [stickerRead]);
   return {...refs, stickerCategories: withInk(stickerList(stickerRow))};
 }
 // registration submit: the payload must match the current lists (ENFORCED) or a supplied version (ADVISORY)
@@ -112,9 +113,10 @@ export function assertRegistrationAgainst(result, payload) {
 
 // ---- photos.upload (public): the file goes to Drive first (slow), then the staging row; a failure trashes the file ----
 export function* photoUploadFlow(p, deps) {
-  const [first] = yield {reads: [campaignRead(p.campaignToken, deps)]};
+  const [first, policyRow] = yield {reads: [campaignRead(p.campaignToken, deps), photoPolicyRead]};
   const campaign = checkCampaign(first, deps);
   if (!PHOTO_SLOTS.includes(p.slot)) throw new Error('INVALID_SLOT');
+  checkPhotoSize(p.base64Image, readPhotoPolicy(policyRow)); // VC-ADR-049: too big → PHOTO_TOO_LARGE before any Drive write
   const photoId = deps.id();
   const item = yield {mediaUpload: {base64: p.base64Image, mime: p.mimeType}};
   try {

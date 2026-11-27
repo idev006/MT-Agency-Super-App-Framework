@@ -7,6 +7,7 @@
 //   afterSave()          optional, e.g. clear a memo
 // An update is checked in full first (any bad key → nothing is saved), then every row and one audit row per entry
 // that changed are written in one store.sequence (all or nothing).
+import {PHOTO_POLICY_KEY, parsePhotoPolicy, readPhotoPolicy} from '../../domain/policies/PhotoPolicy.js';
 export function createSettingsOperations({store, security, entries}) {
   const owner = new Map();
   for (const e of entries) for (const k of e.keys) {
@@ -54,5 +55,17 @@ export const numericSettings = () => ({
       return [key, String(value)];
     });
     return {rows, audit: {action: 'SETTINGS_UPDATED'}};
+  }
+});
+
+// VC-ADR-049: the photo size policy (max longest side, JPEG quality, max bytes, thumbnail side) — the device resizes to it,
+// the server checks uploads against it. Stored as JSON; an unreadable stored value reads as the defaults.
+export const photoPolicySettings = () => ({
+  keys: [PHOTO_POLICY_KEY],
+  view: store => ({[PHOTO_POLICY_KEY]: readPhotoPolicy(store.one('vc_settings', {key: PHOTO_POLICY_KEY}))}),
+  prepare(values) {
+    const p = parsePhotoPolicy(values[PHOTO_POLICY_KEY]);
+    return {rows: [[PHOTO_POLICY_KEY, JSON.stringify(p)]],
+      audit: {action: 'PHOTO_POLICY_UPDATED', summary: `photo_policy:maxSide=${p.maxSide},quality=${p.quality},maxBytes=${p.maxBytes},thumbSide=${p.thumbSide}`}};
   }
 });
