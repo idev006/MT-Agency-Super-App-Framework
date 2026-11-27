@@ -129,7 +129,9 @@ export function createAcceptanceHarness({allowSystemReset=false}={}){
   const o=as('sys','organizations.create',{name:'Synthetic Region Six',type:'POLICE'});
   if(!o.ok)throw Error('createOrganization: '+JSON.stringify(o));return o.data.organizationId;
  }
- return{call,as,store,security,sessions,tokens,seed,read,io,drivePhotos,driveState,deletedFiles,
+ // dispatch: one raw envelope through the legacy router (the Node core harness forwards what it does not answer itself)
+ const dispatch=(envelope,method='POST')=>router.dispatch(envelope,method);
+ return{call,as,dispatch,store,security,sessions,tokens,seed,read,io,drivePhotos,driveState,deletedFiles,
   stagePhotos,registrationPayload,createCampaign,createOrganization,
   now:()=>current,setTime:x=>current=x,
   setDriveTrashFail:b=>throwOnDriveTrash=b,setWriteFailure:t=>throwOnTableWrite=t,

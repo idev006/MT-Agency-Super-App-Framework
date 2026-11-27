@@ -1,7 +1,8 @@
 // The core's operation facade (VC-ADR-046 phase 2b): answers the operations that have been ported — the SAME steps as the
 // legacy router + controller, taken from the legacy code itself (no copy): router checks (routeFailure), DTO payload check,
 // session check (sessionAuthorizeFlow), the operation's flow, and the error → public code mapping (publicErrorCode).
-// To port an operation: add its flow to FLOWS. To roll it back: remove it (the legacy engine answers again).
+// To port an operation: add its flow to FLOWS, or (VC-ADR-051, from N1a) its native async use case to USE_CASES. To roll it
+// back: remove it (the legacy engine answers again).
 import {createHash, randomBytes} from 'node:crypto';
 import {routeFailure, requestIdOf} from '../../../gas/src/api/routes/Router.js';
 import {validateOperationPayload} from '../../../gas/src/api/dto/OperationPayloadValidator.js';
@@ -18,6 +19,8 @@ import {registrationSubmitFlow} from '../../../gas/src/application/flows/Registr
 import {REFERENCE_CACHE_MS} from '../../../cloudrun/runtime.mjs';
 import {createLogManager} from '../../../gas/src/application/logging/LogManager.js';
 import {LOG_SETTING_KEY, defaultLogPolicy, readLogPolicy} from '../../../gas/src/domain/policies/LogPolicy.js';
+import {withPrintState} from '../use-cases/print-state.mjs';
+import {vehiclesList, qrMarkPrinted} from '../use-cases/vehicle-list.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -42,6 +45,12 @@ export const FLOWS = Object.freeze({
   // wave 2b: the submit (idempotent, quota with optimistic concurrency, one atomic commit)
   'registrations.submit': (p, a, d) => registrationSubmitFlow(p, d)
 });
+// operation → async (payload, principal, {store, now, id, sha256, media}) => result   — VC-ADR-051: native async use cases
+export const USE_CASES = Object.freeze({
+  // N1a: the admin vehicle list + QR print state (VC-ADR-042)
+  'vehicles.list': vehiclesList,
+  'qr.markPrinted': qrMarkPrinted
+});
 const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)
 export function createMemo(ttlMs = REFERENCE_CACHE_MS, nowMs = () => Date.now()) {
@@ -57,7 +66,9 @@ const randomId = () => randomBytes(32).toString('hex'); // 64 hex, the format of
 // sessions, so the core must read them live (a cached session could outlive a revocation)
 // media: the MediaStore port (photo bridge) or a function returning it — built on the first photo request
 // passwords: the PasswordHasher port (server.mjs injects node:crypto PBKDF2); google: the Google OIDC port (none yet)
-export function createCoreFacade({store, media = null, passwords = null, google = null, memo = createMemo(), now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS}) {
+export function createCoreFacade({store, media = null, passwords = null, google = null, memo = createMemo(), now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS, useCases = USE_CASES}) {
+  const overlap = Object.keys(useCases).filter(op => Object.prototype.hasOwnProperty.call(flows, op));
+  if (overlap.length) throw new Error('OPERATION_IN_FLOWS_AND_USE_CASES:' + overlap.join(','));
   let raw = null, logged = null, mediaPort = null;
   // the log policy (VC-ADR-040) for the core's store: loaded asynchronously, memoised, defaults when unreadable
   const policy = {value: defaultLogPolicy(), at: -Infinity};
@@ -67,29 +78,32 @@ export function createCoreFacade({store, media = null, passwords = null, google 
     catch { policy.value = defaultLogPolicy(); }
     policy.at = Date.now();
   }
-  // the same Log Manager as the legacy engine decides every log row the core writes (switched off → not written; kept → expire_at)
+  // the same Log Manager as the legacy engine decides every log row the core writes (switched off → not written; kept → expire_at);
+  // and the QR print-state rule (VC-ADR-042) on every write path — the legacy controller's order (print state outside the logs)
   const storeOf = () => {
-    if (!logged) { raw = typeof store === 'function' ? store() : store; logged = createLogManager({policy: () => policy.value, now}).wrapStore(raw); }
+    if (!logged) { raw = typeof store === 'function' ? store() : store; logged = withPrintState(createLogManager({policy: () => policy.value, now}).wrapStore(raw)); }
     return logged;
   };
   const mediaOf = () => (mediaPort ||= typeof media === 'function' ? media() : media);
   return Object.freeze({
-    operations: Object.freeze(Object.keys(flows)),
+    operations: Object.freeze([...Object.keys(flows), ...Object.keys(useCases)]),
     async dispatch(request, method = 'POST') {
       const requestId = requestIdOf(request);
       const failure = routeFailure(request, method);
       if (failure) return failure;
       try {
         const op = request.group + '.' + request.action;
-        if (!Object.prototype.hasOwnProperty.call(flows, op)) return apiFailure('NOT_FOUND', 'Unavailable operation', requestId);
+        const own = k => Object.prototype.hasOwnProperty.call(k, op);
+        if (!own(flows) && !own(useCases)) return apiFailure('NOT_FOUND', 'Unavailable operation', requestId);
         const payload = request.payload || {};
         validateOperationPayload(op, payload);
         const s = storeOf();
         await refreshPolicy(raw);
         const principal = PUBLIC_OPERATIONS.includes(op) ? null
           : await runFlowAsync(sessionAuthorizeFlow({token: request.sessionToken, permission: OPERATION_PERMISSIONS[op], ...authOptionsFor(op)}, {sha256, now}), {store: s});
-        const result = await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, passwords, google, memo,
-          media: MEDIA_OPERATIONS.has(op) ? mediaOf() : null});
+        const media = MEDIA_OPERATIONS.has(op) ? mediaOf() : null;
+        const result = own(useCases) ? await useCases[op](payload, principal, {store: s, now, id, sha256, media})
+          : await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, passwords, google, memo, media});
         return apiSuccess(result, requestId);
       } catch (e) {
         return apiFailure(publicErrorCode(e), 'Request could not be completed', requestId);

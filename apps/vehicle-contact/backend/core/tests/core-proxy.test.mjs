@@ -32,12 +32,12 @@ async function pair() {
 test('CORE-01 every operation is forwarded unchanged; health too; responses carry x-p6vc-engine: core', async () => {
   const p = await pair();
   try {
-    // an operation the core has NOT ported (vehicles.lookup is answered by the core since phase 2b)
-    const env = {apiVersion: 'v1', group: 'vehicles', action: 'list', payload: {page: 1, pageSize: 10}, sessionToken: 'a'.repeat(64), requestId: 'req_12345678'};
+    // an operation the core has NOT ported yet (users.* move in N3; vehicles.list is the core's since N1a)
+    const env = {apiVersion: 'v1', group: 'users', action: 'list', payload: {page: 1, pageSize: 10}, sessionToken: 'a'.repeat(64), requestId: 'req_12345678'};
     const r = await fetch(base(p.core) + '/', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify(env)});
     assert.equal(r.headers.get('x-p6vc-engine'), 'core');
     const body = await r.json();
-    assert.deepEqual(body, {ok: true, data: {echo: 'vehicles.list', payload: env.payload}, error: null, requestId: 'req_12345678'});
+    assert.deepEqual(body, {ok: true, data: {echo: 'users.list', payload: env.payload}, error: null, requestId: 'req_12345678'});
     assert.deepEqual(p.seen.at(-1), {method: 'POST', req: env}, 'legacy received the exact envelope');
     const h = await (await fetch(base(p.core) + '/')).json();
     assert.equal(h.data.backendVersion, '9.9.9', 'health comes from the legacy engine (deploy smoke checks the version end to end)');
@@ -64,7 +64,7 @@ test('CORE-03 legacy unreachable → clean envelope with the requestId; only loc
   const core = await listen(createCoreHandler({legacy: legacyAt(base(dead))}));
   try {
     const r = await fetch(base(core) + '/', {method: 'POST', headers: {'content-type': 'application/json'},
-      body: JSON.stringify({apiVersion: 'v1', group: 'vehicles', action: 'list', payload: {}, requestId: 'req_12345678'})}); // a forwarded op
+      body: JSON.stringify({apiVersion: 'v1', group: 'users', action: 'list', payload: {}, requestId: 'req_12345678'})}); // a forwarded op
     const body = await r.json();
     assert.equal(body.ok, false);
     assert.equal(body.error.code, 'UPSTREAM_UNAVAILABLE');
