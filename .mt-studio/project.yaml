@@ -49,6 +49,8 @@ deploy:
         confirmation: DEPLOY_VEHICLE_CLOUDRUN, verify: "steps 'Smoke the candidate' and 'Smoke the live URL' success", note: "safe deploy: no traffic → smoke → switch → smoke, auto rollback" }
     - { id: core, run: "gh workflow run deploy-vehicle-core.yml --ref main -f confirmation=DEPLOY_VEHICLE_CORE",
         confirmation: DEPLOY_VEHICLE_CORE, verify: "step 'Smoke the live URL' success (first run creates p6vc-core)", note: "VC-ADR-046 front door; after the legacy deploy when both change" }
+    - { id: core_jobs, run: "gh workflow run deploy-vehicle-jobs.yml --ref main -f confirmation=DEPLOY_VEHICLE_JOBS -f mode=DRY_RUN -f schedule=false",
+        confirmation: DEPLOY_VEHICLE_JOBS, verify: "step 'Run once and read its report' prints JOB {...status PASS}", note: "VC-ADR-046 2c-2: Cloud Run Job p6vc-housekeeping from the live core image; mode APPLY needs -f apply_confirmation=APPLY_DRIVE_HOUSEKEEPING (Drive trash, 30-day undo); schedule=true adds the daily 03:30 trigger" }
     - { id: worker, run: "npx wrangler@4 deploy (in tools/p6vc-api-test-console)", note: "separate deploy; the live API suite does NOT go through it" }
   rollback:
     - "Cloud Run: workflow rollback-vehicle-cloudrun.yml, confirmation ROLLBACK_VEHICLE_CLOUDRUN"
