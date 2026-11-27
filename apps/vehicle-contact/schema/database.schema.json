@@ -166,6 +166,14 @@
           "required": false,
           "classification": "internal",
           "notes": "ISO time of the last qr.markPrinted for the ACTIVE QR; empty after a new QR is issued"
+        },
+        {
+          "name": "photo_folder_id",
+          "key": null,
+          "type": "string",
+          "required": false,
+          "classification": "internal",
+          "notes": "Drive folder of the vehicle's photos (VC-ADR-050); empty until organized"
         }
       ]
     },

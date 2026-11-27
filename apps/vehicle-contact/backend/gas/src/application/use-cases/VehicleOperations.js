@@ -8,7 +8,8 @@ import {createQrHistory} from './QrHistoryOperation.js';
 import {createQrExport} from './QrExportOperation.js';
 import {runFlowSync} from '../flows/FlowRunner.js';
 import {vehicleHistoryFlow,vehicleLookupFlow,vehicleDetailFlow,contactReadFlow,qrResolveFlow} from '../flows/VehicleReadFlows.js';
-export function createVehicleOperations({store,security,campaigns,references}) {
+import {organizeVehiclePhotosFlow} from '../flows/PhotoLayoutFlow.js';
+export function createVehicleOperations({store,security,campaigns,references,drivePhotos=null}) {
  const need=(v,name,max=200)=>{if(typeof v!=='string'||!v.trim()||v.length>max||/^[=+@]/.test(v.trim()))throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
  const deps={now,id,sha256:x=>security.sha256(x)}; // what the shared flows need
@@ -264,8 +265,13 @@ export function createVehicleOperations({store,security,campaigns,references}) {
   // → REJECTED request with an ACTIVE vehicle + QR. The request is now read WITH its version and the
   // commit is guarded by it; a WRITE_CONFLICT re-runs the review (replay same decision / refuse other).
   for(let attempt=1;;attempt++){
-   try{return reviewOnce();}
-   catch(error){if(!error||error.message!=='WRITE_CONFLICT')throw error;if(attempt>=3)throw new Error('BUSY');}
+   let result;
+   try{result=reviewOnce();}
+   catch(error){if(!error||error.message!=='WRITE_CONFLICT')throw error;if(attempt>=3)throw new Error('BUSY');continue;}
+   // VC-ADR-050: the approved vehicle's photos go into its own Drive folder (best effort: never undoes the approval)
+   if(p.decision==='APPROVE'&&result&&result.vehicleId&&drivePhotos&&typeof drivePhotos.organize==='function')
+    try{runFlowSync(organizeVehiclePhotosFlow(result.vehicleId),{store,media:drivePhotos});}catch(_){/* PR C's job catches up */}
+   return result;
   }
   function reviewOnce(){
   return store.withLock(()=>{

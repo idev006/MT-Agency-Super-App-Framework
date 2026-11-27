@@ -2,6 +2,7 @@ import {paginate,pageWindow,pageOf} from '../pagination/Pagination.js';
 import {runFlowSync} from '../flows/FlowRunner.js';
 import {vehiclePhotoFlow} from '../flows/VehicleReadFlows.js';
 import {photoUploadFlow} from '../flows/RegistrationFlows.js';
+import {organizeVehiclePhotosFlow} from '../flows/PhotoLayoutFlow.js';
 export function createMediaRetentionOperations({store,security,drivePhotos,campaigns,allowDestructiveRetention=false}) {
  const need=(v,name)=>{if(typeof v!=='string'||!v.trim()||v.length>256)throw new Error('INVALID_'+name);return v.trim();};
  const now=()=>security.now(),id=()=>security.secretToken();
@@ -41,6 +42,8 @@ export function createMediaRetentionOperations({store,security,drivePhotos,campa
     entity_id:vehicleId,actor_id:actor.userId,status:'OLD_FILE_CLEANUP_REQUIRED',
     detail_json:JSON.stringify({storageRef:oldStorage}),created_at:now()}));
   }
+  // VC-ADR-050: the new file joins the vehicle's folder as <SLOT>.<ext> (best effort)
+  if(typeof drivePhotos.organize==='function')try{runFlowSync(organizeVehiclePhotosFlow(vehicleId),{store,media:drivePhotos});}catch(_){/* best effort */}
   return {vehicleId,slot,replaced:true};
  }
  function registrationPhoto(p,actor){

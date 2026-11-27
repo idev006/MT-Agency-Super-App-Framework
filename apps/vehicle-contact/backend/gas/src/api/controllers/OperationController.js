@@ -68,7 +68,7 @@ export function createOperationController({store:rawStore,security,sessions,driv
  const settings=createSettingsOperations({store,security,entries:[numericSettings(),stickerSettings(),logPolicySettings({policy,memo:logPolicyMemo,manager:logs})]});
  const handlers=withStickerCategories({
   ...createIdentityOperations({store,security,sessions}),...admin,...settings,'references.registration':references['references.registration'],
-  ...createVehicleOperations({store,security,campaigns:admin,references}),
+  ...createVehicleOperations({store,security,campaigns:admin,references,drivePhotos}),
   ...createVehicleListOperations({store,security}),
   ...createMediaRetentionOperations({store,security,drivePhotos,campaigns:admin,allowDestructiveRetention}),
   ...createSystemResetOperations({store,security,drivePhotos,enabled:allowSystemReset})

@@ -20,6 +20,8 @@ export function createMediaBridgeGateway({http, secret, idempotent = [], now = (
     read: storageRef => call('read', {storageRef}),
     trash: async storageRef => (await call('trash', {storageRef})).trashed === true,
     trashAll: () => call('trashAll', {}),
-    list: pageToken => call('list', pageToken ? {pageToken} : {})
+    list: pageToken => call('list', pageToken ? {pageToken} : {}),
+    organize: req => call('organize', req), // VC-ADR-050
+    stat: refs => call('stat', {refs})
   });
 }
