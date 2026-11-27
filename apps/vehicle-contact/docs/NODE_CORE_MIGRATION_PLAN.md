@@ -39,7 +39,7 @@ schema (`schema/database.schema.json`), indexes, the web app. **No data migratio
 ## 4. Phases (one issue each; PR size kept small — a phase may be several PRs)
 Order since 2026-11-27 (owner: "ดำเนินการ แบบนี้เหมือนการจัดระเบียบใหม่ อย่าหมักหมมเลย"): 0 → 1 → 2 (2a foundation, 2b officer path, 2b-3 load test) → **2c GAS bridge-only** → **2d shared code out of backend/gas** → 3–7 → 9.
 
-Phases 3–7 in detail (diagnosis, analysis, design, waves): [NODE_CORE_PORTING_PLAN.md](NODE_CORE_PORTING_PLAN.md) — owner 2026-11-27: "backend engine must Nodejs for best performance".
+**What is left, in order, with an issue per item: [ROADMAP.md](ROADMAP.md).** Phases 3–7 in detail (diagnosis, analysis, design, waves): [NODE_CORE_PORTING_PLAN.md](NODE_CORE_PORTING_PLAN.md) — owner 2026-11-27: "backend engine must Nodejs for best performance".
 | # | Phase | Done when |
 |---|---|---|
 | 0 | Plan, ADR, tracking (this file) | merged |
