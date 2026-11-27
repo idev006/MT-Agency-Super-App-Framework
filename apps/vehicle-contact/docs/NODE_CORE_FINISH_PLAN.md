@@ -1,5 +1,10 @@
 # Node core — finish: the whole backend as native async Node.js (VC-ADR-051)
 
+**Progress (2026-11-28):** 20/64 operations live on the core at backend 0.9.58; N1a PR 3 builds two more (`system.reset.*`)
+in 0.9.59, pending merge, deploy and proof. `system.health` remains on the legacy engine until N4 so the deploy smoke still
+checks the published backend version end to end. Owner clarification: map code with LSP; target runtime is the native async
+Node core, Firestore and the GAS API for Google Drive photos, without Cloudflare Worker.
+
 Owner, 2026-11-27: *"อย่าเสียเวลายื้อเลย เราควรเปลี่ยนโค้ด backend core ให้เป็น nodejs 100% เพื่อใช้ประสิทธิภาพของมันได้อย่างเต็มที่"*
 → approach change proposed → *"อนุมัติให้ดำเนินการ โดยคุณและทีมต้องวิเคราะห์ วางแผนการดำเนินการ เพื่อให้ tracking ได้"*.
 
@@ -40,7 +45,7 @@ hand-kept duplicates.
 
 | # | Scope | Operations | Done when |
 |---|---|---|---|
-| **N1a** | foundation: async test harness + generated async acceptance tests; async store rules (print state); the core's use-case table; vehicles.list, qr.markPrinted, system.config.get/update, system.reset.*, system.health | 7 | generated tests for these operations pass on the core; live suite 126/126 through the core with these answered by the core |
+| **N1a** | foundation: async test harness + generated async acceptance tests; async store rules (print state); the core's use-case table; vehicles.list, qr.markPrinted, system.config.get/update, system.reset.*; system.health remains on legacy until N4 | 6 in N1a + health at N4 | generated tests for the six N1a operations pass on the core; live suite 126/126 through the core with these answered by the core |
 | **N1b** | vehicles, QR, change requests, registration review (VehicleOperations + ChangeReview + QR export/history), approval duplicate check by plate | 16 | same, + approve → vehicle / contact / photos / QR rows read back; photo folder organized |
 | **N2** | photos.list / replace, registrations.photo, retention.*, audit.query / export | 10 | same, + retention on synthetic DEV only, dry run first |
 | **N3** | users.* (one hash rule, revocation), organizations.*, campaigns.create / list / revoke | 15 | same, + audit rows read back |

@@ -117,3 +117,19 @@ test('N1A-08 system.config.* are answered by the core; a COUNT the store cannot 
   const got = await configGet({}, null, {store, logs: createLogManager({policy: () => defaultLogPolicy(), now: () => ''}), now: () => '', id: () => 'x'});
   assert.equal(got.retention_days, '90'); assert.equal(got.log_counts, null);
 });
+
+test('N1A-09 system.reset.* are answered by the core; a capped table refuses the plan before any write', async () => {
+  const {resetPreview, resetExecute} = await import('../src/use-cases/system-reset.mjs');
+  const h = createAcceptanceHarness({allowSystemReset: true});
+  assert.equal(h.engineFor('system.reset.preview'), 'core');
+  assert.equal(h.engineFor('system.reset.execute'), 'core');
+  let writes = 0;
+  const store = {readMany: async reqs => reqs.map((_, i) => i === 0 ? Array.from({length: 4000}, () => ({})) : []),
+    writeMany: async () => { writes++; }, insert: async () => { writes++; }};
+  const ctx = {store, resetEnabled: true, sha256: () => 'digest', passwords: {verify: async () => true},
+    now: () => '', id: () => 'id', media: {trashAll: async () => { writes++; }}};
+  const actor = {userId: 'admin', user: {password_hash: 'fixture'}, sessionId: 'session'};
+  await assert.rejects(resetPreview({}, actor, ctx), /RESET_PLAN_TOO_LARGE/);
+  await assert.rejects(resetExecute({confirmation: 'RESET P6VC', password: 'synthetic', planDigest: 'digest'}, actor, ctx), /RESET_PLAN_TOO_LARGE/);
+  assert.equal(writes, 0);
+});

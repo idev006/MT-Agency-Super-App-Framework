@@ -97,7 +97,7 @@ jobs:
             --concurrency 80 --min-instances 0 --max-instances 5 \
             --cpu "$CORE_CPU" --memory 512Mi --timeout 60 --cpu-boost \
             --allow-unauthenticated \
-            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),UV_THREADPOOL_SIZE=$((CORE_CPU * 2))" \
+            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),UV_THREADPOOL_SIZE=$((CORE_CPU * 2)),P6VC_SYSTEM_RESET=${{ vars.P6VC_SYSTEM_RESET || 'DISABLED' }}" \
             --set-secrets "P6VC_MEDIA_BRIDGE_SECRET=p6vc-media-bridge-secret:latest,P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest" \
             --labels "app=p6vc,component=core,commit=${GITHUB_SHA::12}" \
             $NO_TRAFFIC --quiet

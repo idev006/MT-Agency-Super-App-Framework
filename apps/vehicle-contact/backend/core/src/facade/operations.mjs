@@ -22,6 +22,7 @@ import {LOG_SETTING_KEY, defaultLogPolicy, readLogPolicy} from '../../../gas/src
 import {withPrintState} from '../use-cases/print-state.mjs';
 import {vehiclesList, qrMarkPrinted} from '../use-cases/vehicle-list.mjs';
 import {configGet, configUpdate} from '../use-cases/settings.mjs';
+import {resetPreview, resetExecute} from '../use-cases/system-reset.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -53,9 +54,12 @@ export const USE_CASES = Object.freeze({
   'qr.markPrinted': qrMarkPrinted,
   // N1a PR 2: the settings registry (numeric settings, person types, log policy, photo policy)
   'system.config.get': configGet,
-  'system.config.update': configUpdate
+  'system.config.update': configUpdate,
+  // N1a PR 3: disabled by default; execute re-checks the admin password and the current plan
+  'system.reset.preview': resetPreview,
+  'system.reset.execute': resetExecute
 });
-const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload']);
+const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)
 export function createMemo(ttlMs = REFERENCE_CACHE_MS, nowMs = () => Date.now()) {
   const m = new Map();
@@ -70,7 +74,8 @@ const randomId = () => randomBytes(32).toString('hex'); // 64 hex, the format of
 // sessions, so the core must read them live (a cached session could outlive a revocation)
 // media: the MediaStore port (photo bridge) or a function returning it — built on the first photo request
 // passwords: the PasswordHasher port (server.mjs injects node:crypto PBKDF2); google: the Google OIDC port (none yet)
-export function createCoreFacade({store, media = null, passwords = null, google = null, memo = createMemo(), now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS, useCases = USE_CASES}) {
+export function createCoreFacade({store, media = null, passwords = null, google = null, resetEnabled = false,
+  memo = createMemo(), now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS, useCases = USE_CASES}) {
   const overlap = Object.keys(useCases).filter(op => Object.prototype.hasOwnProperty.call(flows, op));
   if (overlap.length) throw new Error('OPERATION_IN_FLOWS_AND_USE_CASES:' + overlap.join(','));
   let raw = null, logged = null, logs = null, mediaPort = null;
@@ -105,9 +110,9 @@ export function createCoreFacade({store, media = null, passwords = null, google 
         await refreshPolicy(raw);
         const principal = PUBLIC_OPERATIONS.includes(op) ? null
           : await runFlowAsync(sessionAuthorizeFlow({token: request.sessionToken, permission: OPERATION_PERMISSIONS[op], ...authOptionsFor(op)}, {sha256, now}), {store: s});
-        const media = MEDIA_OPERATIONS.has(op) ? mediaOf() : null;
+        const media = MEDIA_OPERATIONS.has(op) && (op !== 'system.reset.execute' || resetEnabled) ? mediaOf() : null;
         const result = own(useCases) ? await useCases[op](payload, principal, {store: s, now, id, sha256, media, logs,
-            refreshLogPolicy: () => { policy.at = -Infinity; }})
+            passwords, resetEnabled, refreshLogPolicy: () => { policy.at = -Infinity; }})
           : await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, passwords, google, memo, media});
         return apiSuccess(result, requestId);
       } catch (e) {

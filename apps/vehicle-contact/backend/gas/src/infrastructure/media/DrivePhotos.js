@@ -32,11 +32,23 @@ export function createDrivePhotos({driveApp,utilities,folderId}) {
   if(typeof storageRef!=='string'||!storageRef||storageRef.length>150)throw new Error('INVALID_STORAGE_REF');
   driveApp.getFileById(storageRef).setTrashed(true);return true;
  }
- // VC-ADR-039 system reset: move every file of the photo folder to the Drive trash (30-day undo), within a
- // time budget (GAS / Cloud Run limits); more=true when files remain (call again).
+ // VC-ADR-039 / 050: photos now also live below per-vehicle folders. Walk all descendants; a timed-out call can
+ // start again at the root because Drive iterators omit files that have already been trashed.
  function trashAll(budgetMs=25000){
-  const start=Date.now(),files=driveApp.getFolderById(folderId).getFiles();let trashed=0;
-  while(files.hasNext()){if(Date.now()-start>budgetMs)return {trashed,more:true};files.next().setTrashed(true);trashed++;}
+  const start=Date.now(),pending=[driveApp.getFolderById(folderId)];let trashed=0;
+  while(pending.length){
+   if(Date.now()-start>budgetMs)return {trashed,more:true};
+   const folder=pending.pop(),files=folder.getFiles();
+   while(files.hasNext()){
+    if(Date.now()-start>budgetMs)return {trashed,more:true};
+    files.next().setTrashed(true);trashed++;
+   }
+   const children=folder.getFolders();
+   while(children.hasNext()){
+    if(Date.now()-start>budgetMs)return {trashed,more:true};
+    pending.push(children.next());
+   }
+  }
   return {trashed,more:false};
  }
  // VC-ADR-046 phase 2c: one page of the photo folder for housekeeping (the core asks through the bridge). Paged with Drive's

@@ -21,7 +21,8 @@ export const firestoreStoreFromEnv = (env = process.env) => () => createFirestor
 // integrations: the Integration Manager (VC-ADR-047); every outbound call goes through it
 export function createCoreHandler({integrations = createIntegrationManager(), legacy = integrations.gateway('legacy-engine'),
   core = createCoreFacade({store: firestoreStoreFromEnv(), media: () => integrations.gateway('media-bridge'),
-    passwords: createNodePasswordHasher({pepper: process.env.P6VC_AUTH_PEPPER || null})})} = {}) {
+    passwords: createNodePasswordHasher({pepper: process.env.P6VC_AUTH_PEPPER || null}),
+    resetEnabled: process.env.P6VC_SYSTEM_RESET === 'ENABLED'})} = {}) {
   const router = createRouter({legacy, core});
   // x-p6vc-answered-by: which engine answered this operation (evidence for each ported group; no data in it)
   const headers = envelope => ({'x-p6vc-engine': 'core',

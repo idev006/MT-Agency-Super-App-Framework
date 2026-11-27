@@ -25,7 +25,8 @@ export const FILES = [
   'print-filters.test.mjs',
   'settings-registry.test.mjs',
   'photo-policy.test.mjs',
-  'log-policy.test.mjs'
+  'log-policy.test.mjs',
+  'system-reset.test.mjs'
 ];
 const HARNESS_METHODS = new Set(['call', 'as', 'stagePhotos', 'createCampaign', 'createOrganization']);
 const TEST_FUNCTIONS = new Set(['test', 'it', 'describe']);
