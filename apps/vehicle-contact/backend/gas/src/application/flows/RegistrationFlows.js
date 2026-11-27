@@ -5,6 +5,7 @@
 // deps: {now() → ISO, id() → 64 hex, sha256(text) → hex}. Effects: reads, insert, mediaUpload, mediaTrash, memoGet, memoPut.
 import {STICKER_SETTING_KEY, DEFAULT_STICKER_CATEGORIES, parseStickerCategories, stickerInk} from '../../domain/policies/StickerCategoryPolicy.js';
 import {PHOTO_SLOTS} from '../../domain/policies/VehicleLifecycle.js'; // the ONE list of photo slots
+import {photoPolicyRead, readPhotoPolicy, checkPhotoSize} from '../../domain/policies/PhotoPolicy.js';
 
 const stickerRead = {kind: 'one', name: 'vc_settings', filter: {key: STICKER_SETTING_KEY}};
 const stickerList = row => (row && row.value ? parseStickerCategories(row.value) : DEFAULT_STICKER_CATEGORIES);
@@ -27,10 +28,11 @@ export function* getCampaignFlow(token, options, deps) {
 }
 // campaigns.validate: valid + the ACTIVE person types the public form offers
 export function* campaignValidateFlow(p, deps) {
-  const [row, stickerRow] = yield {reads: [campaignRead(p.campaignToken, deps), stickerRead]};
+  const [row, stickerRow, policyRow] = yield {reads: [campaignRead(p.campaignToken, deps), stickerRead, photoPolicyRead]};
   const campaign = checkCampaign(row, deps);
   return {valid: true, campaignId: campaign.campaign_id,
-    stickerCategories: withInk(stickerList(stickerRow)).filter(c => c.active).map(({code, label}) => ({code, label}))};
+    stickerCategories: withInk(stickerList(stickerRow)).filter(c => c.active).map(({code, label}) => ({code, label})),
+    photoPolicy: readPhotoPolicy(policyRow)}; // VC-ADR-049: the device resizes every photo to this before uploading
 }
 
 // ---- reference lists (TUNEUP R2: the 645 reference rows change only through the seed installer → a process memo; the
@@ -111,9 +113,10 @@ export function assertRegistrationAgainst(result, payload) {
 
 // ---- photos.upload (public): the file goes to Drive first (slow), then the staging row; a failure trashes the file ----
 export function* photoUploadFlow(p, deps) {
-  const [first] = yield {reads: [campaignRead(p.campaignToken, deps)]};
+  const [first, policyRow] = yield {reads: [campaignRead(p.campaignToken, deps), photoPolicyRead]};
   const campaign = checkCampaign(first, deps);
   if (!PHOTO_SLOTS.includes(p.slot)) throw new Error('INVALID_SLOT');
+  checkPhotoSize(p.base64Image, readPhotoPolicy(policyRow)); // VC-ADR-049: too big → PHOTO_TOO_LARGE before any Drive write
   const photoId = deps.id();
   const item = yield {mediaUpload: {base64: p.base64Image, mime: p.mimeType}};
   try {

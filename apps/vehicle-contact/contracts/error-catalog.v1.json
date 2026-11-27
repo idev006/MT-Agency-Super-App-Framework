@@ -3,10 +3,54 @@
   "documentId": "P6VC-ERROR-CATALOG-001",
   "status": "SOURCE_WRITTEN_UNVERIFIED",
   "errors": [
-    {"code":"REFERENCE_DATA_INVALID","httpStatus":200,"retryable":false,"clientAction":"CONTACT_SUPPORT","description":"Reference catalog rows fail canonical validation."},
-    {"code":"REFERENCE_DATA_BOUNDS","httpStatus":200,"retryable":false,"clientAction":"CONTACT_SUPPORT","description":"Reference catalog exceeds the bounded row limit."},
-    {"code":"REFERENCE_VERSION_STALE","httpStatus":200,"retryable":true,"clientAction":"RELOAD_REFERENCE_DATA","description":"Submitted reference version is absent or no longer current while validation is active."},
-    {"code":"INVALID_REFERENCE_VALUE","httpStatus":200,"retryable":false,"clientAction":"CORRECT_INPUT","description":"Submitted strict reference code is not active in the canonical catalog."},
-    {"code":"ORGANIZATION_INACTIVE","httpStatus":200,"retryable":false,"clientAction":"CORRECT_INPUT","description":"Submitted organization is absent or inactive in the authoritative organization table."}
+    {
+      "code": "REFERENCE_DATA_INVALID",
+      "httpStatus": 200,
+      "retryable": false,
+      "clientAction": "CONTACT_SUPPORT",
+      "description": "Reference catalog rows fail canonical validation."
+    },
+    {
+      "code": "REFERENCE_DATA_BOUNDS",
+      "httpStatus": 200,
+      "retryable": false,
+      "clientAction": "CONTACT_SUPPORT",
+      "description": "Reference catalog exceeds the bounded row limit."
+    },
+    {
+      "code": "REFERENCE_VERSION_STALE",
+      "httpStatus": 200,
+      "retryable": true,
+      "clientAction": "RELOAD_REFERENCE_DATA",
+      "description": "Submitted reference version is absent or no longer current while validation is active."
+    },
+    {
+      "code": "INVALID_REFERENCE_VALUE",
+      "httpStatus": 200,
+      "retryable": false,
+      "clientAction": "CORRECT_INPUT",
+      "description": "Submitted strict reference code is not active in the canonical catalog."
+    },
+    {
+      "code": "ORGANIZATION_INACTIVE",
+      "httpStatus": 200,
+      "retryable": false,
+      "clientAction": "CORRECT_INPUT",
+      "description": "Submitted organization is absent or inactive in the authoritative organization table."
+    },
+    {
+      "code": "PHOTO_TOO_LARGE",
+      "httpStatus": 200,
+      "retryable": false,
+      "clientAction": "RESIZE_AND_RETRY",
+      "description": "The photo is larger than the photo policy allows (bytes or longest side; VC-ADR-049)."
+    },
+    {
+      "code": "INVALID_PHOTO_POLICY",
+      "httpStatus": 200,
+      "retryable": false,
+      "clientAction": "FIX_INPUT",
+      "description": "A photo policy value is missing or outside its limits (VC-ADR-049)."
+    }
   ]
 }
