@@ -5,7 +5,8 @@
 // state = written by the system itself, never edit by hand · retired = no code reads it.
 export const SCRIPT_PROPERTIES=Object.freeze({
   VEHICLE_API_ENABLED:{kind:'required',note:"'true' enables protected API ingress"},
-  VEHICLE_AUTH_PEPPER:{kind:'required',note:'secret, >=32 chars; password hashing + token MAC'},
+  VEHICLE_AUTH_PEPPER:{kind:'required',note:'secret, >=32 chars; token MAC (+ plain-format password hashing)'},
+  VEHICLE_PASSWORD_PEPPER:{kind:'optional',note:'secret, >=32 chars; Cloud Run ONLY (from p6vc-auth-pepper): new password hashes peppered, 60k rounds. Never set on GAS unless it equals the Cloud Run secret'},
   VEHICLE_FIRESTORE_SA_KEY:{kind:'required',note:'secret, service-account JSON key (runtime datastore)'},
   VEHICLE_PHOTOS_FOLDER_ID:{kind:'optional',note:'Drive folder for photos; photo ops fail closed without it'},
   VEHICLE_MEDIA_BRIDGE_SECRET:{kind:'optional',note:'secret, >=32 chars; Cloud Run -> Drive photo bridge (VC-ADR-034); bridge disabled without it'},

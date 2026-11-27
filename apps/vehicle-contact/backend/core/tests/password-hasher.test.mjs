@@ -53,3 +53,58 @@ test('HASH-04 flow effects {hashPassword} / {verifyPassword}: same answers on th
   assert.deepEqual(sync, {ok: true, bad: false, freshValid: true}); assert.deepEqual(async, sync);
   assert.throws(() => runFlowSync(flow(stored), {store}), /PASSWORDS_NOT_CONFIGURED/);
 });
+
+// ---- owner 2026-11-27 "Pepper + fewer rounds" ----
+const PEPPER = 's'.repeat(48); // synthetic
+const legacyWith = pepper => createGasSecurity({utilities: nodeUtilities(), clock: () => '2026-11-27T00:00:00.000Z',
+  propertiesService: {getScriptProperties: () => ({getProperty: k => (k === 'VEHICLE_AUTH_PEPPER' ? 'p'.repeat(40) : k === 'VEHICLE_PASSWORD_PEPPER' ? pepper : null)})}});
+
+test('HASH-05 peppered hashes: 60,000 rounds; both engines with the same pepper verify each other; a wrong or missing pepper never verifies', async () => {
+  const core = createNodePasswordHasher({pepper: PEPPER}), legacyP = legacyWith(PEPPER);
+  const fromCore = await core.hash(PW), fromLegacy = legacyP.hashPassword(PW);
+  for (const h of [fromCore, fromLegacy]) {
+    const parsed = parsePasswordHash(h);
+    assert.equal(parsed.peppered, true); assert.equal(parsed.rounds, 60000);
+    assert.equal(await core.verify(PW, h), true); assert.equal(legacyP.verifyPassword(PW, h), true);
+    assert.equal(await core.verify(PW + 'x', h), false);
+    assert.equal(await createNodePasswordHasher({pepper: 'q'.repeat(48)}).verify(PW, h), false, 'another pepper');
+    assert.equal(await createNodePasswordHasher().verify(PW, h), false, 'no pepper (e.g. GAS)');
+    assert.equal(legacy.verifyPassword(PW, h), false, 'the GAS-side hasher without the pepper');
+  }
+  assert.throws(() => createNodePasswordHasher({pepper: 'short'}), /PASSWORD_PEPPER_NOT_CONFIGURED/);
+});
+
+test('HASH-06 old plain hashes still verify on a peppered engine and are marked for upgrade; current ones are not', async () => {
+  const core = createNodePasswordHasher({pepper: PEPPER});
+  const old = legacy.hashPassword(PW); // plain, 150,000 rounds (as every stored hash today)
+  assert.equal(await core.verify(PW, old), true);
+  assert.equal(core.needsRehash(old), true);
+  assert.equal(core.needsRehash(await core.hash(PW)), false);
+  assert.equal(createNodePasswordHasher().needsRehash(old), false, 'an engine without the pepper never upgrades');
+  assert.equal(core.needsRehash('garbage'), false);
+  assert.equal(await core.verify(PW, null), false, 'the dummy check');
+});
+
+test('HASH-07 login upgrades an old hash once, then the user logs in with the new one; timing work is the new cost', async () => {
+  const {loginFlow} = await import('../../gas/src/application/flows/AuthFlows.js');
+  const rows = {vc_users: [{user_id: 'u1', username_normalized: 'staff', status: 'ACTIVE', password_hash: legacy.hashPassword(PW), password_change_required: false}],
+    vc_settings: [{key: 'idle_timeout_minutes', value: '30'}], vc_user_roles: [{user_id: 'u1', role_id: 'STAFF', status: 'ACTIVE'}],
+    vc_user_permissions: [], vc_security_events: [], vc_sessions: []};
+  const match = (r, f) => Object.entries(f || {}).every(([k, v]) => r[k] === v);
+  const store = {
+    readMany: async (reqs, opts = {}) => { for (const [t, row] of opts.inserts || []) rows[t].push(row);
+      return reqs.map(r => { const hit = rows[r.name].filter(x => match(x, r.filter)); return r.kind === 'one' ? hit[0] || null : hit; }); },
+    insert: async (t, row) => (rows[t].push(row), row),
+    patch: async (t, f, fields) => { for (const r of rows[t]) if (match(r, f)) Object.assign(r, fields); return true; }
+  };
+  let n = 0;
+  const deps = {now: () => '2026-11-27T00:00:00.000Z', id: () => (++n).toString(16).padStart(64, '0'), sha256: x => 'd'.repeat(63) + String(x).length % 10};
+  const passwords = createNodePasswordHasher({pepper: PEPPER});
+  const first = await runFlowAsync(loginFlow({username: 'staff', password: PW}, deps), {store, passwords});
+  assert.ok(first.sessionToken);
+  assert.equal(parsePasswordHash(rows.vc_users[0].password_hash).peppered, true, 'upgraded to the peppered format');
+  const upgraded = rows.vc_users[0].password_hash;
+  const second = await runFlowAsync(loginFlow({username: 'staff', password: PW}, deps), {store, passwords});
+  assert.ok(second.sessionToken); assert.equal(rows.vc_users[0].password_hash, upgraded, 'no second rewrite');
+  await assert.rejects(runFlowAsync(loginFlow({username: 'staff', password: 'Wrong-Passw0rd-xx'}, deps), {store, passwords}), /INVALID_CREDENTIALS/);
+});

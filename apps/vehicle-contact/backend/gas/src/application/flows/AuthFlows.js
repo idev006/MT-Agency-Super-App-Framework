@@ -7,10 +7,6 @@
 // deps: {now() → ISO, id() → 64 hex, sha256(text) → hex}. Effects: reads, insert, patch, transaction, cacheRemove,
 // hashPassword, verifyPassword, verifyGoogle.
 import {accessFrom, sessionCacheKey} from './SessionAuthorizeFlow.js';
-import {PBKDF2_ROUNDS} from '../security/PasswordHash.js';
-
-// Static dummy hash with the cost of a real one: unknown / inactive users get the same work (no username-timing oracle).
-export const DUMMY_PASSWORD_HASH = 'pbkdf2-sha256$' + PBKDF2_ROUNDS + '$' + '0'.repeat(32) + '$' + '0'.repeat(64);
 export const LOGIN_FAILURE_LIMIT = 6, LOGIN_WINDOW_MS = 15 * 60000, SESSION_HOURS = 8;
 const SECURITY_EVENT_SCAN = 5000; // = the store's MAX_LIMIT (legacy listNewest default)
 const required = (value, name, max = 256) => { if (typeof value !== 'string' || !value.trim() || value.length > max) throw new Error('INVALID_' + name); return value.trim(); };
@@ -58,11 +54,17 @@ export function* loginFlow(p, deps) {
   const [events, user, policy] = yield {reads: [{kind: 'newest', name: 'vc_security_events', filter: {username_digest: digest}, limit: SECURITY_EVENT_SCAN},
     {kind: 'one', name: 'vc_users', filter: {username_normalized: username}}, {kind: 'one', name: 'vc_settings', filter: {key: 'idle_timeout_minutes'}}]};
   if (events.filter(x => Date.parse(x.created_at) > since && x.status === 'FAILED').length >= LOGIN_FAILURE_LIMIT) throw new Error('LOGIN_RATE_LIMIT');
-  // never reveal whether the username exists (message AND timing): verify unconditionally
+  // never reveal whether the username exists (message AND timing): verify unconditionally — stored null = the hasher's dummy
+  // check, the cost of a new hash on this engine (application/security/PasswordHash.js)
   const active = !!user && user.status === 'ACTIVE';
-  const verified = yield {verifyPassword: {password: p.password, stored: active ? user.password_hash : DUMMY_PASSWORD_HASH}};
+  const verified = yield {verifyPassword: {password: p.password, stored: active ? user.password_hash : null}};
   const event = status => ({event_id: deps.id(), username_digest: digest, status, created_at: deps.now()});
   if (!active || !verified) { yield {insert: {table: 'vc_security_events', row: event('FAILED')}}; throw new Error('INVALID_CREDENTIALS'); }
+  // owner 2026-11-27 "Pepper + fewer rounds": a hash in the old format / cost is rewritten now that the password is known
+  if (yield {passwordNeedsRehash: user.password_hash}) {
+    const upgraded = yield {hashPassword: p.password};
+    yield {patch: {table: 'vc_users', filter: {user_id: user.user_id}, fields: {password_hash: upgraded}}};
+  }
   const success = event('SUCCESS');
   const idle = Number(policy && policy.value);
   if (!Number.isSafeInteger(idle) || idle < 1 || idle > 480) { // as the legacy: the success is recorded, then the policy fails

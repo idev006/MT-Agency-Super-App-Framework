@@ -20,10 +20,13 @@ export function createGasSecurity({utilities,urlFetchApp,propertiesService,clock
   return hex(pbkdf2Sha256(key,bytes(saltHex),iterations));
  }
  // the hash rule lives in application/security/PasswordHash.js (one source with the Node core); here only the GAS-safe
- // pure-JS PBKDF2 and the salt source
- const passwords=createPasswordHasher({derive:pbkdf2,randomSaltHex:()=>secretToken().slice(0,32)});
+ // pure-JS PBKDF2, the salt source and HMAC. VEHICLE_PASSWORD_PEPPER is set ONLY on Cloud Run (from the p6vc-auth-pepper
+ // secret, like the core): there new hashes are peppered; GAS (no such property) keeps the plain format.
+ const passwords=createPasswordHasher({derive:pbkdf2,randomSaltHex:()=>secretToken().slice(0,32),
+  pepper:props.getProperty('VEHICLE_PASSWORD_PEPPER')||null,hmacHex:(key,text)=>hex(utilities.computeHmacSha256Signature(String(text),String(key)))});
  const hashPassword=password=>passwords.hash(password);
  const verifyPassword=(password,stored)=>passwords.verify(password,stored);
+ const passwordNeedsRehash=stored=>passwords.needsRehash(stored);
  function verifyGoogle(idToken) {
   const audience=props.getProperty('VEHICLE_GOOGLE_CLIENT_ID');
   if(!audience)throw new Error('GOOGLE_OIDC_NOT_CONFIGURED');
@@ -38,5 +41,5 @@ export function createGasSecurity({utilities,urlFetchApp,propertiesService,clock
    throw new Error('INVALID_GOOGLE_TOKEN');
   return {sub:String(claims.sub)};
  }
- return Object.freeze({sha256,secretToken,deriveSecret,hashPassword,verifyPassword,verifyGoogle,fixedEqual,now:clock});
+ return Object.freeze({sha256,secretToken,deriveSecret,hashPassword,verifyPassword,passwordNeedsRehash,verifyGoogle,fixedEqual,now:clock});
 }

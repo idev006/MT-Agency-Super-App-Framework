@@ -69,6 +69,8 @@ export function runtimeProperties(env) {
     VEHICLE_FIRESTORE_PROJECT_ID: env.FIRESTORE_PROJECT_ID,
     VEHICLE_FIRESTORE_DATABASE_ID: env.FIRESTORE_DATABASE_ID || '(default)',
     VEHICLE_AUTH_PEPPER: env.P6VC_AUTH_PEPPER,
+    // owner 2026-11-27 "Pepper + fewer rounds": new password hashes on Cloud Run are peppered (same secret as the core)
+    VEHICLE_PASSWORD_PEPPER: env.P6VC_AUTH_PEPPER,
     // VC-ADR-039: the system reset works only when the deploy sets P6VC_SYSTEM_RESET=ENABLED (off by default; off before go-live)
     VEHICLE_SYSTEM_RESET_ENABLED: env.P6VC_SYSTEM_RESET === 'ENABLED' ? 'true' : 'false',
   };
