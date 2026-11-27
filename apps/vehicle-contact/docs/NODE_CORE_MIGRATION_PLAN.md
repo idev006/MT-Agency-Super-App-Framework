@@ -37,18 +37,21 @@ schema (`schema/database.schema.json`), indexes, the web app. **No data migratio
    live suite + fresh DATA_PROOF + Firestore read-back, synthetic DEV data only, no secrets in code or logs.
 
 ## 4. Phases (one issue each; PR size kept small — a phase may be several PRs)
+Order since 2026-11-27 (owner: "ดำเนินการ แบบนี้เหมือนการจัดระเบียบใหม่ อย่าหมักหมมเลย"): 0 → 1 → 2 (2a foundation, 2b officer path, 2b-3 load test) → **2c GAS bridge-only** → **2d shared code out of backend/gas** → 3–7 → 9.
 | # | Phase | Done when |
 |---|---|---|
 | 0 | Plan, ADR, tracking (this file) | merged |
 | 1 | **Core skeleton + proxy:** `backend/core` package, HTTP server (`/`, `/api/frontend` from PR #245), proxy of every op to legacy, health, deploy workflow for a new service `p6vc-core` (first deploy = create; later = safe deploy), load-test script (baseline) | live suite through `p6vc-core` = same result as legacy; load baseline recorded |
 | 2 | **Officer path:** `vehicles.lookup`, `qr.resolve`, `contacts.read`, `vehicles.detail`, `vehicles.history`, `vehicles.photo` + session check + Log Manager + Firestore SDK store + **Integration Manager foundation** (`adapters/outbound/`: http-client, manager, registry; legacy engine + photo bridge read as the first gateways — VC-ADR-047) + Dependency Rule test + **SSOT ratchet** (copies may only go down; architecture §6) | both-engine tests green; live suite + DATA_PROOF; load test vs baseline |
+| 2c | **GAS = photo bridge only** (moved forward, owner 2026-11-27: "ที่ GAS มีโค้ดเท่าที่จำเป็น" · "อย่าหมักหมม"): the API on Cloud Run never needed GAS, so: Drive photo housekeeping as a core job (Cloud Scheduler, bridge op `list`); GAS editor admin tools as Node scripts; `doPost` bridge-only; GAS built from the bridge's imports only (~4 files) | GAS has no API or Firestore code; housekeeping dry run on DEV; owner removes the old GAS trigger |
+| 2d | **Shared code out of `backend/gas`:** domain, flows, store rules, API rules → `backend/shared/` (imported by the core and the legacy Cloud Run engine); GAS keeps `backend/gas-bridge/` only | no module under a `gas` folder is used by Cloud Run; maps, ratchet, all tests green |
 | 3 | Auth + users + organisations (`auth.*`, `users.*`, `organizations.*`) | same |
 | 4 | Registration + review (`campaigns.*`, `registrations.*`, `photos.*`, `references.registration`) — media bridge client async | same + photo read-back in Drive |
 | 5 | Vehicles maintenance + QR + print (`vehicles.update/cancel/list/listMine`, `qr.*`) | same |
 | 6 | Change requests (`changes.*`) | same |
 | 7 | Admin: settings registry, retention, audit, system reset (`system.*`, `retention.*`, `audit.*`) | same; reset preview only |
-| 8 | Jobs + tools: Drive photo housekeeping as a core job (Cloud Scheduler, bridge op `list`); GAS editor admin tools as Node scripts on core modules | dry run on DEV; old GAS trigger removed by the owner |
-| 9 | **Cut over:** `backend/gas-bridge` replaces the GAS project content; web app → `p6vc-core`; Worker retired (owner disables it); legacy service + `backend/gas` deleted; `domain/` moved into the core; concurrency raised | live suite + DATA_PROOF + live UI; GAS has no API or Firestore code |
+| 8 | (moved into 2c) | — |
+| 9 | **Cut over:** web app → `p6vc-core`; Worker retired (owner disables it); legacy service `p6vc-api` deleted; concurrency raised (GAS already bridge-only in 2c; shared code already moved in 2d) | live suite + DATA_PROOF + live UI |
 
 Runs alongside: **VC-ADR-044 PR 2a (#245) / 2b** — the browser gateway and the web-app switch to Cloud Run. The gateway code
 moves into the core in phase 1. VC-ADR-044 PR 3–7 are absorbed by phases 8–9 (PR 6 "split VehicleOperations" is dropped: the
