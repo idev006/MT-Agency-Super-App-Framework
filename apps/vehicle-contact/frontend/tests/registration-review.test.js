@@ -14,7 +14,7 @@ describe('registration review repository contract', () => {
     const repository = createGasRegistrationReviewRepository({ callOperation })
     expect((await repository.listPending()).registrations[0]).toEqual({ requestId: 'r-1', vehicleId: 'v-1', submittedAt: '2026-11-20T00:00:00.000Z', status: 'PENDING_APPROVAL' })
     const detail = await repository.detail('r-1')
-    expect(detail.registration.application.photos).toEqual([{ photoId: 'p-1', slot: 'PLATE', mimeType: 'image/jpeg' }])
+    expect(detail.registration.application.photos).toEqual([{ photoId: 'p-1', slot: 'PLATE', mimeType: 'image/jpeg', thumbUrl: '', fullUrl: '' }])
     expect(JSON.stringify(detail)).not.toContain('private-drive-ref')
   })
 

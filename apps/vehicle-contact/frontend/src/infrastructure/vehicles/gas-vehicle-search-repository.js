@@ -1,3 +1,4 @@
+import { safeDriveImageUrl } from '../media/drive-image-url.js'
 import { stickerOf, toSticker, toStickerList } from '../../domain/reference/sticker-categories.js'
 const READ_CONTACT = 'vehicle.contact.read'
 const READ_PHOTOS = 'vehicle.photos.read'
@@ -39,6 +40,8 @@ function mapPhotos(value, allowed) {
     slot: requiredText(item?.slot),
     mimeType: optionalText(item?.mimeType),
     createdAt: optionalText(item?.createdAt),
+    thumbUrl: safeDriveImageUrl(item?.thumbUrl), // VC-ADR-050 PR B: loaded straight from Drive ('' → the audited API path)
+    fullUrl: safeDriveImageUrl(item?.fullUrl),
   }))
 }
 

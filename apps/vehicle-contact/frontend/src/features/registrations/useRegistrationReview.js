@@ -52,11 +52,18 @@ export function useRegistrationReview({ repository, permissions }) {
     activePhotoId.value = ''
   }
 
-  async function loadPhoto(photoId) {
+  // VC-ADR-050 PR B: a photo with Drive links shows at once; the audited API path is the fallback (photoFailed)
+  const photoOf = (photoId) => (selected.value?.application?.photos || []).find((photo) => photo.photoId === photoId)
+  async function loadPhoto(photoId, { viaApi = false } = {}) {
     const requestId = selected.value?.requestId
     if (!requestId || !canReview.value) return
     const current = photoStates.value[photoId]
     if (current && (current.status === 'ready' || current.status === 'loading')) return
+    const linked = photoOf(photoId)
+    if (!viaApi && linked?.thumbUrl && linked?.fullUrl) {
+      photoStates.value = { ...photoStates.value, [photoId]: { status: 'ready', dataUrl: linked.fullUrl, thumbUrl: linked.thumbUrl, viaLink: true } }
+      return
+    }
     const token = photoLoadToken
     photoStates.value = { ...photoStates.value, [photoId]: { status: 'loading' } }
     try {
@@ -78,6 +85,14 @@ export function useRegistrationReview({ repository, permissions }) {
   function selectPhoto(photoId) {
     activePhotoId.value = photoId
     return loadPhoto(photoId)
+  }
+
+  function photoFailed(photoId) {
+    if (!photoStates.value[photoId]?.viaLink) return
+    const next = { ...photoStates.value }
+    delete next[photoId]
+    photoStates.value = next
+    return loadPhoto(photoId, { viaApi: true })
   }
 
   function retryPhoto(photoId) {
@@ -128,7 +143,7 @@ export function useRegistrationReview({ repository, permissions }) {
   return {
     phase, actionPhase, registrations, selected, failure, page, pageSize, pagination, oneTimeQr, canReview,
     photoStates, activePhotoId,
-    lastDecision, load, inspect, review, selectPhoto, retryPhoto,
+    lastDecision, load, inspect, review, selectPhoto, retryPhoto, photoFailed,
     resendDecision: () => (lastDecision.value ? review(lastDecision.value) : Promise.resolve(false)),
     clearOneTimeQr: () => { oneTimeQr.value = null },
     clearSelection: () => { selected.value = null; resetPhotos() },

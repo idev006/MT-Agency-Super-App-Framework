@@ -27,3 +27,13 @@ export function organizeRequest(vehicle, photos, folderId = '') {
   return {folderId: folderId || '', path: vehicleFolderPath(vehicle),
     files: photos.map(p => ({ref: String(p.storage_ref), name: photoFileName(p.slot, p.mime_type)}))};
 }
+
+// VC-ADR-050 PR B: the links a browser loads a photo from (the files are shared "anyone with the link can view"; Google makes
+// the thumbnail). ONE source for the format; the web app accepts only links of this shape. sizes = the photo policy.
+export const DRIVE_IMAGE_URL = /^https:\/\/drive\.google\.com\/thumbnail\?id=[A-Za-z0-9_-]{10,200}&sz=w[0-9]{2,4}$/;
+export function photoLinks(storageRef, {thumbSide, maxSide}) {
+  const id = String(storageRef || '');
+  if (!/^[A-Za-z0-9_-]{10,200}$/.test(id)) return {thumbUrl: '', fullUrl: ''};
+  const at = w => `https://drive.google.com/thumbnail?id=${id}&sz=w${w}`;
+  return {thumbUrl: at(thumbSide), fullUrl: at(maxSide)};
+}

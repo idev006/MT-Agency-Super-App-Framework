@@ -4,6 +4,8 @@
 // (StickerCategoryOperations.js). Every view / contact read / photo view writes its access-audit row (the store's log
 // policy decides whether it is kept and for how long — VC-ADR-040).
 // deps: {now() → ISO, id() → secret token, sha256(text) → hex}
+import {photoLinks} from '../../domain/policies/PhotoLayout.js';
+import {photoPolicyRead, readPhotoPolicy} from '../../domain/policies/PhotoPolicy.js';
 import {vehicleBusinessKey} from '../../domain/policies/VehicleLifecycle.js';
 import {STICKER_SETTING_KEY, DEFAULT_STICKER_CATEGORIES, parseStickerCategories, resolveSticker, stickerInk} from '../../domain/policies/StickerCategoryPolicy.js';
 
@@ -32,7 +34,7 @@ export function* vehicleViewFlow(v, actor, source, deps) {
   const wantHistory = actor.permissions.includes('vehicle.history.read');
   const reads = [];
   if (wantContacts) reads.push({kind: 'list', name: 'vc_vehicle_contacts', filter: {vehicle_id: v.vehicle_id}});
-  if (wantPhotos) reads.push({kind: 'list', name: 'vc_vehicle_photos', filter: {vehicle_id: v.vehicle_id}});
+  if (wantPhotos) reads.push({kind: 'list', name: 'vc_vehicle_photos', filter: {vehicle_id: v.vehicle_id}}, photoPolicyRead);
   if (wantHistory) reads.push({kind: 'list', name: 'vc_change_audit', filter: {entity_id: v.vehicle_id}});
   const refKeys = [['VEHICLE_TYPE', v.vehicle_type], ['COLOR', v.color], ['PLATE_TYPE', v.plate_type]].filter(([, code]) => code);
   for (const [catalog, code] of refKeys) reads.push({kind: 'one', name: 'vc_reference_values', filter: {reference_id: 'REF-' + catalog + '-' + code}});
@@ -42,7 +44,8 @@ export function* vehicleViewFlow(v, actor, source, deps) {
   const rows = yield {reads, inserts: [['vc_lookup_audit', auditRow(actor, v.vehicle_id, source, 'FOUND', deps)]]};
   const tail = rows.splice(extra); // [organization?, activeQr]
   const qrRow = tail.pop(), orgRow = v.organization_id ? tail.pop() : null;
-  const contactRows = wantContacts ? rows.shift() : [], photoRows = wantPhotos ? rows.shift() : [], historyRows = wantHistory ? rows.shift() : [];
+  const contactRows = wantContacts ? rows.shift() : [], photoRows = wantPhotos ? rows.shift() : [], policyRow = wantPhotos ? rows.shift() : null,
+    historyRows = wantHistory ? rows.shift() : [];
   const label = {}; for (const ref of rows) if (ref && ref.label_th) label[ref.catalog + '|' + ref.code] = ref.label_th;
   response.organization = {id: v.organization_id || '', name: orgRow && orgRow.name || ''};
   response.registeredAt = v.created_at || ''; response.updatedAt = v.updated_at || '';
@@ -54,7 +57,8 @@ export function* vehicleViewFlow(v, actor, source, deps) {
       .map(c => ({name: c.display_name, phone: c.phone_e164, relationship: c.relationship, isPrimary: c.is_primary, verifiedAt: c.verified_at || ''}));
   if (wantPhotos)
     response.photos = photoRows.filter(x => x.status === 'ACTIVE')
-      .map(x => ({photoId: x.photo_id, slot: x.slot, storageRef: x.storage_ref, mimeType: x.mime_type, createdAt: x.created_at || ''}));
+      .map(x => ({photoId: x.photo_id, slot: x.slot, storageRef: x.storage_ref, mimeType: x.mime_type, createdAt: x.created_at || '',
+        ...photoLinks(x.storage_ref, readPhotoPolicy(policyRow))})); // VC-ADR-050 PR B: the browser loads the photo from Drive
   if (wantHistory) response.history = historyRows.slice(-100)
     .map(x => ({audit_id: x.audit_id, action: x.action, redacted_summary: x.redacted_summary, created_at: x.created_at}));
   return response;

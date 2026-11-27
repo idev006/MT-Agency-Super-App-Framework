@@ -77,10 +77,30 @@ const historyLabels = Object.freeze({
   REGISTRATION_APPROVED: 'อนุมัติการลงทะเบียน', VEHICLE_CANCELLED: 'ยกเลิกยานพาหนะ', PHOTO_REPLACED: 'เปลี่ยนรูปประกอบ',
 })
 
+// VC-ADR-050 PR B: a photo with Drive links shows at once (thumbnail in the strip, full size in the viewer); the audited API
+// path is the fallback when a link fails to load (e.g. a file uploaded before link sharing)
+const hasLinks = computed(() => vehicle.value.photos.some((p) => p.thumbUrl && p.fullUrl))
+function photoFailed(photoId) {
+  const p = vehicle.value.photos.find((x) => x.photoId === photoId)
+  if (!p || !photos.value[photoId]?.viaLink) return
+  photos.value = { ...photos.value, [photoId]: { status: 'error', code: 'LINK_FAILED' } }
+  if (props.loadPhoto) void loadViaApi(p)
+}
+async function loadViaApi(p) {
+  photos.value = { ...photos.value, [p.photoId]: { status: 'loading' } }
+  try {
+    const out = await props.loadPhoto({ vehicleId: vehicle.value.vehicleId, photoId: p.photoId })
+    photos.value = { ...photos.value, [p.photoId]: { status: 'ready', dataUrl: out.dataUrl } }
+  } catch (error) {
+    photos.value = { ...photos.value, [p.photoId]: { status: 'error', code: error?.code || 'UNEXPECTED_ERROR' } }
+  }
+}
 async function openPhotos() {
-  if (!props.loadPhoto) return
   const list = vehicle.value.photos
   if (!activePhoto.value && list.length) activePhoto.value = (list.find((p) => p.slot === 'FRONT') || list[0]).photoId
+  for (const p of list) if (p.thumbUrl && p.fullUrl && !photos.value[p.photoId])
+    photos.value = { ...photos.value, [p.photoId]: { status: 'ready', dataUrl: p.fullUrl, thumbUrl: p.thumbUrl, viaLink: true } }
+  if (!props.loadPhoto) return
   await Promise.all(list.filter((p) => !photos.value[p.photoId] || photos.value[p.photoId].status === 'error').map(async (p) => {
     photos.value = { ...photos.value, [p.photoId]: { status: 'loading' } }
     try {
@@ -176,10 +196,10 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
     <section v-if="canReadPhotos" v-show="active === 'photos'" id="vp-photos" role="tabpanel" aria-labelledby="vt-photos" class="card card-border bg-base-100 shadow-none">
       <div class="card-body gap-3 p-5">
         <div v-if="!vehicle.photos.length" class="alert shadow-none">ไม่พบรูปที่ใช้งานอยู่</div>
-        <div v-else-if="!loadPhoto" class="alert shadow-none">หน้านี้ไม่ได้เปิดให้ดูภาพ</div>
+        <div v-else-if="!loadPhoto && !hasLinks" class="alert shadow-none">หน้านี้ไม่ได้เปิดให้ดูภาพ</div>
         <template v-else>
           <div class="relative grid aspect-[4/3] max-h-[28rem] w-full place-items-center overflow-hidden rounded-box bg-base-200">
-            <img v-if="current?.status === 'ready'" :src="current.dataUrl" :alt="`ภาพ${photoSlotLabel(currentSlot)}`" class="h-full w-full object-contain" />
+            <img v-if="current?.status === 'ready'" :src="current.dataUrl" :alt="`ภาพ${photoSlotLabel(currentSlot)}`" class="h-full w-full object-contain" @error="photoFailed(activePhoto)" />
             <div v-else-if="current?.status === 'error'" class="text-center"><p>โหลดภาพไม่สำเร็จ ({{ current.code }})</p><button class="btn btn-sm mt-2" type="button" @click="openPhotos">ลองใหม่</button></div>
             <span v-else class="loading loading-spinner loading-lg" role="status"><span class="sr-only">กำลังโหลดภาพ</span></span>
             <span v-if="currentSlot" class="badge absolute left-3 top-3">{{ photoSlotLabel(currentSlot) }}</span>
@@ -187,12 +207,12 @@ const currentSlot = computed(() => vehicle.value.photos.find((p) => p.photoId ==
           <ul class="grid grid-cols-5 gap-2" aria-label="เลือกภาพ">
             <li v-for="photo in vehicle.photos" :key="photo.photoId">
               <button type="button" class="block w-full overflow-hidden rounded-box border-2 bg-base-200" :class="photo.photoId === activePhoto ? 'border-primary' : 'border-transparent'" :aria-pressed="photo.photoId === activePhoto" @click="activePhoto = photo.photoId">
-                <span class="relative block aspect-square"><img v-if="photos[photo.photoId]?.status === 'ready'" :src="photos[photo.photoId].dataUrl" alt="" class="absolute inset-0 h-full w-full object-cover" /><span v-else class="skeleton absolute inset-0"></span></span>
+                <span class="relative block aspect-square"><img v-if="photos[photo.photoId]?.status === 'ready'" :src="photos[photo.photoId].thumbUrl || photos[photo.photoId].dataUrl" alt="" class="absolute inset-0 h-full w-full object-cover" loading="lazy" @error="photoFailed(photo.photoId)" /><span v-else class="skeleton absolute inset-0"></span></span>
                 <span class="block truncate px-1 py-1 text-center text-xs">{{ photoSlotLabel(photo.slot) }}</span>
               </button>
             </li>
           </ul>
-          <p class="text-sm text-base-content/80">ภาพแสดงในหน่วยความจำเท่านั้น ไม่บันทึกลงเครื่อง และการเปิดดูถูกบันทึก audit</p>
+          <p class="text-sm text-base-content/80">{{ hasLinks ? 'ภาพโหลดจาก Google Drive ของหน่วยงานโดยตรง' : 'ภาพแสดงในหน่วยความจำเท่านั้น ไม่บันทึกลงเครื่อง และการเปิดดูถูกบันทึก audit' }}</p>
         </template>
       </div>
     </section>

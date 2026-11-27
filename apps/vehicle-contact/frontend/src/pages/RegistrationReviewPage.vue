@@ -142,7 +142,7 @@ async function confirmDecision() {
               </div>
               <div class="mt-2 overflow-hidden rounded-box border border-base-300 bg-base-200">
                 <div class="relative aspect-[4/3] w-full max-h-64">
-                  <img v-if="activePhotoState?.status === 'ready'" :src="activePhotoState.dataUrl" :alt="`ภาพหลักฐานยานพาหนะ ${slotLabel(activeSlot)}`" class="absolute inset-0 h-full w-full object-contain" />
+                  <img v-if="activePhotoState?.status === 'ready'" :src="activePhotoState.dataUrl" @error="work.photoFailed(work.activePhotoId.value)" :alt="`ภาพหลักฐานยานพาหนะ ${slotLabel(activeSlot)}`" class="absolute inset-0 h-full w-full object-contain" />
                   <div v-else-if="activePhotoState?.status === 'error'" class="absolute inset-0 grid place-items-center p-4 text-center">
                     <div>
                       <p class="text-sm text-base-content/80">โหลดภาพไม่สำเร็จ ({{ activePhotoState.code }})</p>
@@ -160,7 +160,7 @@ async function confirmDecision() {
                     @click="work.selectPhoto(photo.photoId)">
                     <span class="sr-only">ดูภาพ</span>
                     <span class="relative block aspect-square w-full">
-                      <img v-if="work.photoStates.value[photo.photoId]?.status === 'ready'" :src="work.photoStates.value[photo.photoId].dataUrl" alt="" class="absolute inset-0 h-full w-full object-cover" />
+                      <img v-if="work.photoStates.value[photo.photoId]?.status === 'ready'" :src="work.photoStates.value[photo.photoId].thumbUrl || work.photoStates.value[photo.photoId].dataUrl" loading="lazy" @error="work.photoFailed(photo.photoId)" alt="" class="absolute inset-0 h-full w-full object-cover" />
                       <span v-else-if="work.photoStates.value[photo.photoId]?.status === 'error'" class="absolute inset-0 grid place-items-center text-xs text-error">ผิดพลาด</span>
                       <span v-else class="skeleton absolute inset-0"></span>
                     </span>

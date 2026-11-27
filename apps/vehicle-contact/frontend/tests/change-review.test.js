@@ -52,7 +52,7 @@ describe('vehicle detail repository contract', () => {
     expect(callOperation).toHaveBeenCalledWith('vehicles.detail', { vehicleId: 'v-1' }, { signal: undefined })
     expect(result.version).toBe(3)
     expect(result.vehicle.contacts[0].name).toBe('ผู้ทดสอบ')
-    expect(result.vehicle.photos).toEqual([{ photoId: 'p-1', slot: 'FRONT', mimeType: 'image/jpeg', createdAt: '' }])
+    expect(result.vehicle.photos).toEqual([{ photoId: 'p-1', slot: 'FRONT', mimeType: 'image/jpeg', createdAt: '', thumbUrl: '', fullUrl: '' }])
     expect(JSON.stringify(result)).not.toContain('private-drive-ref')
   })
 
