@@ -6,6 +6,8 @@ import { REGISTRATION_PHOTO_SLOTS, useRegistrationIntake } from '../src/features
 import { useRegistrationReview } from '../src/features/registrations/useRegistrationReview.js'
 import { createGasVehicleSearchRepository } from '../src/infrastructure/vehicles/gas-vehicle-search-repository.js'
 import { createGasVehicleDetailRepository } from '../src/infrastructure/vehicles/gas-vehicle-detail-repository.js'
+// VC-ADR-055: the device codec needs a browser; a stand-in passes the bytes through (the real one never sends an unopened file)
+const compress = async (f) => ({ base64Image: btoa(String.fromCharCode(...new Uint8Array(await f.arrayBuffer()))), mimeType: f.type })
 
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8')
 const vehicle = { vehicleId: 'v1', plate: 'กข1', province: '65', status: 'ACTIVE', contacts: [], photos: [] }
@@ -37,7 +39,7 @@ describe('P2 speed', () => {
       submit: vi.fn().mockResolvedValue({ requestId: 'r', vehicleId: 'v', status: 'PENDING_APPROVAL' }),
     }
     const files = Object.fromEntries(REGISTRATION_PHOTO_SLOTS.map(({ id }) => [id, new File([new Uint8Array([1, 2])], id + '.png', { type: 'image/png' })]))
-    const work = useRegistrationIntake({ repository, permissions: ['vehicle.registration.approve'] })
+    const work = useRegistrationIntake({ repository, permissions: ['vehicle.registration.approve'], compress })
     await work.submit({ campaignToken: 'a'.repeat(64), fields: {}, files })
     expect(peak).toBe(5)
     expect(repository.submit).toHaveBeenCalledTimes(1)
@@ -52,7 +54,7 @@ describe('P2 speed', () => {
       submit: vi.fn().mockResolvedValue({ requestId: 'r', vehicleId: 'v', status: 'PENDING_APPROVAL' }),
     }
     const files = Object.fromEntries(REGISTRATION_PHOTO_SLOTS.map(({ id }) => [id, new File([new Uint8Array([1])], id + '.png', { type: 'image/png' })]))
-    const work = useRegistrationIntake({ repository, permissions: ['vehicle.registration.approve'] })
+    const work = useRegistrationIntake({ repository, permissions: ['vehicle.registration.approve'], compress })
     await work.submit({ campaignToken: 'a'.repeat(64), fields: {}, files })
     expect(work.phase.value).toBe('error')
     await work.submit({ campaignToken: 'a'.repeat(64), fields: {}, files })
@@ -68,7 +70,7 @@ describe('P2 speed', () => {
       detail: vi.fn().mockResolvedValue({ registration: { requestId: 'r', application: { photos } } }),
       photo: vi.fn(async () => { inFlight++; peak = Math.max(peak, inFlight); await new Promise((r) => setTimeout(r, 5)); inFlight--; return { photo: { mimeType: 'image/png', base64Image: 'AA==' } } }),
     }
-    const work = useRegistrationReview({ repository, permissions: ['vehicle.registration.approve'] })
+    const work = useRegistrationReview({ repository, permissions: ['vehicle.registration.approve'], compress })
     await work.inspect('r')
     await vi.waitFor(() => expect(Object.values(work.photoStates.value).filter((x) => x.status === 'ready')).toHaveLength(5))
     expect(peak).toBe(5)

@@ -97,3 +97,24 @@ test('log policy (VC-ADR-040): required logs locked; switching a log off asks fi
     { code: 'CHANGE', enabled: true, days: 0 }, { code: 'LOGIN', enabled: true, days: 90 }])
   await expect(card.locator('[data-log-toggle="LOOKUP"]')).not.toBeChecked()
 })
+
+test('photo rules (VC-ADR-055): the admin picks landscape / portrait / both and the size limits; bad values cannot be saved', async ({ page, api }) => {
+  await signIn(page, '/#/app/admin/settings')
+  const card = page.locator('section', { has: page.getByRole('heading', { name: 'กฎของรูปถ่าย' }) })
+  await expect(card).toBeVisible()
+  await expect(card.locator('[data-photo-orientation="ANY"]')).toBeChecked()
+  await expect(card.locator('[data-photo-max-mb]')).toHaveValue('1.5')
+  const save = card.locator('[data-photo-save]')
+  await expect(save).toBeDisabled()
+  await card.locator('[data-photo-orientation="LANDSCAPE"]').check()
+  await card.locator('[data-photo-min-side]').fill('5000')
+  await expect(save).toBeDisabled() // above the 2000 px limit
+  await card.locator('[data-photo-min-side]').fill('900')
+  await card.locator('[data-photo-max-mb]').fill('1')
+  await save.click()
+  await expect(card.getByRole('status')).toContainText('บันทึกกฎของรูปถ่ายแล้ว')
+  const sent = api.calls.filter((c) => c.op === 'system.config.update').at(-1).payload.values.photo_policy
+  expect(sent).toEqual({ maxSide: 1600, quality: 0.82, maxBytes: 1000000, thumbSide: 320, minSide: 900, orientation: 'LANDSCAPE' })
+  await expect(card.locator('[data-photo-orientation="LANDSCAPE"]')).toBeChecked()
+  await page.screenshot({ path: 'e2e-results/photo-rules-settings.png', fullPage: false })
+})

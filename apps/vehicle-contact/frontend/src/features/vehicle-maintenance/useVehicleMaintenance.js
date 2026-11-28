@@ -3,23 +3,23 @@ import { assertVehicleMaintenanceRepository } from '../../application/vehicles/v
 import { assertVehicleDetailRepository } from '../../application/vehicles/vehicle-detail-port.js'
 
 import { compressForUpload } from '../../infrastructure/media/image-compress.js'
+import { photoPolicyOrDefault } from '../../domain/media/photo-policy.js'
 const WRITE_UNCERTAIN = new Set(['TIMEOUT', 'NETWORK_ERROR'])
 
 function permissionList(permissions) {
   return Array.isArray(unref(permissions)) ? unref(permissions) : []
 }
 
-async function fileBase64(file) {
-  return compressForUpload(file)
-}
-
-export function useVehicleMaintenance({ repository, detailRepository, permissions }) {
+// compress: injectable for tests (default: the device codec, following the admin photo rules — VC-ADR-055)
+export function useVehicleMaintenance({ repository, detailRepository, permissions, compress = compressForUpload }) {
   const source = assertVehicleMaintenanceRepository(repository)
   const detailSource = assertVehicleDetailRepository(detailRepository)
   const phase = ref('idle')
   const actionPhase = ref('idle')
   const failure = ref(null)
   const vehicle = ref(null)
+  // VC-ADR-055: the photo rules in force (vehicles.detail photoPolicy); the defaults when absent
+  const photoPolicy = computed(() => photoPolicyOrDefault(vehicle.value?.photoPolicy))
   const version = ref(0)
   const vehicleId = ref('')
   const conflict = ref(false)
@@ -90,7 +90,7 @@ export function useVehicleMaintenance({ repository, detailRepository, permission
     if (!canEdit.value) { actionPhase.value = 'forbidden'; return false }
     let base64Image
     let mimeType
-    try { ({ base64Image, mimeType } = await fileBase64(file)) } catch (error) { capture(error, actionPhase); return false }
+    try { ({ base64Image, mimeType } = await compress(file, photoPolicy.value)) } catch (error) { capture(error, actionPhase); return false }
     return runWrite(async () => {
       const result = await source.replacePhoto({ vehicleId: vehicleId.value, slot, base64Image, mimeType })
       await load(vehicleId.value)
@@ -108,7 +108,7 @@ export function useVehicleMaintenance({ repository, detailRepository, permission
 
   return {
     phase, actionPhase, failure, vehicle, version, vehicleId, conflict, cancelled, canEdit,
-    load, updateVehicle, updateContact, replacePhoto, cancelVehicle,
+    load, updateVehicle, updateContact, replacePhoto, cancelVehicle, photoPolicy,
     retry: () => load(vehicleId.value),
   }
 }

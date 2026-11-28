@@ -1,5 +1,6 @@
 import { DEFAULT_STICKER_CATEGORIES, toSticker, toStickerList } from '../../domain/reference/sticker-categories.js'
 import { toLogCounts, toLogPolicy } from '../../domain/settings/log-policy.js'
+import { toPhotoPolicy } from '../../domain/media/photo-policy.js'
 export class SystemSettingsContractError extends Error {
   constructor() {
     super('System settings response does not match the contract')
@@ -25,6 +26,8 @@ function mapSettings(value) {
     // VC-ADR-040: which logs are kept and for how long (backend ≥0.9.35; null before that → the card is hidden)
     logPolicy: toLogPolicy(value.log_policy),
     logCounts: toLogCounts(value.log_counts),
+    // VC-ADR-049/055: the photo rules (backend ≥0.9.54; null before that → the card is hidden)
+    photoPolicy: toPhotoPolicy(value.photo_policy),
   })
 }
 
@@ -58,6 +61,11 @@ export function createGasSystemSettingsRepository({ callOperation }) {
     async updateLogPolicy({ policy, signal }) {
       const list = policy.map(({ code, enabled, days }) => ({ code, enabled, days }))
       const response = await callOperation('system.config.update', { values: { log_policy: list } }, { signal })
+      return { settings: mapSettings(response.data), requestId: response.requestId }
+    },
+    async updatePhotoPolicy({ policy, signal }) {
+      const { maxSide, quality, maxBytes, thumbSide, minSide, orientation } = policy
+      const response = await callOperation('system.config.update', { values: { photo_policy: { maxSide, quality, maxBytes, thumbSide, minSide, orientation } } }, { signal })
       return { settings: mapSettings(response.data), requestId: response.requestId }
     },
     async updateStickerCategories({ categories, signal }) {
