@@ -79,3 +79,16 @@ test('GAS-BRIDGE-02 unsigned and tampered requests fail before Drive access', ()
   assert.equal(h.post({...valid, args: {storageRef: 'photo-2'}}).error.code, 'BRIDGE_UNAUTHORIZED');
   assert.equal(h.driveTouches(), 0);
 });
+
+test('G1 the bridge-only push is gated twice and replaces dist with exactly the bridge + manifest (VC-ADR-053/056)', () => {
+  const wf = readFileSync(resolve(gas, '../../../../.github/workflows/deploy-vehicle-gas.yml'), 'utf8');
+  assert.match(wf, /options: \[full, bridge\]/, 'artifact choice, full by default');
+  assert.match(wf, /default: full/);
+  assert.match(wf, /inputs\.confirmation == 'PUSH_VEHICLE_GAS' && \(inputs\.artifact != 'bridge' \|\| inputs\.remove_api_files == 'REMOVE_GAS_API_FILES'\)/,
+    'a bridge push needs the second owner phrase');
+  assert.match(wf, /if: inputs\.artifact == 'bridge'\n\s+run: \|\n\s+node scripts\/build-bridge-candidate\.mjs\n\s+rm -rf dist && mkdir dist/);
+  assert.match(wf, /= "MediaBridge\.gs appsscript\.json "/, 'exactly two files are pushed');
+  const sh = readFileSync(resolve(gas, '../../../../scripts/p6vc-deploy-backend.sh'), 'utf8');
+  assert.match(sh, /P6VC_OWNER_OK_REMOVE_GAS_FILES:-\}" != "REMOVE_GAS_API_FILES"/, 'the deploy script asks for the same confirmation');
+  assert.match(sh, /verify-bridge-live\.mjs --expect "\$ARTIFACT"/, 'checked after the pin, with the rollback target printed');
+});

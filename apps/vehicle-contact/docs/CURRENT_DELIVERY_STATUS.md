@@ -33,7 +33,7 @@ Operations on the core (`backend/core/src/facade/operations.mjs`):
 | Live suite through the core | **112/112 PASS** (public 11, core gateway 14, authenticated 80 covering 64/64 ops, DATA_PROOF 7; the Worker stage is gone), latency p50 311 ms |
 | DATA_PROOF (independent Firestore read-back) | 7/7, started 05:41:41.368Z after the authenticated inventory ended 05:41:41.249Z |
 | Cloudflare Worker (W1) | `wrangler delete --name p6vc-api-test-console` → "Successfully deleted"; its deployment list no longer exists; the workers.dev URL returns HTTP 404 |
-| Photo rules (VC-ADR-055) | server rules live; device rules + admin card live in FE 0.9.24; checked on localhost (portrait refused on the device and by the core). Owner check on a real phone pending |
+| Photo rules (VC-ADR-055) | server rules live; device rules + admin card live in FE 0.9.24; checked on localhost (portrait refused on the device and by the core) and by the owner on a real phone ("ระบบแจ้งเตือนเมื่อถ่ายผิดแนว") |
 
 Previous proof (0.9.63): live suite 126/126 (incl. the Worker stage), DATA_PROOF 7/7; R10 seed DRY_RUN.
 
