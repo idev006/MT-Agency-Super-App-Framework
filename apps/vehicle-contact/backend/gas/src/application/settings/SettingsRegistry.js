@@ -66,6 +66,6 @@ export const photoPolicySettings = () => ({
   prepare(values) {
     const p = parsePhotoPolicy(values[PHOTO_POLICY_KEY]);
     return {rows: [[PHOTO_POLICY_KEY, JSON.stringify(p)]],
-      audit: {action: 'PHOTO_POLICY_UPDATED', summary: `photo_policy:maxSide=${p.maxSide},quality=${p.quality},maxBytes=${p.maxBytes},thumbSide=${p.thumbSide}`}};
+      audit: {action: 'PHOTO_POLICY_UPDATED', summary: `photo_policy:maxSide=${p.maxSide},quality=${p.quality},maxBytes=${p.maxBytes},thumbSide=${p.thumbSide},minSide=${p.minSide},orientation=${p.orientation}`}};
   }
 });
