@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend 0.9.62 / FE 0.9.23. The core answers 24/64 operations; N4a direct browser route is live and publicly verified. A bridge-only GAS candidate is local only.
+**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend 0.9.63 / FE 0.9.23. The core answers 24/64 operations; N4a direct browser route is live and publicly verified. R10 reference seed core job has a successful live DRY_RUN. A bridge-only GAS candidate is local only.
 **Status:** current. Read [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) (what runs, last proof) with this page (how to work, next steps).
 
 ## 1. Ready-to-paste next-AI prompt
@@ -12,12 +12,12 @@ tech lead. Answer the owner in Thai, concisely; end every answer with a section 
 
 Read first, in order: CLAUDE.md (repo root) → .mt-studio/project.yaml (commands, deploy order, proof gates, gotchas) →
 apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md → PROJECT_HANDOVER.md (this) → ROADMAP.md → NODE_CORE_FINISH_PLAN.md →
-the generated maps docs/generated/DATA_ACCESS_MAP.md + CHANGE_CHECKLIST.md → DECISION_LOG.md (VC-ADR-046..052).
+the generated maps docs/generated/DATA_ACCESS_MAP.md + CHANGE_CHECKLIST.md → DECISION_LOG.md (VC-ADR-046..054).
 Then verify the live state yourself: git fetch origin main; gh pr list; gh issue list --label status:in-progress; CI.
 
-Where things stand: backend 0.9.62 is live and proven. The Node core (p6vc-core) answers 24 of 64 operations live and forwards the rest to
+Where things stand: backend 0.9.63 is live and proven. The Node core (p6vc-core) answers 24 of 64 operations live and forwards the rest to
 the frozen legacy engine (p6vc-api). The owner decided (VC-ADR-051) to move the whole backend to native async Node:
-N1a and N4a complete → N1b → N2 → N3 → R10/R11 → N4 cut-over. Each DEV item = small PRs → green CI →
+N1a and N4a complete → N1b → N2 → N3 → finish R10/R11 → N4 cut-over. R10 core job DRY_RUN is proven; R11 needs the owner's security decision. Each DEV item = small PRs → green CI →
 deploy → proof → evidence in DECISION_LOG → ROADMAP + issue updated.
 
 Hard rules (owner): VC-ADR-052's 2026-11-28 one-time DEV approval covers subsequent synthetic-DEV merges/deploys and clasp;
@@ -42,8 +42,8 @@ If two sources disagree, the higher one wins; fix the lower one in the same PR o
 
 ```mermaid
 flowchart LR
-  WEB[frontend/ Vue 3 + Vite<br/>GitHub Pages] --> WK[tools/p6vc-api-test-console<br/>Cloudflare Worker]
-  WK --> API[p6vc-api<br/>backend/cloudrun + backend/gas/src<br/>legacy engine, frozen]
+  WEB[frontend/ Vue 3 + Vite<br/>GitHub Pages] --> CORE
+  API[p6vc-api<br/>backend/cloudrun + backend/gas/src<br/>legacy engine, frozen]
   CORE[p6vc-core<br/>backend/core<br/>native async Node] -. forwards ops it has not taken over .-> API
   CORE --> FS[(Firestore)]
   API --> FS
@@ -101,7 +101,7 @@ Rollback: remove the op from `USE_CASES` / `FLOWS` and redeploy the core (the le
 
 1. **G1 #329** — review [GAS_BRIDGE_REDUCTION_PLAN.md](GAS_BRIDGE_REDUCTION_PLAN.md): a local one-file bridge candidate is tested, but the remote 60-file GAS project remains until R10/R11 editor jobs, old trigger and proof-chain dependencies are resolved. Remote source removal requires a reviewed dry run and separate owner confirmation.
 2. **N1b #312** — PRs 1–2 (`qr.history`, `vehicles.listMine`) are proven on 0.9.61–0.9.62. Move the remaining vehicles, QR, change requests and registration review to native async Node in small PRs. Fix approval's whole-table vehicle read using plate + province.
-3. N2 (#313), N3 (#314), R10 (#303), R11 (#304, owner security review), N4 (#255).
+3. N2 (#313), N3 (#314), finish R10 recovery gate (#303), R11 (#304, owner security review), N4 (#255).
 4. Photos R03 (#296), R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
 
 ## 7. Working notes (things that bit before)

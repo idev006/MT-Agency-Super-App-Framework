@@ -48,14 +48,21 @@ jobs:
       github.ref == 'refs/heads/main' && inputs.confirmation == 'RUN_REFERENCE_SEED' &&
       (inputs.mode != 'APPLY' || inputs.apply_confirmation == 'APPLY_REFERENCE_SEED')
     steps:
-      - name: Validate apply checksum shape
-        if: inputs.mode == 'APPLY'
+      - name: Check out the reference manifest
+        uses: actions/checkout@v4
+
+      - name: Show manifest checksum and validate apply input
         env:
+          MODE: ${{ inputs.mode }}
           CHECKSUM: ${{ inputs.manifest_checksum }}
         run: |
-          if ! [[ "$CHECKSUM" =~ ^[a-f0-9]{64}$ ]]; then
-            echo '::error::Manifest checksum must be 64 lowercase hex characters from a fresh dry run'
-            exit 1
+          EXPECTED=$(node --input-type=module -e "import {runReferenceSeedJob} from './apps/vehicle-contact/backend/core/src/facade/reference-seed.mjs'; const report = await runReferenceSeedJob({store:{count:async()=>0}}); console.log(report.checksum)")
+          echo "Manifest checksum (public, not a credential): $EXPECTED"
+          if [ "$MODE" = 'APPLY' ]; then
+            if ! [[ "$CHECKSUM" =~ ^[a-f0-9]{64}$ ]] || [ "$CHECKSUM" != "$EXPECTED" ]; then
+              echo '::error::Apply requires the exact checksum of the checked-out manifest'
+              exit 1
+            fi
           fi
 
       - name: Authenticate to Google Cloud (keyless)
