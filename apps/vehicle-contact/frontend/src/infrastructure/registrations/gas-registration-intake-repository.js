@@ -1,3 +1,5 @@
+import { toPhotoPolicy } from '../../domain/media/photo-policy.js'
+
 export class RegistrationIntakeContractError extends Error {
   constructor() {
     super('Registration intake response does not match the contract')
@@ -21,7 +23,8 @@ export function createGasRegistrationIntakeRepository({ callPublicOperation }) {
       // VC-ADR-038: the person types the registrant can choose from (ACTIVE only; [] from an older backend)
       const stickerCategories = (Array.isArray(response.data.stickerCategories) ? response.data.stickerCategories : [])
         .filter((c) => typeof c?.code === 'string' && typeof c?.label === 'string').map((c) => Object.freeze({ code: c.code, label: c.label }))
-      return { campaignId: text(response.data.campaignId), valid: true, stickerCategories, requestId: response.requestId }
+      // VC-ADR-055: the photo rules the device applies (null from an older backend → the defaults)
+      return { campaignId: text(response.data.campaignId), valid: true, stickerCategories, photoPolicy: toPhotoPolicy(response.data.photoPolicy), requestId: response.requestId }
     },
     async uploadPhoto({ campaignToken, slot, base64Image, mimeType }) {
       const response = await callPublicOperation('photos.upload', { campaignToken, slot, base64Image, mimeType })

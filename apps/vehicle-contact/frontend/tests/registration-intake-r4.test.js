@@ -4,6 +4,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { REGISTRATION_PHOTO_SLOTS, imageFileProblem, useRegistrationIntake } from '../src/features/registrations/useRegistrationIntake.js'
 import { toE164 } from '../src/domain/reference/vehicle-presentation.js'
+// VC-ADR-055: the device codec needs a browser; a stand-in passes the bytes through (the real one never sends an unopened file)
+const compress = async (f) => ({ base64Image: btoa(String.fromCharCode(...new Uint8Array(await f.arrayBuffer()))), mimeType: f.type })
 
 const TOKEN = 'a'.repeat(64)
 const png = (name) => new File([new Uint8Array([137, 80, 78, 71])], name, { type: 'image/png' })
@@ -20,7 +22,7 @@ describe('R4 uncertain submit → safe resend', () => {
       .mockRejectedValueOnce(Object.assign(new Error('net'), { code: 'NETWORK_ERROR', requestId: 'q-1' }))
       .mockResolvedValueOnce({ requestId: 'r-1', vehicleId: 'v-1', status: 'PENDING_APPROVAL' })
     const repository = repo(submit)
-    const work = useRegistrationIntake({ repository, permissions: ['vehicle.registration.approve'] })
+    const work = useRegistrationIntake({ repository, permissions: ['vehicle.registration.approve'], compress })
     const fields = { plate: 'กข1234', contactPhone: '+66812345678' }
     await work.submit({ campaignToken: TOKEN, fields, files: files() })
     expect(work.phase.value).toBe('uncertain')
@@ -37,7 +39,7 @@ describe('R4 uncertain submit → safe resend', () => {
 
   it('a fresh submission after success gets a new key; next vehicle can keep the campaign', async () => {
     const submit = vi.fn().mockResolvedValue({ requestId: 'r', vehicleId: 'v', status: 'PENDING_APPROVAL' })
-    const work = useRegistrationIntake({ repository: repo(submit), permissions: ['vehicle.registration.approve'] })
+    const work = useRegistrationIntake({ repository: repo(submit), permissions: ['vehicle.registration.approve'], compress })
     await work.submit({ campaignToken: TOKEN, fields: { plate: 'a' }, files: files() })
     work.reset({ keepCampaign: true })
     expect(work.campaign.value?.valid).toBe(true)

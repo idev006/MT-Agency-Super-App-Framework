@@ -67,7 +67,9 @@ describe('registration intake state and page contracts', () => {
       uploadPhoto: vi.fn(({ slot }) => Promise.resolve({ photoId: `photo-${slot}`, slot })),
       submit: vi.fn().mockResolvedValue({ requestId: 'r-1', vehicleId: 'v-1', status: 'PENDING_APPROVAL' }),
     }
-    const work = useRegistrationIntake({ repository, permissions: ['vehicle.registration.approve'] })
+    // VC-ADR-055: the device codec needs a browser; a stand-in passes the bytes through (the real one never sends an unopened file)
+    const compress = async (f) => ({ base64Image: btoa(String.fromCharCode(...new Uint8Array(await f.arrayBuffer()))), mimeType: f.type })
+    const work = useRegistrationIntake({ repository, permissions: ['vehicle.registration.approve'], compress })
     const bytes = new Uint8Array([137, 80, 78, 71])
     const files = Object.fromEntries(REGISTRATION_PHOTO_SLOTS.map(({ id }) => [id, new File([bytes], `${id}.png`, { type: 'image/png' })]))
     await work.submit({ campaignToken: 'a'.repeat(64), fields: { plate: 'กข1234' }, files })

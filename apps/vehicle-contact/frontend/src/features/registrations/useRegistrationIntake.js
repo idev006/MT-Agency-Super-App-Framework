@@ -1,6 +1,7 @@
 import { computed, ref, unref } from 'vue'
 import { assertRegistrationIntakeRepository } from '../../application/registrations/registration-intake-port.js'
 import { compressForUpload, sourceImageProblem } from '../../infrastructure/media/image-compress.js'
+import { photoPolicyOrDefault } from '../../domain/media/photo-policy.js'
 
 export const REGISTRATION_PHOTO_SLOTS = Object.freeze([
   { id: 'FRONT', label: 'ด้านหน้า' }, { id: 'REAR', label: 'ด้านหลัง' },
@@ -16,7 +17,8 @@ export function imageFileProblem(file) {
   return sourceImageProblem(file)
 }
 
-export function useRegistrationIntake({ repository, permissions }) {
+// compress: injectable for tests (default: the device codec, following the admin photo rules — VC-ADR-055)
+export function useRegistrationIntake({ repository, permissions, compress = compressForUpload }) {
   const source = assertRegistrationIntakeRepository(repository)
   const phase = ref('idle')
   const failure = ref(null)
@@ -29,6 +31,8 @@ export function useRegistrationIntake({ repository, permissions }) {
   // winner, while a changed payload under the same key is refused (IDEMPOTENCY_CONFLICT).
   const lastSubmission = ref(null)
   const locked = computed(() => phase.value === 'uncertain')
+  // VC-ADR-055: the photo rules of the campaign's system (from campaigns.validate); the defaults until validated
+  const photoPolicy = computed(() => photoPolicyOrDefault(campaign.value?.photoPolicy))
   const canReceive = computed(() => {
     const values = Array.isArray(unref(permissions)) ? unref(permissions) : []
     return values.includes('vehicle.registration.approve')
@@ -61,7 +65,7 @@ export function useRegistrationIntake({ repository, permissions }) {
       // the slots that failed.
       const pending = REGISTRATION_PHOTO_SLOTS.filter((slot) => uploaded.value[slot.id]?.file !== files[slot.id])
       const outcomes = await Promise.allSettled(pending.map(async (slot) => {
-        const { base64Image, mimeType } = await compressForUpload(files[slot.id])
+        const { base64Image, mimeType } = await compress(files[slot.id], photoPolicy.value)
         const photo = await source.uploadPhoto({ campaignToken, slot: slot.id, base64Image, mimeType })
         uploaded.value = { ...uploaded.value, [slot.id]: { file: files[slot.id], photoId: photo.photoId } }
       }))
@@ -85,7 +89,7 @@ export function useRegistrationIntake({ repository, permissions }) {
     return submit({ campaignToken, fields, files })
   }
 
-  return { phase, failure, campaign, uploaded, result, canReceive, locked, validateCampaign, submit, retrySame,
+  return { phase, failure, campaign, uploaded, result, canReceive, locked, photoPolicy, validateCampaign, submit, retrySame,
     // keepCampaign: "next vehicle, same campaign" skips a second validation round trip.
     reset: ({ keepCampaign = false } = {}) => { phase.value = keepCampaign && campaign.value?.valid ? 'ready' : 'idle'; failure.value = null; if (!keepCampaign) campaign.value = null; uploaded.value = {}; result.value = null; idempotencyKey.value = ''; lastSubmission.value = null } }
 }

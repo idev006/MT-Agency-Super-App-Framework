@@ -9,6 +9,8 @@ import ConfirmDialog from '../components/common/ConfirmDialog.vue'
 import OperationalContextStrip from '../components/page/OperationalContextStrip.vue'
 import PageTemplateComponent from '../components/page/PageTemplateComponent.vue'
 import { useVehicleMaintenance } from '../features/vehicle-maintenance/useVehicleMaintenance.js'
+import { inspectPhoto } from '../infrastructure/media/image-compress.js'
+import { ORIENTATION_LABELS, photoProblemText } from '../domain/media/photo-policy.js'
 import { useSessionStore } from '../stores/session.js'
 import { useRegistrationReferenceStore } from '../stores/registration-reference.js'
 import { PROVINCES } from '../domain/reference/provinces.js'
@@ -63,10 +65,19 @@ const stickerOptions = computed(() => {
 onMounted(() => work.load(route.params.vehicleId))
 watch(() => route.params.vehicleId, (id) => { if (route.name === 'vehicle-maintenance') work.load(id) })
 
-function onPhotoFile(slot, event) {
-  const file = event.target.files?.[0]
-  photoFiles.value = { ...photoFiles.value, [slot]: file || null }
+const photoProblems = ref({})
+async function onPhotoFile(slot, event) {
+  const file = event.target.files?.[0] || null
+  photoFiles.value = { ...photoFiles.value, [slot]: null }
+  photoProblems.value = { ...photoProblems.value, [slot]: '' }
+  if (!file) return
+  // VC-ADR-055: the photo rules checked on the device before "แทนที่รูป" is enabled
+  const problem = await inspectPhoto(file, work.photoPolicy.value)
+  photoProblems.value = { ...photoProblems.value, [slot]: problem ? photoProblemText(problem, work.photoPolicy.value) : '' }
+  if (!problem) photoFiles.value = { ...photoFiles.value, [slot]: file }
 }
+const PHOTO_CODES = new Set(['PHOTO_TOO_LARGE', 'PHOTO_TOO_SMALL', 'PHOTO_ORIENTATION_INVALID', 'INVALID_MEDIA'])
+const photoFailureText = computed(() => (PHOTO_CODES.has(work.failure.value?.code) ? photoProblemText(work.failure.value.code, work.photoPolicy.value) : ''))
 
 async function saveVehicle() { lastSaved.value = ''; if (await work.updateVehicle({ ...vehicleForm.value })) lastSaved.value = `บันทึกข้อมูลยานพาหนะแล้ว (เวอร์ชัน ${work.version.value})` }
 async function saveContact() {
@@ -110,6 +121,7 @@ async function confirmCancel() {
       <div v-if="work.actionPhase.value === 'success' && lastSaved" class="alert alert-success mb-5" role="status"><span>✓ {{ lastSaved }}</span></div>
       <div v-if="work.actionPhase.value === 'conflict'" class="alert alert-warning mb-5" role="alert"><span>ข้อมูลถูกแก้ไขโดยผู้อื่นระหว่างคุณกำลังแก้ไข ระบบโหลดค่าปัจจุบันและเวอร์ชันใหม่แล้ว กรุณาตรวจสอบค่าแล้วบันทึกอีกครั้ง</span></div>
       <div v-else-if="work.actionPhase.value === 'uncertain'" class="alert alert-warning mb-5" role="alert"><span>ไม่ทราบผลการบันทึกแน่ชัด ห้ามกดซ้ำ ให้โหลดข้อมูลใหม่และตรวจสถานะก่อน</span></div>
+      <div v-else-if="work.actionPhase.value === 'error' && photoFailureText" class="alert alert-error mb-5" data-photo-failure><span>{{ photoFailureText }}</span></div>
       <div v-else-if="work.actionPhase.value === 'error'" class="alert alert-error mb-5"><span>บันทึกไม่สำเร็จ ({{ work.failure.value?.code }})</span></div>
 
       <div role="tablist" class="tabs tabs-border mb-4 flex-nowrap overflow-x-auto" aria-label="แก้ไขยานพาหนะ">
@@ -143,11 +155,12 @@ async function confirmCancel() {
 
         <fieldset v-show="mTab === 'photos'" id="mp-photos" role="tabpanel" aria-labelledby="mt-photos" class="fieldset rounded-box border border-base-300 bg-base-100 p-5">
           <legend class="fieldset-legend text-lg font-semibold">เปลี่ยนรูปประกอบ</legend>
-          <p class="mb-3 text-sm text-base-content/80">แต่ละตำแหน่งต้องมีรูปที่ใช้งานอยู่เดิม 1 รูป ระบบจะแทนที่รูปเดิมและบันทึก audit (JPEG/PNG/WebP ไม่เกิน 5MB)</p>
+          <p class="mb-3 text-sm text-base-content/80">แต่ละตำแหน่งต้องมีรูปที่ใช้งานอยู่เดิม 1 รูป ระบบจะแทนที่รูปเดิมและบันทึก audit ถ่าย{{ ORIENTATION_LABELS[work.photoPolicy.value.orientation] }} ระบบย่อรูปบนเครื่องให้เอง</p>
           <ul class="grid gap-3 sm:grid-cols-2">
             <li v-for="slot in slots" :key="slot" class="rounded-box border border-base-300 p-3">
               <span class="label-text font-semibold">{{ slotLabels[slot] }}</span>
               <input class="file-input file-input-bordered mt-2 w-full" type="file" accept="image/jpeg,image/png,image/webp" :aria-label="`เลือกรูป${slotLabels[slot]}`" @change="onPhotoFile(slot, $event)" />
+              <p v-if="photoProblems[slot]" class="mt-2 text-sm font-medium" role="alert">⚠ {{ photoProblems[slot] }}</p>
               <button class="btn btn-sm mt-2" type="button" :disabled="!photoFiles[slot] || work.actionPhase.value === 'submitting'" @click="replaceSlot(slot)">แทนที่รูป</button>
             </li>
           </ul>

@@ -100,7 +100,9 @@ describe('vehicle maintenance state and conflict UX', () => {
     const file = { type: 'image/png', size: 3, arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer }
     const repository = { updateVehicle: vi.fn(), updateContact: vi.fn(), replacePhoto: vi.fn().mockResolvedValue({ vehicleId: 'v-1', slot: 'FRONT', replaced: true }), cancelVehicle: vi.fn() }
     const detailRepository = { detail: vi.fn().mockResolvedValue({ vehicle, version: 3, requestId: 'd' }) }
-    const work = useVehicleMaintenance({ repository, detailRepository, permissions: ['vehicle.update'] })
+    // VC-ADR-055: the device codec needs a browser; a stand-in passes the bytes through (the real one never sends an unopened file)
+    const compress = async (f) => ({ base64Image: btoa(String.fromCharCode(...new Uint8Array(await f.arrayBuffer()))), mimeType: f.type })
+    const work = useVehicleMaintenance({ repository, detailRepository, permissions: ['vehicle.update'], compress })
     await work.load('v-1')
     await work.replacePhoto({ slot: 'FRONT', file })
     expect(repository.replacePhoto).toHaveBeenCalledWith({ vehicleId: 'v-1', slot: 'FRONT', base64Image: 'AQID', mimeType: 'image/png' })

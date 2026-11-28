@@ -10,6 +10,8 @@ import SearchableReferenceCombobox from '../features/reference-data/components/S
 import { CUSTOM_BRAND_CHOICE, reconcileBrandValue, resolveBrandValue } from '../features/registrations/brand-field.js'
 import { CUSTOM_COLOR_CHOICE, reconcileColorValue, resolveColorValue } from '../features/registrations/color-field.js'
 import { REGISTRATION_PHOTO_SLOTS, imageFileProblem, useRegistrationIntake } from '../features/registrations/useRegistrationIntake.js'
+import { inspectPhoto } from '../infrastructure/media/image-compress.js'
+import { ORIENTATION_LABELS, photoProblemText } from '../domain/media/photo-policy.js'
 import { formatThaiPhone, toE164 } from '../domain/reference/vehicle-presentation.js'
 import { useRegistrationReferenceStore } from '../stores/registration-reference.js'
 import { useSessionStore } from '../stores/session.js'
@@ -69,13 +71,25 @@ const reviewRows = computed(() => [
   ...(stickerChoices.value.length ? [['ประเภทผู้ใช้รถ', stickerChoices.value.find((c) => c.code === fields.stickerCategory)?.label || '—']] : []),
 ])
 
-function selectFile(slot, event) {
+async function selectFile(slot, event) {
   const file = event.target.files?.[0] || null
   if (previews[slot]) URL.revokeObjectURL(previews[slot])
   files[slot] = file
   fileProblems[slot] = file ? imageFileProblem(file) : ''
-  previews[slot] = file && !fileProblems[slot] ? URL.createObjectURL(file) : ''
+  previews[slot] = ''
+  if (!file || fileProblems[slot]) return
+  // VC-ADR-055: orientation / minimum size checked on the device at once, so the user retakes the photo now
+  const problem = await inspectPhoto(file, work.photoPolicy.value)
+  if (files[slot] !== file) return // another photo was picked meanwhile
+  fileProblems[slot] = problem ? photoProblemText(problem, work.photoPolicy.value) : ''
+  previews[slot] = problem ? '' : URL.createObjectURL(file)
 }
+const PHOTO_CODES = new Set(['PHOTO_TOO_LARGE', 'PHOTO_TOO_SMALL', 'PHOTO_ORIENTATION_INVALID', 'INVALID_MEDIA'])
+const photoFailureText = computed(() => (PHOTO_CODES.has(work.failure.value?.code) ? photoProblemText(work.failure.value.code, work.photoPolicy.value) : ''))
+const photoRuleText = computed(() => {
+  const p = work.photoPolicy.value
+  return `ถ่าย${ORIENTATION_LABELS[p.orientation]}${p.minSide ? ` ด้านสั้นอย่างน้อย ${p.minSide} px` : ''} ระบบย่อรูปบนเครื่องให้เอง (ไม่เกิน ${(p.maxBytes / 1000000).toLocaleString('th-TH', { maximumFractionDigits: 1 })} MB ต่อรูป)`
+})
 onBeforeUnmount(() => { for (const url of Object.values(previews)) if (url) URL.revokeObjectURL(url) })
 
 function panelValid(index) {
@@ -201,7 +215,7 @@ watch(referenceVersion, reconcileSelections)
 
       <fieldset v-show="step === 3" :ref="(el) => { stepPanels[3] = el }" class="fieldset rounded-box border border-base-300 bg-base-100 p-5 sm:p-6" :disabled="editingLocked">
         <legend class="fieldset-legend text-lg font-semibold">4. ภาพหลักฐาน 5 ตำแหน่ง</legend>
-        <p class="mb-3 text-sm leading-6 text-base-content/80">JPEG, PNG หรือ WebP ไม่เกิน 5 MB ต่อภาพ บนมือถือกดแล้วถ่ายจากกล้องได้ทันที</p>
+        <p class="mb-3 text-sm leading-6 text-base-content/80" data-photo-rules>{{ photoRuleText }} บนมือถือกดแล้วถ่ายจากกล้องได้ทันที</p>
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <div v-for="slot in REGISTRATION_PHOTO_SLOTS" :key="slot.id" class="rounded-box border border-base-300 p-3">
             <label class="field-stack">
@@ -234,6 +248,7 @@ watch(referenceVersion, reconcileSelections)
       <div v-else-if="work.phase.value === 'submitting'" class="alert alert-info" role="status"><span class="loading loading-spinner loading-sm"></span><span>อัปโหลดครบแล้ว กำลังส่งคำขอลงทะเบียน</span></div>
       <div v-else-if="work.phase.value === 'uncertain'" class="alert alert-warning" role="alert"><div><p class="font-semibold">ไม่ทราบผลแน่ชัด (การเชื่อมต่อขาดระหว่างส่ง)</p><p class="text-sm">ข้อมูลถูกล็อกไว้ กด “ส่งซ้ำด้วยข้อมูลเดิม” ได้อย่างปลอดภัย ถ้าคำขอแรกบันทึกแล้ว ระบบจะคืนรหัสคำขอเดิมและไม่สร้างซ้ำ</p><p v-if="work.failure.value?.requestId" class="font-mono text-xs">{{ work.failure.value.requestId }}</p></div><button class="btn btn-sm" type="button" @click="work.retrySame">ส่งซ้ำด้วยข้อมูลเดิม</button></div>
       <div v-else-if="work.phase.value === 'error' && work.failure.value?.code === 'REFERENCE_VERSION_STALE'" class="alert alert-warning"><div><p class="font-semibold">รายการข้อมูลกลางมีการปรับปรุง</p><p class="text-sm">โหลดรายการใหม่ ตรวจสอบค่าที่เลือก แล้วกดส่งคำขออีกครั้ง ระบบจะไม่ส่งซ้ำอัตโนมัติ</p></div><button class="btn btn-sm" type="button" @click="reloadReferences">โหลดรายการใหม่</button></div>
+      <div v-else-if="work.phase.value === 'error' && step > 0 && photoFailureText" class="alert alert-error" role="alert" data-photo-failure><span>{{ photoFailureText }}</span></div>
       <div v-else-if="work.phase.value === 'error' && step > 0" class="alert alert-error" role="alert"><span>ส่งคำขอไม่สำเร็จ ({{ work.failure.value?.code }}) แก้ไขข้อมูลแล้วส่งใหม่ได้</span></div>
       <p v-if="stepError" class="font-medium" role="alert">⚠ {{ stepError }}</p>
 

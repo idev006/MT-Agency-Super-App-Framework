@@ -1,4 +1,5 @@
 import { safeDriveImageUrl } from '../media/drive-image-url.js'
+import { toPhotoPolicy } from '../../domain/media/photo-policy.js'
 import { stickerOf, toSticker, toStickerList } from '../../domain/reference/sticker-categories.js'
 const READ_CONTACT = 'vehicle.contact.read'
 const READ_PHOTOS = 'vehicle.photos.read'
@@ -75,6 +76,8 @@ export function mapVehicleResponse(value, permissions) {
     qr: Object.freeze({ known: typeof value.qr?.active === 'boolean', active: value.qr?.active === true, issuedAt: optionalText(value.qr?.issuedAt) }),
     contacts: mapContacts(value.contacts, permissions.has(READ_CONTACT)),
     photos: mapPhotos(value.photos, permissions.has(READ_PHOTOS)),
+    // VC-ADR-055: the photo rules in force (backend ≥0.9.64, photo readers only; null otherwise)
+    photoPolicy: permissions.has(READ_PHOTOS) ? toPhotoPolicy(value.photoPolicy) : null,
   }
 }
 

@@ -57,6 +57,16 @@ export function useSystemSettings({ repository, permissions }) {
     catch (error) { logFailure.value = failureOf(error); logPhase.value = UNCERTAIN_FAILURES.has(logFailure.value.code) ? 'uncertain' : 'error'; return false }
   }
 
+  // VC-ADR-055: save the photo rules (system admin)
+  const photoPhase = ref('idle'), photoFailure = ref(null)
+  async function savePhotoPolicy(policy) {
+    photoFailure.value = null
+    if (!canManage.value || typeof source.updatePhotoPolicy !== 'function') { photoPhase.value = 'forbidden'; return false }
+    photoPhase.value = 'submitting'
+    try { settings.value = (await source.updatePhotoPolicy({ policy })).settings; photoPhase.value = 'success'; return true }
+    catch (error) { photoFailure.value = failureOf(error); photoPhase.value = UNCERTAIN_FAILURES.has(photoFailure.value.code) ? 'uncertain' : 'error'; return false }
+  }
+
   return { phase, settings, failure, savePhase, saveFailure, canRead, canManage, load, save, stickerPhase, stickerFailure, saveStickerCategories,
-    logPhase, logFailure, saveLogPolicy }
+    logPhase, logFailure, saveLogPolicy, photoPhase, photoFailure, savePhotoPolicy }
 }
