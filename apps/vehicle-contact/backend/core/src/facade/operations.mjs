@@ -8,6 +8,7 @@ import {routeFailure, requestIdOf} from '../../../gas/src/api/routes/Router.js';
 import {validateOperationPayload} from '../../../gas/src/api/dto/OperationPayloadValidator.js';
 import {OPERATION_PERMISSIONS, PUBLIC_OPERATIONS, authOptionsFor, publicErrorCode} from '../../../gas/src/api/controllers/OperationController.js';
 import {apiSuccess, apiFailure} from '../../../gas/src/api/responses/ResponseFactory.js';
+import {systemHealth} from '../../../gas/src/api/groups/system/SystemGroup.js';
 import {runFlowAsync} from '../../../gas/src/application/flows/FlowRunner.js';
 import {sessionAuthorizeFlow} from '../../../gas/src/application/flows/SessionAuthorizeFlow.js';
 import {vehicleHistoryFlow, vehicleLookupFlow, vehicleDetailFlow, contactReadFlow, qrResolveFlow, vehiclePhotoFlow}
@@ -119,6 +120,7 @@ export const USE_CASES = Object.freeze({
   'campaigns.list': campaignsList,
   'campaigns.revoke': campaignsRevoke
 });
+const HEALTH_OP = 'system.health';
 const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute', 'registrations.review', 'registrations.photo',
   'photos.replace', 'retention.execute']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)
@@ -136,7 +138,7 @@ const randomId = () => randomBytes(32).toString('hex'); // 64 hex, the format of
 // media: the MediaStore port (photo bridge) or a function returning it — built on the first photo request
 // passwords: the PasswordHasher port (server.mjs injects node:crypto PBKDF2); google: the Google OIDC port (none yet)
 // deriveSecret: purpose => hex HMAC-SHA256 with the auth pepper (= legacy security.deriveSecret) — registration QR tokens
-export function createCoreFacade({store, media = null, passwords = null, google = null, resetEnabled = false, deriveSecret = null, retentionExecuteEnabled = false,
+export function createCoreFacade({store, media = null, passwords = null, google = null, resetEnabled = false, deriveSecret = null, retentionExecuteEnabled = false, health = true,
   memo = createMemo(), now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS, useCases = USE_CASES}) {
   const overlap = Object.keys(useCases).filter(op => Object.prototype.hasOwnProperty.call(flows, op));
   if (overlap.length) throw new Error('OPERATION_IN_FLOWS_AND_USE_CASES:' + overlap.join(','));
@@ -157,13 +159,15 @@ export function createCoreFacade({store, media = null, passwords = null, google 
   };
   const mediaOf = () => (mediaPort ||= typeof media === 'function' ? media() : media);
   return Object.freeze({
-    operations: Object.freeze([...Object.keys(flows), ...Object.keys(useCases)]),
+    operations: Object.freeze([...Object.keys(flows), ...Object.keys(useCases), ...(health ? [HEALTH_OP] : [])]),
     async dispatch(request, method = 'POST') {
       const requestId = requestIdOf(request);
       const failure = routeFailure(request, method);
       if (failure) return failure;
       try {
         const op = request.group + '.' + request.action;
+        // N4: health on the core (GET / and POST system.health) — the same systemHealth() as the legacy engine, no store read
+        if (health && op === HEALTH_OP) return apiSuccess(systemHealth({persistence: {engine: 'firestore', dualWrite: false}}), requestId);
         const own = k => Object.prototype.hasOwnProperty.call(k, op);
         if (!own(flows) && !own(useCases)) return apiFailure('NOT_FOUND', 'Unavailable operation', requestId);
         const payload = request.payload || {};
