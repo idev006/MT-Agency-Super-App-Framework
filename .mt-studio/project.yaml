@@ -6,7 +6,7 @@ project:
   app_dir: apps/vehicle-contact
   default_branch: main
 rules_extra:
-  - "Owner 2026-11-28 (VC-ADR-052): one-time approval 'อนุมัติแผน DEV นี้' covers subsequent synthetic-DEV merges/deploys and clasp publication; do not re-ask per round. Keep CI, live proof and the P6VC_OWNER_OK execution guard. Excludes real data, permanent deletes, system.reset.execute and creating a new p6vc-auth-pepper version."
+  - "Owner 2026-11-28 (VC-ADR-052): one-time approval 'อนุมัติแผน DEV นี้' was a one-time DEV approval; SUPERSEDED by the owner's 2026-11-28 handover prompt: every merge and every deploy needs the owner's OK for that round. Keep CI, live proof and the P6VC_OWNER_OK execution guard. Excludes real data, permanent deletes, system.reset.execute and creating a new p6vc-auth-pepper version."
   - "PDPA: do not block or caveat development on PDPA; legal writes consent at go-live (owner 2026-11-26). Synthetic DEV data still applies."
   - "Before go-live: switch off the system reset (P6VC_SYSTEM_RESET=ENABLED on the test system)."
 context:

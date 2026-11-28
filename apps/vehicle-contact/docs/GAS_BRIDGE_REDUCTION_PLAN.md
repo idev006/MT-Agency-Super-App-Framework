@@ -1,5 +1,7 @@
 # GAS project file reduction — candidate and publication gate
 
+**Status:** DONE 2026-11-28 — the GAS project is the photo bridge only (GAS @117: `MediaBridge.gs` + `appsscript.json`); the deploy chain pushes the bridge by default only after PR #348 merges (until then: `--bridge-only` + `P6VC_OWNER_OK_REMOVE_GAS_FILES=REMOVE_GAS_API_FILES`). Evidence: DECISION_LOG VC-ADR-053. The sections below are the plan as it was carried out.
+
 Owner direction 2026-11-28: use `clasp` to manage GAS source; the deployed GAS project should contain only a few files. Track as [#329](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/329) and VC-ADR-053.
 
 ## Verified current state

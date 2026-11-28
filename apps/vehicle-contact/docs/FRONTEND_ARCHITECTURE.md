@@ -1,5 +1,7 @@
 # P6 Vehicle Contact Frontend Architecture
 
+> **Current state (2026-11-28):** the Cloudflare Worker sections below are history — the Worker was retired and deleted (VC-ADR-056 W1). The web app calls p6vc-core `/api/frontend` directly, configured by `VITE_CORE_API_URL` (+ `VITE_BASE_PATH`). Current status: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
+
 > **CURRENT HANDOFF (2026-11-22) — ARCHITECTURE/DESIGN REFERENCE.** The approved boundaries and composition guidance below are preserved; POC routes, allowlists and the 2026-11-18 acceptance section are historical, not the current runtime or frontend inventory. Defer current status and implementation structure to [Current Delivery Status](CURRENT_DELIVERY_STATUS.md), [Delivery Execution Plan](PROJECT_MANAGEMENT_PLAN_20261121.md), [Live API Automation](LIVE_API_AUTOMATION.md), and [Code Map](CODE_MAP_20261121.md). Do not resume the old POC as missing work.
 
 Status: Vue SPA POC, Cloudflare `/api/frontend` and GitHub Pages deployment implemented and verified on 2026-11-18.
