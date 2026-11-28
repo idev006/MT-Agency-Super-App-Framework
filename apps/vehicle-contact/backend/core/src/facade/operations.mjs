@@ -30,6 +30,8 @@ import {registrationsListPending, registrationsDetail, registrationsReview, regi
 import {vehiclesUpdate, vehiclesCancel, contactsUpdate, changesSubmit, changesListPending, changesReview, changesListMine}
   from '../use-cases/vehicle-admin.mjs';
 import {qrIssue, qrRevoke, qrReplace, qrExport} from '../use-cases/qr-manage.mjs';
+import {photosList, photosReplace, retentionListDue, retentionListExecutable, retentionApprove, retentionJobStatus, retentionExecute,
+  auditQuery, auditExport} from '../use-cases/photos-retention-audit.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -86,9 +88,20 @@ export const USE_CASES = Object.freeze({
   'qr.issue': qrIssue,
   'qr.revoke': qrRevoke,
   'qr.replace': qrReplace,
-  'qr.export': qrExport
+  'qr.export': qrExport,
+  // N2: photos, retention (execute OFF unless enabled, as the legacy engine), audit
+  'photos.list': photosList,
+  'photos.replace': photosReplace,
+  'retention.listDue': retentionListDue,
+  'retention.listExecutable': retentionListExecutable,
+  'retention.approve': retentionApprove,
+  'retention.jobStatus': retentionJobStatus,
+  'retention.execute': retentionExecute,
+  'audit.query': auditQuery,
+  'audit.export': auditExport
 });
-const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute', 'registrations.review', 'registrations.photo']);
+const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute', 'registrations.review', 'registrations.photo',
+  'photos.replace', 'retention.execute']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)
 export function createMemo(ttlMs = REFERENCE_CACHE_MS, nowMs = () => Date.now()) {
   const m = new Map();
@@ -104,7 +117,7 @@ const randomId = () => randomBytes(32).toString('hex'); // 64 hex, the format of
 // media: the MediaStore port (photo bridge) or a function returning it — built on the first photo request
 // passwords: the PasswordHasher port (server.mjs injects node:crypto PBKDF2); google: the Google OIDC port (none yet)
 // deriveSecret: purpose => hex HMAC-SHA256 with the auth pepper (= legacy security.deriveSecret) — registration QR tokens
-export function createCoreFacade({store, media = null, passwords = null, google = null, resetEnabled = false, deriveSecret = null,
+export function createCoreFacade({store, media = null, passwords = null, google = null, resetEnabled = false, deriveSecret = null, retentionExecuteEnabled = false,
   memo = createMemo(), now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS, useCases = USE_CASES}) {
   const overlap = Object.keys(useCases).filter(op => Object.prototype.hasOwnProperty.call(flows, op));
   if (overlap.length) throw new Error('OPERATION_IN_FLOWS_AND_USE_CASES:' + overlap.join(','));
@@ -142,7 +155,7 @@ export function createCoreFacade({store, media = null, passwords = null, google 
           : await runFlowAsync(sessionAuthorizeFlow({token: request.sessionToken, permission: OPERATION_PERMISSIONS[op], ...authOptionsFor(op)}, {sha256, now}), {store: s});
         const media = MEDIA_OPERATIONS.has(op) && (op !== 'system.reset.execute' || resetEnabled) ? mediaOf() : null;
         const result = own(useCases) ? await useCases[op](payload, principal, {store: s, now, id, sha256, media, logs,
-            passwords, resetEnabled, deriveSecret, refreshLogPolicy: () => { policy.at = -Infinity; }})
+            passwords, resetEnabled, deriveSecret, retentionExecuteEnabled, refreshLogPolicy: () => { policy.at = -Infinity; }})
           : await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, passwords, google, memo, media});
         return apiSuccess(result, requestId);
       } catch (e) {
