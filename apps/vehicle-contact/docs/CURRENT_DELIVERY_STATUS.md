@@ -16,7 +16,7 @@ Next steps, rules and the ready-to-paste prompt: [PROJECT_HANDOVER.md](PROJECT_H
 | Cloudflare Worker | **retired** (VC-ADR-056 W1): code removed from the repo; the Cloudflare deletion follows the merge (owner approved) | the browser calls p6vc-core `/api/frontend`; gateway contract checked by `backend/cloudrun/verify-gateway-failclosed.mjs` |
 | **p6vc-core** (Cloud Run, Node 22 ESM, async, gRPC Firestore) | front door; answers **24 / 64** ops, forwards the rest to p6vc-api | 2 vCPU, 512 Mi, cpu-boost, `UV_THREADPOOL_SIZE=2×vCPU`, secrets: media bridge + `p6vc-auth-pepper` |
 | p6vc-api (Cloud Run, legacy engine) | the sync GAS-style backend (`backend/gas/src`), concurrency 1 | frozen (VC-ADR-051): no new features, deleted at N4 |
-| GAS web app | **@113**, photo bridge (upload / read / trash / list / organize / stat, HMAC signed) + old API | current clasp artifact has 60 `.gs` files; bridge-only candidate is local, not published |
+| GAS web app (image manager) | **@117 — photo bridge ONLY** (upload / read / trash / list / organize / stat, HMAC signed): 2 files `MediaBridge.gs` + `appsscript.json` (G1 done 2026-11-28; was 60 files + old API + 12 editor functions) | managed with clasp; the deploy chain pushes the bridge by default; `--full-api` (+ RESTORE_GAS_API_FILES) puts the old files back for a rollback |
 | Cloud Run Jobs | `p6vc-housekeeping` (mode APPLY: Drive trash, 30-day undo), `p6vc-photo-audit` (read-only), `p6vc-reference-seed` (manual DRY_RUN default) | housekeeping daily 03:30 Bangkok; R10 job has a separate manual workflow |
 | Firestore `(default)` | 25 tables, **38** composite indexes (`contracts/firestore-indexes.v1.json`), TTL on log tables | indexes are deployed **before** the backend |
 | Google Drive | photos: `รถ/<province>/<province> <plate> · <vehicle id 8>/<SIDE>.<ext>`, shared by link | owner: photos are not secret |
@@ -29,6 +29,7 @@ Operations on the core (`backend/core/src/facade/operations.mjs`):
 
 | Check | Result |
 |---|---|
+| **G1: GAS = image manager only** (owner: REMOVE_GAS_API_FILES) | `b3c0a2f` bridge-only push: "Pushed 2 files" (MediaBridge.gs, appsscript.json), version 117 pinned; bridge check PASS (artifact bridge, 0.9.66); photo-audit job (bridge list/stat) exit 0; live suite through the core 112/112 incl. photos.upload ×5, registrations.photo, photos.list, vehicles.photo, photos.replace through the bridge; DATA_PROOF 7/7 at 08:42:45.970Z after the inventory ended 08:42:45.874Z. Rollback target @116 |
 | Deploy chain 0.9.66 (`9608b87`) | GAS @116 (bridge check PASS full 0.9.66), p6vc-api 46121927144, p6vc-core 46122141226, jobs 46122377909 — all exit 0 |
 | Live suite through the core (0.9.66) | **112/112 PASS**, DATA_PROOF 7/7 at 07:46:06.266Z after the inventory ended 07:46:06.167Z |
 | R11 admin-tools live proof | RESET_PREVIEW for `admin` (run 46122750437, execution p6vc-admin-tools-pghqv completed, no secret mounted); Firestore read-back before = after (nothing written) |

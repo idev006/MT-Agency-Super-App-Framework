@@ -28,7 +28,7 @@
 | [AGILE_KANBAN.md](AGILE_KANBAN.md) — P6 Vehicle Contact — Agile Kanban Operations & Live Issue Board | Navigation / current | 2026-11-28 | 2026-11-27 | SUPERSEDED 2026-11-27 — board of 2026-11-22; current board: KANBAN_BOARD.md; work order an |
 | [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) — P6 Vehicle Contact — Current Delivery Status / Resume Here | Navigation / current | 2026-11-28 | 2026-11-28 | DEV / synthetic data only. Engine move to native async Node in progress (24 of 64 operatio |
 | [DECISION_LOG.md](DECISION_LOG.md) — P6 Vehicle Contact — Decision and approval log | Navigation / current | 2026-11-28 | 2026-11-28 |  |
-| [GAS_BRIDGE_REDUCTION_PLAN.md](GAS_BRIDGE_REDUCTION_PLAN.md) — GAS project file reduction — candidate and publication gate | Plan / process | 2026-11-28 | 2026-11-28 |  |
+| [GAS_BRIDGE_REDUCTION_PLAN.md](GAS_BRIDGE_REDUCTION_PLAN.md) — GAS project file reduction — candidate and publication gate | Plan / process | 2026-11-28 | 2026-11-28 | DONE 2026-11-28 — the GAS project is the photo bridge only (GAS @117: `MediaBridge.gs` + ` |
 | [KANBAN_BOARD.md](KANBAN_BOARD.md) — P6 Vehicle Contact — Kanban board | Plan / process | 2026-11-28 | 2026-11-28 |  |
 | [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md) — Node core — finish: the whole backend as native async Node.js (VC-ADR-051) | Plan / process | 2026-11-28 | 2026-11-28 |  |
 | [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) — P6 Vehicle Contact — Project Handover / Next AI | Navigation / current | 2026-11-28 | 2026-11-28 | current. Read CURRENT_DELIVERY_STATUS.md (what runs, last proof) with this page (how to wo |

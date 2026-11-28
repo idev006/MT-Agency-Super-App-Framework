@@ -128,7 +128,7 @@ The AI never sees the password. Workflow **P6 Vehicle Contact admin tools (manua
 Plan approved 2026-11-28 (VC-ADR-056), in this order — status on [KANBAN_BOARD.md](KANBAN_BOARD.md):
 0. **R03** photo rules: #334 (BE 0.9.64) + #335 (FE 0.9.24) merged; backend deploy + live proof pending the owner's OK.
 0. **T1 #336** code map scans the core, core LSP config, README, Kanban board document · **L1 #337** localhost (core dev server with stub adapters + FE dev) · **W1 #338** Worker out of the suite / CI / docs, then deleted (owner approved the deletion).
-1. **G1 #329** — review [GAS_BRIDGE_REDUCTION_PLAN.md](GAS_BRIDGE_REDUCTION_PLAN.md): a local one-file bridge candidate is tested, but the remote 60-file GAS project remains until R10/R11 editor jobs, old trigger and proof-chain dependencies are resolved. Remote source removal requires a reviewed dry run and separate owner confirmation.
+1. **G1 #329 — DONE 2026-11-28**: the GAS project is the image manager only (2 files, @117). There are no GAS editor functions any more: reference seed = core job (R10, `reference-seed-job.yml`), first admin / admin reset = core job (R11, `admin-tools-job.yml`), housekeeping / photo audit = core jobs. A normal deploy pushes the bridge; `--full-api` with `P6VC_OWNER_OK_RESTORE_GAS_FILES=RESTORE_GAS_API_FILES` puts the old files back (rollback only).
 2. **N1b #312** — PRs 1–2 (`qr.history`, `vehicles.listMine`) are proven on 0.9.61–0.9.62. Move the remaining vehicles, QR, change requests and registration review to native async Node in small PRs. Fix approval's whole-table vehicle read using plate + province.
 3. N2 (#313), N3 (#314), finish R10 recovery gate (#303), R11 (#304, owner security review), N4 (#255).
 4. Photos R03 (#296), R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
@@ -140,6 +140,7 @@ Plan approved 2026-11-28 (VC-ADR-056), in this order — status on [KANBAN_BOARD
 - The local `.env` points `P6VC_GAS_EXEC_URL` at GAS `/exec`: set BOTH target vars to the core for the live suite.
 - Generated maps must be regenerated after any change that moves a table access, an operation or a count; a test literal like `x.length, 64` is picked up as an operation count — avoid it.
 - Squash merges: `git branch --merged` does not show merged branches; use the PR state (`gh pr list --state all --head <branch>`).
+- Stop the local dev servers (`p6vc-core-dev` :8787, `p6vc-frontend-local` :5175) before `npm run check` in backend/gas: a test there listens on a fixed port and fails while they run.
 - Kanban: after an issue changes status run `node scripts/gen-kanban.mjs` (draws docs/KANBAN_BOARD.md from the issues; needs `gh`) and commit it in the same docs PR.
 - LSP: `jsconfig.json` in backend/core (reaches the shared `../gas/src` rules), backend/gas (also lists `../core/src`) and frontend. A jsconfig change is picked up by a new session.
 - Code maps: `scripts/gen-system-maps.mjs` scans backend/gas/src/application + security and backend/core/src (not adapters); a table name held in a constant (`const SETTINGS = 'vc_settings'`) is followed; names built at run time are not.
