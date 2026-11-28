@@ -11,6 +11,7 @@
 
 | เอกสาร | ใช้ทำอะไร |
 |---|---|
+| [HANDOFF_NEXT_SESSION_20261128.md](HANDOFF_NEXT_SESSION_20261128.md) | ส่งต่องานแชทถัดไป (2026-11-28): สถานะ, PR ที่เปิด, งานถัดไป N1b PR 3, สิ่งที่รอ owner |
 | [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) | ความจริงปัจจุบัน: อะไรรันอยู่ เวอร์ชัน หลักฐานล่าสุด งานที่กำลังทำ — จุดกลับมาทำงาน |
 | [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) | prompt สำหรับ AI ตัวต่อไป, กฎ owner, ผังโค้ด, วิธีย้าย operation ไป core, deploy + proof, next actions |
 | [ROADMAP.md](ROADMAP.md) | ลำดับงานที่เหลือ (issue ละข้อ) + สถานะ |
@@ -21,7 +22,7 @@
 | [generated/CHANGE_CHECKLIST.md](generated/CHANGE_CHECKLIST.md) | (generated, CI-checked) ไฟล์ที่ต้องแตะเมื่อเพิ่ม operation + สิ่งที่ต้อง deploy |
 | [CLOUD_RUN_RELEASE_AND_ROLLBACK_RUNBOOK.md](CLOUD_RUN_RELEASE_AND_ROLLBACK_RUNBOOK.md) | ขั้นตอน release / rollback ของ Cloud Run |
 
-## 2. เอกสารทั้งหมด (161 ไฟล์)
+## 2. เอกสารทั้งหมด (162 ไฟล์)
 
 | เอกสาร | หมวด | อัปเดต (git) | วันที่ในไฟล์ | สถานะ / หมายเหตุ |
 |---|---|---|---|---|
@@ -41,7 +42,7 @@
 | [PRODUCTION_READINESS_PLAN_20261121.md](PRODUCTION_READINESS_PLAN_20261121.md) — P6 Vehicle Contact — Production Readiness Plan | Plan / process | 2026-11-27 | 2026-11-23 | HISTORICAL TRACKER (2026-11-21) — the gate list (PDPA, security, UAT, release) is still in |
 | [PROJECT_MANAGEMENT_PLAN_20261121.md](PROJECT_MANAGEMENT_PLAN_20261121.md) — P6 Vehicle Contact — Project Management / Delivery Execution Plan | Plan / process | 2026-11-27 | 2026-11-27 | SUPERSEDED 2026-11-27 — slice state of 2026-11-21; current order and status: CURRENT_DELIV |
 | [API_TEST_SUITE_PHASE1.md](API_TEST_SUITE_PHASE1.md) — P6 Vehicle Contact — API Test Suites (Approved 2026-11-17) | Engineering reference | 2026-11-26 | 2026-11-26 | **Status at this snapshot:** PARTIALLY IMPLEMENTED / LIVE BACKEND INTEGRATION GATED |
-| [ARCHITECTURE_SSOT.md](ARCHITECTURE_SSOT.md) — P6 Vehicle Contact — Architecture SSOT (canonical, living) | Standard / architecture | 2026-11-26 | 2026-11-22 | **Document:** P6VC-ARCH-001 |
+| [ARCHITECTURE_SSOT.md](ARCHITECTURE_SSOT.md) — P6 Vehicle Contact — Architecture SSOT (canonical, living) | Standard / architecture | 2026-11-26 | 2026-11-28 | **Document:** P6VC-ARCH-001 |
 | [BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md](BACKEND_DURABLE_JOURNALING_B2B_EVIDENCE_20261122.md) — B2b — Durable journaling for `registrationReview` and `assignRoles` | Evidence | 2026-11-26 | 2026-11-26 |  |
 | [CLOUD_RUN_RELEASE_AND_ROLLBACK_RUNBOOK.md](CLOUD_RUN_RELEASE_AND_ROLLBACK_RUNBOOK.md) — Cloud Run release and rollback runbook (VC-ADR-041) | Runbook | 2026-11-26 | 2026-11-26 |  |
 | [SCRIPT_PROPERTIES.md](SCRIPT_PROPERTIES.md) — P6VC — GAS Script Properties catalog | Reference | 2026-11-26 | **⚠ ไม่ระบุ** |  |
@@ -102,7 +103,7 @@
 | [E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md](E3_PRODUCTION_SIGNOFF_DOSSIER_20261121.md) — E3 — Production sign-off dossier (prepared for owner review) | Proposal / decision input | 2026-11-22 | 2026-11-22 |  |
 | [FIRESTORE_PHYSICAL_MAPPING_20261122.md](FIRESTORE_PHYSICAL_MAPPING_20261122.md) — Firestore physical mapping (DERIVED projection of the logical SSOT) | Reference | 2026-11-22 | 2026-11-22 | **Document:** P6VC-FS-MAP-001 |
 | [FRONTEND_A11Y_CONTRAST_TOUCH_EVIDENCE_20261122.md](FRONTEND_A11Y_CONTRAST_TOUCH_EVIDENCE_20261122.md) — P6 Vehicle Contact — Semantic Contrast (WCAG AA) + Touch-Target Evidence | Evidence | 2026-11-22 | 2026-11-22 | SOURCE-REVIEW EVIDENCE (partial gate matrix; full sign-off pending) |
-| [FRONTEND_ARCHITECTURE.md](FRONTEND_ARCHITECTURE.md) — P6 Vehicle Contact Frontend Architecture | Standard / architecture | 2026-11-22 | 2026-11-22 | Vue SPA POC, Cloudflare `/api/frontend` and GitHub Pages deployment implemented and verifi |
+| [FRONTEND_ARCHITECTURE.md](FRONTEND_ARCHITECTURE.md) — P6 Vehicle Contact Frontend Architecture | Standard / architecture | 2026-11-22 | 2026-11-28 | Vue SPA POC, Cloudflare `/api/frontend` and GitHub Pages deployment implemented and verifi |
 | [FRONTEND_UI_COMPLIANCE_CHECKLIST.md](FRONTEND_UI_COMPLIANCE_CHECKLIST.md) — P6 Vehicle Contact — Frontend UI Compliance Checklist | Engineering reference | 2026-11-22 | 2026-11-18 | REQUIRED MERGE GATE |
 | [FRONTEND_UI_DENSITY_P13_EVIDENCE_20261122.md](FRONTEND_UI_DENSITY_P13_EVIDENCE_20261122.md) — P6 Vehicle Contact — P13 Key-Message & Viewport-First Density Evidence | Evidence | 2026-11-22 | 2026-11-22 | SOURCE-REVIEW EVIDENCE (partial gate matrix; full sign-off pending) |
 | [FRONTEND_UI_UX_PRINCIPLES.md](FRONTEND_UI_UX_PRINCIPLES.md) — P6 Vehicle Contact — Frontend UI/UX Principles | Engineering reference | 2026-11-22 | 2026-11-22 | REQUIRED BASELINE |
@@ -186,6 +187,7 @@
 | [SYSTEM_ANALYSIS_V2.md](SYSTEM_ANALYSIS_V2.md) — P6 Vehicle Contact — System Analysis & Design v2.0 | Reference | 2026-11-16 | 2026-10-31 |  |
 | [TEAM_UPSKILL_RESEARCH_2026-10-31.md](TEAM_UPSKILL_RESEARCH_2026-10-31.md) — MT Vehicle Contact — Team Upskill / Reskill Research | Engineering reference | 2026-11-16 | 2026-10-31 | **Research date:** 31 ตุลาคม 2569 |
 | [WORKFLOW_AND_MEDIA_PIPELINE.md](WORKFLOW_AND_MEDIA_PIPELINE.md) — MT Vehicle Contact v1.0 — Workflow & Photo Pipeline | Plan / process | 2026-11-16 | 2026-10-30 | PROPOSED / Implementation-ready design draft |
+| [HANDOFF_NEXT_SESSION_20261128.md](HANDOFF_NEXT_SESSION_20261128.md) — Handoff — ส่งต่องานให้แชทถัดไป (2026-11-28) | Navigation / current | — | 2026-11-28 | CURRENT HANDOFF — จุดเริ่มของแชทใหม่. ความจริงปัจจุบันอยู่ที่ CURRENT_DELIVERY_STATUS.md;  |
 
 ## 3. กติกาความสด (freshness rules)
 

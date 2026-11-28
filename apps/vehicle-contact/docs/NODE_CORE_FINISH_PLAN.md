@@ -1,7 +1,8 @@
 # Node core — finish: the whole backend as native async Node.js (VC-ADR-051)
 
-**Progress (2026-11-28):** 20/64 operations live on the core at backend 0.9.58; N1a PR 3 builds two more (`system.reset.*`)
-in 0.9.59, pending merge, deploy and proof. `system.health` remains on the legacy engine until N4 so the deploy smoke still
+**Progress (2026-11-28, refreshed):** 24/64 operations live on the core at backend 0.9.66 (N1a done; N1b PRs 1–2 done; Worker
+deleted — W1; GAS = photo bridge only — G1). Current status: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); the
+"Today (0.9.56)" diagram below is the starting point, kept for history. `system.health` remains on the legacy engine until N4 so the deploy smoke still
 checks the published backend version end to end. Owner clarification: map code with LSP; target runtime is the native async
 Node core, Firestore and the GAS API for Google Drive photos, without Cloudflare Worker.
 
