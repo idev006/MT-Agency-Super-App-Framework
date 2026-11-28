@@ -23,6 +23,14 @@ frontend/ (Vue shell: screens + on-device photo work) ──► backend/core (p6
 - `backend/gas` — shared rules still used by the core, the legacy engine, and the GAS image manager (managed with `clasp`; being reduced to the bridge only, G1).
 - `tools/p6vc-api-test-console` — the old Cloudflare Worker, being retired (W1).
 
+## Run it on this computer (no deploy)
+
+```bash
+npm --prefix apps/vehicle-contact/backend/core run dev
+VITE_CORE_API_URL=http://localhost:8787/api/frontend npm --prefix apps/vehicle-contact/frontend run dev
+```
+The real core with stub adapters (in memory, synthetic users and data) — details: [PROJECT_HANDOVER.md §4b](docs/PROJECT_HANDOVER.md).
+
 ## Checks
 
 ```bash

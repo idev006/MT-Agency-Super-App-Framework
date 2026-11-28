@@ -8,7 +8,8 @@
   },
   "scripts": {
     "test": "node --test tests/*.test.mjs tests/generated/*.test.mjs",
-    "gen:acceptance": "node scripts/gen-core-acceptance.mjs"
+    "gen:acceptance": "node scripts/gen-core-acceptance.mjs",
+    "dev": "node scripts/dev-server.mjs"
   },
   "dependencies": {
     "@google-cloud/firestore": "^9.4.1"

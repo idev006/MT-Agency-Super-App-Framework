@@ -33,6 +33,37 @@
       "env": {
         "VITE_UI_PREVIEW": "true"
       }
+    },
+    {
+      "name": "p6vc-core-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "apps/vehicle-contact/backend/core",
+        "run",
+        "dev"
+      ],
+      "port": 8787,
+      "autoPort": false
+    },
+    {
+      "name": "p6vc-frontend-local",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "apps/vehicle-contact/frontend",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5175",
+        "--strictPort"
+      ],
+      "port": 5175,
+      "env": {
+        "VITE_CORE_API_URL": "http://localhost:8787/api/frontend"
+      },
+      "autoPort": false
     }
   ]
 }

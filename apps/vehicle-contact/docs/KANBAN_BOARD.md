@@ -1,9 +1,9 @@
 # P6 Vehicle Contact — Kanban board
 
-**Drawn:** 2026-11-28 04:45 UTC from the GitHub issues by `node scripts/gen-kanban.mjs` — do not edit by hand.
+**Drawn:** 2026-11-28 04:53 UTC from the GitHub issues by `node scripts/gen-kanban.mjs` — do not edit by hand.
 **Source of truth:** the issues (labels `status:*`, `priority:*`, milestones). Order of work and done-criteria: [ROADMAP.md](ROADMAP.md). Current state: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
 
-## กำลังทำ (in progress) — 6
+## กำลังทำ (in progress) — 7
 
 | Item | Issue | Milestone | Priority |
 |---|---|---|---|
@@ -11,6 +11,7 @@
 | N1b | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) Vehicles, QR, change requests, registration review as native async Node (16 ops) | Node core (VC-ADR-046) | P1 |
 | G1 | [#329](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/329) Reduce clasp project to photo bridge files | Node core (VC-ADR-046) | P1 |
 | T1 | [#336](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/336) Code map covers the Node core + LSP for core + README current | Node core (VC-ADR-046) | P1 |
+| L1 | [#337](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/337) Run the web app + Node core on localhost with stub adapters (no cloud) | Node core (VC-ADR-046) | P1 |
 | R03 | [#296](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/296) PR 2 — web app resizes by the admin policy; photo replace resizes too; admin fields | Photos (VC-ADR-049/050) | P2 |
 | R10 | [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) 2c-3b — reference seed as a core job | Node core (VC-ADR-046) | P2 |
 
@@ -26,14 +27,13 @@
 | VC-W21 | [#21](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/21) Controlled pilot deploy, training and rollback | Go-live readiness | P0 |
 | VC-W22 | [#22](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/22) Visitor pass and entry-exit module (future only) | Go-live readiness | P3 |
 
-## ถัดไป (todo) — 10
+## ถัดไป (todo) — 9
 
 | Item | Issue | Milestone | Priority |
 |---|---|---|---|
 | N4 | [#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255) Cut over: web app → core directly, Worker retired, legacy + GAS API deleted | Node core (VC-ADR-046) | P1 |
 | R14 | [#306](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/306) Capacity for 100 simultaneous logins | Go-live readiness | P1 |
 | R16 | [#307](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/307) Production switches and owner actions | Go-live readiness | P1 |
-| L1 | [#337](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/337) Run the web app + Node core on localhost with stub adapters (no cloud) | Node core (VC-ADR-046) | P1 |
 | W1 | [#338](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/338) Retire the Cloudflare Worker (owner approved deletion) | Node core (VC-ADR-046) | P1 |
 | R04 | [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) PR C — move existing photos into their vehicle folders (job, dry run first) | Photos (VC-ADR-049/050) | P2 |
 | R11 | [#304](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/304) 2c-3c — first admin + admin password reset as core jobs (security review) | Node core (VC-ADR-046) | P2 |
