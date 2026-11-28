@@ -21,7 +21,7 @@ Status labels: `status:todo` → `status:in-progress` → closed (with the evide
 | R04 | Move existing photos into their vehicle folders (PR C, dry run first) | [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) | R01 | todo |
 | N1a | Foundation + system / list ops as native async Node (7 ops; system.health stays legacy until N4) — VC-ADR-051 | [#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311) | — | **done — 0.9.60 proven** (PRs 1–3 + fix #323; core 22/64; 126/126 live suite, DATA_PROOF 7/7; system.health deferred to N4) |
 | N4a | Browser calls the core directly; no Worker route in the web build (VC-ADR-052) | [#322](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/322) | N1a core front door | **done — FE 0.9.23 live** (PR #324, Pages run 46050309613; public browser and core gateway proof) |
-| N1b | Vehicles, QR, change requests, registration review (16 ops) | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) | N1a | in progress — PR 1 built 0.9.61 (`qr.history` native async); CI, deploy and live proof pending |
+| N1b | Vehicles, QR, change requests, registration review (16 ops) | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) | N1a | in progress — PR 1 deployed and proven 0.9.61 (`qr.history` native async; 36/36 dual call, 126/126 suite, DATA_PROOF 7/7) |
 | N2 | Photos, retention, audit (10 ops) | [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) | N1a | todo |
 | N3 | Users, organizations, campaigns (15 ops) | [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) | N1a | todo |
 | R10 | GAS 2c-3b — reference seed as a core job | [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) | — | todo |
@@ -31,8 +31,8 @@ Status labels: `status:todo` → `status:in-progress` → closed (with the evide
 | R16 | Production switches + owner actions (reset off, Drive storage, legal, pepper, Google login, GAS trigger) | [#307](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/307) | before real data | todo |
 | R17 | Apply the new log retention to old rows (preview + confirm) | [#308](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/308) | owner confirmation | todo |
 
-Progress of the engine move: **22 of 64 operations live** on the core (officer path 6, auth 6, public registration 4,
-N1a 4: vehicles.list, qr.markPrinted, system.config.get/update); system.reset.preview/execute proven in 0.9.60. N1b–N3 move the next groups as native async Node ([NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md), VC-ADR-051); N4 cuts over, including system.health.
+Progress of the engine move: **23 of 64 operations live** on the core (officer path 6, auth 6, public registration 4,
+N1a 4: vehicles.list, qr.markPrinted, system.config.get/update); system.reset.preview/execute proven in 0.9.60; N1b 1: qr.history in 0.9.61. N1b–N3 move the next groups as native async Node ([NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md), VC-ADR-051); N4 cuts over, including system.health.
 
 ## Done (evidence in DECISION_LOG.md)
 - Node core phases 0–2: front door, Integration Manager, shared flows, store rules, async Firestore (gRPC), officer path.
