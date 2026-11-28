@@ -1,8 +1,8 @@
 # P6 Vehicle Contact — Current Delivery Status / Resume Here
 
-**Last verified:** 2026-11-28 (Asia/Bangkok) — backend **0.9.64** + FE **0.9.24** live, proven through the Node core (live suite 112/112 + DATA_PROOF 7/7 fresher than the suite); Cloudflare Worker deleted. R10 reference seed core job DRY_RUN executed successfully.
+**Last verified:** 2026-11-28 (Asia/Bangkok) — backend **0.9.65** + FE **0.9.24** live, proven through the Node core (live suite 112/112 + DATA_PROOF 7/7 fresher than the suite); Cloudflare Worker deleted. R10 reference seed core job DRY_RUN executed successfully.
 **Status:** DEV / synthetic data only. Engine move to native async Node in progress (24 of 64 operations on the core). Not production-ready; go-live items in [ROADMAP.md](ROADMAP.md) R14 / R16 / R17.
-**Main:** `56aeae3` (#341). Before any work: `git fetch origin main`, compare, read open PRs / issues / CI.
+**Main:** `7dc112f` (#344). Before any work: `git fetch origin main`, compare, read open PRs / issues / CI.
 
 This page is the **current truth only** (short on purpose). History up to 2026-11-26 lives in this file's git history, the
 [DECISION_LOG.md](DECISION_LOG.md) evidence column and the dated `*_EVIDENCE_*` documents (they prove only their own date).
@@ -25,9 +25,15 @@ Operations on the core (`backend/core/src/facade/operations.mjs`):
 - shared flows (`FLOWS`): vehicles.lookup / detail / history / photo, qr.resolve, contacts.read, auth.* (6), campaigns.validate, references.registration, photos.upload, registrations.submit
 - native async use cases (`USE_CASES`, `backend/core/src/use-cases/`): vehicles.list, qr.markPrinted, system.config.get, system.config.update, system.reset.preview, system.reset.execute, qr.history, vehicles.listMine
 
-## 2. Last proof (2026-11-28 Bangkok, 0.9.64)
+## 2. Last proof (2026-11-28 Bangkok, 0.9.65)
 
 | Check | Result |
+|---|---|
+| Deploy chain 0.9.65 (`7dc112f`, R11) | GAS @115 (bridge check: full, 0.9.65 PASS), p6vc-api 46120003654, p6vc-core 46120197350, jobs 46120392070 — all exit 0 |
+| Live suite through the core (0.9.65) | **112/112 PASS**, DATA_PROOF 7/7 at 07:20:07.763Z after the inventory ended 07:20:07.663Z; p50 363 ms |
+| R11 admin-tools job | code live in the core image; workflow `admin-tools-job.yml` ready; first run (RESET_PREVIEW) waits for the owner's secret |
+
+| 0.9.64 check | Result |
 |---|---|
 | Deploy chain (`scripts/p6vc-deploy-backend.sh`, first run from the repo) | `56aeae3`: GAS @114 (run 46112332178), p6vc-api 46112531374, p6vc-core 46112691992, jobs 46112939754 — all exit 0; `/` = 0.9.64 |
 | Live suite through the core | **112/112 PASS** (public 11, core gateway 14, authenticated 80 covering 64/64 ops, DATA_PROOF 7; the Worker stage is gone), latency p50 311 ms |
