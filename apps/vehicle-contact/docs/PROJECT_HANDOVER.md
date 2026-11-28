@@ -111,6 +111,18 @@ Other proofs: dual call `backend/core/scripts/ported-compare-live.mjs`, load `ba
 Rollback: remove the op from `USE_CASES` / `FLOWS` and redeploy the core (the legacy engine answers again); Cloud Run
 `rollback-vehicle-cloudrun.yml`; GAS `clasp update-deployment <id> -V <previous>`.
 
+## 5b. Admin tools (R11, VC-ADR-057) — first admin / admin password reset, OWNER-run
+The AI never sees the password. Workflow **P6 Vehicle Contact admin tools (manual)** (`admin-tools-job.yml`), from the live core image:
+1. Owner creates the temporary password as a Secret Manager secret in the Cloud Console (not in a shell history):
+   name `p6vc-admin-temp-password`, project `mt-iam-core-2026`, and grants `p6vc-api-runtime@…` the role *Secret Manager Secret Accessor* on it.
+   Policy: 16–128 characters, upper + lower + digit + symbol, no leading/trailing space.
+2. Run the workflow with `RUN_ADMIN_TOOLS`, mode `RESET_PREVIEW` (or `BOOTSTRAP_PREVIEW` on an empty system), `expected_user_id`
+   (the admin's id from Firestore `vc_users`), a new `run_label` (e.g. `reset-20261128`). PREVIEW writes nothing; the job log
+   shows `READY_FOR_RESET` + sessions to revoke, or the refusal code.
+3. Same inputs with mode `RESET_APPLY` + approval `RESET_ADMIN_ONCE` (bootstrap: `BOOTSTRAP_APPLY` + `BOOTSTRAP_ADMIN_ONCE`).
+   The admin must change the password at the next sign-in; all its sessions are revoked; an audit row is written.
+4. Owner deletes the secret right after. A failed APPLY leaves `RECOVERY_REQUIRED` for that run label: investigate, then use a new label.
+
 ## 6. Next actions
 
 Plan approved 2026-11-28 (VC-ADR-056), in this order — status on [KANBAN_BOARD.md](KANBAN_BOARD.md):

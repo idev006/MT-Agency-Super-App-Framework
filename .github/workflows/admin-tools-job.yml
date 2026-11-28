@@ -1,0 +1,121 @@
+name: P6 Vehicle Contact admin tools (manual)
+
+# R11 (VC-ADR-057): first system admin / admin password reset as a manual core job (was: GAS editor functions).
+# PREVIEW modes never write. APPLY needs the typed approval of that mode. The temporary password is the Secret Manager
+# secret p6vc-admin-temp-password that the OWNER creates before the run and deletes after it — mounted by name, never
+# printed. The pepper (p6vc-auth-pepper) is mounted by name too; it is never re-created here. The job report holds only
+# counters and states.
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type RUN_ADMIN_TOOLS to deploy and execute this job'
+        required: true
+        type: string
+      mode:
+        description: 'PREVIEW modes read only; APPLY modes write'
+        required: true
+        default: RESET_PREVIEW
+        type: choice
+        options: [RESET_PREVIEW, BOOTSTRAP_PREVIEW, RESET_APPLY, BOOTSTRAP_APPLY]
+      approval:
+        description: 'APPLY only: RESET_ADMIN_ONCE or BOOTSTRAP_ADMIN_ONCE (the one of the chosen mode)'
+        required: false
+        type: string
+      username:
+        description: 'Admin username (bootstrap: the new account; reset: the account to reset)'
+        required: false
+        default: admin
+        type: string
+      expected_user_id:
+        description: 'Reset only: the admin user id the owner confirmed (from Firestore vc_users)'
+        required: false
+        type: string
+      run_label:
+        description: 'Reset only: a new label for this approved reset, e.g. reset-20261128 (one-shot per label)'
+        required: false
+        type: string
+      idle_minutes:
+        description: 'Bootstrap only: session idle timeout to set when none exists (1-480)'
+        required: false
+        default: '30'
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: p6vc-admin-tools
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: mt-iam-core-2026
+  REGION: asia-southeast3
+  CORE_SERVICE: p6vc-core
+  JOB: p6vc-admin-tools
+  RUNTIME_SA: p6vc-api-runtime@mt-iam-core-2026.iam.gserviceaccount.com
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: >-
+      github.ref == 'refs/heads/main' && inputs.confirmation == 'RUN_ADMIN_TOOLS' &&
+      ((inputs.mode == 'RESET_APPLY' && inputs.approval == 'RESET_ADMIN_ONCE') ||
+       (inputs.mode == 'BOOTSTRAP_APPLY' && inputs.approval == 'BOOTSTRAP_ADMIN_ONCE') ||
+       inputs.mode == 'RESET_PREVIEW' || inputs.mode == 'BOOTSTRAP_PREVIEW')
+    steps:
+      - name: Validate inputs (no secret involved)
+        env:
+          MODE: ${{ inputs.mode }}
+          USERNAME: ${{ inputs.username }}
+          USER_ID: ${{ inputs.expected_user_id }}
+          LABEL: ${{ inputs.run_label }}
+          IDLE: ${{ inputs.idle_minutes }}
+        run: |
+          [[ "$USERNAME" =~ ^[a-z0-9._-]{3,80}$ ]] || { echo '::error::username'; exit 1; }
+          if [[ "$MODE" == RESET_* ]]; then
+            [[ "$USER_ID" =~ ^[A-Za-z0-9_-]{8,100}$ ]] || { echo '::error::expected_user_id'; exit 1; }
+            [[ "$LABEL" =~ ^[A-Za-z0-9_-]{4,40}$ ]] || { echo '::error::run_label'; exit 1; }
+          else
+            [[ "$IDLE" =~ ^[0-9]{1,3}$ ]] || { echo '::error::idle_minutes'; exit 1; }
+          fi
+
+      - name: Authenticate to Google Cloud (keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy the job from the live core image (secrets by name only)
+        run: |
+          IMAGE=$(gcloud run services describe "$CORE_SERVICE" --project "$PROJECT_ID" --region "$REGION" \
+            --format='value(spec.template.spec.containers[0].image)')
+          if [ -z "$IMAGE" ]; then echo '::error::Deploy p6vc-core first'; exit 1; fi
+          gcloud secrets describe p6vc-admin-temp-password --project "$PROJECT_ID" --format='value(name)' >/dev/null \
+            || { echo '::error::The owner creates the secret p6vc-admin-temp-password before the run (see PROJECT_HANDOVER)'; exit 1; }
+          gcloud run jobs deploy "$JOB" --project "$PROJECT_ID" --region "$REGION" \
+            --image "$IMAGE" --service-account "$RUNTIME_SA" \
+            --command node --args backend/core/src/job.mjs,admin-tools \
+            --tasks 1 --max-retries 0 --task-timeout 600 --cpu 1 --memory 512Mi \
+            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),P6VC_ADMIN_TOOL_MODE=RESET_PREVIEW" \
+            --set-secrets "P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest,P6VC_ADMIN_TEMP_PASSWORD=p6vc-admin-temp-password:latest" \
+            --labels "app=p6vc,component=admin-tools,commit=${GITHUB_SHA::12}" --quiet
+
+      - name: Execute once and wait
+        env:
+          MODE: ${{ inputs.mode }}
+          APPROVAL: ${{ inputs.approval }}
+          USERNAME: ${{ inputs.username }}
+          USER_ID: ${{ inputs.expected_user_id }}
+          LABEL: ${{ inputs.run_label }}
+          IDLE: ${{ inputs.idle_minutes }}
+        run: |
+          gcloud run jobs execute "$JOB" --project "$PROJECT_ID" --region "$REGION" --wait \
+            --update-env-vars "P6VC_ADMIN_TOOL_MODE=${MODE},P6VC_ADMIN_TOOL_APPROVAL=${APPROVAL},P6VC_ADMIN_USERNAME=${USERNAME},P6VC_ADMIN_EXPECTED_USER_ID=${USER_ID},P6VC_ADMIN_RUN_LABEL=${LABEL},P6VC_ADMIN_IDLE_MINUTES=${IDLE}"
+          echo "### P6VC admin tools: ${MODE} executed (report = counters only, in the job log)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- After an APPLY the owner deletes the secret: gcloud secrets delete p6vc-admin-temp-password --project ${PROJECT_ID}" >> "$GITHUB_STEP_SUMMARY"
