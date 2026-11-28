@@ -28,7 +28,8 @@
 |---|---|---|---|---|
 | [AGILE_KANBAN.md](AGILE_KANBAN.md) — P6 Vehicle Contact — Agile Kanban Operations & Live Issue Board | Navigation / current | 2026-11-28 | 2026-11-27 | SUPERSEDED 2026-11-27 — board of 2026-11-22; current board: KANBAN_BOARD.md; work order an |
 | [ARCHITECTURE_SSOT.md](ARCHITECTURE_SSOT.md) — P6 Vehicle Contact — Architecture SSOT (canonical, living) | Standard / architecture | 2026-11-28 | 2026-11-28 | **Document:** P6VC-ARCH-001 |
-| [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) — P6 Vehicle Contact — Current Delivery Status / Resume Here | Navigation / current | 2026-11-28 | 2026-11-28 | DEV / synthetic data only. **The Node core answers all 64 operations** (VC-ADR-051: N1b, N |
+| [CLOUD_RUN_SPIKE_AND_GAS_INCIDENT_20261125.md](CLOUD_RUN_SPIKE_AND_GAS_INCIDENT_20261125.md) — Cloud Run spike + GAS outbound incident (2026-11-25) | Evidence | 2026-11-28 | 2026-11-28 |  |
+| [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) — P6 Vehicle Contact — Current Delivery Status / Resume Here | Navigation / current | 2026-11-28 | 2026-11-28 | DEV / synthetic data only. **p6vc-core is the only backend** (VC-ADR-051 done 2026-11-28): |
 | [DECISION_LOG.md](DECISION_LOG.md) — P6 Vehicle Contact — Decision and approval log | Navigation / current | 2026-11-28 | 2026-11-28 |  |
 | [FRONTEND_ARCHITECTURE.md](FRONTEND_ARCHITECTURE.md) — P6 Vehicle Contact Frontend Architecture | Standard / architecture | 2026-11-28 | 2026-11-28 | Vue SPA POC, Cloudflare `/api/frontend` and GitHub Pages deployment implemented and verifi |
 | [GAS_BRIDGE_REDUCTION_PLAN.md](GAS_BRIDGE_REDUCTION_PLAN.md) — GAS project file reduction — candidate and publication gate | Plan / process | 2026-11-28 | 2026-11-28 | DONE 2026-11-28 — the GAS project is the photo bridge only (GAS @117: `MediaBridge.gs` + ` |
@@ -52,7 +53,6 @@
 | [traceability-matrix.md](traceability-matrix.md) — P6 Vehicle Contact — Requirements → Use Case → Sequence → API → Tests | Reference | 2026-11-26 | 2026-11-22 |  |
 | [WORLD_CLASS_TEST_SUITE_PLAN_20261122.md](WORLD_CLASS_TEST_SUITE_PLAN_20261122.md) — P6 Vehicle Contact — World-Class Test Suite Master Plan | Plan / process | 2026-11-26 | 2026-11-26 |  |
 | [BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md](BACKEND_FIRESTORE_REST_POC1_EVIDENCE_20261122.md) — POC #1 — GAS V8 → Firestore REST + service-account OAuth proof (F3a de-risk) | Evidence | 2026-11-25 | 2026-11-25 | **DONE — OFFLINE 10/10 + LIVE GAS RUN #2 PASS 8/8 (2026-11-22 20:57 ICT).** Run #1 (20:25  |
-| [CLOUD_RUN_SPIKE_AND_GAS_INCIDENT_20261125.md](CLOUD_RUN_SPIKE_AND_GAS_INCIDENT_20261125.md) — Cloud Run spike + GAS outbound incident (2026-11-25) | Evidence | 2026-11-25 | 2026-11-25 |  |
 | [FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md](FIRESTORE_REST_LIVE_POC_INCIDENT_20261122.md) — Incident — Firestore REST live POC run #1: three real-API contract bugs (FAIL 5/8) | Evidence | 2026-11-25 | 2026-11-25 | **CLOSED — fixed and live-verified.** Offline suite **10/10**, live-shape probe against Fi |
 | [SYSTEM_ADMIN_USECASE_GAP_PLAN_20261125.md](SYSTEM_ADMIN_USECASE_GAP_PLAN_20261125.md) — SYSTEM_ADMIN use cases: coverage check, Vehicle 360, QR history, plan (2026-11-25) | Plan / process | 2026-11-25 | 2026-11-25 |  |
 | [TUNEUP_FIRESTORE_READS_20261125.md](TUNEUP_FIRESTORE_READS_20261125.md) — Tune-up: Firestore reads and unnecessary parts (2026-11-25) | Reference | 2026-11-25 | 2026-11-25 |  |
