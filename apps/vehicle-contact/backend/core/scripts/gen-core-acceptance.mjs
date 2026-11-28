@@ -28,7 +28,13 @@ export const FILES = [
   'photo-policy.test.mjs',
   'log-policy.test.mjs',
   'owner-worker-scoped-reads.test.mjs',
-  'system-reset.test.mjs'
+  'system-reset.test.mjs',
+  // N1b PR 3: registration review (listPending / detail / review / photo) incl. the B2B review recovery
+  'acceptance-failures.test.mjs',
+  'journal-recovery.test.mjs',
+  'registration-photo.test.mjs',
+  'pagination-contract.test.mjs',
+  'photo-layout.test.mjs'
 ];
 const HARNESS_METHODS = new Set(['call', 'as', 'stagePhotos', 'createCampaign', 'createOrganization']);
 const TEST_FUNCTIONS = new Set(['test', 'it', 'describe']);
@@ -118,7 +124,13 @@ export function transform(source, file = 'input') {
     if (spec === './acceptance-fixture.mjs') to = '../support/core-harness.mjs';
     else if (spec.startsWith('../src/')) to = '../../../gas/src/' + spec.slice('../src/'.length);
     else if (spec.startsWith('./')) to = '../../../gas/tests/' + spec.slice(2);
+    else if (spec.startsWith('../../')) to = '../../../' + spec.slice('../../'.length); // backend-relative (cloudrun/, core/): one level deeper
     if (to) edits.push([lit.start, null, lit.end, JSON.stringify(to).replace(/"/g, "'")]);
+  });
+  // import.meta.dirname (files read relative to the legacy test): the copy resolves from the legacy test folder
+  walk(ast, n => {
+    if (n.type === 'MemberExpression' && n.object?.type === 'MetaProperty' && n.property?.name === 'dirname')
+      edits.push([n.start, null, n.end, "(import.meta.dirname + '/../../../gas/tests')"]);
   });
   edits.sort((a, b) => b[0] - a[0] || (a[1] === ')' ? -1 : 1));
   let out = source;

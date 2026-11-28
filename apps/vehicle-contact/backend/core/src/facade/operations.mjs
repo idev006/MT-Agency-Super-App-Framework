@@ -25,6 +25,8 @@ import {configGet, configUpdate} from '../use-cases/settings.mjs';
 import {resetPreview, resetExecute} from '../use-cases/system-reset.mjs';
 import {qrHistory} from '../use-cases/qr-history.mjs';
 import {vehiclesListMine} from '../use-cases/vehicle-own-list.mjs';
+import {registrationsListPending, registrationsDetail, registrationsReview, registrationsPhoto}
+  from '../use-cases/registration-review.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -63,9 +65,14 @@ export const USE_CASES = Object.freeze({
   // N1b PR 1: QR history uses the core's async Firestore store.
   'qr.history': qrHistory,
   // N1b PR 2: owner-scoped vehicle list, page/count/sticker setting in one read round.
-  'vehicles.listMine': vehiclesListMine
+  'vehicles.listMine': vehiclesListMine,
+  // N1b PR 3: registration review (bounded pending page; approval duplicate check by plate + province)
+  'registrations.listPending': registrationsListPending,
+  'registrations.detail': registrationsDetail,
+  'registrations.review': registrationsReview,
+  'registrations.photo': registrationsPhoto
 });
-const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute']);
+const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute', 'registrations.review', 'registrations.photo']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)
 export function createMemo(ttlMs = REFERENCE_CACHE_MS, nowMs = () => Date.now()) {
   const m = new Map();
@@ -80,7 +87,8 @@ const randomId = () => randomBytes(32).toString('hex'); // 64 hex, the format of
 // sessions, so the core must read them live (a cached session could outlive a revocation)
 // media: the MediaStore port (photo bridge) or a function returning it — built on the first photo request
 // passwords: the PasswordHasher port (server.mjs injects node:crypto PBKDF2); google: the Google OIDC port (none yet)
-export function createCoreFacade({store, media = null, passwords = null, google = null, resetEnabled = false,
+// deriveSecret: purpose => hex HMAC-SHA256 with the auth pepper (= legacy security.deriveSecret) — registration QR tokens
+export function createCoreFacade({store, media = null, passwords = null, google = null, resetEnabled = false, deriveSecret = null,
   memo = createMemo(), now = () => new Date().toISOString(), sha256 = sha256Hex, id = randomId, flows = FLOWS, useCases = USE_CASES}) {
   const overlap = Object.keys(useCases).filter(op => Object.prototype.hasOwnProperty.call(flows, op));
   if (overlap.length) throw new Error('OPERATION_IN_FLOWS_AND_USE_CASES:' + overlap.join(','));
@@ -118,7 +126,7 @@ export function createCoreFacade({store, media = null, passwords = null, google 
           : await runFlowAsync(sessionAuthorizeFlow({token: request.sessionToken, permission: OPERATION_PERMISSIONS[op], ...authOptionsFor(op)}, {sha256, now}), {store: s});
         const media = MEDIA_OPERATIONS.has(op) && (op !== 'system.reset.execute' || resetEnabled) ? mediaOf() : null;
         const result = own(useCases) ? await useCases[op](payload, principal, {store: s, now, id, sha256, media, logs,
-            passwords, resetEnabled, refreshLogPolicy: () => { policy.at = -Infinity; }})
+            passwords, resetEnabled, deriveSecret, refreshLogPolicy: () => { policy.at = -Infinity; }})
           : await runFlowAsync(flows[op](payload, principal, {now, id, sha256}), {store: s, passwords, google, memo, media});
         return apiSuccess(result, requestId);
       } catch (e) {

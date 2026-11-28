@@ -7,6 +7,7 @@ import {createIntegrationManager} from './adapters/outbound/manager.mjs';
 import {createSdkGateway} from './adapters/firestore/sdk-gateway.mjs';
 import {createFirestoreStoreAsync} from './adapters/firestore/store.mjs';
 import {createNodePasswordHasher} from './adapters/security/password-hasher.mjs';
+import {createDeriveSecret} from './adapters/security/derive-secret.mjs';
 import {createCoreFacade} from './facade/operations.mjs';
 import {createRouter} from './http/routing.mjs';
 
@@ -22,6 +23,7 @@ export const firestoreStoreFromEnv = (env = process.env) => () => createFirestor
 export function createCoreHandler({integrations = createIntegrationManager(), legacy = integrations.gateway('legacy-engine'),
   core = createCoreFacade({store: firestoreStoreFromEnv(), media: () => integrations.gateway('media-bridge'),
     passwords: createNodePasswordHasher({pepper: process.env.P6VC_AUTH_PEPPER || null}),
+    deriveSecret: createDeriveSecret(process.env.P6VC_AUTH_PEPPER),
     resetEnabled: process.env.P6VC_SYSTEM_RESET === 'ENABLED'})} = {}) {
   const router = createRouter({legacy, core});
   // x-p6vc-answered-by: which engine answered this operation (evidence for each ported group; no data in it)

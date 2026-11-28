@@ -44,7 +44,7 @@ export function createAcceptanceHarness(options = {}) {
       trashAll: async () => h.drivePhotos.trashAll()},
     passwords: {hash: async p => s.hashPassword(p), verify: async (p, stored) => (stored == null ? false : s.verifyPassword(p, stored))},
     google: {verify: async token => s.verifyGoogle(token)},
-    now: () => s.now(), sha256: x => s.sha256(x), id: () => s.secretToken(), resetEnabled: options.allowSystemReset === true});
+    now: () => s.now(), sha256: x => s.sha256(x), id: () => s.secretToken(), deriveSecret: purpose => s.deriveSecret(purpose), resetEnabled: options.allowSystemReset === true});
   const router = createRouter({legacy: {dispatch: async (e, m) => h.dispatch(e, m)}, core});
   const call = (operation, payload = {}, actor = null, opts = {}) => {
     const [group, ...actions] = operation.split('.');
