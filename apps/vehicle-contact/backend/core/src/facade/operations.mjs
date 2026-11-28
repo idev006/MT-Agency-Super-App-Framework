@@ -27,6 +27,8 @@ import {qrHistory} from '../use-cases/qr-history.mjs';
 import {vehiclesListMine} from '../use-cases/vehicle-own-list.mjs';
 import {registrationsListPending, registrationsDetail, registrationsReview, registrationsPhoto}
   from '../use-cases/registration-review.mjs';
+import {vehiclesUpdate, vehiclesCancel, contactsUpdate, changesSubmit, changesListPending, changesReview, changesListMine}
+  from '../use-cases/vehicle-admin.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -70,7 +72,15 @@ export const USE_CASES = Object.freeze({
   'registrations.listPending': registrationsListPending,
   'registrations.detail': registrationsDetail,
   'registrations.review': registrationsReview,
-  'registrations.photo': registrationsPhoto
+  'registrations.photo': registrationsPhoto,
+  // N1b PR 4: vehicle administration + owner change requests (one commit per write path; change lists = window + COUNT)
+  'vehicles.update': vehiclesUpdate,
+  'vehicles.cancel': vehiclesCancel,
+  'contacts.update': contactsUpdate,
+  'changes.submit': changesSubmit,
+  'changes.listPending': changesListPending,
+  'changes.review': changesReview,
+  'changes.listMine': changesListMine
 });
 const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute', 'registrations.review', 'registrations.photo']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)
