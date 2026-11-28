@@ -7,6 +7,17 @@ on:
         description: 'Type PUSH_VEHICLE_GAS to authorize replacing the target Apps Script project source'
         required: true
         type: string
+      artifact:
+        description: 'full = the current 60-file API + editor bundle; bridge = ONLY the signed photo bridge (G1, VC-ADR-053/056)'
+        required: false
+        default: full
+        type: choice
+        options: [full, bridge]
+      remove_api_files:
+        description: 'bridge only: type REMOVE_GAS_API_FILES (owner confirmation that every other file is removed from the GAS project)'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -19,7 +30,7 @@ jobs:
   deploy:
     name: Build, test and push to assigned GAS Script ID
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'PUSH_VEHICLE_GAS'
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'PUSH_VEHICLE_GAS' && (inputs.artifact != 'bridge' || inputs.remove_api_files == 'REMOVE_GAS_API_FILES')
     timeout-minutes: 15
     defaults:
       run:
@@ -44,6 +55,7 @@ jobs:
         run: npm run check
 
       - name: Verify deployment artifact
+        if: inputs.artifact != 'bridge'
         run: |
           test -s dist/appsscript.json
           expected_gs=$(( $(find src -type f -name '*.js' | wc -l) + 1 ))
@@ -59,6 +71,19 @@ jobs:
             test "$(wc -l < "$file")" -le 800
           done
           node -e 'const f=require("fs");const m=JSON.parse(f.readFileSync("dist/appsscript.json","utf8"));if(m.runtimeVersion!=="V8")process.exit(1)'
+
+      # G1 (VC-ADR-053/056): the GAS project becomes ONLY the signed photo bridge — one MediaBridge.gs + the manifest.
+      # clasp push --force replaces the whole remote project, so every other file is removed (owner typed REMOVE_GAS_API_FILES).
+      - name: Build the bridge-only artifact (replaces dist)
+        if: inputs.artifact == 'bridge'
+        run: |
+          node scripts/build-bridge-candidate.mjs
+          rm -rf dist && mkdir dist
+          cp ../gas-bridge/dist/MediaBridge.gs ../gas-bridge/dist/appsscript.json dist/
+          test "$(ls dist | LC_ALL=C sort | tr '\n' ' ')" = "MediaBridge.gs appsscript.json "
+          grep -q 'function doPost(e)' dist/MediaBridge.gs
+          node -e 'const f=require("fs");const m=JSON.parse(f.readFileSync("dist/appsscript.json","utf8"));if(m.runtimeVersion!=="V8")process.exit(1)'
+          echo "Bridge-only artifact: $(ls dist | tr '\n' ' ')"
 
       - name: Install pinned clasp 3.4.1
         run: npm install --global @google/clasp@3.4.1 --no-audit --no-fund
@@ -104,6 +129,7 @@ jobs:
           echo "### P6 Vehicle Contact GAS source push" >> "$GITHUB_STEP_SUMMARY"
           echo "- Source commit: \`$GITHUB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
           echo "- GAS Script ID: \`$TARGET_SCRIPT_ID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Artifact: \`${{ inputs.artifact }}\` ($(ls dist | wc -l) files)" >> "$GITHUB_STEP_SUMMARY"
           echo "- Scope: clasp push + version only. **No Web App deployment was published.**" >> "$GITHUB_STEP_SUMMARY"
           echo "- Authentication/security/PDPA release gates remain separate." >> "$GITHUB_STEP_SUMMARY"
 
