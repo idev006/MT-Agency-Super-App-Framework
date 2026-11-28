@@ -1,18 +1,15 @@
 # P6 Vehicle Contact — Kanban board
 
-**Drawn:** 2026-11-28 05:04 UTC from the GitHub issues by `node scripts/gen-kanban.mjs` — do not edit by hand.
+**Drawn:** 2026-11-28 05:44 UTC from the GitHub issues by `node scripts/gen-kanban.mjs` — do not edit by hand.
 **Source of truth:** the issues (labels `status:*`, `priority:*`, milestones). Order of work and done-criteria: [ROADMAP.md](ROADMAP.md). Current state: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
 
-## กำลังทำ (in progress) — 8
+## กำลังทำ (in progress) — 5
 
 | Item | Issue | Milestone | Priority |
 |---|---|---|---|
 | VC-W18 | [#18](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/18) Consolidate QR scanner POC into Vue | — | P1 |
 | N1b | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) Vehicles, QR, change requests, registration review as native async Node (16 ops) | Node core (VC-ADR-046) | P1 |
 | G1 | [#329](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/329) Reduce clasp project to photo bridge files | Node core (VC-ADR-046) | P1 |
-| T1 | [#336](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/336) Code map covers the Node core + LSP for core + README current | Node core (VC-ADR-046) | P1 |
-| L1 | [#337](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/337) Run the web app + Node core on localhost with stub adapters (no cloud) | Node core (VC-ADR-046) | P1 |
-| W1 | [#338](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/338) Retire the Cloudflare Worker (owner approved deletion) | Node core (VC-ADR-046) | P1 |
 | R03 | [#296](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/296) PR 2 — web app resizes by the admin policy; photo replace resizes too; admin fields | Photos (VC-ADR-049/050) | P2 |
 | R10 | [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) 2c-3b — reference seed as a core job | Node core (VC-ADR-046) | P2 |
 
@@ -45,6 +42,9 @@
 
 | Item | Issue | Closed |
 |---|---|---|
+| W1 | [#338](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/338) Retire the Cloudflare Worker (owner approved deletion) | 2026-11-28 |
+| L1 | [#337](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/337) Run the web app + Node core on localhost with stub adapters (no cloud) | 2026-11-28 |
+| T1 | [#336](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/336) Code map covers the Node core + LSP for core + README current | 2026-11-28 |
 | N4a | [#322](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/322) Route browser directly to p6vc-core | 2026-11-27 |
 | N1a | [#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311) Foundation + system and list operations as native async Node (7 ops) | 2026-11-27 |
 | R12 | [#305](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/305) 2c-4 — GAS = photo bridge only | 2026-11-27 |
@@ -54,6 +54,3 @@
 | R06 | [#299](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/299) Wave 4 — vehicle admin + QR on the core (10 operations) | 2026-11-27 |
 | R05 | [#298](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/298) Wave 3 — registration review on the core | 2026-11-27 |
 | R02 | [#295](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/295) PR B — show photos by Drive link instead of base64 | 2026-11-27 |
-| R01 | [#294](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/294) Prove the per-vehicle photo folders live (0.9.55) | 2026-11-27 |
-| VC-ADR-046 | [#270](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/270) Shared code out of backend/gas into backend/shared | 2026-11-27 |
-| VC-ADR-046 | [#269](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/269) GAS = photo bridge only (moved forward) | 2026-11-27 |
