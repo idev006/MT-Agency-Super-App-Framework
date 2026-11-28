@@ -1,10 +1,9 @@
 # Node core — finish: the whole backend as native async Node.js (VC-ADR-051)
 
-**Progress (2026-11-28, refreshed):** 24/64 operations live on the core at backend 0.9.66 (N1a done; N1b PRs 1–2 done; Worker
-deleted — W1; GAS = photo bridge only — G1). Current status: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md); the
-"Today (0.9.56)" diagram below is the starting point, kept for history. `system.health` remains on the legacy engine until N4 so the deploy smoke still
-checks the published backend version end to end. Owner clarification: map code with LSP; target runtime is the native async
-Node core, Firestore and the GAS API for Google Drive photos, without Cloudflare Worker.
+**Progress (2026-11-28, 0.9.72):** **64/64 operations live on the core** — N1a, N1b (0.9.61–0.9.69), N2 (0.9.70), N3 (0.9.71) and
+N4 PR 1 (0.9.72: `system.health` from the shared `systemHealth()`, no store read) are deployed and proven (suite 112/112 + DATA_PROOF 7/7 each).
+p6vc-api receives nothing; the rest of N4 (remove it, move the shared rules into the core, delete the legacy engine) waits for the owner.
+Current status: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md). The diagrams below are the starting point, kept for history.
 
 Owner, 2026-11-27: *"อย่าเสียเวลายื้อเลย เราควรเปลี่ยนโค้ด backend core ให้เป็น nodejs 100% เพื่อใช้ประสิทธิภาพของมันได้อย่างเต็มที่"*
 → approach change proposed → *"อนุมัติให้ดำเนินการ โดยคุณและทีมต้องวิเคราะห์ วางแผนการดำเนินการ เพื่อให้ tracking ได้"*.

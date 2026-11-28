@@ -21,23 +21,23 @@ Status labels: `status:todo` → `status:in-progress` → closed (with the evide
 | R04 | Move existing photos into their vehicle folders (PR C, dry run first) | [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) | R01 | todo |
 | N1a | Foundation + system / list ops as native async Node (7 ops; system.health stays legacy until N4) — VC-ADR-051 | [#311](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/311) | — | **done — 0.9.60 proven** (PRs 1–3 + fix #323; core 22/64; 126/126 live suite, DATA_PROOF 7/7; system.health deferred to N4) |
 | N4a | Browser calls the core directly; no Worker route in the web build (VC-ADR-052) | [#322](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/322) | N1a core front door | **done — FE 0.9.23 live** (PR #324, Pages run 46050309613; public browser and core gateway proof) |
-| N1b | Vehicles, QR, change requests, registration review (16 ops) | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) | N1a | in progress — PR 1 `qr.history` proven 0.9.61; PR 2 `vehicles.listMine` proven 0.9.62 (126/126 suite, DATA_PROOF 7/7); **next PR 3** (15 ops left) |
-| N2 | Photos, retention, audit (10 ops) | [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) | N1a | todo |
-| N3 | Users, organizations, campaigns (15 ops) | [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) | N1a | todo |
+| N1b | Vehicles, QR, change requests, registration review (16 ops) | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) | N1a | **done — 0.9.61–0.9.69 proven** (PRs 1–5: #326 #328 #351 #352 #353; each 112/112 + DATA_PROOF 7/7) |
+| N2 | Photos, retention, audit (10 ops) | [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) | N1a | **done — 0.9.70 proven** (#354; 112/112 + DATA_PROOF 7/7; retention.execute stays off) |
+| N3 | Users, organizations, campaigns (15 ops) | [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) | N1a | **done — 0.9.71 proven** (#355; 112/112 + DATA_PROOF 7/7) |
 | T1 | Code map covers the Node core (acorn) + LSP config for core + README current + Kanban board document (VC-ADR-056) | [#336](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/336) | — | **done** — #339 |
 | L1 | Web app + Node core on localhost with stub adapters — test without deploying (VC-ADR-056) | [#337](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/337) | — | **done** — #340 (proven on localhost; smoke test in CI) |
 | W1 | Retire the Cloudflare Worker: out of the live suite / CI / docs, then delete it (owner approved deletion) | [#338](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/338) | — | **done** — #341 + Worker deleted from Cloudflare (workers.dev 404); suite 112/112 |
 | G1 | Reduce GAS clasp project to signed photo bridge only | [#329](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/329) | R10, R11, trigger retirement, separate source-removal confirmation | **done** — GAS @117 = MediaBridge.gs + appsscript.json only; suite 112/112 + DATA_PROOF; bridge is the deploy default (#348) |
 | R10 | GAS 2c-3b — reference seed as a core job | [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) | — | in progress — native async job + manual workflow deployed; DRY_RUN execution succeeded on 0.9.63, independent Firestore COUNT 645; recovery workflow still withheld because it deletes rows |
 | R11 | GAS 2c-3c — first admin + admin reset as core jobs (security review) | [#304](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/304) | owner security OK | **done** — 0.9.66: RESET_PREVIEW proven live (nothing written, read back); APPLY only when the owner needs it |
-| N4 | Cut-over: last ops to the core (incl. `system.health`); delete p6vc-api + legacy use-case code (Worker already gone — W1; GAS already bridge only — G1) | [#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255) | N1b–N3, R10 | todo |
+| N4 | Cut-over: last ops to the core (incl. `system.health`); delete p6vc-api + legacy use-case code (Worker already gone — W1; GAS already bridge only — G1) | [#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255) | N1b–N3, R10 | in progress — PR 1 #356 (0.9.72): health on the core, 64/64, nothing forwarded; removal of p6vc-api + legacy code waits for the owner |
 | R14 | Capacity for 100 simultaneous logins (sustained test, min-instances decision) | [#306](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/306) | owner cost decision | todo |
 | R16 | Production switches + owner actions (reset off, Drive storage, legal, pepper, Google login; GAS trigger already deleted 2026-11-28) | [#307](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/307) | before real data | todo |
 | R17 | Apply the new log retention to old rows (preview + confirm) | [#308](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/308) | owner confirmation | todo |
 
-Progress of the engine move: **24 of 64 operations live** on the core (officer path 6, auth 6, public registration 4,
-N1a 6: vehicles.list, qr.markPrinted, system.config.get/update, system.reset.preview/execute; N1b 2: qr.history,
-vehicles.listMine). N1b–N3 move the next groups as native async Node ([NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md), VC-ADR-051); N4 cuts over, including system.health.
+Progress of the engine move: **64 of 64 operations live** on the core (2026-11-28, 0.9.72): shared flows 16 (officer path, auth,
+public registration), native async use cases for the rest (N1a, N1b, N2, N3) and `system.health` (N4 PR 1). p6vc-api receives nothing;
+its removal is the rest of N4 ([NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md), VC-ADR-051).
 
 ## Done (evidence in DECISION_LOG.md)
 - Node core phases 0–2: front door, Integration Manager, shared flows, store rules, async Firestore (gRPC), officer path.
