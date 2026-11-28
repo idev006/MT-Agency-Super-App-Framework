@@ -24,6 +24,7 @@ import {vehiclesList, qrMarkPrinted} from '../use-cases/vehicle-list.mjs';
 import {configGet, configUpdate} from '../use-cases/settings.mjs';
 import {resetPreview, resetExecute} from '../use-cases/system-reset.mjs';
 import {qrHistory} from '../use-cases/qr-history.mjs';
+import {vehiclesListMine} from '../use-cases/vehicle-own-list.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -60,7 +61,9 @@ export const USE_CASES = Object.freeze({
   'system.reset.preview': resetPreview,
   'system.reset.execute': resetExecute,
   // N1b PR 1: QR history uses the core's async Firestore store.
-  'qr.history': qrHistory
+  'qr.history': qrHistory,
+  // N1b PR 2: owner-scoped vehicle list, page/count/sticker setting in one read round.
+  'vehicles.listMine': vehiclesListMine
 });
 const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)

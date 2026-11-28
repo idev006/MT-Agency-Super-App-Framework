@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {qrHistory} from '../src/use-cases/qr-history.mjs';
+import {vehiclesListMine} from '../src/use-cases/vehicle-own-list.mjs';
 import {createAcceptanceHarness} from './support/core-harness.mjs';
 
 test('N1B-01 qr.history is answered by the core and resolves names in two read rounds without exposing codes', async () => {
@@ -31,4 +32,28 @@ test('N1B-02 qr.history refuses a missing vehicle before user lookups', async ()
   const store = {readMany: async () => { rounds++; return [null, []]; }};
   await assert.rejects(qrHistory({vehicleId: 'missing'}, null, {store}), /NOT_FOUND/);
   assert.equal(rounds, 1);
+});
+
+test('N1B-03 vehicles.listMine pages only the authorized owner in one Firestore read round', async () => {
+  const h = createAcceptanceHarness();
+  assert.equal(h.engineFor('vehicles.listMine'), 'core');
+  const requests = [];
+  const store = {readMany: async reqs => {
+    requests.push(reqs);
+    return [null, [{vehicle_id: 'v1', plate_normalized: 'TEST 1', province_code: 'TH-10',
+      status: 'ACTIVE', version: 2, owner_user_id: 'session-owner'}], 1];
+  }};
+  const page = await vehiclesListMine({page: 1, pageSize: 10, ownerUserId: 'spoofed'},
+    {userId: 'session-owner'}, {store});
+  assert.equal(requests.length, 1);
+  assert.deepEqual(requests[0].slice(1).map(r => r.filter), [
+    {owner_user_id: 'session-owner', status: 'ACTIVE'},
+    {owner_user_id: 'session-owner', status: 'ACTIVE'}
+  ]);
+  assert.equal(requests[0][1].limit, 10);
+  assert.deepEqual(page.items.map(r => r.vehicleId), ['v1']);
+  assert.equal(page.total, 1);
+  assert.equal(page.items[0].stickerCategory, '');
+  assert.equal(page.items[0].sticker, null);
+  assert.ok(!Object.hasOwn(page.items[0], 'owner_user_id'));
 });
