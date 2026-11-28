@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend 0.9.61 / FE 0.9.23. N1a is proven (core 23/64 operations including N1b PR 1); N4a direct browser route is live and publicly verified.
+**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend 0.9.62 / FE 0.9.23. The core answers 24/64 operations; N4a direct browser route is live and publicly verified. A bridge-only GAS candidate is local only.
 **Status:** current. Read [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) (what runs, last proof) with this page (how to work, next steps).
 
 ## 1. Ready-to-paste next-AI prompt
@@ -15,7 +15,7 @@ apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md → PROJECT_HANDOVER.md (th
 the generated maps docs/generated/DATA_ACCESS_MAP.md + CHANGE_CHECKLIST.md → DECISION_LOG.md (VC-ADR-046..052).
 Then verify the live state yourself: git fetch origin main; gh pr list; gh issue list --label status:in-progress; CI.
 
-Where things stand: backend 0.9.61 is live and proven. The Node core (p6vc-core) answers 23 of 64 operations live and forwards the rest to
+Where things stand: backend 0.9.62 is live and proven. The Node core (p6vc-core) answers 24 of 64 operations live and forwards the rest to
 the frozen legacy engine (p6vc-api). The owner decided (VC-ADR-051) to move the whole backend to native async Node:
 N1a and N4a complete → N1b → N2 → N3 → R10/R11 → N4 cut-over. Each DEV item = small PRs → green CI →
 deploy → proof → evidence in DECISION_LOG → ROADMAP + issue updated.
@@ -99,8 +99,8 @@ Rollback: remove the op from `USE_CASES` / `FLOWS` and redeploy the core (the le
 
 ## 6. Next actions
 
-1. **N1b #312** — PR 1 (`qr.history`) is proven on 0.9.61. Move the remaining vehicles, QR, change requests and registration review to native async Node in small PRs. Keep local acceptance, CI and independent live proof per deploy.
-2. N1b includes fixing approval reading the whole `vc_vehicles` table (query by plate + province).
+1. **G1 #329** — review [GAS_BRIDGE_REDUCTION_PLAN.md](GAS_BRIDGE_REDUCTION_PLAN.md): a local one-file bridge candidate is tested, but the remote 60-file GAS project remains until R10/R11 editor jobs, old trigger and proof-chain dependencies are resolved. Remote source removal requires a reviewed dry run and separate owner confirmation.
+2. **N1b #312** — PRs 1–2 (`qr.history`, `vehicles.listMine`) are proven on 0.9.61–0.9.62. Move the remaining vehicles, QR, change requests and registration review to native async Node in small PRs. Fix approval's whole-table vehicle read using plate + province.
 3. N2 (#313), N3 (#314), R10 (#303), R11 (#304, owner security review), N4 (#255).
 4. Photos R03 (#296), R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
 
