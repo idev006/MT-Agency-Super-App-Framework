@@ -96,3 +96,14 @@ test('PP-06 VC-ADR-055 the admin asks for landscape + a minimum size; the form r
   assert.equal(h.io.driveUploads, uploadsBefore, 'nothing sent to Drive');
   assertOk(assert, up(jpeg(1600, 1200)), 'landscape within the policy');
 });
+
+test('PP-07 VC-ADR-055 vehicles.detail carries the photo rules for whoever may see photos (the replace screen uses them)', () => {
+  const h = createAcceptanceHarness();
+  const org = h.createOrganization(), camp = h.createCampaign();
+  const r = assertOk(assert, h.call('registrations.submit', h.registrationPayload(camp.campaignToken, org, h.stagePhotos(camp.campaignToken))), 'submit');
+  const v = assertOk(assert, h.as('reg', 'registrations.review', {requestId: r.requestId, decision: 'APPROVE', stickerCategory: 'NCO', platePhotoVerified: true}), 'approve');
+  const policy = {...DEFAULT_PHOTO_POLICY, orientation: 'PORTRAIT', minSide: 600};
+  assertOk(assert, h.as('sys', 'system.config.update', {values: {[PHOTO_POLICY_KEY]: policy}}), 'admin sets');
+  const d = assertOk(assert, h.as('reg', 'vehicles.detail', {vehicleId: v.vehicleId}), 'detail');
+  assert.ok(Array.isArray(d.photos)); assert.deepEqual(d.photoPolicy, policy);
+});
