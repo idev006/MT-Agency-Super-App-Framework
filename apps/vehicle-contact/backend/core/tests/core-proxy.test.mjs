@@ -26,6 +26,10 @@ test('CORE-01 with no legacy engine an operation the core does not have → NOT_
     assert.equal(r.headers.get('x-p6vc-engine'), 'core');
     const body = await r.json();
     assert.deepEqual([body.ok, body.error.code, body.requestId], [false, 'NOT_FOUND', 'req_12345678']);
+    // the router checks still run first (live LIVE-06, a regression in 0.9.73): a prototype-like group is BAD_REQUEST
+    const bad = await (await fetch(base(server) + '/', {method: 'POST', headers: {'content-type': 'application/json'},
+      body: JSON.stringify({apiVersion: 'v1', group: '__proto__', action: 'list', payload: {}, requestId: 'req_12345678'})})).json();
+    assert.deepEqual([bad.ok, bad.error.code], [false, 'BAD_REQUEST']);
     const h = await (await fetch(base(server) + '/')).json();
     assert.equal(h.ok, true, 'health is the core\'s own');
   } finally { server.close(); }
@@ -53,7 +57,7 @@ test('CORE-03 the integration registry has no legacy engine any more; overrides 
     /INTEGRATION_OVERRIDE_NOT_LOCAL/);
 });
 
-test('CORE-04 routing: the core answers its operations; others go to a legacy engine only when one is given, else NOT_FOUND', async () => {
+test('CORE-04 routing: the core answers its operations; others go to a legacy engine only when one is given, else to the core facade', async () => {
   const calls = [];
   const core = {operations: ['qr.resolve', 'system.health'], dispatch: async e => (calls.push('core:' + e.group + '.' + e.action), {ok: true})};
   const withLegacy = createRouter({legacy: {dispatch: async e => (calls.push('legacy:' + e.group + '.' + e.action), {ok: true})}, core});
@@ -64,9 +68,10 @@ test('CORE-04 routing: the core answers its operations; others go to a legacy en
   await withLegacy.dispatch({group: 'system', action: 'health'}, 'GET');
   assert.deepEqual(calls, ['core:qr.resolve', 'legacy:vehicles.lookup', 'core:system.health']);
   const alone = createRouter({core});
-  assert.equal(alone.engineFor('vehicles.lookup'), 'none');
-  const r = await alone.dispatch({group: 'vehicles', action: 'lookup', requestId: 'req_x'});
-  assert.deepEqual([r.ok, r.error.code, r.requestId], [false, 'NOT_FOUND', 'req_x']);
+  assert.equal(alone.engineFor('vehicles.lookup'), 'core');
+  calls.length = 0;
+  await alone.dispatch({group: 'vehicles', action: 'lookup', requestId: 'req_x'});
+  assert.deepEqual(calls, ['core:vehicles.lookup'], 'no legacy: the core facade answers (its router checks, then NOT_FOUND)');
 });
 
 test('CORE-05 x-p6vc-answered-by: core for every operation and for GET health', async () => {
