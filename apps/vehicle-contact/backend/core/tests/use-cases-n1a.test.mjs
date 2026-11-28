@@ -22,7 +22,7 @@ test('N1A-01 vehicles.list and qr.markPrinted are answered by the core; no opera
   const h = createAcceptanceHarness();
   assert.equal(h.engineFor('vehicles.list'), 'core');
   assert.equal(h.engineFor('qr.markPrinted'), 'core');
-  assert.equal(h.engineFor('users.list'), 'legacy');
+  assert.equal(h.engineFor('system.health'), 'legacy'); // the one op left on the legacy engine until N4
   assert.deepEqual(Object.keys(USE_CASES).filter(op => op in FLOWS), []);
   assert.throws(() => createCoreFacade({store: {}, flows: {x: () => null}, useCases: {x: async () => null}}), /OPERATION_IN_FLOWS_AND_USE_CASES:x/);
 });
