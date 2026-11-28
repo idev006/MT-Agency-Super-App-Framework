@@ -11,13 +11,13 @@ import './load-env.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {randomUUID} from 'node:crypto';
+import {coreFrontendEndpoint} from './core-frontend-endpoint.mjs';
 
-const endpoint = process.env.P6VC_WORKER_FRONTEND_URL;
+const endpoint = coreFrontendEndpoint();
 const origin = process.env.P6VC_FRONTEND_ORIGIN || 'https://idev006.github.io';
 const user = process.env.P6VC_ADMIN_USER, password = process.env.P6VC_ADMIN_PASS;
 const argCount = process.argv.indexOf('--count');
 const COUNT = argCount > 0 ? Number(process.argv[argCount + 1]) : 20;
-assert.match(endpoint || '', /^https:\/\/[a-z0-9.-]+\.workers\.dev\/api\/frontend$/, 'P6VC_WORKER_FRONTEND_URL must be the Worker /api/frontend endpoint');
 assert.ok(user && password, 'P6VC_ADMIN_USER and P6VC_ADMIN_PASS are required (gitignored .env)');
 assert.equal(process.env.P6VC_ALLOW_OWNER_DEV_WRITES, 'RUN_SYNTHETIC_OWNER_DEV', 'owner-dev synthetic write guard is required');
 assert.ok(Number.isInteger(COUNT) && COUNT >= 1 && COUNT <= 100, '--count 1..100');
