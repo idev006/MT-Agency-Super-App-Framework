@@ -37,7 +37,7 @@ test('R11-01 modes, approval and the password policy', async () => {
 
 test('R11-02 bootstrap: preview writes nothing; refuses bad config, a weak password, no pepper, an existing user', async () => {
   const h = emptySystem(), store = asyncStoreOver(h.store), before = rowsOf(h);
-  assert.deepEqual(await run(store, 'BOOTSTRAP_PREVIEW'), {mode: 'BOOTSTRAP_PREVIEW', status: 'PASS', result: 'READY_FOR_BOOTSTRAP', usersExisting: 0, dataModified: false, credentialsExposed: false});
+  assert.deepEqual(await run(store, 'BOOTSTRAP_PREVIEW'), {mode: 'BOOTSTRAP_PREVIEW', status: 'PASS', result: 'READY_FOR_BOOTSTRAP', usersExisting: 0, passwordChecked: true, dataModified: false, credentialsExposed: false});
   assert.equal(rowsOf(h), before, 'preview never writes');
   await assert.rejects(run(store, 'BOOTSTRAP_APPLY', {input: {username: 'A D M I N'}}), /INVALID_BOOTSTRAP_CONFIGURATION/);
   await assert.rejects(run(store, 'BOOTSTRAP_APPLY', {input: {idleMinutes: '999'}}), /INVALID_BOOTSTRAP_CONFIGURATION/);
@@ -72,6 +72,12 @@ test('R11-04 reset: target, role, label, password and pepper gates; preview coun
   const before = rowsOf(h);
   const preview = await run(store, 'RESET_PREVIEW', {input: ok});
   assert.deepEqual([preview.result, preview.sessionsToRevoke, preview.dataModified], ['READY_FOR_RESET', 3, false]);
+  // a PREVIEW may run before the owner created the secret (writes nothing); APPLY never runs without a password
+  const noSecret = await run(store, 'RESET_PREVIEW', {input: {...ok, tempPassword: ''}});
+  assert.deepEqual([noSecret.result, noSecret.passwordChecked, noSecret.sessionsToRevoke], ['READY_FOR_RESET', false, 3]);
+  assert.equal((await run(store, 'BOOTSTRAP_PREVIEW', {input: {tempPassword: ''}}).catch(e => e.message)), 'BOOTSTRAP_ALREADY_COMPLETED');
+  await assert.rejects(run(store, 'RESET_APPLY', {input: {...ok, tempPassword: ''}}), /RESET_NEW_PASSWORD_POLICY_FAILED/);
+  await assert.rejects(run(store, 'RESET_PREVIEW', {input: {...ok, tempPassword: 'weak'}}), /RESET_NEW_PASSWORD_POLICY_FAILED/, 'a given password is still checked');
   assert.equal(rowsOf(h), before, 'preview never writes');
   await assert.rejects(run(store, 'RESET_APPLY', {input: {...ok, expectedUserId: 'f'.repeat(64)}}), /RESET_ADMIN_IDENTITY_MISMATCH/);
   await assert.rejects(run(store, 'RESET_APPLY', {input: {...ok, expectedUserId: ''}}), /RESET_TARGET_NOT_CONFIRMED/);

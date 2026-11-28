@@ -92,18 +92,27 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy the job from the live core image (secrets by name only)
+        env:
+          MODE: ${{ inputs.mode }}
         run: |
           IMAGE=$(gcloud run services describe "$CORE_SERVICE" --project "$PROJECT_ID" --region "$REGION" \
             --format='value(spec.template.spec.containers[0].image)')
           if [ -z "$IMAGE" ]; then echo '::error::Deploy p6vc-core first'; exit 1; fi
-          gcloud secrets describe p6vc-admin-temp-password --project "$PROJECT_ID" --format='value(name)' >/dev/null \
-            || { echo '::error::The owner creates the secret p6vc-admin-temp-password before the run (see PROJECT_HANDOVER)'; exit 1; }
+          # APPLY needs the owner's secret; a PREVIEW (writes nothing) runs without it and reports passwordChecked:false
+          SECRETS="P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest"
+          if gcloud secrets describe p6vc-admin-temp-password --project "$PROJECT_ID" --format='value(name)' >/dev/null 2>&1; then
+            SECRETS="${SECRETS},P6VC_ADMIN_TEMP_PASSWORD=p6vc-admin-temp-password:latest"
+          elif [[ "$MODE" == *_APPLY ]]; then
+            echo '::error::APPLY needs the secret p6vc-admin-temp-password created by the owner (see PROJECT_HANDOVER §5b)'; exit 1
+          else
+            echo 'PREVIEW without the temporary-password secret (the password policy is checked at APPLY)'
+          fi
           gcloud run jobs deploy "$JOB" --project "$PROJECT_ID" --region "$REGION" \
             --image "$IMAGE" --service-account "$RUNTIME_SA" \
             --command node --args backend/core/src/job.mjs,admin-tools \
             --tasks 1 --max-retries 0 --task-timeout 600 --cpu 1 --memory 512Mi \
             --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),P6VC_ADMIN_TOOL_MODE=RESET_PREVIEW" \
-            --set-secrets "P6VC_AUTH_PEPPER=p6vc-auth-pepper:latest,P6VC_ADMIN_TEMP_PASSWORD=p6vc-admin-temp-password:latest" \
+            --set-secrets "$SECRETS" \
             --labels "app=p6vc,component=admin-tools,commit=${GITHUB_SHA::12}" --quiet
 
       - name: Execute once and wait

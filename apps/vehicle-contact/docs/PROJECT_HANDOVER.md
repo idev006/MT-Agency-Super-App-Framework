@@ -116,7 +116,7 @@ The AI never sees the password. Workflow **P6 Vehicle Contact admin tools (manua
 1. Owner creates the temporary password as a Secret Manager secret in the Cloud Console (not in a shell history):
    name `p6vc-admin-temp-password`, project `mt-iam-core-2026`, and grants `p6vc-api-runtime@…` the role *Secret Manager Secret Accessor* on it.
    Policy: 16–128 characters, upper + lower + digit + symbol, no leading/trailing space.
-2. Run the workflow with `RUN_ADMIN_TOOLS`, mode `RESET_PREVIEW` (or `BOOTSTRAP_PREVIEW` on an empty system), `expected_user_id`
+2. (A PREVIEW does not need step 1 — it writes nothing and reports `passwordChecked: false`; APPLY always needs the secret.) Run the workflow with `RUN_ADMIN_TOOLS`, mode `RESET_PREVIEW` (or `BOOTSTRAP_PREVIEW` on an empty system), `expected_user_id`
    (the admin's id from Firestore `vc_users`), a new `run_label` (e.g. `reset-20261128`). PREVIEW writes nothing; the job log
    shows `READY_FOR_RESET` + sessions to revoke, or the refusal code.
 3. Same inputs with mode `RESET_APPLY` + approval `RESET_ADMIN_ONCE` (bootstrap: `BOOTSTRAP_APPLY` + `BOOTSTRAP_ADMIN_ONCE`).

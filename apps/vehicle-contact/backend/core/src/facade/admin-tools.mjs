@@ -21,14 +21,22 @@ export function passwordPolicyOk(p) {
     && /[A-Z]/.test(p) && /[a-z]/.test(p) && /[0-9]/.test(p) && /[^A-Za-z0-9]/.test(p);
 }
 
+// APPLY always needs a password that passes the policy. A PREVIEW writes nothing, so it may run before the owner has
+// created the secret (passwordChecked: false); a password that IS given to a preview is checked (passwordChecked: true).
+function passwordGate(password, apply, code) {
+  if (!apply && !password) return false;
+  if (!passwordPolicyOk(password)) fail(code);
+  return true;
+}
+
 async function bootstrap({store, apply, input, passwords, pepperConfigured, now, id}) {
   const username = String(input.username || '');
   const idle = Number(input.idleMinutes || 30);
   if (!/^[a-z0-9._-]{3,80}$/.test(username) || !Number.isSafeInteger(idle) || idle < 1 || idle > 480) fail('INVALID_BOOTSTRAP_CONFIGURATION');
   if ((await store.list('vc_users', {}, 2)).length) fail('BOOTSTRAP_ALREADY_COMPLETED'); // one-shot: only an empty system
-  if (!passwordPolicyOk(input.tempPassword)) fail('BOOTSTRAP_TEMP_PASSWORD_POLICY_FAILED');
+  const passwordChecked = passwordGate(input.tempPassword, apply, 'BOOTSTRAP_TEMP_PASSWORD_POLICY_FAILED');
   if (!pepperConfigured) fail('ADMIN_TOOL_PEPPER_MISSING');
-  if (!apply) return {status: 'PASS', result: 'READY_FOR_BOOTSTRAP', usersExisting: 0, dataModified: false};
+  if (!apply) return {status: 'PASS', result: 'READY_FOR_BOOTSTRAP', usersExisting: 0, passwordChecked, dataModified: false};
   const hash = await passwords.hash(input.tempPassword);
   if (!(await passwords.verify(input.tempPassword, hash))) fail('BOOTSTRAP_HASH_SELF_CHECK_FAILED');
   const userId = id(), at = now();
@@ -64,11 +72,11 @@ async function reset({store, apply, input, passwords, pepperConfigured, now, id}
   if (!/^[A-Za-z0-9_-]{4,40}$/.test(label)) fail('RESET_RUN_LABEL_INVALID');
   if (await store.one('vc_settings', {key: stateKey(label)})) fail('RESET_ALREADY_STARTED_OR_COMPLETED');
   await resetTarget(store, input);
-  if (!passwordPolicyOk(input.tempPassword)) fail('RESET_NEW_PASSWORD_POLICY_FAILED');
+  const passwordChecked = passwordGate(input.tempPassword, apply, 'RESET_NEW_PASSWORD_POLICY_FAILED');
   if (!pepperConfigured) fail('ADMIN_TOOL_PEPPER_MISSING');
   if (!apply) {
     const {active} = await resetTarget(store, input);
-    return {status: 'PASS', result: 'READY_FOR_RESET', sessionsToRevoke: active.length, dataModified: false};
+    return {status: 'PASS', result: 'READY_FOR_RESET', sessionsToRevoke: active.length, passwordChecked, dataModified: false};
   }
   const hash = await passwords.hash(input.tempPassword);
   if (!(await passwords.verify(input.tempPassword, hash))) fail('RESET_HASH_SELF_CHECK_FAILED');
