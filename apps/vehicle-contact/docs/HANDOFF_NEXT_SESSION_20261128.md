@@ -9,7 +9,7 @@
 
 ```text
 อ่าน apps/vehicle-contact/docs/HANDOFF_NEXT_SESSION_20261128.md แล้วทำตาม prompt ใน PROJECT_HANDOVER.md §1
-งานแรก: ขอการยืนยันจาก owner เรื่องลบ p6vc-api (ส่วนที่เหลือของ N4) — ทุก merge / deploy ขอ OK owner รอบนั้น
+งานแรก: ให้ owner รัน `ops/cloudrun-uptime-alert.sh` (uptime ของ core) แล้วทำ N4 ส่วนโค้ด (ย้าย rule ที่ core ใช้จาก backend/gas/src เข้า core) — ทุก merge / deploy ขอ OK owner รอบนั้น
 ```
 
 ลำดับการอ่าน (ตาม PROJECT_HANDOVER §1): `CLAUDE.md` → `.mt-studio/project.yaml` → [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) → [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) → [ROADMAP.md](ROADMAP.md) → [KANBAN_BOARD.md](KANBAN_BOARD.md) → [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md) → [generated/DATA_ACCESS_MAP.md](generated/DATA_ACCESS_MAP.md) + [generated/CHANGE_CHECKLIST.md](generated/CHANGE_CHECKLIST.md) → [DECISION_LOG.md](DECISION_LOG.md)
@@ -31,7 +31,7 @@ flowchart LR
 
 | เรื่อง | สถานะ |
 |---|---|
-| `main` | N1b + N2 + N3 + N4 PR 1 merged และ deploy แล้ว (0.9.72) — core ตอบ **64/64** |
+| `main` | 0.9.74 — p6vc-core เป็น backend เดียว (64/64); **p6vc-api ถูกลบแล้ว** (2026-11-28); full test PASS 12/12 |
 | PR #348 | merge แล้ว — bridge เป็น default ของ deploy (พิสูจน์แล้ว: "Pushed 2 files") |
 | PR docs refresh + handoff (ไฟล์นี้) | branch `docs/p6vc-status-handoff-main` สร้างจาก `main` (ไม่ขึ้นกับ #348) — docs only ไม่ต้อง deploy runtime; Pages build เองเมื่อ merge. แทน PR #349 (ซ้อนบน #348) |
 | หลักฐานล่าสุด | ทุก slice (0.9.67–0.9.72): live suite ผ่าน core **112/112** + DATA_PROOF 7/7 ที่สดกว่า suite — ตัวเลขใน CURRENT_DELIVERY_STATUS §2 |

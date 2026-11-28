@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend **0.9.72** / FE **0.9.24**. The Node core answers **all 64 operations** (N1b, N2, N3, N4 PR 1); p6vc-api receives nothing and runs only as the rollback. GAS = photo bridge only (deploy default since #348). Session handoff: [HANDOFF_NEXT_SESSION_20261128.md](HANDOFF_NEXT_SESSION_20261128.md).
+**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend **0.9.74** / FE **0.9.25**. **p6vc-core is the only backend** (64/64); p6vc-api is deleted; full automated test PASS 12/12. Session handoff: [HANDOFF_NEXT_SESSION_20261128.md](HANDOFF_NEXT_SESSION_20261128.md).
 **Status:** current. Read [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) (what runs, last proof) with this page (how to work, next steps).
 
 ## 1. Ready-to-paste next-AI prompt
@@ -133,7 +133,7 @@ The AI never sees the password. Workflow **P6 Vehicle Contact admin tools (manua
 
 Plan approved 2026-11-28 (VC-ADR-056), in this order — status on [KANBAN_BOARD.md](KANBAN_BOARD.md):
 0. **Done 2026-11-28:** R03, T1, L1, W1, R11, G1 (#348 bridge default proven "Pushed 2 files"), **N1b** #312 (0.9.67–0.9.69), **N2** #313 (0.9.70), **N3** #314 (0.9.71), **N4 PR 1** (0.9.72: health on the core, 64/64). Evidence: CURRENT_DELIVERY_STATUS §2, DECISION_LOG VC-ADR-051.
-1. **N4 rest #255 — ask the owner first** (hard to reverse): (a) stop deploying p6vc-api in `scripts/p6vc-deploy-backend.sh` and the smoke steps that call it; (b) delete the p6vc-api Cloud Run service (owner confirmation); (c) move the rules the core still imports from `backend/gas/src` (policies, flows, pagination, DTO validator, router checks) into `backend/core`, keep the legacy acceptance tests as the specification, then delete `backend/gas/src` legacy use cases.
+1. **N4 rest #255 (code only):** move the rules the core still imports from `backend/gas/src` (policies, flows, pagination, DTO validator, router checks) into `backend/core`, keep the legacy acceptance tests as the specification; the runtime part is done (p6vc-api deleted 2026-11-28).
 2. R10 recovery gate (#303). Photos R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
 
 ## 7. Working notes (things that bit before)
