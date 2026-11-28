@@ -50,22 +50,22 @@ const safeguards = Object.freeze([
   <PageTemplateComponent eyebrow="ข้อมูลระบบ" title="เกี่ยวกับระบบ" description="P6 Vehicle Contact — ระบบลงทะเบียน ค้นหา และติดต่อผู้ประสานงานยานพาหนะด้วยทะเบียนรถหรือ QR">
     <template #breadcrumbs><RouterLink class="link" :to="{ name: 'dashboard' }">ภาพรวม</RouterLink><span aria-hidden="true"> / </span><span aria-current="page">เกี่ยวกับระบบ</span></template>
     <div class="grid gap-6 lg:grid-cols-2">
-      <section class="card card-border bg-base-100 shadow-none" aria-labelledby="about-system">
+      <section class="card card-border min-w-0 bg-base-100 shadow-none" aria-labelledby="about-system">
         <div class="card-body gap-3 p-5">
           <div class="flex items-center justify-between gap-2">
             <h2 id="about-system" class="card-title text-lg">สถานะและเวอร์ชัน</h2>
             <span class="flex items-center gap-2 text-sm"><span class="status" :class="statusTone" aria-hidden="true"></span>{{ statusLabel }}</span>
           </div>
-          <div class="p6-table-wrap"><table class="p6-table"><tbody>
+          <div class="p6-table-wrap" tabindex="0" role="region" aria-labelledby="about-system"><table class="p6-table"><tbody>
             <tr v-for="[label, value] in systemRows" :key="label"><th>{{ label }}</th><td class="p6-col-text">{{ value }}</td></tr>
           </tbody></table></div>
           <div class="card-actions justify-end"><button class="btn btn-sm" type="button" :disabled="busy" @click="auth.checkConnection"><span v-if="phase === 'checking'" class="loading loading-spinner loading-sm"></span>ตรวจสถานะอีกครั้ง</button></div>
         </div>
       </section>
-      <section class="card card-border bg-base-100 shadow-none" aria-labelledby="about-session">
+      <section class="card card-border min-w-0 bg-base-100 shadow-none" aria-labelledby="about-session">
         <div class="card-body gap-3 p-5">
           <h2 id="about-session" class="card-title text-lg">เซสชันของคุณ</h2>
-          <div class="p6-table-wrap"><table class="p6-table"><tbody>
+          <div class="p6-table-wrap" tabindex="0" role="region" aria-labelledby="about-session"><table class="p6-table"><tbody>
             <tr v-for="[label, value] in sessionRows" :key="label"><th>{{ label }}</th><td class="p6-col-text">{{ value }}</td></tr>
           </tbody></table></div>
         </div>
@@ -74,7 +74,7 @@ const safeguards = Object.freeze([
     <section class="card card-border mt-6 bg-base-100 shadow-none" aria-labelledby="about-safeguards">
       <div class="card-body gap-3 p-5">
         <h2 id="about-safeguards" class="card-title text-lg">การคุ้มครองข้อมูลและความปลอดภัย</h2>
-        <div class="p6-table-wrap"><table class="p6-table">
+        <div class="p6-table-wrap" tabindex="0" role="region" aria-labelledby="about-safeguards"><table class="p6-table">
           <thead><tr><th>เรื่อง</th><th>ระบบทำอย่างไร</th></tr></thead>
           <tbody><tr v-for="[topic, detail] in safeguards" :key="topic"><th>{{ topic }}</th><td class="p6-col-text">{{ detail }}</td></tr></tbody>
         </table></div>

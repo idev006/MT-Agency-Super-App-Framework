@@ -20,8 +20,8 @@ const here = path.dirname(fileURLToPath(import.meta.url))
 const gasDir = path.resolve(here, '../../backend/gas')
 process.chdir(gasDir); await import(pathToFileURL(path.join(gasDir, 'scripts/load-env.mjs')).href); process.chdir(path.resolve(here, '..'))
 if (process.env.P6VC_ALLOW_OWNER_DEV_WRITES !== 'RUN_SYNTHETIC_OWNER_DEV') throw new Error('owner-dev synthetic write guard is required')
-const endpoint = process.env.P6VC_WORKER_FRONTEND_URL, APP = process.env.P6VC_UI_BASE || 'http://localhost:5173'
-if (!/^https:\/\/[a-z0-9.-]+\.workers\.dev\/api\/frontend$/.test(endpoint || '')) throw new Error('P6VC_WORKER_FRONTEND_URL must be the Worker /api/frontend endpoint')
+const { coreFrontendEndpoint } = await import(new URL('file:///' + path.join(gasDir, 'scripts/core-frontend-endpoint.mjs').replace(/\\/g, '/')).href)
+const endpoint = coreFrontendEndpoint(), APP = process.env.P6VC_UI_BASE || 'http://localhost:5173'
 const out = path.resolve(process.argv[2] || 'test-results/live-print-ui'); fs.mkdirSync(out, { recursive: true })
 
 const api = async (operation, payload, token) => {

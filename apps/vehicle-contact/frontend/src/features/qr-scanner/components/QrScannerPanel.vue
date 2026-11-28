@@ -32,7 +32,7 @@ function chooseFile(event) {
       <div v-else-if="phase === 'error'" class="alert alert-warning items-start"><div><strong>เปิดกล้องหรืออ่าน QR ไม่ได้</strong><p class="mt-1 text-sm">รหัสข้อผิดพลาด: {{ failureCode || 'CAMERA_UNAVAILABLE' }} — ใช้ "อ่าน QR จากรูปภาพ" หรือกรอกรหัสด้านล่างแทนได้</p></div></div>
       <div class="relative mx-auto grid aspect-square max-h-[26rem] w-full max-w-md place-items-center overflow-hidden rounded-box bg-neutral text-neutral-content">
         <div :id="readerId" class="size-full overflow-hidden"></div>
-        <p v-if="!active && phase !== 'starting' && phase !== 'switching'" class="absolute max-w-xs px-6 text-center">กด “เปิดกล้อง” แล้วเล็งไปที่ QR บนรถ<br><span class="text-sm opacity-80">กล้องเปิดเฉพาะเมื่อกด ระบบไม่อัปโหลดภาพจากกล้อง</span></p>
+        <p v-if="!active && phase !== 'starting' && phase !== 'switching'" class="absolute max-w-xs px-6 text-center text-white">กด “เปิดกล้อง” แล้วเล็งไปที่ QR บนรถ<br><span class="text-sm opacity-80">กล้องเปิดเฉพาะเมื่อกด ระบบไม่อัปโหลดภาพจากกล้อง</span></p>
       </div>
       <button v-if="!active" class="btn btn-primary btn-lg min-h-12 w-full" type="button" :disabled="busy" @click="emit('start')">เปิดกล้อง</button>
       <div v-else class="grid grid-cols-2 gap-3">

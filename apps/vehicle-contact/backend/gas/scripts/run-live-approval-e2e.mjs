@@ -1,20 +1,20 @@
-// Owner-authorized A2 approval E2E against the live DEV backend via the Cloudflare Worker gateway.
+// Owner-authorized A2 approval E2E against the live DEV backend via the p6vc-core browser gateway (/api/frontend).
 // Approves pending synthetic registrations, verifies the original synthetic batch (lookup + fresh QR
 // resolve), and runs review/photo negatives. Creates synthetic approvals only; never touches real data.
 // Credentials and tokens are env/memory-only; the report is sanitized (no passwords, session tokens,
 // raw QR tokens, or personal data). Requires the explicit owner-dev write guard, like the regression runner.
 import './load-env.mjs';
+import {coreFrontendEndpoint} from './core-frontend-endpoint.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {randomUUID} from 'node:crypto';
 
-const endpoint=process.env.P6VC_WORKER_FRONTEND_URL;
+const endpoint=coreFrontendEndpoint();
 const origin=process.env.P6VC_FRONTEND_ORIGIN||'https://idev006.github.io';
 const user=process.env.P6VC_ADMIN_USER;
 const password=process.env.P6VC_ADMIN_PASS;
 const batchPrefix=process.env.P6VC_BATCH_PREFIX||'ฑฆ';
 const batchExpected=Number(process.env.P6VC_BATCH_EXPECTED||'10');
-assert.match(endpoint||'',/^https:\/\/[a-z0-9.-]+\.workers\.dev\/api\/frontend$/,'P6VC_WORKER_FRONTEND_URL must be the Worker /api/frontend endpoint');
 assert.ok(user&&password,'P6VC_ADMIN_USER and P6VC_ADMIN_PASS are required (env or gitignored .env; never committed)');
 assert.equal(process.env.P6VC_ALLOW_OWNER_DEV_WRITES,'RUN_SYNTHETIC_OWNER_DEV','owner-dev synthetic write guard is required');
 
@@ -24,7 +24,7 @@ async function call(operation,payload={},{auth=true}={}){
  const body={apiVersion:'v1',group,action:rest.join('.'),payload,requestId:randomUUID(),...(auth&&sessionToken?{sessionToken}:{})};
  const res=await fetch(endpoint,{method:'POST',headers:{'content-type':'application/json',origin,accept:'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(90000)});
  const j=await res.json();
- if(j.error&&!('ok'in j))throw new Error('WORKER_'+j.error);
+ if(j.error&&!('ok'in j))throw new Error('GATEWAY_'+j.error);
  return j;
 }
 const ok=(j,label)=>{if(!j.ok)throw new Error(label+' -> '+JSON.stringify(j.error));return j.data;};

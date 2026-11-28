@@ -70,7 +70,7 @@ onBeforeUnmount(clearSecret)
   <section class="card card-border border-error/50 bg-base-100 shadow-none" aria-labelledby="system-reset-title" data-system-reset>
     <div class="card-body gap-4">
       <div>
-        <h2 id="system-reset-title" class="card-title text-error">รีเซ็ตข้อมูลระบบ (สำหรับทดสอบ / ตั้งต้นระบบ)</h2>
+        <h2 id="system-reset-title" class="card-title"><span class="badge badge-error">ลบถาวร</span> รีเซ็ตข้อมูลระบบ (สำหรับทดสอบ / ตั้งต้นระบบ)</h2>
         <p class="text-sm text-base-content/80">ลบข้อมูลการใช้งานทั้งหมดใน Firestore และย้ายภาพรถใน Google Drive ไปถังขยะ (กู้คืนได้ 30 วัน) <strong>เก็บไว้:</strong> ข้อมูลอ้างอิง การตั้งค่า (รวมประเภทบุคคล/สีสติกเกอร์) บทบาทและสิทธิ์ และบัญชีของคุณ การลบใน Firestore ย้อนกลับไม่ได้</p>
       </div>
       <fieldset class="flex flex-wrap gap-x-6 gap-y-2" :disabled="phase === 'running' || phase === 'previewing'">
