@@ -34,7 +34,10 @@ export const FILES = [
   'journal-recovery.test.mjs',
   'registration-photo.test.mjs',
   'pagination-contract.test.mjs',
-  'photo-layout.test.mjs'
+  'photo-layout.test.mjs',
+  // N3: users / organizations / campaigns (role matrix, org hierarchy)
+  'actor-rbac-matrix.test.mjs',
+  'org-hierarchy.test.mjs'
 ];
 const HARNESS_METHODS = new Set(['call', 'as', 'stagePhotos', 'createCampaign', 'createOrganization']);
 const TEST_FUNCTIONS = new Set(['test', 'it', 'describe']);
@@ -131,6 +134,9 @@ export function transform(source, file = 'input') {
   walk(ast, n => {
     if (n.type === 'MemberExpression' && n.object?.type === 'MetaProperty' && n.property?.name === 'dirname')
       edits.push([n.start, null, n.end, "(import.meta.dirname + '/../../../gas/tests')"]);
+    // import.meta.url (new URL(relative, import.meta.url)): the URL of the legacy test file itself
+    if (n.type === 'MemberExpression' && n.object?.type === 'MetaProperty' && n.property?.name === 'url')
+      edits.push([n.start, null, n.end, `new URL('../../../gas/tests/${file}', import.meta.url).href`]);
   });
   edits.sort((a, b) => b[0] - a[0] || (a[1] === ')' ? -1 : 1));
   let out = source;

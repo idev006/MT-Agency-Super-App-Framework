@@ -11,10 +11,15 @@ import {createApiHandler} from '../../cloudrun/http-handler.mjs';
 import {createCoreHandler} from '../src/server.mjs';
 import {createIntegrationManager} from '../src/adapters/outbound/manager.mjs';
 import {createRouter} from '../src/http/routing.mjs';
+import {createCoreFacade, USE_CASES} from '../src/facade/operations.mjs';
 
 const listen = handler => new Promise(r => { const s = http.createServer(handler); s.listen(0, '127.0.0.1', () => r(s)); });
 const base = s => `http://127.0.0.1:${s.address().port}`;
 const quiet = () => {};
+// every operation is on the core since N3 (system.health excepted): these proxy tests keep users.list on the legacy side so a
+// real forwarded operation (with a payload and a session) is exercised
+const {'users.list': _forwarded, ...ported} = USE_CASES;
+const coreWithout = () => createCoreFacade({store: () => { throw new Error('NO_STORE_IN_PROXY_TEST'); }, useCases: ported});
 const legacyAt = url => createIntegrationManager({overrides: {urls: {'legacy-engine': url}}, log: quiet}).gateway('legacy-engine');
 
 async function pair() {
@@ -25,14 +30,14 @@ async function pair() {
     return {ok: true, data: {echo: req.group + '.' + req.action, payload: req.payload}, error: null, requestId: req.requestId || null};
   }};
   const legacy = await listen(createApiHandler(legacyApp));
-  const core = await listen(createCoreHandler({legacy: legacyAt(base(legacy))}));
+  const core = await listen(createCoreHandler({legacy: legacyAt(base(legacy)), core: coreWithout()}));
   return {legacy, core, seen, close: () => { legacy.close(); core.close(); }};
 }
 
 test('CORE-01 every operation is forwarded unchanged; health too; responses carry x-p6vc-engine: core', async () => {
   const p = await pair();
   try {
-    // an operation the core has NOT ported yet (users.* move in N3; vehicles.list is the core's since N1a)
+    // an operation the core does not answer here (kept on the legacy side above)
     const env = {apiVersion: 'v1', group: 'users', action: 'list', payload: {page: 1, pageSize: 10}, sessionToken: 'a'.repeat(64), requestId: 'req_12345678'};
     const r = await fetch(base(p.core) + '/', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify(env)});
     assert.equal(r.headers.get('x-p6vc-engine'), 'core');
@@ -61,7 +66,7 @@ test('CORE-02 the browser gateway contract (WF-01..14) holds at the core', async
 
 test('CORE-03 legacy unreachable → clean envelope with the requestId; only local overrides are accepted', async () => {
   const dead = await listen((_req, res) => { res.destroy(); });
-  const core = await listen(createCoreHandler({legacy: legacyAt(base(dead))}));
+  const core = await listen(createCoreHandler({legacy: legacyAt(base(dead)), core: coreWithout()}));
   try {
     const r = await fetch(base(core) + '/', {method: 'POST', headers: {'content-type': 'application/json'},
       body: JSON.stringify({apiVersion: 'v1', group: 'users', action: 'list', payload: {}, requestId: 'req_12345678'})}); // a forwarded op

@@ -32,6 +32,9 @@ import {vehiclesUpdate, vehiclesCancel, contactsUpdate, changesSubmit, changesLi
 import {qrIssue, qrRevoke, qrReplace, qrExport} from '../use-cases/qr-manage.mjs';
 import {photosList, photosReplace, retentionListDue, retentionListExecutable, retentionApprove, retentionJobStatus, retentionExecute,
   auditQuery, auditExport} from '../use-cases/photos-retention-audit.mjs';
+import {usersCreate, usersList, usersUpdate, usersSuspend, usersReactivate, usersResetPassword, usersAssignRoles,
+  organizationsList, organizationsCreate, organizationsUpdate, organizationsDisable, organizationsEnable,
+  campaignsCreate, campaignsList, campaignsRevoke} from '../use-cases/identity-admin.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -98,7 +101,23 @@ export const USE_CASES = Object.freeze({
   'retention.jobStatus': retentionJobStatus,
   'retention.execute': retentionExecute,
   'audit.query': auditQuery,
-  'audit.export': auditExport
+  'audit.export': auditExport,
+  // N3: users (core password port, shared session revoke), organizations, campaigns
+  'users.create': usersCreate,
+  'users.list': usersList,
+  'users.update': usersUpdate,
+  'users.suspend': usersSuspend,
+  'users.reactivate': usersReactivate,
+  'users.resetPassword': usersResetPassword,
+  'users.assignRoles': usersAssignRoles,
+  'organizations.list': organizationsList,
+  'organizations.create': organizationsCreate,
+  'organizations.update': organizationsUpdate,
+  'organizations.disable': organizationsDisable,
+  'organizations.enable': organizationsEnable,
+  'campaigns.create': campaignsCreate,
+  'campaigns.list': campaignsList,
+  'campaigns.revoke': campaignsRevoke
 });
 const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute', 'registrations.review', 'registrations.photo',
   'photos.replace', 'retention.execute']);
