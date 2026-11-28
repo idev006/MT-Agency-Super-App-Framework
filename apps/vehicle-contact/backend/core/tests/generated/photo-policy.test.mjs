@@ -3,7 +3,7 @@
 // VC-ADR-049 photo size policy: one domain module; the admin sets it, the form receives it, the server enforces it.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {PHOTO_POLICY_KEY, DEFAULT_PHOTO_POLICY, parsePhotoPolicy, readPhotoPolicy, imageInfo, checkPhotoSize} from '../../../gas/src/domain/policies/PhotoPolicy.js';
+import {PHOTO_POLICY_KEY, DEFAULT_PHOTO_POLICY, parsePhotoPolicy, readPhotoPolicy, imageInfo, checkPhotoSize, fitsOrientation} from '../../../gas/src/domain/policies/PhotoPolicy.js';
 import {createAcceptanceHarness, assertOk, assertError} from '../support/core-harness.mjs';
 
 // synthetic image headers (no real photo): PNG IHDR, baseline JPEG (APP0 then SOF0), WebP VP8X
@@ -52,12 +52,60 @@ test('PP-04 the admin sets it (audited), the form receives it, uploads + replace
   assertError(assert, (await h.as('staff', 'system.config.update', {values: {[PHOTO_POLICY_KEY]: DEFAULT_PHOTO_POLICY}})), 'FORBIDDEN', 'not an admin');
   const policy = {maxSide: 1200, quality: 0.75, maxBytes: 800000, thumbSide: 256};
   const saved = assertOk(assert, (await h.as('sys', 'system.config.update', {values: {[PHOTO_POLICY_KEY]: policy}})), 'admin sets');
-  assert.deepEqual(saved[PHOTO_POLICY_KEY], policy);
+  // VC-ADR-055: a policy sent without the two newer fields is saved with their defaults (no change for older clients)
+  const inForce = {...policy, minSide: 0, orientation: 'ANY'};
+  assert.deepEqual(saved[PHOTO_POLICY_KEY], inForce);
   assert.ok(h.store.list('vc_change_audit').some(a => a.action === 'PHOTO_POLICY_UPDATED'), 'audited');
-  assert.deepEqual(assertOk(assert, (await h.call('campaigns.validate', {campaignToken: camp.campaignToken})), 'validate').photoPolicy, policy);
+  assert.deepEqual(assertOk(assert, (await h.call('campaigns.validate', {campaignToken: camp.campaignToken})), 'validate').photoPolicy, inForce);
   const uploadsBefore = h.io.driveUploads, stagedBefore = h.store.list('vc_photo_staging').length;
   assertError(assert, (await h.call('photos.upload', {campaignToken: camp.campaignToken, slot: 'FRONT', base64Image: jpeg(1600, 1200), mimeType: 'image/jpeg'})),
     'PHOTO_TOO_LARGE', 'longer than 1200 px');
   assert.equal(h.io.driveUploads, uploadsBefore, 'nothing sent to Drive'); assert.equal(h.store.list('vc_photo_staging').length, stagedBefore, 'no staging row');
   assertOk(assert, (await h.call('photos.upload', {campaignToken: camp.campaignToken, slot: 'FRONT', base64Image: jpeg(1200, 900), mimeType: 'image/jpeg'})), 'within the policy');
+});
+
+test('PP-05 VC-ADR-055 orientation (ANY / LANDSCAPE / PORTRAIT; a square fits both) and minimum shorter side (0 = off)', () => {
+  const base = parsePhotoPolicy(DEFAULT_PHOTO_POLICY);
+  assert.equal(base.orientation, 'ANY'); assert.equal(base.minSide, 0);
+  assert.deepEqual(parsePhotoPolicy({maxSide: 1600, quality: 0.82, maxBytes: 1500000, thumbSide: 320}), DEFAULT_PHOTO_POLICY, 'older policy rows read as before');
+  for (const bad of [{...DEFAULT_PHOTO_POLICY, orientation: 'landscape'}, {...DEFAULT_PHOTO_POLICY, orientation: 1}, {...DEFAULT_PHOTO_POLICY, minSide: -1},
+    {...DEFAULT_PHOTO_POLICY, minSide: 2001}, {...DEFAULT_PHOTO_POLICY, minSide: 600.5}, {...DEFAULT_PHOTO_POLICY, maxSide: 1000, minSide: 1200}])
+    assert.throws(() => parsePhotoPolicy(bad), /INVALID_PHOTO_POLICY/, JSON.stringify(bad));
+  assert.deepEqual([fitsOrientation(1600, 1200, 'LANDSCAPE'), fitsOrientation(1200, 1600, 'LANDSCAPE'), fitsOrientation(1200, 1600, 'PORTRAIT'),
+    fitsOrientation(1000, 1000, 'PORTRAIT'), fitsOrientation(0, 0, 'LANDSCAPE'), fitsOrientation(1200, 1600, 'ANY')], [true, false, true, true, true, true]);
+  const land = parsePhotoPolicy({...DEFAULT_PHOTO_POLICY, orientation: 'LANDSCAPE', minSide: 900});
+  assert.doesNotThrow(() => checkPhotoSize(jpeg(1600, 1200), land));
+  assert.throws(() => checkPhotoSize(jpeg(1200, 1600), land), /PHOTO_ORIENTATION_INVALID/);
+  assert.throws(() => checkPhotoSize(png(1600, 800), land), /PHOTO_TOO_SMALL/, 'shorter side 800 < 900');
+  assert.throws(() => checkPhotoSize(jpeg(1700, 1200), land), /PHOTO_TOO_LARGE/, 'too large is checked first');
+  assert.doesNotThrow(() => checkPhotoSize('AAAA-binary-fake', land), 'unreadable header: judged by bytes only, as before');
+  const port = parsePhotoPolicy({...DEFAULT_PHOTO_POLICY, orientation: 'PORTRAIT'});
+  assert.doesNotThrow(() => checkPhotoSize(webp(1200, 1600), port));
+  assert.throws(() => checkPhotoSize(webp(1600, 1200), port), /PHOTO_ORIENTATION_INVALID/);
+});
+
+test('PP-06 VC-ADR-055 the admin asks for landscape + a minimum size; the form receives it; other photos refused before Drive (audited)', async () => {
+  const h = createAcceptanceHarness();
+  const camp = (await h.createCampaign());
+  const policy = {...DEFAULT_PHOTO_POLICY, orientation: 'LANDSCAPE', minSide: 900};
+  assertOk(assert, (await h.as('sys', 'system.config.update', {values: {[PHOTO_POLICY_KEY]: policy}})), 'admin sets');
+  assert.ok(h.store.list('vc_change_audit').some(a => a.action === 'PHOTO_POLICY_UPDATED' && /minSide=900,orientation=LANDSCAPE/.test(a.redacted_summary)), 'audited');
+  assert.deepEqual(assertOk(assert, (await h.call('campaigns.validate', {campaignToken: camp.campaignToken})), 'validate').photoPolicy, policy);
+  const uploadsBefore = h.io.driveUploads;
+  const up = async img => (await h.call('photos.upload', {campaignToken: camp.campaignToken, slot: 'FRONT', base64Image: img, mimeType: 'image/jpeg'}));
+  assertError(assert, (await up(jpeg(1200, 1600))), 'PHOTO_ORIENTATION_INVALID', 'portrait refused');
+  assertError(assert, (await up(jpeg(1600, 800))), 'PHOTO_TOO_SMALL', 'too small refused');
+  assert.equal(h.io.driveUploads, uploadsBefore, 'nothing sent to Drive');
+  assertOk(assert, (await up(jpeg(1600, 1200))), 'landscape within the policy');
+});
+
+test('PP-07 VC-ADR-055 vehicles.detail carries the photo rules for whoever may see photos (the replace screen uses them)', async () => {
+  const h = createAcceptanceHarness();
+  const org = (await h.createOrganization()), camp = (await h.createCampaign());
+  const r = assertOk(assert, (await h.call('registrations.submit', h.registrationPayload(camp.campaignToken, org, (await h.stagePhotos(camp.campaignToken))))), 'submit');
+  const v = assertOk(assert, (await h.as('reg', 'registrations.review', {requestId: r.requestId, decision: 'APPROVE', stickerCategory: 'NCO', platePhotoVerified: true})), 'approve');
+  const policy = {...DEFAULT_PHOTO_POLICY, orientation: 'PORTRAIT', minSide: 600};
+  assertOk(assert, (await h.as('sys', 'system.config.update', {values: {[PHOTO_POLICY_KEY]: policy}})), 'admin sets');
+  const d = assertOk(assert, (await h.as('reg', 'vehicles.detail', {vehicleId: v.vehicleId})), 'detail');
+  assert.ok(Array.isArray(d.photos)); assert.deepEqual(d.photoPolicy, policy);
 });

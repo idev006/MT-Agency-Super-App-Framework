@@ -55,10 +55,13 @@ export function* vehicleViewFlow(v, actor, source, deps) {
   if (wantContacts)
     response.contacts = contactRows.filter(c => c.status === 'ACTIVE')
       .map(c => ({name: c.display_name, phone: c.phone_e164, relationship: c.relationship, isPrimary: c.is_primary, verifiedAt: c.verified_at || ''}));
+  const policy = wantPhotos ? readPhotoPolicy(policyRow) : null;
   if (wantPhotos)
     response.photos = photoRows.filter(x => x.status === 'ACTIVE')
       .map(x => ({photoId: x.photo_id, slot: x.slot, storageRef: x.storage_ref, mimeType: x.mime_type, createdAt: x.created_at || '',
-        ...photoLinks(x.storage_ref, readPhotoPolicy(policyRow))})); // VC-ADR-050 PR B: the browser loads the photo from Drive
+        ...photoLinks(x.storage_ref, policy)})); // VC-ADR-050 PR B: the browser loads the photo from Drive
+  // VC-ADR-055: the photo rules in force, so the photo-replace screen resizes / checks on the device (already read, no extra cost)
+  if (wantPhotos) response.photoPolicy = policy;
   if (wantHistory) response.history = historyRows.slice(-100)
     .map(x => ({audit_id: x.audit_id, action: x.action, redacted_summary: x.redacted_summary, created_at: x.created_at}));
   return response;

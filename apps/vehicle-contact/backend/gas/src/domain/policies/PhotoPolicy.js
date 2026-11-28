@@ -3,10 +3,16 @@
 // so the device resizes to it, and the server checks every uploaded photo against it (photos.upload, photos.replace).
 // The server never re-encodes (no image library): the device resizes; the server reads the size from the file header.
 export const PHOTO_POLICY_KEY = 'photo_policy';
-// [min, max] of each field; maxSide / maxBytes / thumbSide are whole numbers
-export const PHOTO_POLICY_LIMITS = Object.freeze({maxSide: [800, 4000], quality: [0.5, 0.95], maxBytes: [100000, 4500000], thumbSide: [160, 640]});
-export const DEFAULT_PHOTO_POLICY = Object.freeze({maxSide: 1600, quality: 0.82, maxBytes: 1500000, thumbSide: 320});
-const INTEGERS = new Set(['maxSide', 'maxBytes', 'thumbSide']);
+// VC-ADR-055 (owner 2026-11-28: "ถ้าสามารถกำหนดกฏ ให้ผู้ใช้ต้องถ่ายแนวนอน แนวตั้ง หรือ อนุญาตทั้ง 2 แบบ ก็จะดีมาก ... รูปที่อัพโหลด
+// ขึ้นมาต้องมีขนาดไม่เกินเท่าใด ... การประมวลผลรูปจะเกิดที่ FE"): two more rules — orientation (ANY | LANDSCAPE | PORTRAIT;
+// a square photo fits both) and minSide (the shorter side at least this many px; 0 = off). Both are optional in a stored or
+// sent policy (older rows / clients keep working, with the defaults = no change).
+// [min, max] of each numeric field; maxSide / maxBytes / thumbSide / minSide are whole numbers
+export const PHOTO_POLICY_LIMITS = Object.freeze({maxSide: [800, 4000], quality: [0.5, 0.95], maxBytes: [100000, 4500000], thumbSide: [160, 640], minSide: [0, 2000]});
+export const PHOTO_ORIENTATIONS = Object.freeze(['ANY', 'LANDSCAPE', 'PORTRAIT']);
+export const DEFAULT_PHOTO_POLICY = Object.freeze({maxSide: 1600, quality: 0.82, maxBytes: 1500000, thumbSide: 320, minSide: 0, orientation: 'ANY'});
+const INTEGERS = new Set(['maxSide', 'maxBytes', 'thumbSide', 'minSide']);
+const OPTIONAL = new Set(['minSide', 'orientation']); // VC-ADR-055: absent → the default
 
 // a policy from the admin (object or JSON text) → the checked policy, or INVALID_PHOTO_POLICY
 export function parsePhotoPolicy(raw) {
@@ -14,14 +20,18 @@ export function parsePhotoPolicy(raw) {
   if (typeof raw === 'string') { try { v = JSON.parse(raw); } catch { throw new Error('INVALID_PHOTO_POLICY'); } }
   if (!v || typeof v !== 'object' || Array.isArray(v)) throw new Error('INVALID_PHOTO_POLICY');
   const keys = Object.keys(PHOTO_POLICY_LIMITS);
-  if (Object.keys(v).some(k => !keys.includes(k))) throw new Error('INVALID_PHOTO_POLICY');
+  if (Object.keys(v).some(k => !keys.includes(k) && k !== 'orientation')) throw new Error('INVALID_PHOTO_POLICY');
   const out = {};
   for (const k of keys) {
+    if (OPTIONAL.has(k) && v[k] === undefined) { out[k] = DEFAULT_PHOTO_POLICY[k]; continue; }
     const n = v[k], [min, max] = PHOTO_POLICY_LIMITS[k];
     if (typeof n !== 'number' || !Number.isFinite(n) || n < min || n > max || (INTEGERS.has(k) && !Number.isInteger(n))) throw new Error('INVALID_PHOTO_POLICY');
     out[k] = k === 'quality' ? Math.round(n * 100) / 100 : n;
   }
-  if (out.thumbSide > out.maxSide) throw new Error('INVALID_PHOTO_POLICY');
+  if (out.thumbSide > out.maxSide || out.minSide > out.maxSide) throw new Error('INVALID_PHOTO_POLICY');
+  const o = v.orientation === undefined ? DEFAULT_PHOTO_POLICY.orientation : v.orientation;
+  if (!PHOTO_ORIENTATIONS.includes(o)) throw new Error('INVALID_PHOTO_POLICY');
+  out.orientation = o;
   return Object.freeze(out);
 }
 // the stored row → the policy in force (no row, or an unreadable one: the defaults — an upload never breaks on a bad setting)
@@ -80,9 +90,18 @@ export function imageInfo(base64) {
   const d = dimensions(decodePrefix(base64, HEADER_CHARS));
   return {bytes, width: d ? d.width : 0, height: d ? d.height : 0};
 }
-// PHOTO_TOO_LARGE when the file is bigger than the policy allows (bytes, or its longest side)
+// does a width × height photo fit the orientation rule (a square fits both; unknown size is not judged here)
+export const fitsOrientation = (width, height, orientation) => !width || !height || orientation === 'ANY' || width === height
+  || (orientation === 'LANDSCAPE' ? width > height : height > width);
+// the server's check of an uploaded photo against the policy — reads the header only, never decodes or re-encodes:
+//   PHOTO_TOO_LARGE           more bytes than maxBytes, or the longest side over maxSide
+//   PHOTO_TOO_SMALL           the shorter side under minSide (VC-ADR-055; minSide 0 = off)
+//   PHOTO_ORIENTATION_INVALID not the orientation the policy asks for (VC-ADR-055)
+// An unreadable header (width / height 0) is judged by bytes only (the Drive adapter validates the file, as before).
 export function checkPhotoSize(base64, policy) {
   const {bytes, width, height} = imageInfo(base64);
   if (bytes > policy.maxBytes || Math.max(width, height) > policy.maxSide) throw new Error('PHOTO_TOO_LARGE');
+  if (width && height && policy.minSide && Math.min(width, height) < policy.minSide) throw new Error('PHOTO_TOO_SMALL');
+  if (!fitsOrientation(width, height, policy.orientation || 'ANY')) throw new Error('PHOTO_ORIENTATION_INVALID');
   return {bytes, width, height};
 }
