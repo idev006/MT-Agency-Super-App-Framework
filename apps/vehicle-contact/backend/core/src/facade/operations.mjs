@@ -29,6 +29,7 @@ import {registrationsListPending, registrationsDetail, registrationsReview, regi
   from '../use-cases/registration-review.mjs';
 import {vehiclesUpdate, vehiclesCancel, contactsUpdate, changesSubmit, changesListPending, changesReview, changesListMine}
   from '../use-cases/vehicle-admin.mjs';
+import {qrIssue, qrRevoke, qrReplace, qrExport} from '../use-cases/qr-manage.mjs';
 
 // operation → (payload, principal) => flow
 // operation → (payload, principal, deps) => flow   — phase 2b: the officer path
@@ -80,7 +81,12 @@ export const USE_CASES = Object.freeze({
   'changes.submit': changesSubmit,
   'changes.listPending': changesListPending,
   'changes.review': changesReview,
-  'changes.listMine': changesListMine
+  'changes.listMine': changesListMine,
+  // N1b PR 5: QR administration (one read round + one commit; export = one round + one audit batch)
+  'qr.issue': qrIssue,
+  'qr.revoke': qrRevoke,
+  'qr.replace': qrReplace,
+  'qr.export': qrExport
 });
 const MEDIA_OPERATIONS = new Set(['vehicles.photo', 'photos.upload', 'system.reset.execute', 'registrations.review', 'registrations.photo']);
 // a process memo (key → value, expires): the 645 reference rows change only through the seed installer (as the legacy, 5 min)
