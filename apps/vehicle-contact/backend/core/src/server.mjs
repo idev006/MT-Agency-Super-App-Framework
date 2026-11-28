@@ -20,7 +20,8 @@ export const firestoreStoreFromEnv = (env = process.env) => () => createFirestor
   db: new Firestore({projectId: env.FIRESTORE_PROJECT_ID, databaseId: env.FIRESTORE_DATABASE_ID || '(default)'})})});
 
 // integrations: the Integration Manager (VC-ADR-047); every outbound call goes through it
-export function createCoreHandler({integrations = createIntegrationManager(), legacy = integrations.gateway('legacy-engine'),
+// legacy: none in production since 0.9.73 (p6vc-api retired); the L1 dev server passes the in-process legacy engine
+export function createCoreHandler({integrations = createIntegrationManager(), legacy = null,
   core = createCoreFacade({store: firestoreStoreFromEnv(), media: () => integrations.gateway('media-bridge'),
     passwords: createNodePasswordHasher({pepper: process.env.P6VC_AUTH_PEPPER || null}),
     deriveSecret: createDeriveSecret(process.env.P6VC_AUTH_PEPPER),
@@ -31,6 +32,6 @@ export function createCoreHandler({integrations = createIntegrationManager(), le
   // x-p6vc-answered-by: which engine answered this operation (evidence for each ported group; no data in it)
   // (no envelope = GET / = health)
   const headers = envelope => ({'x-p6vc-engine': 'core',
-    'x-p6vc-answered-by': router.engineFor(envelope && typeof envelope === 'object' ? envelope.group + '.' + envelope.action : 'system.health') === 'core' ? 'core' : 'legacy'});
+    'x-p6vc-answered-by': router.engineFor(envelope && typeof envelope === 'object' ? envelope.group + '.' + envelope.action : 'system.health')});
   return createApiHandler(router, {headers});
 }

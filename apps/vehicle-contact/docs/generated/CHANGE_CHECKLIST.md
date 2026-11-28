@@ -44,7 +44,6 @@ Hard-coded operation counts (update them, or better: derive from the inventory):
 | `apps/vehicle-contact/contracts/firestore-indexes.v1.json` | indexes | `ensure-firestore-indexes.mjs --apply` BEFORE the backend deploy |
 | `apps/vehicle-contact/contracts/firestore-field-config.v1.json` | TTL / exemptions | `ensure-firestore-field-config.mjs --apply` |
 | `apps/vehicle-contact/frontend/src` | web app | GitHub Pages deploys on merge; check the bundle version on the live site |
-| `.github/workflows/deploy-vehicle-cloudrun.yml` | deploy pipeline | proven only by a real deploy run |
 | `.github/workflows/deploy-vehicle-core.yml` | core deploy pipeline | proven only by a real deploy run (the first run creates p6vc-core) |
 | `.github/workflows/deploy-vehicle-jobs.yml` | core jobs pipeline (Cloud Run Jobs p6vc-housekeeping + p6vc-photo-audit) | proven only by a real run: its JOB report (mode KEEP by default; APPLY needs `APPLY_DRIVE_HOUSEKEEPING`) |
 | `.github/workflows/run-vehicle-jobs.yml` | daily start of the core jobs (GitHub schedule 03:30 Bangkok) | starts the job as deployed (image + mode come from deploy-vehicle-jobs); proven by a run that ends in success |
@@ -57,8 +56,7 @@ Each fact has one owner; these files still carry a copy. CI fails when a count g
 | Fact | Owner | Copies |
 |---|---|---|
 | photo-slots | `apps/vehicle-contact/backend/gas/src/domain/policies/VehicleLifecycle.js` | 11 |
-| gas-webapp-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 4 |
-| cloud-run-legacy-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 2 |
+| gas-webapp-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 3 |
 | cloud-run-core-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 0 |
 | backend-version | `apps/vehicle-contact/backend/gas/package.json` | 2 |
 
@@ -78,19 +76,11 @@ Each fact has one owner; these files still carry a copy. CI fails when a count g
 
 </details>
 
-<details><summary>gas-webapp-url (4)</summary>
+<details><summary>gas-webapp-url (3)</summary>
 
-- `.github/workflows/deploy-vehicle-cloudrun.yml`
 - `.github/workflows/p6vc-live-acceptance.yml`
 - `apps/vehicle-contact/backend/gas/scripts/run-live-api-suite.mjs`
 - `apps/vehicle-contact/backend/gas/scripts/verify-live-publish.mjs`
-
-</details>
-
-<details><summary>cloud-run-legacy-url (2)</summary>
-
-- `apps/vehicle-contact/ops/cloudrun-alert-drill.sh`
-- `apps/vehicle-contact/ops/cloudrun-uptime-alert.sh`
 
 </details>
 

@@ -1,8 +1,7 @@
 {
   "note": "Written by scripts/gen-system-maps.mjs. Allowed copies per single-source fact; may only go down.",
   "photo-slots": 11,
-  "gas-webapp-url": 4,
-  "cloud-run-legacy-url": 2,
+  "gas-webapp-url": 3,
   "cloud-run-core-url": 0,
   "backend-version": 2
 }

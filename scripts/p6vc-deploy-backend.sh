@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # P6VC backend deploy chain, in the project's deploy order (.mt-studio/project.yaml deploy.steps):
-#   [indexes] → GAS push (PUSH_VEHICLE_GAS) → pin the web-app deployment to the new version (clasp) → p6vc-api (legacy
-#   Cloud Run) → p6vc-core → Cloud Run Jobs (mode KEEP, runs the read-only photo audit once).
-# There is no Cloudflare Worker any more (retired, VC-ADR-056 W1).
+#   [indexes] → GAS push (PUSH_VEHICLE_GAS) → pin the web-app deployment to the new version (clasp) → p6vc-core →
+#   Cloud Run Jobs (mode KEEP, runs the read-only photo audit once).
+# There is no Cloudflare Worker (retired, VC-ADR-056 W1) and no p6vc-api (retired 2026-11-28: the core is the only backend).
 # GitHub Pages deploys by itself on every merge to main.
 #
 # Owner 2026-11-28 (VC-ADR-052) approved subsequent synthetic-DEV merges/deploys once. This script still refuses without
@@ -30,9 +30,9 @@ fi
 cd "$(git rev-parse --show-toplevel)" || exit 1
 [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || { echo "REFUSED: check out main (git fetch origin main && git merge --ff-only FETCH_HEAD)"; exit 2; }
 git rev-parse --verify -q "$SHA^{commit}" >/dev/null || { echo "REFUSED: $SHA is not a local commit"; exit 2; }
-# the GAS web-app deployment the media bridge calls — one source: deploy-vehicle-cloudrun.yml MEDIA_BRIDGE_URL
-DEPLOYMENT=$(grep -o 'macros/s/[A-Za-z0-9_-]*/exec' .github/workflows/deploy-vehicle-cloudrun.yml | head -1 | sed 's#macros/s/##; s#/exec##')
-[ -n "$DEPLOYMENT" ] || { echo "FAILED: no GAS deployment id in deploy-vehicle-cloudrun.yml"; exit 1; }
+# the GAS web-app deployment the media bridge calls — one source: contracts/trusted-endpoints.v1.json (id gas-webapp)
+DEPLOYMENT=$(grep -o 'macros/s/[A-Za-z0-9_-]*/exec' apps/vehicle-contact/contracts/trusted-endpoints.v1.json | head -1 | sed 's#macros/s/##; s#/exec##')
+[ -n "$DEPLOYMENT" ] || { echo "FAILED: no GAS deployment id in contracts/trusted-endpoints.v1.json"; exit 1; }
 
 watch() { gh run watch "$1" --interval 20 --exit-status >/dev/null 2>&1; local rc=$?; echo "$2 RUN $1 EXIT $rc"; [ $rc -eq 0 ] || exit $rc; }
 latest() { gh run list --workflow "$1" --limit 1 --json databaseId -q '.[0].databaseId'; }
@@ -57,7 +57,7 @@ echo "V=$V"
 (cd apps/vehicle-contact/backend/gas && node scripts/verify-bridge-live.mjs --expect "$ARTIFACT") || {
   echo "FAILED: the GAS web app check after the pin. Roll back: (cd apps/vehicle-contact/backend/gas && npx @google/clasp@3.4.1 -u p6vc update-deployment $DEPLOYMENT -V ${PREV:-<previous>})"; exit 1; }
 
-for w in "deploy-vehicle-cloudrun.yml DEPLOY_VEHICLE_CLOUDRUN" "deploy-vehicle-core.yml DEPLOY_VEHICLE_CORE"; do
+for w in "deploy-vehicle-core.yml DEPLOY_VEHICLE_CORE"; do
   set -- $w
   gh workflow run "$1" --ref main -f confirmation="$2" >/dev/null; sleep 8
   watch "$(latest "$1")" "$1"

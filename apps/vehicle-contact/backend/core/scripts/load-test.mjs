@@ -1,4 +1,4 @@
-// Load test (VC-ADR-046 phase 1/2/2b-3). Synthetic DEV only. Target: a trusted endpoint id (cloud-run-api | cloud-run-core).
+// Load test (VC-ADR-046 phase 1/2/2b-3). Synthetic DEV only. Target: a trusted endpoint id (cloud-run-core; p6vc-api retired 2026-11-28).
 // Probes:
 //   validate — public, read-only: campaigns.validate with a random unknown token (one Firestore read, answer CAMPAIGN_INVALID).
 //   lookup   — authenticated officer path: vehicles.lookup of a real synthetic vehicle (session check + vehicle read + one

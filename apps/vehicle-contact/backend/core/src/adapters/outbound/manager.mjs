@@ -2,13 +2,11 @@
 // URLs come from the trusted-endpoints contract by id (no URL in code); secrets from the environment by NAME.
 import fs from 'node:fs';
 import {createHttpClient} from './http-client.mjs';
-import {createLegacyEngineGateway} from './gateways/legacy-engine.mjs';
 import {createMediaBridgeGateway} from './gateways/media-bridge.mjs';
 import {assertImplements} from '../../ports/index.mjs';
 
 const contract = name => JSON.parse(fs.readFileSync(new URL(`../../../../../contracts/${name}`, import.meta.url), 'utf8'));
 const GATEWAYS = {
-  'legacy-engine': ({http}) => createLegacyEngineGateway({http}),
   'media-bridge': ({http, secrets, entry}) => createMediaBridgeGateway({http, secret: secrets.P6VC_MEDIA_BRIDGE_SECRET, idempotent: entry.idempotent})
 };
 

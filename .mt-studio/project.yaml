@@ -33,29 +33,27 @@ versioning:
     - apps/vehicle-contact/backend/gas/scripts/expected-live-version.json   # the deploy smoke asserts this
     - apps/vehicle-contact/frontend/package.json                            # frontend version (FE)
 deploy:
-  chain: "P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <sha> <desc> [--indexes]  # GAS = photo bridge only (G1; --full-api = rollback, needs RESTORE_GAS_API_FILES); gas_push → gas_pin → cloudrun → core → core_jobs (KEEP); VC-ADR-052 supplies one-time DEV approval; set the guard per run"
+  chain: "P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <sha> <desc> [--indexes]  # GAS = photo bridge only (G1; --full-api = rollback, needs RESTORE_GAS_API_FILES); gas_push → gas_pin → core → core_jobs (KEEP); p6vc-api retired 2026-11-28; VC-ADR-052 supplies one-time DEV approval; set the guard per run"
   on_merge:
     - "GitHub Pages: workflow 'Build and deploy Pages from SSOT' runs on every push to main (also docs-only PRs)"
   by_path:
     - { path: apps/vehicle-contact/contracts/firestore-indexes.v1.json, steps: [indexes] }
-    - { path: apps/vehicle-contact/backend/gas/src, steps: [gas_push, gas_pin, cloudrun] }
-    - { path: apps/vehicle-contact/backend/cloudrun, steps: [cloudrun, core] }   # shared handler: both services
+    - { path: apps/vehicle-contact/backend/gas/src, steps: [gas_push, gas_pin, core] }   # the core imports the shared rules
+    - { path: apps/vehicle-contact/backend/cloudrun, steps: [core] }   # the HTTP handler the core uses
     - { path: apps/vehicle-contact/backend/core, steps: [core] }
     - { path: apps/vehicle-contact/frontend/src, steps: [] }   # Pages on merge
   steps:
     - { id: indexes, run: "node scripts/ensure-firestore-indexes.mjs --apply (in apps/vehicle-contact/backend/gas)", verify: "report: declared N / live N / missing 0", note: "ALWAYS before the backend" }
     - { id: gas_push, run: "gh workflow run deploy-vehicle-gas.yml --ref main -f confirmation=PUSH_VEHICLE_GAS",
         confirmation: PUSH_VEHICLE_GAS, verify: "run log: 'Created version N'", note: "push + version only; does not publish the web app" }
-    - { id: gas_pin, run: "npx @google/clasp@3.4.1 -u p6vc update-deployment <id from MEDIA_BRIDGE_URL in deploy-vehicle-cloudrun.yml> -V N",
+    - { id: gas_pin, run: "npx @google/clasp@3.4.1 -u p6vc update-deployment <id of gas-webapp in contracts/trusted-endpoints.v1.json> -V N",
         verify: "clasp list-deployments shows @N", note: "run from apps/vehicle-contact/backend/gas" }
-    - { id: cloudrun, run: "gh workflow run deploy-vehicle-cloudrun.yml --ref main -f confirmation=DEPLOY_VEHICLE_CLOUDRUN",
-        confirmation: DEPLOY_VEHICLE_CLOUDRUN, verify: "steps 'Smoke the candidate' and 'Smoke the live URL' success", note: "safe deploy: no traffic → smoke → switch → smoke, auto rollback" }
     - { id: core, run: "gh workflow run deploy-vehicle-core.yml --ref main -f confirmation=DEPLOY_VEHICLE_CORE",
         confirmation: DEPLOY_VEHICLE_CORE, verify: "step 'Smoke the live URL' success (first run creates p6vc-core)", note: "VC-ADR-046 front door; after the legacy deploy when both change" }
     - { id: core_jobs, run: "gh workflow run deploy-vehicle-jobs.yml --ref main -f confirmation=DEPLOY_VEHICLE_JOBS",
         confirmation: DEPLOY_VEHICLE_JOBS, verify: "step 'Run once and read its report' prints JOB {...status PASS}", note: "VC-ADR-046 2c: Cloud Run Jobs p6vc-housekeeping + p6vc-photo-audit (read-only) from the live core image; -f run_job picks the one run once; mode KEEP (default) keeps the housekeeping mode, APPLY needs -f apply_confirmation=APPLY_DRIVE_HOUSEKEEPING (Drive trash, 30-day undo); daily start = run-vehicle-jobs.yml (GitHub schedule 03:30 Bangkok; manual: -f confirmation=RUN_VEHICLE_JOBS)" }
   rollback:
-    - "Cloud Run: workflow rollback-vehicle-cloudrun.yml, confirmation ROLLBACK_VEHICLE_CLOUDRUN"
+    - "Cloud Run p6vc-core: the deploy rolls back by itself on a failed live smoke; by hand: gcloud run services update-traffic p6vc-core --to-revisions <previous>=100 (Cloud Console)"
     - "GAS web app: clasp -u p6vc update-deployment <id> -V <previous>"
     - "Runbook: apps/vehicle-contact/docs/CLOUD_RUN_RELEASE_AND_ROLLBACK_RUNBOOK.md"
 prove:

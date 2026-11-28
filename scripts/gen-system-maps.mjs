@@ -101,7 +101,6 @@ const DEPLOY = [
   ['apps/vehicle-contact/contracts/firestore-indexes.v1.json', 'indexes', '`ensure-firestore-indexes.mjs --apply` BEFORE the backend deploy'],
   ['apps/vehicle-contact/contracts/firestore-field-config.v1.json', 'TTL / exemptions', '`ensure-firestore-field-config.mjs --apply`'],
   ['apps/vehicle-contact/frontend/src', 'web app', 'GitHub Pages deploys on merge; check the bundle version on the live site'],
-  ['.github/workflows/deploy-vehicle-cloudrun.yml', 'deploy pipeline', 'proven only by a real deploy run'],
   ['.github/workflows/deploy-vehicle-core.yml', 'core deploy pipeline', 'proven only by a real deploy run (the first run creates p6vc-core)'],
   ['.github/workflows/deploy-vehicle-jobs.yml', 'core jobs pipeline (Cloud Run Jobs p6vc-housekeeping + p6vc-photo-audit)', 'proven only by a real run: its JOB report (mode KEEP by default; APPLY needs `APPLY_DRIVE_HOUSEKEEPING`)'],
   ['.github/workflows/run-vehicle-jobs.yml', 'daily start of the core jobs (GitHub schedule 03:30 Bangkok)', 'starts the job as deployed (image + mode come from deploy-vehicle-jobs); proven by a run that ends in success'],
@@ -120,7 +119,6 @@ const backendVersion = JSON.parse(read(path.join(app, 'backend/gas/package.json'
 const FACTS = [
   {id: 'photo-slots', owner: 'apps/vehicle-contact/backend/gas/src/domain/policies/VehicleLifecycle.js', re: /['"]FRONT_ANGLE['"]/},
   {id: 'gas-webapp-url', owner: 'apps/vehicle-contact/contracts/trusted-endpoints.v1.json', re: /AKfycby15c-Aux2za0[A-Za-z0-9_-]+/},
-  {id: 'cloud-run-legacy-url', owner: 'apps/vehicle-contact/contracts/trusted-endpoints.v1.json', re: /p6vc-api-46858005337/},
   {id: 'cloud-run-core-url', owner: 'apps/vehicle-contact/contracts/trusted-endpoints.v1.json', re: /p6vc-core-46858005337/},
   {id: 'backend-version', owner: 'apps/vehicle-contact/backend/gas/package.json', re: new RegExp('["\']' + backendVersion.replace(/\./g, '\.') + '["\']')}
 ];

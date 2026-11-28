@@ -37,12 +37,11 @@ test('DEPLOY-02 healthy revision with the expected version passes; wrong version
   await assert.rejects(smoke('https://evil.example.com', {fetchImpl: healthy('x')}), /run\.app/);
 });
 
-test('DEPLOY-03 the deploy workflow gives traffic only after the candidate smoke, and rolls back on a failed live smoke', () => {
-  const wf = fs.readFileSync(new URL('../../../../../.github/workflows/deploy-vehicle-cloudrun.yml', import.meta.url), 'utf8');
+// p6vc-api and its deploy / rollback workflows were retired 2026-11-28; the core's workflow keeps the same safe deploy
+test('DEPLOY-03 the core deploy workflow gives traffic only after the candidate smoke, and rolls back on a failed live smoke', () => {
+  const wf = fs.readFileSync(new URL('../../../../../.github/workflows/deploy-vehicle-core.yml', import.meta.url), 'utf8');
   const at = s => { const i = wf.indexOf(s); assert.ok(i > 0, s); return i; };
   assert.ok(at('--no-traffic --tag candidate') < at('Smoke the candidate') && at('Smoke the candidate') < at('--to-revisions "${{ steps.candidate.outputs.revision }}=100"'));
   assert.ok(at('Smoke the live URL; roll back on failure') < at('--to-revisions "$PREV=100"'));
-  const rb = fs.readFileSync(new URL('../../../../../.github/workflows/rollback-vehicle-cloudrun.yml', import.meta.url), 'utf8');
-  assert.match(rb, /inputs\.confirmation == 'ROLLBACK_VEHICLE_CLOUDRUN'/);
-  assert.match(rb, /\^p6vc-api-\[a-z0-9-\]\+\$/, 'a named revision is validated');
+  assert.ok(!fs.existsSync(new URL('../../../../../.github/workflows/deploy-vehicle-cloudrun.yml', import.meta.url)), 'p6vc-api deploy workflow retired');
 });

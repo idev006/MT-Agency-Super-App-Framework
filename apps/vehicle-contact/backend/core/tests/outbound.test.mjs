@@ -55,11 +55,11 @@ test('OUT-03 logs carry name/status/ms only — never bodies, headers or secrets
 
 test('OUT-04 registry: unknown or untrusted integrations are refused at start; ports are enforced', () => {
   const trusted = {endpoints: [{id: 'x', url: 'https://x.example'}]};
-  const entry = {name: 'legacy-engine', port: 'LegacyEngine', endpoint: 'x', timeoutMs: 1000, retry: {max: 0}, breaker: {}, idempotent: [], secrets: []};
+  const entry = {name: 'media-bridge', port: 'MediaStore', endpoint: 'x', timeoutMs: 1000, retry: {max: 0}, breaker: {}, idempotent: [], secrets: []};
   assert.throws(() => createIntegrationManager({registry: {integrations: [{...entry, endpoint: 'nope'}]}, trusted}), /INTEGRATION_ENDPOINT_NOT_TRUSTED/);
   assert.throws(() => createIntegrationManager({registry: {integrations: [{...entry, name: 'sms'}]}, trusted}), /INTEGRATION_UNKNOWN/);
   const m = createIntegrationManager({log: () => {}});
-  assert.deepEqual(m.names().sort(), ['legacy-engine', 'media-bridge']);
+  assert.deepEqual(m.names().sort(), ['media-bridge']); // p6vc-api (legacy engine) retired 2026-11-28
   assert.throws(() => m.gateway('media-bridge'), /MEDIA_BRIDGE_NOT_CONFIGURED/, 'secret missing → refused, never sent unsigned');
 });
 
