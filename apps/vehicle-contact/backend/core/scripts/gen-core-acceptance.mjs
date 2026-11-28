@@ -27,6 +27,7 @@ export const FILES = [
   'settings-registry.test.mjs',
   'photo-policy.test.mjs',
   'log-policy.test.mjs',
+  'owner-worker-scoped-reads.test.mjs',
   'system-reset.test.mjs'
 ];
 const HARNESS_METHODS = new Set(['call', 'as', 'stagePhotos', 'createCampaign', 'createOrganization']);
