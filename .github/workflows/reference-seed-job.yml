@@ -1,0 +1,92 @@
+name: P6 Vehicle Contact reference seed (manual)
+
+# R10: deploy a read-only-by-default job from the already proven core image.
+# APPLY requires both a typed phrase and the current manifest checksum. RECOVER
+# is deliberately unavailable here: it deletes rows and needs a separate owner decision.
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: 'Type RUN_REFERENCE_SEED to deploy and execute this job'
+        required: true
+        type: string
+      mode:
+        description: 'DRY_RUN reads only; APPLY inserts into an empty reference table'
+        required: true
+        default: DRY_RUN
+        type: choice
+        options: [DRY_RUN, APPLY]
+      apply_confirmation:
+        description: 'With APPLY only, type APPLY_REFERENCE_SEED'
+        required: false
+        type: string
+      manifest_checksum:
+        description: 'With APPLY only, paste the exact checksum from a fresh DRY_RUN report'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: p6vc-reference-seed
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: mt-iam-core-2026
+  REGION: asia-southeast3
+  CORE_SERVICE: p6vc-core
+  JOB: p6vc-reference-seed
+  RUNTIME_SA: p6vc-api-runtime@mt-iam-core-2026.iam.gserviceaccount.com
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    if: >-
+      github.ref == 'refs/heads/main' && inputs.confirmation == 'RUN_REFERENCE_SEED' &&
+      (inputs.mode != 'APPLY' || inputs.apply_confirmation == 'APPLY_REFERENCE_SEED')
+    steps:
+      - name: Validate apply checksum shape
+        if: inputs.mode == 'APPLY'
+        env:
+          CHECKSUM: ${{ inputs.manifest_checksum }}
+        run: |
+          if ! [[ "$CHECKSUM" =~ ^[a-f0-9]{64}$ ]]; then
+            echo '::error::Manifest checksum must be 64 lowercase hex characters from a fresh dry run'
+            exit 1
+          fi
+
+      - name: Authenticate to Google Cloud (keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy read-only-by-default job from live core image
+        run: |
+          IMAGE=$(gcloud run services describe "$CORE_SERVICE" --project "$PROJECT_ID" --region "$REGION" \
+            --format='value(spec.template.spec.containers[0].image)')
+          if [ -z "$IMAGE" ]; then echo '::error::Deploy p6vc-core first'; exit 1; fi
+          gcloud run jobs deploy "$JOB" --project "$PROJECT_ID" --region "$REGION" \
+            --image "$IMAGE" --service-account "$RUNTIME_SA" \
+            --command node --args backend/core/src/job.mjs,reference-seed \
+            --tasks 1 --max-retries 0 --task-timeout 900 --cpu 1 --memory 512Mi \
+            --set-env-vars "FIRESTORE_PROJECT_ID=${PROJECT_ID},FIRESTORE_DATABASE_ID=(default),P6VC_JOB_MODE=DRY_RUN" \
+            --labels "app=p6vc,component=reference-seed,commit=${GITHUB_SHA::12}" --quiet
+
+      - name: Execute once and wait
+        env:
+          MODE: ${{ inputs.mode }}
+          CHECKSUM: ${{ inputs.manifest_checksum }}
+        run: |
+          if [ "$MODE" = 'APPLY' ]; then
+            gcloud run jobs execute "$JOB" --project "$PROJECT_ID" --region "$REGION" --wait \
+              --update-env-vars "P6VC_JOB_MODE=APPLY,P6VC_REFERENCE_SEED_APPROVAL=${CHECKSUM}"
+          else
+            gcloud run jobs execute "$JOB" --project "$PROJECT_ID" --region "$REGION" --wait
+          fi
