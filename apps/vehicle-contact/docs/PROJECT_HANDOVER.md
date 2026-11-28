@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend **0.9.66** / FE **0.9.24** (core `/` reports 0.9.66). The core answers 24/64 operations; the browser calls the core directly; the Cloudflare Worker is deleted; GAS @117 is the photo bridge only (G1); R10 DRY_RUN and R11 RESET_PREVIEW are proven live. Session handoff: [HANDOFF_NEXT_SESSION_20261128.md](HANDOFF_NEXT_SESSION_20261128.md).
+**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend **0.9.72** / FE **0.9.24**. The Node core answers **all 64 operations** (N1b, N2, N3, N4 PR 1); p6vc-api receives nothing and runs only as the rollback. GAS = photo bridge only (deploy default since #348). Session handoff: [HANDOFF_NEXT_SESSION_20261128.md](HANDOFF_NEXT_SESSION_20261128.md).
 **Status:** current. Read [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) (what runs, last proof) with this page (how to work, next steps).
 
 ## 1. Ready-to-paste next-AI prompt
@@ -20,9 +20,9 @@ Shape (VC-ADR-056): FE shell (GitHub Pages) → p6vc-core (Node, Cloud Run) → 
 forwarded to the frozen legacy engine p6vc-api; core → GAS image manager (signed bridge). Photos shown straight from Drive
 links; uploads go through the core (owner chose option A); image processing on the device only.
 
-Where things stand: backend 0.9.66 / FE 0.9.24 are live and proven (suite 112/112 + DATA_PROOF 7/7); GAS is the photo bridge only (@117). The Node core (p6vc-core) answers 24 of 64 operations live and forwards the rest to
+Where things stand: backend 0.9.72 / FE 0.9.24 are live and proven (suite 112/112 + DATA_PROOF 7/7 after every slice); GAS is the photo bridge only and the bridge is the deploy default (#348). The Node core (p6vc-core) answers ALL 64 operations itself (health too) and forwards nothing to
 the frozen legacy engine (p6vc-api). The owner decided (VC-ADR-051) to move the whole backend to native async Node:
-N1a, N4a, W1, G1, R11 complete → N1b (PR 3 next) → N2 → N3 → finish R10 recovery → N4 cut-over. PR #348 is merged: the bridge is the GAS deploy default (`--full-api` + RESTORE_GAS_API_FILES = rollback only). Each DEV item = small PRs → green CI →
+N1a, N1b, N2, N3, N4a, N4 PR 1, W1, G1, R11 complete → rest of N4 (remove p6vc-api from Cloud Run and the deploy chain, move the shared rules the core imports from backend/gas/src into the core, delete the legacy engine) — that removal needs the owner's confirmation first. Each DEV item = small PRs → green CI →
 deploy → proof → evidence in DECISION_LOG → ROADMAP + issue updated.
 
 Hard rules (owner): every merge and every deploy needs the owner's OK for that round (owner prompt 2026-11-28 — stricter
@@ -101,7 +101,7 @@ Smoke test: `backend/core/tests/dev-server.test.mjs` (in `npm test`, CI). The li
 
 ```bash
 git checkout main && git fetch origin main && git merge --ff-only FETCH_HEAD
-P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <short sha> "<desc>" [--indexes]   # run in background, ~15–20 min
+P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <short sha> "<desc>" [--indexes]   # run in background, ~15–20 min
 # proof (from apps/vehicle-contact/backend/gas; ~2–10 min):
 CORE=https://p6vc-core-46858005337.asia-southeast3.run.app
 P6VC_API_BASE_URL=$CORE P6VC_GAS_EXEC_URL=$CORE P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE \
@@ -111,6 +111,7 @@ PASS only when: `LIVE_SUITE status PASS 112/112` (126 before the Worker stage wa
 AUTHENTICATED_FULL_INVENTORY `finishedAt` (`test-results/p6vc-live-api-suite.json`, `p6vc-firestore-readback-proof.json`),
 `/` shows the new version, and the moved ops answer `x-p6vc-answered-by: core`. Then: DECISION_LOG "DEPLOYED, PROVEN" with
 the numbers, ROADMAP, a comment on the issue — in a small docs PR (merge needs the owner's OK too).
+Everything in one command: `node scripts/p6vc-full-test.mjs --live` (L0–L5, see CURRENT_DELIVERY_STATUS §2; `--offline` = no cloud). From a git worktree set `P6VC_ENV_DIR` to the folder with the gitignored `.env` for the live UI layer.
 Other proofs: dual call `backend/core/scripts/ported-compare-live.mjs`, load `backend/core/scripts/load-test.mjs`
 (gates in `.mt-studio/project.yaml`; owner bar: 100 simultaneous logins, 0 errors).
 Rollback: remove the op from `USE_CASES` / `FLOWS` and redeploy the core (the legacy engine answers again); Cloud Run
@@ -131,11 +132,9 @@ The AI never sees the password. Workflow **P6 Vehicle Contact admin tools (manua
 ## 6. Next actions
 
 Plan approved 2026-11-28 (VC-ADR-056), in this order — status on [KANBAN_BOARD.md](KANBAN_BOARD.md):
-0. **Done 2026-11-28:** R03 photo rules (BE 0.9.64 + FE 0.9.24, owner phone check) · T1 #336 code map + LSP · L1 #337 localhost · W1 #338 Worker deleted · R11 #304 admin tools (0.9.65–0.9.66). #348 merged: the bridge is the GAS deploy default.
-1. **G1 #329 — DONE 2026-11-28**: the GAS project is the image manager only (2 files, @117). There are no GAS editor functions any more: reference seed = core job (R10, `reference-seed-job.yml`), first admin / admin reset = core job (R11, `admin-tools-job.yml`), housekeeping / photo audit = core jobs. A normal deploy pushes the bridge (#348); `--full-api` with `P6VC_OWNER_OK_RESTORE_GAS_FILES=RESTORE_GAS_API_FILES` puts the old 60 files back (rollback only).
-2. **N1b #312** — PRs 1–2 (`qr.history`, `vehicles.listMine`) are proven on 0.9.61–0.9.62. Next: the remaining 15 (`registrations.listPending/detail/review/photo`, `vehicles.update/cancel`, `contacts.update`, `changes.*` 4, `qr.issue/revoke/replace/export`) as native async Node in small PRs. Fix approval's whole-table vehicle read using plate + province.
-3. N2 (#313), N3 (#314), finish R10 recovery gate (#303), N4 (#255).
-4. Photos R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
+0. **Done 2026-11-28:** R03, T1, L1, W1, R11, G1 (#348 bridge default proven "Pushed 2 files"), **N1b** #312 (0.9.67–0.9.69), **N2** #313 (0.9.70), **N3** #314 (0.9.71), **N4 PR 1** (0.9.72: health on the core, 64/64). Evidence: CURRENT_DELIVERY_STATUS §2, DECISION_LOG VC-ADR-051.
+1. **N4 rest #255 — ask the owner first** (hard to reverse): (a) stop deploying p6vc-api in `scripts/p6vc-deploy-backend.sh` and the smoke steps that call it; (b) delete the p6vc-api Cloud Run service (owner confirmation); (c) move the rules the core still imports from `backend/gas/src` (policies, flows, pagination, DTO validator, router checks) into `backend/core`, keep the legacy acceptance tests as the specification, then delete `backend/gas/src` legacy use cases.
+2. R10 recovery gate (#303). Photos R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
 
 ## 7. Working notes (things that bit before)
 

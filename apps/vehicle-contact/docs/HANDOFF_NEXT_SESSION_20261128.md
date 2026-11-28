@@ -9,7 +9,7 @@
 
 ```text
 อ่าน apps/vehicle-contact/docs/HANDOFF_NEXT_SESSION_20261128.md แล้วทำตาม prompt ใน PROJECT_HANDOVER.md §1
-งานแรก: เริ่ม N1b PR 3 (registration review ก่อน) — ทุก merge / deploy ขอ OK owner รอบนั้น
+งานแรก: ขอการยืนยันจาก owner เรื่องลบ p6vc-api (ส่วนที่เหลือของ N4) — ทุก merge / deploy ขอ OK owner รอบนั้น
 ```
 
 ลำดับการอ่าน (ตาม PROJECT_HANDOVER §1): `CLAUDE.md` → `.mt-studio/project.yaml` → [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) → [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) → [ROADMAP.md](ROADMAP.md) → [KANBAN_BOARD.md](KANBAN_BOARD.md) → [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md) → [generated/DATA_ACCESS_MAP.md](generated/DATA_ACCESS_MAP.md) + [generated/CHANGE_CHECKLIST.md](generated/CHANGE_CHECKLIST.md) → [DECISION_LOG.md](DECISION_LOG.md)
@@ -31,10 +31,10 @@ flowchart LR
 
 | เรื่อง | สถานะ |
 |---|---|
-| `main` | #350 (docs) + #348 merged |
-| PR #348 | **#348** `feat/p6vc-g1-bridge-default` — ทำให้ bridge เป็นค่า default ของการ deploy GAS (`full` = rollback เท่านั้น ต้องมี `RESTORE_GAS_API_FILES`). **merge แล้ว** (owner OK 2026-11-28) — deploy backend แบบปกติ push เฉพาะ bridge; หลักฐาน live ของ default ใหม่จะได้จาก deploy ครั้งถัดไป (log ต้องขึ้น "Pushed 2 files" + bridge check PASS) |
+| `main` | N1b + N2 + N3 + N4 PR 1 merged และ deploy แล้ว (0.9.72) — core ตอบ **64/64** |
+| PR #348 | merge แล้ว — bridge เป็น default ของ deploy (พิสูจน์แล้ว: "Pushed 2 files") |
 | PR docs refresh + handoff (ไฟล์นี้) | branch `docs/p6vc-status-handoff-main` สร้างจาก `main` (ไม่ขึ้นกับ #348) — docs only ไม่ต้อง deploy runtime; Pages build เองเมื่อ merge. แทน PR #349 (ซ้อนบน #348) |
-| หลักฐานล่าสุด | live suite ผ่าน core **112/112** + DATA_PROOF 7/7 ที่สดกว่า suite (0.9.66 และหลัง G1 @117) |
+| หลักฐานล่าสุด | ทุก slice (0.9.67–0.9.72): live suite ผ่าน core **112/112** + DATA_PROOF 7/7 ที่สดกว่า suite — ตัวเลขใน CURRENT_DELIVERY_STATUS §2 |
 | Cloudflare Worker | ลบแล้ว (W1) — ไม่มีขั้นตอน Worker อีกต่อไป |
 | GAS | @117 = `MediaBridge.gs` + `appsscript.json`; rollback target @116; trigger เก่าถูก owner ลบแล้ว |
 
@@ -54,20 +54,9 @@ flowchart LR
 
 ## 4. งานถัดไป (ตามลำดับ)
 
-1. **N1b PR 3** ([#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312)) — ย้าย op ที่เหลือ 15 ตัวของ N1b ไป native async Node (ทีละกลุ่มเล็ก ๆ, PR ละกลุ่ม):
-   - registration review: `registrations.listPending`, `registrations.detail`, `registrations.review`, `registrations.photo` (+ duplicate check ตอนอนุมัติให้ query ด้วย plate + province แทนอ่านทั้งตาราง, + จัดโฟลเดอร์รูปตอนอนุมัติ VC-ADR-050)
-   - vehicle admin: `vehicles.update`, `vehicles.cancel`, `contacts.update`
-   - change requests: `changes.submit`, `changes.listPending`, `changes.review`, `changes.listMine`
-   - QR: `qr.issue`, `qr.revoke`, `qr.replace`, `qr.export`
-   - วิธีทำ: PROJECT_HANDOVER §4 (pure rules ใน legacy module → async use case ใน `backend/core/src/use-cases/` → `USE_CASES` → เพิ่มไฟล์ใน `FILES` ของ `gen-core-acceptance.mjs`) แล้ว deploy + prove ตาม §5
-2. N2 [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) (photos.list/replace, retention 5, audit 2) → N3 [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) (users 7, organizations 5, campaigns 3) → R10 recovery gate [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) → N4 cut-over [#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255) (รวม `system.health`, ลบ p6vc-api)
-3. R04 [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) ย้ายรูปเก่าเข้าโฟลเดอร์ต่อคัน (dry run ก่อน)
-
-ตรวจเองว่า op ไหนยังอยู่ legacy (รันใน `apps/vehicle-contact/backend/core`):
-
-```bash
-node -e 'import("./src/facade/operations.mjs").then(m=>{const c=new Set([...Object.keys(m.FLOWS),...Object.keys(m.USE_CASES)]);const inv=require("../../contracts/api-inventory.v1.json").operations.map(o=>o.group+"."+o.action);console.log(c.size+"/"+inv.length,inv.filter(o=>!c.has(o)).join(" "))})'
-```
+1. **N4 ส่วนที่เหลือ** ([#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255)) — ต้องได้คำยืนยันจาก owner ก่อน (ย้อนกลับยาก): เอา p6vc-api ออกจาก deploy chain → ลบ service p6vc-api → ย้าย rule ที่ core ยัง import จาก `backend/gas/src` เข้า core → ลบโค้ด legacy (legacy acceptance tests ยังเป็น spec)
+2. R10 recovery gate [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) · R04 [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) (dry run ก่อน)
+3. go-live: R14 / R16 / R17 (owner)
 
 ## 5. รอ owner (ไม่ใช่งาน engineering)
 
