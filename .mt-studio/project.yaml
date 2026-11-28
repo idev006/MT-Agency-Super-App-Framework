@@ -33,7 +33,7 @@ versioning:
     - apps/vehicle-contact/backend/gas/scripts/expected-live-version.json   # the deploy smoke asserts this
     - apps/vehicle-contact/frontend/package.json                            # frontend version (FE)
 deploy:
-  chain: "P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <sha> <desc> [--indexes]  # gas_push → gas_pin → cloudrun → core → core_jobs (KEEP); VC-ADR-052 supplies one-time DEV approval; set the guard per run"
+  chain: "P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <sha> <desc> [--indexes]  # GAS = photo bridge only (G1; --full-api = rollback, needs RESTORE_GAS_API_FILES); gas_push → gas_pin → cloudrun → core → core_jobs (KEEP); VC-ADR-052 supplies one-time DEV approval; set the guard per run"
   on_merge:
     - "GitHub Pages: workflow 'Build and deploy Pages from SSOT' runs on every push to main (also docs-only PRs)"
   by_path:

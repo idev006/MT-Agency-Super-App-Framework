@@ -80,16 +80,17 @@ test('GAS-BRIDGE-02 unsigned and tampered requests fail before Drive access', ()
   assert.equal(h.driveTouches(), 0);
 });
 
-test('G1 the bridge-only push is gated twice and replaces dist with exactly the bridge + manifest (VC-ADR-053/056)', () => {
+test('G1 (done): GAS gets only the bridge by default; putting the old API back is gated twice (VC-ADR-053/056)', () => {
   const lf = file => readFileSync(file, 'utf8').replace(/\r\n/g, '\n'); // a Windows checkout has CRLF
   const wf = lf(resolve(gas, '../../../../.github/workflows/deploy-vehicle-gas.yml'));
-  assert.match(wf, /options: \[full, bridge\]/, 'artifact choice, full by default');
-  assert.match(wf, /default: full/);
-  assert.match(wf, /inputs\.confirmation == 'PUSH_VEHICLE_GAS' && \(inputs\.artifact != 'bridge' \|\| inputs\.remove_api_files == 'REMOVE_GAS_API_FILES'\)/,
-    'a bridge push needs the second owner phrase');
+  assert.match(wf, /options: \[bridge, full\]/);
+  assert.match(wf, /default: bridge/, 'the bridge is the default since G1');
+  assert.match(wf, /inputs\.confirmation == 'PUSH_VEHICLE_GAS' && \(inputs\.artifact != 'full' \|\| inputs\.restore_api_files == 'RESTORE_GAS_API_FILES'\)/,
+    'putting the old API back needs the second owner phrase');
   assert.match(wf, /if: inputs\.artifact == 'bridge'\n\s+run: \|\n\s+node scripts\/build-bridge-candidate\.mjs\n\s+rm -rf dist && mkdir dist/);
   assert.match(wf, /= "MediaBridge\.gs appsscript\.json "/, 'exactly two files are pushed');
   const sh = lf(resolve(gas, '../../../../scripts/p6vc-deploy-backend.sh'));
-  assert.match(sh, /P6VC_OWNER_OK_REMOVE_GAS_FILES:-\}" != "REMOVE_GAS_API_FILES"/, 'the deploy script asks for the same confirmation');
+  assert.match(sh, /INDEXES=""; ARTIFACT=bridge/, 'the deploy chain pushes the bridge by default');
+  assert.match(sh, /P6VC_OWNER_OK_RESTORE_GAS_FILES:-\}" != "RESTORE_GAS_API_FILES"/, 'the deploy script asks for the same confirmation');
   assert.match(sh, /verify-bridge-live\.mjs --expect "\$ARTIFACT"/, 'checked after the pin, with the rollback target printed');
 });

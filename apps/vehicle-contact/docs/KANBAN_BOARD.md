@@ -1,6 +1,6 @@
 # P6 Vehicle Contact — Kanban board
 
-**Drawn:** 2026-11-28 09:54 UTC from the GitHub issues by `node scripts/gen-kanban.mjs` — do not edit by hand.
+**Drawn:** 2026-11-28 10:04 UTC from the GitHub issues by `node scripts/gen-kanban.mjs` — do not edit by hand.
 **Source of truth:** the issues (labels `status:*`, `priority:*`, milestones). Order of work and done-criteria: [ROADMAP.md](ROADMAP.md). Current state: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
 
 ## กำลังทำ (in progress) — 3

@@ -9,7 +9,7 @@
 
 ```text
 อ่าน apps/vehicle-contact/docs/HANDOFF_NEXT_SESSION_20261128.md แล้วทำตาม prompt ใน PROJECT_HANDOVER.md §1
-งานแรก: ตรวจสถานะ PR #348 (ยังไม่ merge = ห้าม deploy backend แบบปกติ) แล้วเริ่ม N1b PR 3 — ทุก merge / deploy ขอ OK owner รอบนั้น
+งานแรก: เริ่ม N1b PR 3 (registration review ก่อน) — ทุก merge / deploy ขอ OK owner รอบนั้น
 ```
 
 ลำดับการอ่าน (ตาม PROJECT_HANDOVER §1): `CLAUDE.md` → `.mt-studio/project.yaml` → [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) → [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) → [ROADMAP.md](ROADMAP.md) → [KANBAN_BOARD.md](KANBAN_BOARD.md) → [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md) → [generated/DATA_ACCESS_MAP.md](generated/DATA_ACCESS_MAP.md) + [generated/CHANGE_CHECKLIST.md](generated/CHANGE_CHECKLIST.md) → [DECISION_LOG.md](DECISION_LOG.md)
@@ -31,8 +31,8 @@ flowchart LR
 
 | เรื่อง | สถานะ |
 |---|---|
-| `main` | `b3c0a2f` (#347) |
-| PR ที่เปิดอยู่ | **#348** `feat/p6vc-g1-bridge-default` — ทำให้ bridge เป็นค่า default ของการ deploy GAS (`full` = rollback เท่านั้น ต้องมี `RESTORE_GAS_API_FILES`). CI เขียว, mergeable, **ยังไม่ merge** (owner: "Not now"). **ระหว่างนี้ค่า default บน `main` ยังเป็น `full` — deploy backend แบบปกติจะ push ไฟล์ GAS เก่า 60 ไฟล์กลับไป.** ห้าม deploy backend ก่อน #348 merge เว้นแต่ owner สั่ง; ถ้าสั่ง ให้ใช้ `--bridge-only` + `P6VC_OWNER_OK_REMOVE_GAS_FILES=REMOVE_GAS_API_FILES` (หรือ GAS workflow `-f artifact=bridge -f remove_api_files=REMOVE_GAS_API_FILES`) |
+| `main` | #350 (docs) + #348 merged |
+| PR #348 | **#348** `feat/p6vc-g1-bridge-default` — ทำให้ bridge เป็นค่า default ของการ deploy GAS (`full` = rollback เท่านั้น ต้องมี `RESTORE_GAS_API_FILES`). **merge แล้ว** (owner OK 2026-11-28) — deploy backend แบบปกติ push เฉพาะ bridge; หลักฐาน live ของ default ใหม่จะได้จาก deploy ครั้งถัดไป (log ต้องขึ้น "Pushed 2 files" + bridge check PASS) |
 | PR docs refresh + handoff (ไฟล์นี้) | branch `docs/p6vc-status-handoff-main` สร้างจาก `main` (ไม่ขึ้นกับ #348) — docs only ไม่ต้อง deploy runtime; Pages build เองเมื่อ merge. แทน PR #349 (ซ้อนบน #348) |
 | หลักฐานล่าสุด | live suite ผ่าน core **112/112** + DATA_PROOF 7/7 ที่สดกว่า suite (0.9.66 และหลัง G1 @117) |
 | Cloudflare Worker | ลบแล้ว (W1) — ไม่มีขั้นตอน Worker อีกต่อไป |
@@ -49,20 +49,19 @@ flowchart LR
 | R03: กฎรูปถ่าย (admin ตั้ง, เครื่องผู้ใช้ทำตาม) | #334 #335 | BE 0.9.64 + FE 0.9.24, owner ตรวจบนมือถือแล้ว |
 | T1 / L1 / W1: code map + LSP, รัน localhost, ลบ Worker | #339 #340 #341 #342 | done |
 | R11: first admin / reset รหัส admin เป็น core job | #344 #346 #347 | RESET_PREVIEW proven live (ไม่เขียนอะไร) |
-| G1: GAS = photo bridge เท่านั้น | (push @117) + #348 | live proven; #348 รอ merge |
-| Docs refresh + handoff นี้ | PR จาก `docs/p6vc-status-handoff-main` | ระบุชัดว่า deploy default ยังเป็น `full` จนกว่า #348 merge; แก้เวอร์ชัน/สถานะค้างใน CURRENT_DELIVERY_STATUS, PROJECT_HANDOVER, ROADMAP, NODE_CORE_FINISH_PLAN; ป้าย "Current state" บน ARCHITECTURE_SSOT, FRONTEND_ARCHITECTURE; DOCS_INDEX read-first เพิ่มไฟล์นี้ |
+| G1: GAS = photo bridge เท่านั้น | (push @117) + #348 | live proven; #348 merged |
+| Docs refresh + handoff นี้ | PR จาก `docs/p6vc-status-handoff-main` | แก้เวอร์ชัน/สถานะค้างใน CURRENT_DELIVERY_STATUS, PROJECT_HANDOVER, ROADMAP, NODE_CORE_FINISH_PLAN; ป้าย "Current state" บน ARCHITECTURE_SSOT, FRONTEND_ARCHITECTURE; DOCS_INDEX read-first เพิ่มไฟล์นี้ |
 
 ## 4. งานถัดไป (ตามลำดับ)
 
-1. **PR #348** — merge เมื่อ owner OK (CI เขียว) แล้วแก้ docs ให้บอกว่า bridge เป็น default แล้ว; ก่อนหน้านั้นไม่ deploy backend แบบปกติ
-2. **N1b PR 3** ([#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312)) — ย้าย op ที่เหลือ 15 ตัวของ N1b ไป native async Node (ทีละกลุ่มเล็ก ๆ, PR ละกลุ่ม):
+1. **N1b PR 3** ([#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312)) — ย้าย op ที่เหลือ 15 ตัวของ N1b ไป native async Node (ทีละกลุ่มเล็ก ๆ, PR ละกลุ่ม):
    - registration review: `registrations.listPending`, `registrations.detail`, `registrations.review`, `registrations.photo` (+ duplicate check ตอนอนุมัติให้ query ด้วย plate + province แทนอ่านทั้งตาราง, + จัดโฟลเดอร์รูปตอนอนุมัติ VC-ADR-050)
    - vehicle admin: `vehicles.update`, `vehicles.cancel`, `contacts.update`
    - change requests: `changes.submit`, `changes.listPending`, `changes.review`, `changes.listMine`
    - QR: `qr.issue`, `qr.revoke`, `qr.replace`, `qr.export`
    - วิธีทำ: PROJECT_HANDOVER §4 (pure rules ใน legacy module → async use case ใน `backend/core/src/use-cases/` → `USE_CASES` → เพิ่มไฟล์ใน `FILES` ของ `gen-core-acceptance.mjs`) แล้ว deploy + prove ตาม §5
-3. N2 [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) (photos.list/replace, retention 5, audit 2) → N3 [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) (users 7, organizations 5, campaigns 3) → R10 recovery gate [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) → N4 cut-over [#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255) (รวม `system.health`, ลบ p6vc-api)
-4. R04 [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) ย้ายรูปเก่าเข้าโฟลเดอร์ต่อคัน (dry run ก่อน)
+2. N2 [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) (photos.list/replace, retention 5, audit 2) → N3 [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) (users 7, organizations 5, campaigns 3) → R10 recovery gate [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) → N4 cut-over [#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255) (รวม `system.health`, ลบ p6vc-api)
+3. R04 [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) ย้ายรูปเก่าเข้าโฟลเดอร์ต่อคัน (dry run ก่อน)
 
 ตรวจเองว่า op ไหนยังอยู่ legacy (รันใน `apps/vehicle-contact/backend/core`):
 

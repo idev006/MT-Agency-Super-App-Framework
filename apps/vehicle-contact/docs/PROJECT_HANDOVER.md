@@ -22,7 +22,7 @@ links; uploads go through the core (owner chose option A); image processing on t
 
 Where things stand: backend 0.9.66 / FE 0.9.24 are live and proven (suite 112/112 + DATA_PROOF 7/7); GAS is the photo bridge only (@117). The Node core (p6vc-core) answers 24 of 64 operations live and forwards the rest to
 the frozen legacy engine (p6vc-api). The owner decided (VC-ADR-051) to move the whole backend to native async Node:
-N1a, N4a, W1, G1, R11 complete → N1b (PR 3 next) → N2 → N3 → finish R10 recovery → N4 cut-over. PR #348 (bridge = GAS deploy default) is open and NOT merged: until it merges the deploy default is still `full`, so do not deploy the backend unless the owner says so (then use `--bridge-only` + `P6VC_OWNER_OK_REMOVE_GAS_FILES=REMOVE_GAS_API_FILES`); merging #348 needs the owner's OK. Each DEV item = small PRs → green CI →
+N1a, N4a, W1, G1, R11 complete → N1b (PR 3 next) → N2 → N3 → finish R10 recovery → N4 cut-over. PR #348 is merged: the bridge is the GAS deploy default (`--full-api` + RESTORE_GAS_API_FILES = rollback only). Each DEV item = small PRs → green CI →
 deploy → proof → evidence in DECISION_LOG → ROADMAP + issue updated.
 
 Hard rules (owner): every merge and every deploy needs the owner's OK for that round (owner prompt 2026-11-28 — stricter
@@ -101,8 +101,7 @@ Smoke test: `backend/core/tests/dev-server.test.mjs` (in `npm test`, CI). The li
 
 ```bash
 git checkout main && git fetch origin main && git merge --ff-only FETCH_HEAD
-P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <short sha> "<desc>" [--indexes]   # run in background, ~15–20 min
-# !! until PR #348 merges add: --bridge-only  (and P6VC_OWNER_OK_REMOVE_GAS_FILES=REMOVE_GAS_API_FILES) — else the old 60 GAS files return
+P6VC_OWNER_OK=MERGE_AND_DEPLOY scripts/p6vc-deploy-backend.sh <short sha> "<desc>" [--indexes]   # run in background, ~15–20 min
 # proof (from apps/vehicle-contact/backend/gas; ~2–10 min):
 CORE=https://p6vc-core-46858005337.asia-southeast3.run.app
 P6VC_API_BASE_URL=$CORE P6VC_GAS_EXEC_URL=$CORE P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE \
@@ -132,8 +131,8 @@ The AI never sees the password. Workflow **P6 Vehicle Contact admin tools (manua
 ## 6. Next actions
 
 Plan approved 2026-11-28 (VC-ADR-056), in this order — status on [KANBAN_BOARD.md](KANBAN_BOARD.md):
-0. **Done 2026-11-28:** R03 photo rules (BE 0.9.64 + FE 0.9.24, owner phone check) · T1 #336 code map + LSP · L1 #337 localhost · W1 #338 Worker deleted · R11 #304 admin tools (0.9.65–0.9.66). Open PR **#348** (G1 bridge = deploy default) is not merged (owner: "Not now"); it must merge — or the deploy must use `--bridge-only` — before the next backend deploy.
-1. **G1 #329 — DONE 2026-11-28**: the GAS project is the image manager only (2 files, @117). There are no GAS editor functions any more: reference seed = core job (R10, `reference-seed-job.yml`), first admin / admin reset = core job (R11, `admin-tools-job.yml`), housekeeping / photo audit = core jobs. On `main` today a normal deploy still pushes the old 60 files (`full`) — use `--bridge-only` with `P6VC_OWNER_OK_REMOVE_GAS_FILES=REMOVE_GAS_API_FILES`. After PR #348 merges, a normal deploy pushes the bridge and `--full-api` with `P6VC_OWNER_OK_RESTORE_GAS_FILES=RESTORE_GAS_API_FILES` puts the old files back (rollback only).
+0. **Done 2026-11-28:** R03 photo rules (BE 0.9.64 + FE 0.9.24, owner phone check) · T1 #336 code map + LSP · L1 #337 localhost · W1 #338 Worker deleted · R11 #304 admin tools (0.9.65–0.9.66). #348 merged: the bridge is the GAS deploy default.
+1. **G1 #329 — DONE 2026-11-28**: the GAS project is the image manager only (2 files, @117). There are no GAS editor functions any more: reference seed = core job (R10, `reference-seed-job.yml`), first admin / admin reset = core job (R11, `admin-tools-job.yml`), housekeeping / photo audit = core jobs. A normal deploy pushes the bridge (#348); `--full-api` with `P6VC_OWNER_OK_RESTORE_GAS_FILES=RESTORE_GAS_API_FILES` puts the old 60 files back (rollback only).
 2. **N1b #312** — PRs 1–2 (`qr.history`, `vehicles.listMine`) are proven on 0.9.61–0.9.62. Next: the remaining 15 (`registrations.listPending/detail/review/photo`, `vehicles.update/cancel`, `contacts.update`, `changes.*` 4, `qr.issue/revoke/replace/export`) as native async Node in small PRs. Fix approval's whole-table vehicle read using plate + province.
 3. N2 (#313), N3 (#314), finish R10 recovery gate (#303), N4 (#255).
 4. Photos R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
