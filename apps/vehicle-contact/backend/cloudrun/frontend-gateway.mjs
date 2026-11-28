@@ -1,6 +1,6 @@
 // Browser gateway on Cloud Run (VC-ADR-044 PR 2): POST /api/frontend from the web app.
 // Same contract as the Cloudflare Worker's /api/frontend it replaces (same HTTP status + error codes, so
-// tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs checks either): allowed Origin only (CORS),
+// backend/cloudrun/verify-gateway-failclosed.mjs checks either): allowed Origin only (CORS),
 // JSON only, size limits, strict envelope, known operations only, DTO payload, bounded nested values, session shape.
 // The operation list, DTO fields and public operations come from the backend itself (one source), not a copy.
 import {DTO_OPERATIONS, validateOperationPayload} from '../gas/src/api/dto/OperationPayloadValidator.js';

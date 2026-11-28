@@ -48,9 +48,9 @@ test('CORE-02 the browser gateway contract (WF-01..14) holds at the core', async
   const p = await pair();
   try {
     const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'p6vc-core-gw-'));
-    const script = new URL('../../../../../tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs', import.meta.url);
+    const script = new URL('../../cloudrun/verify-gateway-failclosed.mjs', import.meta.url);
     const code = await new Promise(resolve => spawn(process.execPath, [script.pathname.replace(/^\/([A-Za-z]:)/, '$1')], {cwd, stdio: 'ignore',
-      env: {...process.env, P6VC_WORKER_FRONTEND_URL: base(p.core) + '/api/frontend', P6VC_GATEWAY_LOCAL_TEST: 'ALLOW', P6VC_GATEWAY_REPORT: 'core-gw.json'}}).once('exit', resolve));
+      env: {...process.env, P6VC_GATEWAY_URL: base(p.core) + '/api/frontend', P6VC_GATEWAY_LOCAL_TEST: 'ALLOW', P6VC_GATEWAY_REPORT: 'core-gw.json'}}).once('exit', resolve));
     const report = JSON.parse(fs.readFileSync(path.join(cwd, 'test-results', 'core-gw.json'), 'utf8'));
     assert.deepEqual(report.tests.filter(t => t.status !== 'PASS').map(t => t.id + ': ' + t.reason), []);
     assert.equal(report.tests.length, 14);

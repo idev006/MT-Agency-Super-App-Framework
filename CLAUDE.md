@@ -13,4 +13,4 @@ Start here before changing `apps/vehicle-contact` (owner 2026-11-26: maps so wor
 - Decisions: `apps/vehicle-contact/docs/DECISION_LOG.md` (VC-ADR-xxx). Use cases: `apps/vehicle-contact/docs/use-cases/` (validated by `scripts/validate-usecase-ssot.mjs`).
 - Node core (VC-ADR-051): operations move from the frozen legacy engine (`backend/gas/src`) into `backend/core/src/use-cases/`; the legacy acceptance tests run through the core as generated copies (`backend/core/scripts/gen-core-acceptance.mjs`, never hand-edit `tests/generated/`).
 - Deploy chain: `scripts/p6vc-deploy-backend.sh` (refuses without `P6VC_OWNER_OK=MERGE_AND_DEPLOY` — set only after the owner's OK for that round).
-- Deploy order that has bitten before: Firestore indexes **before** the backend; the Cloudflare Worker (`tools/p6vc-api-test-console`) is a separate deploy and the live API suite does **not** go through it.
+- Deploy order that has bitten before: Firestore indexes **before** the backend. There is no Cloudflare Worker any more (retired, VC-ADR-056 W1): the web app calls the core's `/api/frontend` directly.

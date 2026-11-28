@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - 'apps/vehicle-contact/**'
-      - 'tools/p6vc-api-test-console/**'
       - 'scripts/**'
       - 'blueprint/**'
       - 'portal/**'
@@ -66,12 +65,8 @@ jobs:
             apps/vehicle-contact/frontend/e2e-report
             apps/vehicle-contact/frontend/e2e-results
           retention-days: 7
-      - name: Test Cloudflare gateway contract and security boundaries
-        run: |
-          node --check tools/p6vc-api-test-console/worker.mjs
-          node --check tools/p6vc-api-test-console/worker.test.mjs
-          node --check tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs
-          node --test tools/p6vc-api-test-console/worker.test.mjs
+      - name: Check the browser gateway verifier (VC-ADR-056 W1; the Worker is retired)
+        run: node --check apps/vehicle-contact/backend/cloudrun/verify-gateway-failclosed.mjs
       - name: Test Node core (VC-ADR-046)
         working-directory: apps/vehicle-contact/backend/core
         run: |

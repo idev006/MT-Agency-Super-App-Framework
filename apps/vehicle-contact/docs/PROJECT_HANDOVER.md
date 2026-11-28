@@ -25,7 +25,7 @@ never merge with
 red CI; never claim PASS without independent evidence (live suite through the core + DATA_PROOF fresher than the suite,
 Firestore read-back); synthetic DEV data only; never read, print or commit secrets (SA key, pepper, tokens, passwords — env
 var NAMES only); never create a new version of / lose secret p6vc-auth-pepper; permanent deletes need a dry run + the
-owner's confirmation; deploy order: Firestore indexes before the backend; the unused Worker service is retired in N4; do not type passwords into the hosted web app (the owner checks screens); PDPA must not
+owner's confirmation; deploy order: Firestore indexes before the backend; there is no Cloudflare Worker any more (W1); do not type passwords into the hosted web app (the owner checks screens); PDPA must not
 block development (legal at go-live).
 ```
 
@@ -102,7 +102,7 @@ CORE=https://p6vc-core-46858005337.asia-southeast3.run.app
 P6VC_API_BASE_URL=$CORE P6VC_GAS_EXEC_URL=$CORE P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE \
   node scripts/run-live-api-suite.mjs --require-authenticated --require-data-proof
 ```
-PASS only when: `LIVE_SUITE status PASS 126/126`, `LIVE_SUITE_TARGET` = the core, DATA_PROOF `startedAt` later than the
+PASS only when: `LIVE_SUITE status PASS 112/112` (126 before the Worker stage was removed in W1), `LIVE_SUITE_TARGET` = the core, DATA_PROOF `startedAt` later than the
 AUTHENTICATED_FULL_INVENTORY `finishedAt` (`test-results/p6vc-live-api-suite.json`, `p6vc-firestore-readback-proof.json`),
 `/` shows the new version, and the moved ops answer `x-p6vc-answered-by: core`. Then: DECISION_LOG "DEPLOYED, PROVEN" with
 the numbers, ROADMAP, a comment on the issue — in a small docs PR (merge needs the owner's OK too).

@@ -59,12 +59,13 @@ test('single-admin acceptance declares the expected password lifecycle without e
 
 test('one-command API suite gates authenticated writes behind safe preflight and explicit credentials',()=>{
  for(const marker of [
-  'PUBLIC_DIRECT_GAS','WORKER_FAIL_CLOSED','AUTHENTICATED_FULL_INVENTORY',
+  'PUBLIC_DIRECT_GAS','CLOUD_RUN_GATEWAY_FAIL_CLOSED','AUTHENTICATED_FULL_INVENTORY',
   'SAFE_PREFLIGHT_FAILED','MISSING_TEST_CREDENTIALS','MISSING_WRITE_CONFIRMATION',
   'PASS_PUBLIC_ONLY','p6vc-live-api-suite.json','GITHUB_STEP_SUMMARY'
  ])assert.ok(suiteSource.includes(marker),marker);
  assert.ok(suiteSource.indexOf("runStage('PUBLIC_DIRECT_GAS'")<suiteSource.indexOf("runStage('AUTHENTICATED_FULL_INVENTORY'"));
- assert.ok(suiteSource.indexOf("runStage('WORKER_FAIL_CLOSED'")<suiteSource.indexOf("runStage('AUTHENTICATED_FULL_INVENTORY'"));
+ assert.ok(suiteSource.indexOf("runStage('CLOUD_RUN_GATEWAY_FAIL_CLOSED'")<suiteSource.indexOf("runStage('AUTHENTICATED_FULL_INVENTORY'"));
+ assert.ok(!suiteSource.includes("WORKER_FAIL_CLOSED"),'VC-ADR-056 W1: the Worker stage is gone');
  assert.ok(suiteSource.includes("process.argv.includes('--require-authenticated')"));
  assert.ok(suiteSource.includes("suite.cleanup=(authenticated.status==='PASS'||authenticated.status==='FAIL')&&ownerReport"),'failed authenticated runs must retain cleanup evidence');
  assert.ok(smokeSource.includes('p6vc-live-public-smoke.json'));

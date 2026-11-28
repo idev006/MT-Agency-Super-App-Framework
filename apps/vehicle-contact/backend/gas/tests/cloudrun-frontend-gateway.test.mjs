@@ -14,15 +14,15 @@ const fakeApp = {calls: [], dispatch(req) { this.calls.push(req.group + '.' + re
 const env = (op, payload, extra = {}) => ({apiVersion: 'v1', group: op.split('.')[0], action: op.split('.').slice(1).join('.'), payload, requestId: 'req_12345678', ...extra});
 const TOKEN = 'a'.repeat(64);
 
-test('GW-01 the Worker contract script (WF-01..14) passes against Cloud Run /api/frontend', async () => {
+test('GW-01 the gateway contract script (WF-01..14) passes against Cloud Run /api/frontend', async () => {
   const server = http.createServer(createApiHandler(fakeApp));
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const url = `http://127.0.0.1:${server.address().port}/api/frontend`;
   const cwd = fs.mkdtempSync(path.join(os.tmpdir(), 'p6vc-gw-'));
-  const script = new URL('../../../../../tools/p6vc-api-test-console/verify-live-worker-failclosed.mjs', import.meta.url);
+  const script = new URL('../../cloudrun/verify-gateway-failclosed.mjs', import.meta.url);
   const code = await new Promise(resolve => {
     const child = spawn(process.execPath, [script.pathname.replace(/^\/([A-Za-z]:)/, '$1')], {cwd, stdio: 'ignore',
-      env: {...process.env, P6VC_WORKER_FRONTEND_URL: url, P6VC_GATEWAY_LOCAL_TEST: 'ALLOW', P6VC_GATEWAY_REPORT: 'gw.json'}});
+      env: {...process.env, P6VC_GATEWAY_URL: url, P6VC_GATEWAY_LOCAL_TEST: 'ALLOW', P6VC_GATEWAY_REPORT: 'gw.json'}});
     child.once('exit', resolve);
   });
   server.close();

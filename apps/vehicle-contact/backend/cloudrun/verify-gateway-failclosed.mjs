@@ -1,30 +1,28 @@
 // P6VC LIVE browser-gateway fail-closed acceptance (E2). Credential-free.
-// One contract, two gateways (VC-ADR-044 PR 2): the Cloudflare Worker /api/frontend and its replacement,
-// Cloud Run /api/frontend (backend/cloudrun/frontend-gateway.mjs). Target = P6VC_WORKER_FRONTEND_URL; report name =
+// The browser gateway is the core's Cloud Run /api/frontend (backend/cloudrun/frontend-gateway.mjs); the Cloudflare Worker
+// that used to carry the same contract is retired (VC-ADR-056 W1; this file moved here from tools/p6vc-api-test-console).
+// Target = P6VC_GATEWAY_URL (default: the core's /api/frontend from contracts/trusted-endpoints.v1.json); report name =
 // P6VC_GATEWAY_REPORT. A local http://127.0.0.1 target is accepted only with P6VC_GATEWAY_LOCAL_TEST=ALLOW (unit test).
-// Probes the deployed Cloudflare Worker /api/frontend gateway and asserts that
-// every malformed / unauthorized / non-allowlisted request is denied AT THE EDGE
-// before reaching GAS. The only request that reaches GAS is public read-only
-// system.health (liveness). No username, password, real session token, photo or
-// personal data is ever sent or printed. A synthetic all-'a' 64-hex token is used
-// solely to pass the Worker session-SHAPE gate so DTO-field denials can be proven.
+// Asserts that every malformed / unauthorized / non-allowlisted request is denied at the gateway before any operation
+// runs. The only request that passes is public read-only system.health (liveness). No username, password, real session
+// token, photo or personal data is ever sent or printed. A synthetic all-'a' 64-hex token is used solely to pass the
+// session-SHAPE gate so DTO-field denials can be proven.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const url = process.env.P6VC_WORKER_FRONTEND_URL
-  || 'https://p6vc-api-test-console.thaipoliceregion6.workers.dev/api/frontend';
-const origin = process.env.P6VC_FRONTEND_ORIGIN || 'https://idev006.github.io';
-const trusted = JSON.parse(fs.readFileSync(new URL('../../apps/vehicle-contact/contracts/trusted-endpoints.v1.json', import.meta.url), 'utf8'));
+const trusted = JSON.parse(fs.readFileSync(new URL('../../contracts/trusted-endpoints.v1.json', import.meta.url), 'utf8'));
 const cloudRunGateways = trusted.endpoints.filter(e => e.kind === 'cloud-run').map(e => e.url + '/api/frontend'); // legacy + core
-const isWorker = /^https:\/\/[a-z0-9.-]+\.workers\.dev\/api\/frontend$/.test(url);
+const coreGateway = (trusted.endpoints.find(e => e.id === 'cloud-run-core')?.url || '') + '/api/frontend';
+const url = process.env.P6VC_GATEWAY_URL || coreGateway;
+const origin = process.env.P6VC_FRONTEND_ORIGIN || 'https://idev006.github.io';
 const isLocal = process.env.P6VC_GATEWAY_LOCAL_TEST === 'ALLOW' && /^http:\/\/127\.0\.0\.1:\d{2,5}\/api\/frontend$/.test(url);
-assert.ok(isWorker || cloudRunGateways.includes(url) || isLocal, 'gateway URL must be the Worker (workers.dev) or a trusted Cloud Run /api/frontend');
-const reportName = /^[a-z0-9-]+\.json$/.test(process.env.P6VC_GATEWAY_REPORT || '') ? process.env.P6VC_GATEWAY_REPORT : 'p6vc-live-worker-failclosed.json';
+assert.ok(cloudRunGateways.includes(url) || isLocal, 'gateway URL must be a trusted Cloud Run /api/frontend');
+const reportName = /^[a-z0-9-]+\.json$/.test(process.env.P6VC_GATEWAY_REPORT || '') ? process.env.P6VC_GATEWAY_REPORT : 'p6vc-live-gateway-failclosed.json';
 assert.ok(/^https:\/\//.test(origin), 'allowed origin must be https');
 
 const SYNTHETIC_TOKEN = 'a'.repeat(64); // not a credential; shape-only probe value
 const runner = {
-  status: 'RUNNING', environment: isWorker ? 'REMOTE_CLOUDFLARE_WORKER' : isLocal ? 'LOCAL_TEST' : 'REMOTE_CLOUD_RUN_GATEWAY', target: url, allowedOrigin: origin,
+  status: 'RUNNING', environment: isLocal ? 'LOCAL_TEST' : 'REMOTE_CLOUD_RUN_GATEWAY', target: url, allowedOrigin: origin,
   sourceCommit: process.env.GITHUB_SHA || null, startedAt: new Date().toISOString(),
   tests: [], scope: 'Edge fail-closed denial probes + public health liveness; no credentials, no mutations',
 };
