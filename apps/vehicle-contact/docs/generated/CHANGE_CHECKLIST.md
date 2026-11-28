@@ -29,7 +29,6 @@ Every file that wires the reference operation `qr.markPrinted` — a new operati
 - [ ] `apps/vehicle-contact/frontend/e2e/vehicle-qr.e2e.js`
 - [ ] `apps/vehicle-contact/frontend/src/infrastructure/qr/gas-qr-governance-repository.js`
 - [ ] `apps/vehicle-contact/schema/database.schema.json`
-- [ ] `tools/p6vc-api-test-console/worker.mjs`
 
 Hard-coded operation counts (update them, or better: derive from the inventory):
 
@@ -45,7 +44,6 @@ Hard-coded operation counts (update them, or better: derive from the inventory):
 | `apps/vehicle-contact/schema/database.schema.json` | new field | a backfill script for existing rows if a filter or rule depends on it |
 | `apps/vehicle-contact/contracts/firestore-indexes.v1.json` | indexes | `ensure-firestore-indexes.mjs --apply` BEFORE the backend deploy |
 | `apps/vehicle-contact/contracts/firestore-field-config.v1.json` | TTL / exemptions | `ensure-firestore-field-config.mjs --apply` |
-| `tools/p6vc-api-test-console/worker.mjs` | Worker (web app gateway) | `npx wrangler@4 deploy` — the web app goes through it; the live API suite calls Cloud Run directly and does NOT catch a stale Worker |
 | `apps/vehicle-contact/frontend/src` | web app | GitHub Pages deploys on merge; check the bundle version on the live site |
 | `.github/workflows/deploy-vehicle-cloudrun.yml` | deploy pipeline | proven only by a real deploy run |
 | `.github/workflows/deploy-vehicle-core.yml` | core deploy pipeline | proven only by a real deploy run (the first run creates p6vc-core) |
@@ -58,13 +56,13 @@ Each fact has one owner; these files still carry a copy. CI fails when a count g
 
 | Fact | Owner | Copies |
 |---|---|---|
-| photo-slots | `apps/vehicle-contact/backend/gas/src/domain/policies/VehicleLifecycle.js` | 12 |
-| gas-webapp-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 6 |
-| cloud-run-legacy-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 4 |
+| photo-slots | `apps/vehicle-contact/backend/gas/src/domain/policies/VehicleLifecycle.js` | 11 |
+| gas-webapp-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 4 |
+| cloud-run-legacy-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 2 |
 | cloud-run-core-url | `apps/vehicle-contact/contracts/trusted-endpoints.v1.json` | 0 |
 | backend-version | `apps/vehicle-contact/backend/gas/package.json` | 2 |
 
-<details><summary>photo-slots (12)</summary>
+<details><summary>photo-slots (11)</summary>
 
 - `apps/vehicle-contact/backend/gas/scripts/measure-intake-upload-timing.mjs`
 - `apps/vehicle-contact/backend/gas/scripts/reset-dev-data.mjs`
@@ -77,27 +75,22 @@ Each fact has one owner; these files still carry a copy. CI fails when a count g
 - `apps/vehicle-contact/backend/gas/src/application/use-cases/MediaRetentionOperations.js`
 - `apps/vehicle-contact/frontend/src/features/registrations/useRegistrationIntake.js`
 - `apps/vehicle-contact/frontend/src/infrastructure/vehicles/gas-vehicle-maintenance-repository.js`
-- `tools/p6vc-api-test-console/worker.mjs`
 
 </details>
 
-<details><summary>gas-webapp-url (6)</summary>
+<details><summary>gas-webapp-url (4)</summary>
 
 - `.github/workflows/deploy-vehicle-cloudrun.yml`
 - `.github/workflows/p6vc-live-acceptance.yml`
 - `apps/vehicle-contact/backend/gas/scripts/run-live-api-suite.mjs`
 - `apps/vehicle-contact/backend/gas/scripts/verify-live-publish.mjs`
-- `tools/p6vc-api-test-console/worker.mjs`
-- `tools/p6vc-api-test-console/wrangler.toml`
 
 </details>
 
-<details><summary>cloud-run-legacy-url (4)</summary>
+<details><summary>cloud-run-legacy-url (2)</summary>
 
 - `apps/vehicle-contact/ops/cloudrun-alert-drill.sh`
 - `apps/vehicle-contact/ops/cloudrun-uptime-alert.sh`
-- `tools/p6vc-api-test-console/worker.mjs`
-- `tools/p6vc-api-test-console/wrangler.toml`
 
 </details>
 

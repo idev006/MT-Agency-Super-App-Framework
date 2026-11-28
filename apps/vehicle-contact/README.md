@@ -21,7 +21,7 @@ frontend/ (Vue shell: screens + on-device photo work) ──► backend/core (p6
 
 - `backend/core` — the backend: async Node on Cloud Run. Operations not yet moved are still answered by the frozen legacy engine (`backend/gas/src` on Cloud Run `p6vc-api`) until N4.
 - `backend/gas` — shared rules still used by the core, the legacy engine, and the GAS image manager (managed with `clasp`; being reduced to the bridge only, G1).
-- `tools/p6vc-api-test-console` — the old Cloudflare Worker, being retired (W1).
+- No Cloudflare Worker: retired (VC-ADR-056 W1); the browser gateway contract is checked by `backend/cloudrun/verify-gateway-failclosed.mjs`.
 
 ## Run it on this computer (no deploy)
 

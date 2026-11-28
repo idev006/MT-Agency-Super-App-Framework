@@ -26,7 +26,6 @@ commands:
   - { dir: apps/vehicle-contact/frontend, run: "npm run test:summary", what: "frontend unit" }
   - { dir: apps/vehicle-contact/frontend, run: "npm run test:e2e:summary", what: "frontend e2e (mock API)" }
   - { dir: ., run: "node scripts/validate-ssot.mjs && node scripts/validate-usecase-ssot.mjs", what: "SSOT validators (CI)" }
-  - { dir: ., run: "node --test tools/p6vc-api-test-console/worker.test.mjs", what: "Worker tests (CI)" }
 versioning:
   files:
     - apps/vehicle-contact/backend/gas/package.json
@@ -43,7 +42,6 @@ deploy:
     - { path: apps/vehicle-contact/backend/cloudrun, steps: [cloudrun, core] }   # shared handler: both services
     - { path: apps/vehicle-contact/backend/core, steps: [core] }
     - { path: apps/vehicle-contact/frontend/src, steps: [] }   # Pages on merge
-    - { path: tools/p6vc-api-test-console, steps: [worker] }
   steps:
     - { id: indexes, run: "node scripts/ensure-firestore-indexes.mjs --apply (in apps/vehicle-contact/backend/gas)", verify: "report: declared N / live N / missing 0", note: "ALWAYS before the backend" }
     - { id: gas_push, run: "gh workflow run deploy-vehicle-gas.yml --ref main -f confirmation=PUSH_VEHICLE_GAS",
@@ -56,7 +54,6 @@ deploy:
         confirmation: DEPLOY_VEHICLE_CORE, verify: "step 'Smoke the live URL' success (first run creates p6vc-core)", note: "VC-ADR-046 front door; after the legacy deploy when both change" }
     - { id: core_jobs, run: "gh workflow run deploy-vehicle-jobs.yml --ref main -f confirmation=DEPLOY_VEHICLE_JOBS",
         confirmation: DEPLOY_VEHICLE_JOBS, verify: "step 'Run once and read its report' prints JOB {...status PASS}", note: "VC-ADR-046 2c: Cloud Run Jobs p6vc-housekeeping + p6vc-photo-audit (read-only) from the live core image; -f run_job picks the one run once; mode KEEP (default) keeps the housekeeping mode, APPLY needs -f apply_confirmation=APPLY_DRIVE_HOUSEKEEPING (Drive trash, 30-day undo); daily start = run-vehicle-jobs.yml (GitHub schedule 03:30 Bangkok; manual: -f confirmation=RUN_VEHICLE_JOBS)" }
-    - { id: worker, run: "npx wrangler@4 deploy (in tools/p6vc-api-test-console)", note: "separate deploy; the live API suite does NOT go through it" }
   rollback:
     - "Cloud Run: workflow rollback-vehicle-cloudrun.yml, confirmation ROLLBACK_VEHICLE_CLOUDRUN"
     - "GAS web app: clasp -u p6vc update-deployment <id> -V <previous>"
@@ -69,7 +66,7 @@ prove:
     gates: [P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE]
     target_env: "P6VC_API_BASE_URL and P6VC_GAS_EXEC_URL BOTH = https://p6vc-core-46858005337.asia-southeast3.run.app (the .env default is GAS /exec; one alone = CONFLICTING_API_BASE_URL)"
     background: true            # > 10 minutes
-    expect: "LIVE_SUITE status PASS 126/126 (public 11, Worker 14, Cloud Run gateway 14, authenticated 80 covering every op, DATA_PROOF 7); check LIVE_SUITE_TARGET line"
+    expect: "LIVE_SUITE status PASS 112/112 (public 11, core gateway 14, authenticated 80 covering every op, DATA_PROOF 7 — the Worker stage was removed in W1, VC-ADR-056; 126 before); check LIVE_SUITE_TARGET line"
   data_proof:
     dir: .
     command: "P6VC_ALLOW_FIRESTORE_DEV_PROBE=RUN_SYNTHETIC_FIRESTORE_PROBE node apps/vehicle-contact/backend/gas/scripts/firestore-readback-proof.mjs"
