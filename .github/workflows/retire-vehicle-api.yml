@@ -1,0 +1,85 @@
+name: P6 Vehicle Contact — infra report / retire p6vc-api (manual)
+
+# Owner 2026-11-28: "ลบ p6vc-api" — the legacy Cloud Run service receives no operation since backend 0.9.72 (the Node core
+# answers 64/64); its code is backed up on the owner's machine and in git history.
+#   REPORT  read-only: Cloud Run services + jobs, uptime checks / alert policies that watch p6vc-api, Firestore database
+#           settings (point-in-time recovery, delete protection), backup schedules, composite index count. Changes nothing.
+#   DELETE  deletes ONLY the Cloud Run service p6vc-api (its revisions go with it; the images stay in Artifact Registry, so a
+#           redeploy from the backup is possible). Needs the typed phrase DELETE_P6VC_API. Never touches p6vc-core, the jobs,
+#           the runtime service account p6vc-api-runtime (shared by the core and the jobs), secrets or Firestore.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'REPORT (read-only) or DELETE'
+        required: true
+        default: REPORT
+        type: choice
+        options: [REPORT, DELETE]
+      confirmation:
+        description: 'For DELETE only: type DELETE_P6VC_API'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: p6vc-retire-api
+  cancel-in-progress: false
+
+env:
+  PROJECT_ID: mt-iam-core-2026
+  REGION: asia-southeast3
+  SERVICE: p6vc-api
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Refuse DELETE without the phrase
+        if: inputs.mode == 'DELETE' && inputs.confirmation != 'DELETE_P6VC_API'
+        run: echo "::error::DELETE needs confirmation DELETE_P6VC_API" && exit 1
+
+      - name: Authenticate to Google Cloud (keyless)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOYER_SA }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Report (read-only)
+        run: |
+          set +e
+          echo "== Cloud Run services"
+          gcloud run services list --project "$PROJECT_ID" --region "$REGION" --format="table(metadata.name,status.url,status.latestReadyRevisionName,status.conditions[0].status)"
+          echo "== Cloud Run jobs"
+          gcloud run jobs list --project "$PROJECT_ID" --region "$REGION" --format="table(metadata.name,status.latestCreatedExecution.name)"
+          echo "== p6vc-api traffic"
+          gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format="value(status.traffic)" || echo "p6vc-api: not found"
+          echo "== uptime checks (name, host)"
+          gcloud monitoring uptime list-configs --project "$PROJECT_ID" --format="table(displayName,monitoredResource.labels.host,httpCheck.path)" || echo "uptime: not readable with this account"
+          echo "== alert policies"
+          gcloud alpha monitoring policies list --project "$PROJECT_ID" --format="table(displayName,enabled)" 2>/dev/null || echo "alert policies: not readable with this account"
+          echo "== Firestore (default)"
+          gcloud firestore databases describe --database='(default)' --project "$PROJECT_ID" --format="yaml(name,locationId,type,pointInTimeRecoveryEnablement,deleteProtectionState,concurrencyMode,earliestVersionTime)" || echo "firestore: not readable"
+          echo "== Firestore backup schedules"
+          gcloud firestore backups schedules list --database='(default)' --project "$PROJECT_ID" || echo "backup schedules: not readable"
+          echo "== Firestore composite indexes (count by state)"
+          gcloud firestore indexes composite list --database='(default)' --project "$PROJECT_ID" --format="value(state)" | sort | uniq -c || echo "indexes: not readable"
+          exit 0
+
+      - name: Delete the Cloud Run service p6vc-api
+        if: inputs.mode == 'DELETE'
+        run: |
+          gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --format="value(metadata.name)"
+          gcloud run services delete "$SERVICE" --project "$PROJECT_ID" --region "$REGION" --quiet
+          echo "== after"
+          gcloud run services list --project "$PROJECT_ID" --region "$REGION" --format="table(metadata.name,status.url)"
+          if gcloud run services describe "$SERVICE" --project "$PROJECT_ID" --region "$REGION" >/dev/null 2>&1; then echo "::error::p6vc-api still exists"; exit 1; fi
+          echo "DELETED p6vc-api"
