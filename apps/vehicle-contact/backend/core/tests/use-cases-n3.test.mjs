@@ -15,7 +15,7 @@ const ids = () => { let n = 0; return () => String(++n).padStart(64, '0'); };
 test('N3-01 the fifteen user / organization / campaign operations are answered by the core; only system.health stays legacy', () => {
   const h = createAcceptanceHarness();
   for (const op of OPS) assert.equal(h.engineFor(op), 'core', op);
-  assert.equal(h.engineFor('system.health'), 'legacy');
+  assert.equal(h.engineFor('system.health'), 'core'); // N4
 });
 
 test('N3-02 users.create hashes through the password port and writes user + STAFF role + audit in ONE commit', async () => {

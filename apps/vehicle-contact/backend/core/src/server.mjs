@@ -29,7 +29,8 @@ export function createCoreHandler({integrations = createIntegrationManager(), le
     resetEnabled: process.env.P6VC_SYSTEM_RESET === 'ENABLED'})} = {}) {
   const router = createRouter({legacy, core});
   // x-p6vc-answered-by: which engine answered this operation (evidence for each ported group; no data in it)
+  // (no envelope = GET / = health)
   const headers = envelope => ({'x-p6vc-engine': 'core',
-    'x-p6vc-answered-by': envelope && typeof envelope === 'object' && router.engineFor(envelope.group + '.' + envelope.action) === 'core' ? 'core' : 'legacy'});
+    'x-p6vc-answered-by': router.engineFor(envelope && typeof envelope === 'object' ? envelope.group + '.' + envelope.action : 'system.health') === 'core' ? 'core' : 'legacy'});
   return createApiHandler(router, {headers});
 }

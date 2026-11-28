@@ -75,7 +75,7 @@ test('BOTH-02 the core answers only operations it has a flow for', async () => {
   assert.deepEqual([...Object.keys(FLOWS)].sort(), ['auth.changePassword', 'auth.googleLogin', 'auth.linkGoogle', 'auth.login', 'auth.logout', 'auth.session',
     'campaigns.validate', 'contacts.read', 'photos.upload', 'qr.resolve', 'references.registration', 'registrations.submit', 'vehicles.detail', 'vehicles.history',
     'vehicles.lookup', 'vehicles.photo']);
-  const core = createCoreFacade({store: asyncOf(h.store), now: () => h.security.now(), sha256: x => h.security.sha256(x)});
+  const core = createCoreFacade({store: asyncOf(h.store), now: () => h.security.now(), sha256: x => h.security.sha256(x), health: false});
   const r = await core.dispatch(env(h, 'system.health', {}), 'POST');
   assert.equal(r.error.code, 'NOT_FOUND', 'an operation without a flow is not answered by the core');
 });

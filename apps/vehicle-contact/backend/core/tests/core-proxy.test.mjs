@@ -19,7 +19,7 @@ const quiet = () => {};
 // every operation is on the core since N3 (system.health excepted): these proxy tests keep users.list on the legacy side so a
 // real forwarded operation (with a payload and a session) is exercised
 const {'users.list': _forwarded, ...ported} = USE_CASES;
-const coreWithout = () => createCoreFacade({store: () => { throw new Error('NO_STORE_IN_PROXY_TEST'); }, useCases: ported});
+const coreWithout = () => createCoreFacade({store: () => { throw new Error('NO_STORE_IN_PROXY_TEST'); }, useCases: ported, health: false});
 const legacyAt = url => createIntegrationManager({overrides: {urls: {'legacy-engine': url}}, log: quiet}).gateway('legacy-engine');
 
 async function pair() {
