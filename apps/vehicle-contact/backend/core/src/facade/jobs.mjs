@@ -3,6 +3,7 @@
 import {runFlowAsync} from '../../../gas/src/application/flows/FlowRunner.js';
 import {drivePhotoHousekeepingFlow} from '../../../gas/src/application/flows/DrivePhotoHousekeepingFlow.js';
 import {drivePhotoAuditFlow} from '../../../gas/src/application/flows/DrivePhotoAuditFlow.js';
+import {runReferenceSeedJob} from './reference-seed.mjs';
 
 // name -> ({store, media, apply, nowMs}) -> report
 export const JOBS = Object.freeze({
@@ -10,5 +11,10 @@ export const JOBS = Object.freeze({
   'drive-photo-housekeeping': ({store, media, apply = false, nowMs = Date.now()}) =>
     runFlowAsync(drivePhotoHousekeepingFlow({apply, nowMs}), {store, media}),
   // on demand, read-only: Firestore photo rows <-> files in the Drive photo folder (L4 SSOT file proof)
-  'drive-photo-audit': ({store, media}) => runFlowAsync(drivePhotoAuditFlow(), {store, media})
+  'drive-photo-audit': ({store, media}) => runFlowAsync(drivePhotoAuditFlow(), {store, media}),
+  // Manual only. The checksum approval is never printed by the job runner.
+  'reference-seed': async ({store, mode = 'DRY_RUN', approval = ''}) => {
+    const result = await runReferenceSeedJob({store, mode, approval});
+    return {...result, seedStatus: result.status, status: result.status === 'BLOCKED' ? 'PARTIAL' : 'PASS'};
+  }
 });

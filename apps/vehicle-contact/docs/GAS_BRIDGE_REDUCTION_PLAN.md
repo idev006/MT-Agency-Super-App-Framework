@@ -14,7 +14,7 @@ Owner direction 2026-11-28: use `clasp` to manage GAS source; the deployed GAS p
 
 ## Gates before changing the remote GAS project
 
-1. Move R10 reference seed and R11 first-admin/admin reset to reviewed core jobs, preserving their current security gates. Confirm whether any other editor entrypoint is still needed, including photo audit/config inspection and the password diagnostic.
+1. Move R10 reference seed and R11 first-admin/admin reset to reviewed core jobs, preserving their current security gates. R10 has a native async core job implementation with an in-Firestore journal and local dry-run/apply/recover tests; its manual workflow and live dry-run proof remain pending. Confirm whether any other editor entrypoint is still needed, including photo audit/config inspection and the password diagnostic.
 2. Confirm the old GAS daily housekeeping trigger is removed or migrate its scheduling without overlap. Keep the Cloud Run housekeeping job proof.
 3. Replace the old GAS full-API publish verification with a signed bridge smoke and the full core suite + independent Firestore DATA_PROOF. The current GAS verifier still expects the old API and would fail against bridge-only code.
 4. Review the dry-run file list and obtain the owner's **separate confirmation for remote source removal**. VC-ADR-052's one-time synthetic DEV approval excludes permanent deletes.

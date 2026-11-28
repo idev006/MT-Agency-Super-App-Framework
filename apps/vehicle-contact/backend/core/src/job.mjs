@@ -8,8 +8,10 @@ import {firestoreStoreFromEnv} from './server.mjs';
 const name = process.argv[2];
 if (!Object.prototype.hasOwnProperty.call(JOBS, name)) { console.error(JSON.stringify({event: 'job', status: 'UNKNOWN_JOB'})); process.exit(2); }
 try {
-  const report = await JOBS[name]({store: firestoreStoreFromEnv()(), media: createIntegrationManager().gateway('media-bridge'),
-    apply: process.env.P6VC_JOB_MODE === 'APPLY', nowMs: Date.now()});
+  const report = await JOBS[name]({store: firestoreStoreFromEnv()(),
+    media: name === 'reference-seed' ? undefined : createIntegrationManager().gateway('media-bridge'),
+    apply: process.env.P6VC_JOB_MODE === 'APPLY', mode: process.env.P6VC_JOB_MODE || 'DRY_RUN',
+    approval: process.env.P6VC_REFERENCE_SEED_APPROVAL || '', nowMs: Date.now()});
   console.log('JOB ' + JSON.stringify({event: 'job', job: name, ...report}));
   process.exit(report.status === 'PASS' ? 0 : 1);
 } catch (e) {
