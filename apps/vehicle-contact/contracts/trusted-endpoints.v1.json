@@ -8,19 +8,7 @@
       "kind": "gas",
       "url": "https://script.google.com/macros/s/AKfycby15c-Aux2za0BuedeIYni8-tc6rkf9ZVNmw-6ZMTgPvG9SvFjuQVSzNoMouiMhqTmxrA/exec",
       "redirect": "follow-get-to-script.googleusercontent.com",
-      "role": "media bridge (VC-ADR-034) + rollback target (VC-ADR-035)",
-      "workerUpstream": true
-    },
-    {
-      "id": "cloud-run-api",
-      "kind": "cloud-run",
-      "url": "https://p6vc-api-46858005337.asia-southeast3.run.app",
-      "redirect": "none",
-      "projectId": "mt-iam-core-2026",
-      "projectNumber": "46858005337",
-      "region": "asia-southeast3",
-      "service": "p6vc-api",
-      "role": "primary API (VC-ADR-033/035)",
+      "role": "media bridge (VC-ADR-034): signed photo files in Google Drive",
       "workerUpstream": true
     },
     {
@@ -32,7 +20,7 @@
       "projectNumber": "46858005337",
       "region": "asia-southeast3",
       "service": "p6vc-core",
-      "role": "new Node core front door (VC-ADR-046); forwards not-yet-ported operations to cloud-run-api",
+      "role": "the only backend: Node core (VC-ADR-046/051); p6vc-api retired 2026-11-28",
       "workerUpstream": false
     }
   ]

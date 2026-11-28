@@ -70,7 +70,7 @@ Cloud Run in `asia-southeast3` (Bangkok) should be equal or faster: the server s
   - `server.mjs` and a `Dockerfile` (`node:22-slim`, no npm dependencies, runs as user `node`).
   - Tests: `CLOUDRUN-01..03`. They prove env config with a required pepper, read-only config with a names-only report, Firestore called with the identity token, and a second request reading Firestore again (no cache).
 - The container layout was simulated locally (the same files the Dockerfile copies): imports resolve and health returns `ready`. Docker Desktop was not running, so the real image build happens in CI.
-- [.github/workflows/deploy-vehicle-cloudrun.yml](../../../.github/workflows/deploy-vehicle-cloudrun.yml):
+- .github/workflows/deploy-vehicle-cloudrun.yml (`deploy-vehicle-cloudrun.yml`, retired 2026-11-28):
   - Manual only; confirmation phrase `DEPLOY_VEHICLE_CLOUDRUN`; `main` branch only.
   - Gate: backend tests.
   - Keyless auth via Workload Identity Federation.

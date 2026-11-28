@@ -2,7 +2,6 @@
 // Adapters implement them; use cases import nothing else from outside the domain. All methods return promises.
 export const PORTS = Object.freeze({
   // the legacy engine answers operations the core has not ported yet (phase 1–8)
-  LegacyEngine: ['dispatch'],                 // dispatch(envelope, method) -> envelope
   // photo files (owner's Drive through the GAS bridge, VC-ADR-034)
   MediaStore: ['upload', 'read', 'trash', 'trashAll', 'list', 'organize', 'stat'], // upload(base64, mime) -> {storageRef}; read(ref) -> {base64Image, mime_type}; trash(ref) -> boolean;
   //   list(pageToken|null) -> {files: [{id, createdMs, trashed}], nextPageToken|null} (housekeeping, phase 2c)

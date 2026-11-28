@@ -5,10 +5,11 @@
 #                                         expects text the API never returns) + a policy on the existing e-mail channel
 #   bash cloudrun-alert-drill.sh stop     delete both (always run it, even if no e-mail came)
 # The e-mail ("P6VC alert drill", "DRILL - not a real outage") arrives in about 5 minutes. The real uptime check
-# "p6vc-api-health" and the real policy "P6VC API down (uptime)" are never touched. First run: 2026-11-26, e-mail in ~5 min.
+# "p6vc-core-health" and the real policy "P6VC core down (uptime)" are never touched. First run: 2026-11-26, e-mail in ~5 min.
 set -euo pipefail
 P="mt-iam-core-2026"
-H="p6vc-api-46858005337.asia-southeast3.run.app"
+H="$(grep -o 'p6vc-core-[0-9]*\.[a-z0-9-]*\.run\.app' "$(dirname "$0")/../contracts/trusted-endpoints.v1.json" | head -1)"
+[ -n "$H" ] || { echo "core host not found in contracts/trusted-endpoints.v1.json (run from the repo checkout)"; exit 1; }
 gcloud config set project "$P" >/dev/null
 if [ "${1:-}" = "stop" ]; then
   for p in $(gcloud alpha monitoring policies list --filter='displayName="P6VC alert drill"' --format='value(name)'); do gcloud alpha monitoring policies delete "$p" --quiet; done

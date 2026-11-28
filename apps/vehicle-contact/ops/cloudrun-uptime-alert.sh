@@ -4,17 +4,23 @@
 #   bash cloudrun-uptime-alert.sh you@example.com
 # Creates (Cloud Monitoring, within the free allotment):
 #   - an e-mail notification channel to the address given (asked here, never stored in the repo)
-#   - an uptime check: GET https://<p6vc-api>/ every 5 minutes from 3 regions, must contain "status":"ready"
+#   - an uptime check: GET https://<p6vc-core>/ every 5 minutes from 3 regions, must contain "status":"ready"
 #   - an alert policy: e-mail when the check fails from 2+ regions for 5 minutes; e-mail again when it recovers
-# What to do on an alert: GitHub → Actions → "Roll back P6 Vehicle Contact API on Cloud Run" (ROLLBACK_VEHICLE_CLOUDRUN).
+#   - and REMOVES the retired p6vc-api check "p6vc-api-health" + policy "P6VC API down (uptime)" (p6vc-api retired 2026-11-28)
+# What to do on an alert: Cloud Console → Cloud Run → p6vc-core → Revisions → send 100% traffic to the previous revision
+# (the deploy also rolls back by itself when its live smoke fails).
 set -euo pipefail
 
 EMAIL="${1:-}"
 if ! [[ "$EMAIL" =~ ^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$ ]]; then echo "usage: bash $0 <alert e-mail>"; exit 1; fi
 PROJECT_ID="mt-iam-core-2026"
-HOST="p6vc-api-46858005337.asia-southeast3.run.app"
-CHECK_NAME="p6vc-api-health"
-POLICY_NAME="P6VC API down (uptime)"
+# the core host from ONE place (contracts/trusted-endpoints.v1.json, id cloud-run-core) — run from a checkout of the repo
+HOST="$(grep -o 'p6vc-core-[0-9]*\.[a-z0-9-]*\.run\.app' "$(dirname "$0")/../contracts/trusted-endpoints.v1.json" | head -1)"
+[ -n "$HOST" ] || { echo "core host not found in contracts/trusted-endpoints.v1.json (run from the repo checkout)"; exit 1; }
+CHECK_NAME="p6vc-core-health"
+POLICY_NAME="P6VC core down (uptime)"
+OLD_CHECK_NAME="p6vc-api-health"
+OLD_POLICY_NAME="P6VC API down (uptime)"
 
 gcloud config set project "$PROJECT_ID" >/dev/null
 echo "1/4 Enabling Cloud Monitoring API..."
@@ -55,11 +61,14 @@ if [ -z "$(gcloud alpha monitoring policies list --filter="displayName=\"$POLICY
     }
   }],
   "alertStrategy": {"autoClose": "1800s", "notificationPrompts": ["OPENED", "CLOSED"]},
-  "documentation": {"mimeType": "text/markdown", "content": "P6VC API is not answering ready. Roll back: GitHub → Actions → Roll back P6 Vehicle Contact API on Cloud Run (type ROLLBACK_VEHICLE_CLOUDRUN)."},
+  "documentation": {"mimeType": "text/markdown", "content": "P6VC core (p6vc-core) is not answering ready. Roll back: Cloud Console → Cloud Run → p6vc-core → Revisions → 100% to the previous revision."},
   "notificationChannels": ["$CHANNEL"]
 }
 JSON
   gcloud alpha monitoring policies create --policy-from-file="$POLICY_FILE"
   rm -f "$POLICY_FILE"
 fi
+echo "Retiring the p6vc-api check and policy (the service was retired 2026-11-28)..."
+for p in $(gcloud alpha monitoring policies list --filter="displayName=\"$OLD_POLICY_NAME\"" --format='value(name)'); do gcloud alpha monitoring policies delete "$p" --quiet; done
+for c in $(gcloud monitoring uptime list-configs --filter="displayName=\"$OLD_CHECK_NAME\"" --format='value(name)'); do gcloud monitoring uptime delete "$c" --quiet; done
 echo "Done. Google sends a confirmation only for some channel types; check the inbox of $EMAIL."

@@ -1,7 +1,7 @@
 // Cloud Run smoke for the safe deploy (owner 2026-11-26: Cloud Run only is fine "แต่ไม่อยากให้เกิด" an outage).
-// Used twice by deploy-vehicle-cloudrun.yml: on the new revision's private tag URL BEFORE it gets traffic, and on the
-// service URL right after the switch (a failure there moves traffic back to the previous revision). Also used by the
-// rollback workflow. Public, non-sensitive requests only: no credentials, no vehicle data, no writes.
+// Used twice by deploy-vehicle-core.yml: on the new revision's private tag URL BEFORE it gets traffic, and on the
+// service URL right after the switch (a failure there moves traffic back to the previous revision). (p6vc-api and its
+// deploy / rollback workflows were retired 2026-11-28.) Public, non-sensitive requests only: no credentials, no vehicle data, no writes.
 //   node candidate-smoke.mjs <https://...run.app> [--version 0.9.36 | --any-version]
 export const RUN_APP_URL = /^https:\/\/(candidate---)?p6vc-(api|core)-[a-z0-9-]+\.[a-z0-9-]+\.run\.app\/?$/; // legacy + core (VC-ADR-046)
 const msg = (group, action, payload = {}, extra = {}) => ({apiVersion: 'v1', group, action, payload, requestId: 'deploy-smoke', ...extra});
