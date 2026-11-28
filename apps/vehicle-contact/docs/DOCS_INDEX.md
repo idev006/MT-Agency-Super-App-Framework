@@ -25,13 +25,14 @@
 
 | เอกสาร | หมวด | อัปเดต (git) | วันที่ในไฟล์ | สถานะ / หมายเหตุ |
 |---|---|---|---|---|
+| [AGILE_KANBAN.md](AGILE_KANBAN.md) — P6 Vehicle Contact — Agile Kanban Operations & Live Issue Board | Navigation / current | 2026-11-28 | 2026-11-27 | SUPERSEDED 2026-11-27 — board of 2026-11-22; current board: KANBAN_BOARD.md; work order an |
 | [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) — P6 Vehicle Contact — Current Delivery Status / Resume Here | Navigation / current | 2026-11-28 | 2026-11-28 | DEV / synthetic data only. Engine move to native async Node in progress (24 of 64 operatio |
 | [DECISION_LOG.md](DECISION_LOG.md) — P6 Vehicle Contact — Decision and approval log | Navigation / current | 2026-11-28 | 2026-11-28 |  |
 | [GAS_BRIDGE_REDUCTION_PLAN.md](GAS_BRIDGE_REDUCTION_PLAN.md) — GAS project file reduction — candidate and publication gate | Plan / process | 2026-11-28 | 2026-11-28 |  |
+| [KANBAN_BOARD.md](KANBAN_BOARD.md) — P6 Vehicle Contact — Kanban board | Plan / process | 2026-11-28 | 2026-11-28 |  |
 | [NODE_CORE_FINISH_PLAN.md](NODE_CORE_FINISH_PLAN.md) — Node core — finish: the whole backend as native async Node.js (VC-ADR-051) | Plan / process | 2026-11-28 | 2026-11-28 |  |
 | [PROJECT_HANDOVER.md](PROJECT_HANDOVER.md) — P6 Vehicle Contact — Project Handover / Next AI | Navigation / current | 2026-11-28 | 2026-11-28 | current. Read CURRENT_DELIVERY_STATUS.md (what runs, last proof) with this page (how to wo |
 | [ROADMAP.md](ROADMAP.md) — P6 Vehicle Contact — roadmap to finish (tracked) | Plan / process | 2026-11-28 | 2026-11-28 |  |
-| [AGILE_KANBAN.md](AGILE_KANBAN.md) — P6 Vehicle Contact — Agile Kanban Operations & Live Issue Board | Navigation / current | 2026-11-27 | 2026-11-27 | SUPERSEDED 2026-11-27 — board of 2026-11-22; current board: KANBAN_BOARD.md; work order an |
 | [CODE_MAP_20261121.md](CODE_MAP_20261121.md) — P6 Vehicle Contact — Code Map (current source) | Standard / architecture | 2026-11-27 | 2026-11-27 | SUPERSEDED 2026-11-27 — map of `248a3a6`; current: the generated, CI-checked DATA_ACCESS_M |
 | [HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md](HANDOFF_FIRESTORE_PHASE3_CONTINUATION_20261123.md) — Handoff — Firestore Phase 3 continuation (synthetic DEV) | Navigation / current | 2026-11-27 | 2026-11-27 | SUPERSEDED 2026-11-27 — historical handoff (GAS runtime, 0.9.3); current: CURRENT_DELIVERY |
 | [NODE_CORE_ARCHITECTURE.md](NODE_CORE_ARCHITECTURE.md) — Node core architecture (VC-ADR-046) | Standard / architecture | 2026-11-27 | 2026-11-27 |  |
@@ -185,7 +186,6 @@
 | [SYSTEM_ANALYSIS_V2.md](SYSTEM_ANALYSIS_V2.md) — P6 Vehicle Contact — System Analysis & Design v2.0 | Reference | 2026-11-16 | 2026-10-31 |  |
 | [TEAM_UPSKILL_RESEARCH_2026-10-31.md](TEAM_UPSKILL_RESEARCH_2026-10-31.md) — MT Vehicle Contact — Team Upskill / Reskill Research | Engineering reference | 2026-11-16 | 2026-10-31 | **Research date:** 31 ตุลาคม 2569 |
 | [WORKFLOW_AND_MEDIA_PIPELINE.md](WORKFLOW_AND_MEDIA_PIPELINE.md) — MT Vehicle Contact v1.0 — Workflow & Photo Pipeline | Plan / process | 2026-11-16 | 2026-10-30 | PROPOSED / Implementation-ready design draft |
-| [KANBAN_BOARD.md](KANBAN_BOARD.md) — P6 Vehicle Contact — Kanban board | Plan / process | — | 2026-11-28 |  |
 
 ## 3. กติกาความสด (freshness rules)
 
