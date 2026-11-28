@@ -24,6 +24,8 @@ export function createCoreHandler({integrations = createIntegrationManager(), le
   core = createCoreFacade({store: firestoreStoreFromEnv(), media: () => integrations.gateway('media-bridge'),
     passwords: createNodePasswordHasher({pepper: process.env.P6VC_AUTH_PEPPER || null}),
     deriveSecret: createDeriveSecret(process.env.P6VC_AUTH_PEPPER),
+    // retention.execute deletes permanently: off unless set (the legacy property; not set on Cloud Run)
+    retentionExecuteEnabled: process.env.VEHICLE_RETENTION_EXECUTE_ENABLED === 'true',
     resetEnabled: process.env.P6VC_SYSTEM_RESET === 'ENABLED'})} = {}) {
   const router = createRouter({legacy, core});
   // x-p6vc-answered-by: which engine answered this operation (evidence for each ported group; no data in it)
