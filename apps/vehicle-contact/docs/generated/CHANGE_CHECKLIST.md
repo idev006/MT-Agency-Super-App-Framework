@@ -19,6 +19,7 @@ Every file that wires the reference operation `qr.markPrinted` — a new operati
 - [ ] `apps/vehicle-contact/contracts/api-inventory.v1.json`
 - [ ] `apps/vehicle-contact/contracts/api-permissions.v1.json`
 - [ ] `apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md`
+- [ ] `apps/vehicle-contact/docs/HANDOFF_NEXT_SESSION_20261128.md`
 - [ ] `apps/vehicle-contact/docs/NODE_CORE_FINISH_PLAN.md`
 - [ ] `apps/vehicle-contact/docs/ROADMAP.md`
 - [ ] `apps/vehicle-contact/docs/traceability-matrix.md`
