@@ -25,7 +25,7 @@ Status labels: `status:todo` → `status:in-progress` → closed (with the evide
 | N2 | Photos, retention, audit (10 ops) | [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) | N1a | todo |
 | N3 | Users, organizations, campaigns (15 ops) | [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) | N1a | todo |
 | G1 | Reduce GAS clasp project to signed photo bridge only | [#329](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/329) | R10, R11, trigger retirement, separate source-removal confirmation | in progress — 60-file current artifact; one-file local candidate + VM proof; no remote removal |
-| R10 | GAS 2c-3b — reference seed as a core job | [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) | — | todo |
+| R10 | GAS 2c-3b — reference seed as a core job | [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) | — | in progress — native async job + manual dry-run/apply workflow; live dry-run proof pending; recovery not exposed by workflow |
 | R11 | GAS 2c-3c — first admin + admin reset as core jobs (security review) | [#304](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/304) | owner security OK | todo |
 | N4 | Retire Worker service; delete legacy API + GAS API code; leave GAS photo bridge only | [#255](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/255) | N1a–N3, N4a, R10, R11 | todo |
 | R14 | Capacity for 100 simultaneous logins (sustained test, min-instances decision) | [#306](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/306) | owner cost decision | todo |
