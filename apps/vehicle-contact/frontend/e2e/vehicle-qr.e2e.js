@@ -66,6 +66,7 @@ test('QR print → PDF: real page sizes (A4 sheet, 56 mm single page with bleed)
 })
 
 test('person types + sticker colours (VC-ADR-038): a system admin changes a colour → the print uses it', async ({ page, api }) => {
+  test.slow() // two pages + a dialog; under a full parallel run on a cold dev server it went past 30 s (stress run 2026-11-28)
   await signIn(page, '/#/app/admin/settings')
   const table = page.getByRole('table', { name: 'ประเภทบุคคลและสีสติกเกอร์' })
   await expect(table).toBeVisible()
@@ -112,6 +113,7 @@ test('print UX (live review 2026-11-26): select all at once, action bar stays at
 })
 
 test('print filters (VC-ADR-042): not printed by default; unit / type / plate; confirm printed moves the vehicle out', async ({ page, api }) => {
+  test.slow() // many filter round trips + print + confirm; same cold-start timeout as above (stress run 2026-11-28)
   await signIn(page, '/#/app/admin/qr-print')
   const table = page.getByRole('table', { name: 'เลือกรถสำหรับพิมพ์ QR' })
   await expect(table).toBeVisible()
