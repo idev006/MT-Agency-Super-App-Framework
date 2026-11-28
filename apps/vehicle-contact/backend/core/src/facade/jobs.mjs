@@ -4,6 +4,7 @@ import {runFlowAsync} from '../../../gas/src/application/flows/FlowRunner.js';
 import {drivePhotoHousekeepingFlow} from '../../../gas/src/application/flows/DrivePhotoHousekeepingFlow.js';
 import {drivePhotoAuditFlow} from '../../../gas/src/application/flows/DrivePhotoAuditFlow.js';
 import {runReferenceSeedJob} from './reference-seed.mjs';
+import {runAdminTool} from './admin-tools.mjs';
 
 // name -> ({store, media, apply, nowMs}) -> report
 export const JOBS = Object.freeze({
@@ -16,5 +17,8 @@ export const JOBS = Object.freeze({
   'reference-seed': async ({store, mode = 'DRY_RUN', approval = ''}) => {
     const result = await runReferenceSeedJob({store, mode, approval});
     return {...result, seedStatus: result.status, status: result.status === 'BLOCKED' ? 'PARTIAL' : 'PASS'};
-  }
+  },
+  // Manual only (R11, VC-ADR-057): first admin / admin password reset. The temporary password and the pepper arrive as
+  // mounted secrets; the report never carries them, a hash or a user id.
+  'admin-tools': ({store, adminTool}) => runAdminTool({store, ...adminTool})
 });

@@ -1,9 +1,9 @@
 # P6 Vehicle Contact — Kanban board
 
-**Drawn:** 2026-11-28 06:33 UTC from the GitHub issues by `node scripts/gen-kanban.mjs` — do not edit by hand.
+**Drawn:** 2026-11-28 06:49 UTC from the GitHub issues by `node scripts/gen-kanban.mjs` — do not edit by hand.
 **Source of truth:** the issues (labels `status:*`, `priority:*`, milestones). Order of work and done-criteria: [ROADMAP.md](ROADMAP.md). Current state: [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md).
 
-## กำลังทำ (in progress) — 4
+## กำลังทำ (in progress) — 5
 
 | Item | Issue | Milestone | Priority |
 |---|---|---|---|
@@ -11,6 +11,7 @@
 | N1b | [#312](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/312) Vehicles, QR, change requests, registration review as native async Node (16 ops) | Node core (VC-ADR-046) | P1 |
 | G1 | [#329](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/329) Reduce clasp project to photo bridge files | Node core (VC-ADR-046) | P1 |
 | R10 | [#303](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/303) 2c-3b — reference seed as a core job | Node core (VC-ADR-046) | P2 |
+| R11 | [#304](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/304) 2c-3c — first admin + admin password reset as core jobs (security review) | Node core (VC-ADR-046) | P2 |
 
 ## รอ owner / ติดขัด (blocked, on hold, review) — 7
 
@@ -24,7 +25,7 @@
 | VC-W21 | [#21](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/21) Controlled pilot deploy, training and rollback | Go-live readiness | P0 |
 | VC-W22 | [#22](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/22) Visitor pass and entry-exit module (future only) | Go-live readiness | P3 |
 
-## ถัดไป (todo) — 8
+## ถัดไป (todo) — 7
 
 | Item | Issue | Milestone | Priority |
 |---|---|---|---|
@@ -32,7 +33,6 @@
 | R14 | [#306](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/306) Capacity for 100 simultaneous logins | Go-live readiness | P1 |
 | R16 | [#307](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/307) Production switches and owner actions | Go-live readiness | P1 |
 | R04 | [#297](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/297) PR C — move existing photos into their vehicle folders (job, dry run first) | Photos (VC-ADR-049/050) | P2 |
-| R11 | [#304](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/304) 2c-3c — first admin + admin password reset as core jobs (security review) | Node core (VC-ADR-046) | P2 |
 | N2 | [#313](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/313) Photos, retention, audit as native async Node (10 ops) | Node core (VC-ADR-046) | P2 |
 | N3 | [#314](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/314) Users, organizations, campaigns as native async Node (15 ops) | Node core (VC-ADR-046) | P2 |
 | R17 | [#308](https://github.com/idev006/MT-Agency-Super-App-Framework/issues/308) Apply the new log retention to old log rows (destructive: preview + confirm) | Go-live readiness | P3 |
