@@ -78,6 +78,20 @@ Owner clarification 2026-11-28: use LSP to map code; the target backend is nativ
 6. Checks: core `npm test`, legacy `npm run check`, frontend `npx vitest run`, `node scripts/gen-system-maps.mjs --check`, `node scripts/validate-ssot.mjs`, `node scripts/validate-usecase-ssot.mjs`.
 7. PR → CI green → DEV merge/deploy under VC-ADR-052's existing owner approval → section 5.
 
+## 4b. Try it on this computer first (L1, VC-ADR-056) — no deploy, no cloud
+
+```bash
+npm --prefix apps/vehicle-contact/backend/core run dev        # core on http://localhost:8787/api/frontend (stub adapters, in memory)
+VITE_CORE_API_URL=http://localhost:8787/api/frontend npm --prefix apps/vehicle-contact/frontend run dev
+```
+In the Claude desktop app: `preview_start p6vc-core-dev` then `preview_start p6vc-frontend-local` (`.claude/launch.json`, web app on :5175).
+The core is the real one (facade, use cases, flows, browser gateway); the adapters are the acceptance harness's: one in-memory
+store, fake Drive (keeps uploaded bytes; the Drive thumbnail links fail → the web app falls back to the API, as designed),
+fake password hashing, users `sys` / `reg` / `staff` / `owner` / `worker` (password = `SAMPLE_PASSWORD` in
+`backend/gas/tests/acceptance-fixture.mjs`, synthetic), 645 reference rows, an open campaign (token printed at start). Operations
+not yet on the core are answered by the legacy engine in the same process, as in production. Data is lost on stop.
+Smoke test: `backend/core/tests/dev-server.test.mjs` (in `npm test`, CI). The live suite + DATA_PROOF after a deploy stay the PASS gate.
+
 ## 5. Deploy and prove (DEV approval recorded in VC-ADR-052)
 
 ```bash
