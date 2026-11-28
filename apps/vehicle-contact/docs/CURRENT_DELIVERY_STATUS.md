@@ -12,7 +12,7 @@ Next steps, rules and the ready-to-paste prompt: [PROJECT_HANDOVER.md](PROJECT_H
 
 | Component | Now | Notes |
 |---|---|---|
-| Web app | **FE 0.9.23** live on GitHub Pages; browser calls p6vc-core directly | photos shown by Drive link (thumbnail at once, full size on tap, API fallback) |
+| Web app | **FE 0.9.24** live on GitHub Pages (2026-11-28, #335: photo rules applied on the device, admin card "กฎของรูปถ่าย"; works with the current backend using the default rules); browser calls p6vc-core directly | photos shown by Drive link (thumbnail at once, full size on tap, API fallback) |
 | Cloudflare Worker `tools/p6vc-api-test-console` | still deployed but no longer used by the web app; retirement tracked in N4 | no Worker deploy in N4a; removal requires the N4 plan |
 | **p6vc-core** (Cloud Run, Node 22 ESM, async, gRPC Firestore) | front door; answers **24 / 64** ops, forwards the rest to p6vc-api | 2 vCPU, 512 Mi, cpu-boost, `UV_THREADPOOL_SIZE=2×vCPU`, secrets: media bridge + `p6vc-auth-pepper` |
 | p6vc-api (Cloud Run, legacy engine) | the sync GAS-style backend (`backend/gas/src`), concurrency 1 | frozen (VC-ADR-051): no new features, deleted at N4 |

@@ -1,0 +1,12 @@
+{
+  "//": "Editor/LSP only (VC-ADR-056 T1): go-to-definition / find-references across the core and the shared rules it imports from ../gas/src. Not used by the build or the Docker image.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "checkJs": false,
+    "allowJs": true
+  },
+  "include": ["src/**/*.mjs", "tests/**/*.mjs", "scripts/**/*.mjs", "../gas/src/**/*.js", "../cloudrun/**/*.mjs"],
+  "exclude": ["node_modules", "tests/generated"]
+}

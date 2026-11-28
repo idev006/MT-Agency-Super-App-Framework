@@ -49,6 +49,7 @@ const readFirst = [
   ['CURRENT_DELIVERY_STATUS.md','ความจริงปัจจุบัน: อะไรรันอยู่ เวอร์ชัน หลักฐานล่าสุด งานที่กำลังทำ — จุดกลับมาทำงาน'],
   ['PROJECT_HANDOVER.md','prompt สำหรับ AI ตัวต่อไป, กฎ owner, ผังโค้ด, วิธีย้าย operation ไป core, deploy + proof, next actions'],
   ['ROADMAP.md','ลำดับงานที่เหลือ (issue ละข้อ) + สถานะ'],
+  ['KANBAN_BOARD.md','บอร์ด Kanban: กำลังทำ / รอ owner / ถัดไป / เสร็จล่าสุด (สร้างจาก issue ด้วย scripts/gen-kanban.mjs)'],
   ['NODE_CORE_FINISH_PLAN.md','แผน VC-ADR-051: backend ทั้งหมดเป็น native async Node (N1a–N4) + blueprint diagrams'],
   ['DECISION_LOG.md','VC-ADR ทั้งหมด + หลักฐาน deploy แต่ละรอบ (คอลัมน์สถานะ)'],
   ['generated/DATA_ACCESS_MAP.md','(generated, CI-checked) โมดูลไหนอ่าน/เขียนตารางไหน'],
