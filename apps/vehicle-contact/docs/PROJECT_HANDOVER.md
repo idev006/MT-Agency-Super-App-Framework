@@ -1,7 +1,7 @@
 # P6 Vehicle Contact — Project Handover / Next AI
 
 **Document ID:** P6VC-HANDOVER-001
-**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend 0.9.63 / FE 0.9.23. The core answers 24/64 operations; N4a direct browser route is live and publicly verified. R10 reference seed core job has a successful live DRY_RUN. A bridge-only GAS candidate is local only.
+**Last verified live:** 2026-11-28 (Asia/Bangkok) — backend **0.9.66** / FE **0.9.24** (core `/` reports 0.9.66). The core answers 24/64 operations; the browser calls the core directly; the Cloudflare Worker is deleted; GAS @117 is the photo bridge only (G1); R10 DRY_RUN and R11 RESET_PREVIEW are proven live. Session handoff: [HANDOFF_NEXT_SESSION_20261128.md](HANDOFF_NEXT_SESSION_20261128.md).
 **Status:** current. Read [CURRENT_DELIVERY_STATUS.md](CURRENT_DELIVERY_STATUS.md) (what runs, last proof) with this page (how to work, next steps).
 
 ## 1. Ready-to-paste next-AI prompt
@@ -15,9 +15,9 @@ apps/vehicle-contact/docs/CURRENT_DELIVERY_STATUS.md → PROJECT_HANDOVER.md (th
 the generated maps docs/generated/DATA_ACCESS_MAP.md + CHANGE_CHECKLIST.md → DECISION_LOG.md (VC-ADR-046..054).
 Then verify the live state yourself: git fetch origin main; gh pr list; gh issue list --label status:in-progress; CI.
 
-Where things stand: backend 0.9.63 is live and proven. The Node core (p6vc-core) answers 24 of 64 operations live and forwards the rest to
+Where things stand: backend 0.9.66 / FE 0.9.24 are live and proven (suite 112/112 + DATA_PROOF 7/7); GAS is the photo bridge only (@117). The Node core (p6vc-core) answers 24 of 64 operations live and forwards the rest to
 the frozen legacy engine (p6vc-api). The owner decided (VC-ADR-051) to move the whole backend to native async Node:
-N1a and N4a complete → N1b → N2 → N3 → finish R10/R11 → N4 cut-over. R10 core job DRY_RUN is proven; R11 needs the owner's security decision. Each DEV item = small PRs → green CI →
+N1a, N4a, W1, G1, R11 complete → N1b (PR 3 next) → N2 → N3 → finish R10 recovery → N4 cut-over. Check PR #348 first (merge it if still open). Each DEV item = small PRs → green CI →
 deploy → proof → evidence in DECISION_LOG → ROADMAP + issue updated.
 
 Hard rules (owner): VC-ADR-052's 2026-11-28 one-time DEV approval covers subsequent synthetic-DEV merges/deploys and clasp;
@@ -66,7 +66,7 @@ flowchart LR
 | `scripts/gen-system-maps.mjs` | the generated maps + ratchet (`--check` in CI) |
 | `scripts/p6vc-deploy-backend.sh` | the deploy chain (refuses without `P6VC_OWNER_OK=MERGE_AND_DEPLOY`) |
 
-Owner clarification 2026-11-28: use LSP to map code; the target backend is native async Node in `p6vc-core`, with Firestore for data and the GAS API for Google Drive photos, **without Cloudflare Worker**. FE 0.9.23 now calls the core directly; the Worker service is still deployed but unused by the browser and is retired in N4.
+Owner clarification 2026-11-28: use LSP to map code; the target backend is native async Node in `p6vc-core`, with Firestore for data and the GAS API for Google Drive photos, **without Cloudflare Worker**. The web app calls the core directly (`VITE_CORE_API_URL`); the Worker was deleted from Cloudflare on 2026-11-28 (W1).
 
 ## 4. How to move an operation to the core (the N1a pattern)
 
@@ -126,12 +126,11 @@ The AI never sees the password. Workflow **P6 Vehicle Contact admin tools (manua
 ## 6. Next actions
 
 Plan approved 2026-11-28 (VC-ADR-056), in this order — status on [KANBAN_BOARD.md](KANBAN_BOARD.md):
-0. **R03** photo rules: #334 (BE 0.9.64) + #335 (FE 0.9.24) merged; backend deploy + live proof pending the owner's OK.
-0. **T1 #336** code map scans the core, core LSP config, README, Kanban board document · **L1 #337** localhost (core dev server with stub adapters + FE dev) · **W1 #338** Worker out of the suite / CI / docs, then deleted (owner approved the deletion).
+0. **Done 2026-11-28:** R03 photo rules (BE 0.9.64 + FE 0.9.24, owner phone check) · T1 #336 code map + LSP · L1 #337 localhost · W1 #338 Worker deleted · R11 #304 admin tools (0.9.65–0.9.66). Open PR **#348** (G1 bridge = deploy default) must merge before the next deploy.
 1. **G1 #329 — DONE 2026-11-28**: the GAS project is the image manager only (2 files, @117). There are no GAS editor functions any more: reference seed = core job (R10, `reference-seed-job.yml`), first admin / admin reset = core job (R11, `admin-tools-job.yml`), housekeeping / photo audit = core jobs. A normal deploy pushes the bridge; `--full-api` with `P6VC_OWNER_OK_RESTORE_GAS_FILES=RESTORE_GAS_API_FILES` puts the old files back (rollback only).
-2. **N1b #312** — PRs 1–2 (`qr.history`, `vehicles.listMine`) are proven on 0.9.61–0.9.62. Move the remaining vehicles, QR, change requests and registration review to native async Node in small PRs. Fix approval's whole-table vehicle read using plate + province.
-3. N2 (#313), N3 (#314), finish R10 recovery gate (#303), R11 (#304, owner security review), N4 (#255).
-4. Photos R03 (#296), R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
+2. **N1b #312** — PRs 1–2 (`qr.history`, `vehicles.listMine`) are proven on 0.9.61–0.9.62. Next: the remaining 15 (`registrations.listPending/detail/review/photo`, `vehicles.update/cancel`, `contacts.update`, `changes.*` 4, `qr.issue/revoke/replace/export`) as native async Node in small PRs. Fix approval's whole-table vehicle read using plate + province.
+3. N2 (#313), N3 (#314), finish R10 recovery gate (#303), N4 (#255).
+4. Photos R04 (#297, dry run first). Go-live R14 / R16 / R17 are owner decisions.
 
 ## 7. Working notes (things that bit before)
 

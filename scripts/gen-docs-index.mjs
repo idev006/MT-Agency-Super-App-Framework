@@ -46,6 +46,7 @@ const rows = files.map(f => {
 rows.sort((a,b) => (b.git||'').localeCompare(a.git||'') || a.f.localeCompare(b.f));
 
 const readFirst = [
+  ['HANDOFF_NEXT_SESSION_20261128.md','ส่งต่องานแชทถัดไป (2026-11-28): สถานะ, PR ที่เปิด, งานถัดไป N1b PR 3, สิ่งที่รอ owner'],
   ['CURRENT_DELIVERY_STATUS.md','ความจริงปัจจุบัน: อะไรรันอยู่ เวอร์ชัน หลักฐานล่าสุด งานที่กำลังทำ — จุดกลับมาทำงาน'],
   ['PROJECT_HANDOVER.md','prompt สำหรับ AI ตัวต่อไป, กฎ owner, ผังโค้ด, วิธีย้าย operation ไป core, deploy + proof, next actions'],
   ['ROADMAP.md','ลำดับงานที่เหลือ (issue ละข้อ) + สถานะ'],
